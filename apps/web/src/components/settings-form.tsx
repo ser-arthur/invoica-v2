@@ -1,12 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { SUPPORTED_CURRENCIES } from '@invoica/core';
 import { saveProfileAction } from '@/lib/actions/settings';
 import { COUNTRIES, TIME_ZONES } from '@/lib/countries';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
-import { TEMPLATES } from '@/lib/templates';
+import type { DocumentSnapshot } from '@invoica/core';
+import { TemplatePicker } from './template-picker';
 
 export interface ProfileValues {
   name: string;
@@ -93,7 +94,7 @@ const ROUNDING_CHOICES = [
   },
 ];
 
-export function SettingsForm({ initial }: { initial: ProfileValues }) {
+export function SettingsForm({ initial, logoUrl }: { initial: ProfileValues; logoUrl: string | null }) {
   const router = useRouter();
   const [v, setV] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -115,6 +116,30 @@ export function SettingsForm({ initial }: { initial: ProfileValues }) {
   const setMm = (k: keyof NonNullable<ProfileValues['paymentDetails']['mobileMoney']>, value: string) =>
     set('paymentDetails', { ...v.paymentDetails, mobileMoney: { ...mm, [k]: value } });
   const taxWord = v.countryCode === 'GB' || v.countryCode === 'GH' || v.countryCode === 'IE' ? 'VAT' : 'tax';
+  const previewSeller: DocumentSnapshot['seller'] = useMemo(
+    () => ({
+      name: v.name || 'Your business',
+      legalName: v.legalName,
+      businessType: v.businessType,
+      companyNumber: v.companyNumber,
+      email: v.email,
+      phone: v.phone,
+      website: v.website,
+      address: {
+        line1: v.addressLine1,
+        line2: v.addressLine2,
+        city: v.city,
+        region: v.region,
+        postcode: v.postcode,
+        countryCode: v.countryCode,
+      },
+      taxRegistered: v.taxRegistered,
+      taxNumber: v.taxNumber,
+      brandColour: /^#[0-9a-fA-F]{6}$/.test(v.brandColour) ? v.brandColour : '#17795a',
+      logoFileId: null,
+    }),
+    [v],
+  );
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -318,15 +343,12 @@ export function SettingsForm({ initial }: { initial: ProfileValues }) {
             onChange={(e) => set('defaultPaymentTermsDays', Number(e.target.value.replace(/\D/g, '') || 0))}
           />
         </Field>
-        <Field label="Template" htmlFor="s-tpl">
-          <Select id="s-tpl" {...text('defaultTemplate')}>
-            {TEMPLATES.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <TemplatePicker
+          value={v.defaultTemplate}
+          onChange={(id) => set('defaultTemplate', id)}
+          seller={previewSeller}
+          logoUrl={logoUrl}
+        />
         <Field
           label="Brand colour"
           htmlFor="s-colour"

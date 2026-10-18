@@ -75,7 +75,7 @@ export default async function SettingsPage() {
       </nav>
       <div className="flex flex-col gap-6">
         <LogoUpload logoUrl={org.logoFileId ? `/files/${org.logoFileId}` : null} name={org.name} />
-        <SettingsForm initial={initial} />
+        <SettingsForm initial={initial} logoUrl={org.logoFileId ? `/files/${org.logoFileId}` : null} />
         <TaxCodes
           country={org.countryCode}
           presetAvailable={presetMissing}
