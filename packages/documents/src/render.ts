@@ -4,9 +4,13 @@ import { BASE_CSS, esc, pageFooterCss } from './templates/shared';
 import { signature } from './templates/signature';
 import { studio } from './templates/studio';
 import { counsel } from './templates/counsel';
+import { ledger } from './templates/ledger';
+import { poster } from './templates/poster';
+import { letter } from './templates/letter';
+import { ticket } from './templates/ticket';
 import { buildView } from './view';
 
-export const TEMPLATES = { signature, studio, counsel } as const;
+export const TEMPLATES = { signature, studio, counsel, ledger, poster, letter, ticket } as const;
 export type TemplateId = keyof typeof TEMPLATES;
 
 export const TEMPLATE_LIST: { id: TemplateId; name: string; description: string }[] = [
@@ -24,6 +28,27 @@ export const TEMPLATE_LIST: { id: TemplateId; name: string; description: string 
     id: 'counsel',
     name: 'Counsel',
     description: 'A centred letterhead in a serif. For firms and practices.',
+  },
+  {
+    id: 'poster',
+    name: 'Poster',
+    description: 'The amount set as large as a headline, on a strict grid. For designers and studios.',
+  },
+  {
+    id: 'ledger',
+    name: 'Ledger',
+    description:
+      'A ruled margin, a folio number and figures in a mono face. For bookkeepers and consultants.',
+  },
+  {
+    id: 'letter',
+    name: 'Letter',
+    description: 'Addressed by name and signed off, with dotted leaders. For coaches, tutors and therapists.',
+  },
+  {
+    id: 'ticket',
+    name: 'Ticket',
+    description: 'A printed receipt in one narrow column. For makers, shops and events.',
   },
 ];
 

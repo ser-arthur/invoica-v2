@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildView, renderDocumentHtml, lineTaxLabel } from '../src/index';
+import { buildView, renderDocumentHtml, lineTaxLabel, TEMPLATE_LIST } from '../src/index';
 import { FIXTURES } from './fixtures';
 
 const fontUrl = (f: string) => `/fonts/${f}`;
@@ -53,9 +53,10 @@ describe('document view', () => {
 });
 
 describe('rendering', () => {
-  it('renders every fixture with each template and escapes text', () => {
+  it('renders every fixture with each of the seven templates and escapes text', () => {
+    expect(TEMPLATE_LIST).toHaveLength(7);
     for (const [name, s] of Object.entries(FIXTURES)) {
-      for (const template of ['signature', 'studio', 'counsel']) {
+      for (const { id: template } of TEMPLATE_LIST) {
         const html = renderDocumentHtml(
           { ...s, template, buyer: { ...s.buyer, name: `${s.buyer.name} <b>&</b>` } },
           { fontUrl },
