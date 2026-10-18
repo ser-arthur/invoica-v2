@@ -1,0 +1,13 @@
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 98e20741c27a, initial migration of model schemas
+INFO  [alembic.runtime.migration] Running upgrade 98e20741c27a -> 6b95f315aefa, Increase password has length in schema
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.ddl.postgresql] Detected sequence named 'user_id_seq' as owned by integer column 'user(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'line_item_id_seq' as owned by integer column 'line_item(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'company_details_id_seq' as owned by integer column 'company_details(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'client_custom_field_id_seq' as owned by integer column 'client_custom_field(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected added column 'company_details.base_currency'
+ERROR [flask_migrate] Error: New upgrade operations detected: [('add_column', None, 'company_details', Column('base_currency', String(length=3), table=<company_details>, nullable=False, default=ScalarElementColumnDefault('GBP')))]
+id, user_id, company_name, company_logo, company_website, company_email, company_phone, company_address_line_1, company_address_line_2, company_city, company_state_province, company_postcode, company_country, company_tax_id, business_type, bank_name, bank_account_name, bank_account_number, bank_sort_code, momo_account_name, momo_number, merchant_code, payment_terms_text

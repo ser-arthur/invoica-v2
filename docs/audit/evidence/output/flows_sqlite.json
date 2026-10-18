@@ -1,0 +1,427 @@
+{
+  "T1_basic_20pct": {
+    "editor": {
+      "subtotal": "\u00a3109.99",
+      "vat": "\u00a322.00",
+      "total": "\u00a3131.99",
+      "vatLabel": "Tax (20%)"
+    },
+    "submitted": {
+      "subtotal": "109.99",
+      "discount_amount": "0.00",
+      "shipping_charge": "0.00",
+      "vat_rate_value": "0.2000"
+    },
+    "stored": {
+      "id": 1,
+      "number": "INV-001",
+      "status": "Pending",
+      "vat_rate": 0.2,
+      "vat_amount": 21.998,
+      "shipping": 0.0,
+      "discount": 0.0,
+      "subtotal": 109.99,
+      "total_incl_vat": 131.988,
+      "currency": "GBP",
+      "paid_date": "None",
+      "lines": [
+        [
+          "Design",
+          3,
+          33.33
+        ],
+        [
+          "Hosting",
+          1,
+          10.0
+        ]
+      ]
+    },
+    "preview": {
+      "subtotal": "\u00a3109.99",
+      "vat_label": "VAT (20%)",
+      "vat": "\u00a322.00",
+      "discount": null,
+      "shipping": null,
+      "total": "\u00a3131.99"
+    }
+  },
+  "T2_tie_5pct_12_50": {
+    "editor": {
+      "subtotal": "\u00a312.50",
+      "vat": "\u00a30.63",
+      "total": "\u00a313.13",
+      "vatLabel": "Tax (5%)"
+    },
+    "stored": {
+      "id": 2,
+      "number": "INV-002",
+      "status": "Pending",
+      "vat_rate": 0.05,
+      "vat_amount": 0.625,
+      "shipping": 0.0,
+      "discount": 0.0,
+      "subtotal": 12.5,
+      "total_incl_vat": 13.125,
+      "currency": "GBP",
+      "paid_date": "None",
+      "lines": [
+        [
+          "Item",
+          1,
+          12.5
+        ]
+      ]
+    },
+    "preview": {
+      "subtotal": "\u00a312.50",
+      "vat_label": "VAT (5%)",
+      "vat": "\u00a30.62",
+      "discount": null,
+      "shipping": null,
+      "total": "\u00a313.12"
+    }
+  },
+  "T3_17_5pct_on_13": {
+    "editor": {
+      "subtotal": "\u00a313.00",
+      "vat": "\u00a32.28",
+      "total": "\u00a315.28",
+      "vatLabel": "Tax (17.5%)"
+    },
+    "stored": {
+      "id": 3,
+      "number": "INV-003",
+      "status": "Pending",
+      "vat_rate": 0.175,
+      "vat_amount": 2.275,
+      "shipping": 0.0,
+      "discount": 0.0,
+      "subtotal": 13.0,
+      "total_incl_vat": 15.275,
+      "currency": "GBP",
+      "paid_date": "None",
+      "lines": [
+        [
+          "Item",
+          1,
+          13.0
+        ]
+      ]
+    },
+    "preview": {
+      "subtotal": "\u00a313.00",
+      "vat_label": "VAT (17%)",
+      "vat": "\u00a32.27",
+      "discount": null,
+      "shipping": null,
+      "total": "\u00a315.28"
+    }
+  },
+  "T4_discount_exceeds": {
+    "editor": {
+      "subtotal": "\u00a3100.00",
+      "vat": "\u00a30.00",
+      "total": "-\u00a350.00",
+      "vatLabel": "Tax (20%)"
+    },
+    "editor_total_raw": -50,
+    "stored": {
+      "id": 4,
+      "number": "INV-004",
+      "status": "Pending",
+      "vat_rate": 0.2,
+      "vat_amount": 0.0,
+      "shipping": 0.0,
+      "discount": 150.0,
+      "subtotal": 100.0,
+      "total_incl_vat": 0.0,
+      "currency": "GBP",
+      "paid_date": "None",
+      "lines": [
+        [
+          "Item",
+          1,
+          100.0
+        ]
+      ]
+    },
+    "preview": {
+      "subtotal": "\u00a3100.00",
+      "vat_label": "VAT (20%)",
+      "vat": "\u00a30.00",
+      "discount": "\u00a3150.00",
+      "shipping": null,
+      "total": "\u00a30.00"
+    }
+  },
+  "T5_shipping_discount": {
+    "editor": {
+      "subtotal": "\u00a3100.00",
+      "vat": "\u00a318.00",
+      "total": "\u00a3108.00",
+      "vatLabel": "Tax (20%)"
+    },
+    "stored": {
+      "id": 5,
+      "number": "INV-005",
+      "status": "Pending",
+      "vat_rate": 0.2,
+      "vat_amount": 18.0,
+      "shipping": 10.0,
+      "discount": 20.0,
+      "subtotal": 100.0,
+      "total_incl_vat": 108.0,
+      "currency": "GBP",
+      "paid_date": "None",
+      "lines": [
+        [
+          "Item",
+          2,
+          50.0
+        ]
+      ]
+    },
+    "preview": {
+      "subtotal": "\u00a3100.00",
+      "vat_label": "VAT (20%)",
+      "vat": "\u00a318.00",
+      "discount": "\u00a320.00",
+      "shipping": "\u00a310.00",
+      "total": "\u00a3108.00"
+    }
+  },
+  "T6_fractional_quantity": {
+    "editor": {
+      "subtotal": "\u00a3100.00",
+      "vat": "\u00a30.00",
+      "total": "\u00a3100.00",
+      "vatLabel": "Tax (0%)"
+    },
+    "stored": {
+      "id": 6,
+      "number": "INV-006",
+      "status": "Pending",
+      "vat_rate": 0.0,
+      "vat_amount": 0.0,
+      "shipping": 0.0,
+      "discount": 0.0,
+      "subtotal": 100.0,
+      "total_incl_vat": 100.0,
+      "currency": "GBP",
+      "paid_date": "None",
+      "lines": [
+        [
+          "Consulting hours",
+          1.5,
+          40.0
+        ],
+        [
+          "Half day",
+          0.4,
+          100.0
+        ]
+      ]
+    },
+    "preview": {
+      "subtotal": "\u00a3100.00",
+      "vat_label": "VAT (0%)",
+      "vat": "\u00a30.00",
+      "discount": null,
+      "shipping": null,
+      "total": "\u00a3100.00"
+    },
+    "preview_line_rows": [
+      [
+        "1.5",
+        "\u00a340.00",
+        "\u00a360.00"
+      ],
+      [
+        "0.4",
+        "\u00a3100.00",
+        "\u00a340.00"
+      ],
+      [
+        "1.5",
+        "\u00a340.00",
+        "\u00a360.00"
+      ],
+      [
+        "0.4",
+        "\u00a3100.00",
+        "\u00a340.00"
+      ]
+    ],
+    "editor_after_reopen": {
+      "subtotal": "\u00a3100.00",
+      "vat": "\u00a30.00",
+      "total": "\u00a3100.00",
+      "vatLabel": "Tax (0%)"
+    }
+  },
+  "T7_edit_round_trip": {
+    "vatRate_loaded_into_editor": 0.2,
+    "editor_after_load": {
+      "subtotal": "\u00a3109.99",
+      "vat": "\u00a30.22",
+      "total": "\u00a3110.21",
+      "vatLabel": "Tax (0.2%)"
+    },
+    "submitted_vat_rate_value": "0.0020",
+    "before": {
+      "vat_rate": 0.2,
+      "vat_amount": 21.998,
+      "total_incl_vat": 131.988
+    },
+    "after": {
+      "vat_rate": 0.002,
+      "vat_amount": 0.21997999999999998,
+      "total_incl_vat": 110.20998
+    },
+    "preview_after": {
+      "subtotal": "\u00a3109.99",
+      "vat_label": "VAT (0%)",
+      "vat": "\u00a30.22",
+      "discount": null,
+      "shipping": null,
+      "total": "\u00a3110.21"
+    }
+  },
+  "T8_vat_label": {
+    "labels": {
+      "17.5": {
+        "stored_rate": 0.175,
+        "label": "VAT (17%)",
+        "vat": "\u00a317.50"
+      },
+      "12.5": {
+        "stored_rate": 0.125,
+        "label": "VAT (12%)",
+        "vat": "\u00a312.50"
+      },
+      "29": {
+        "stored_rate": 0.29,
+        "label": "VAT (28%)",
+        "vat": "\u00a329.00"
+      },
+      "21.9": {
+        "stored_rate": 0.219,
+        "label": "VAT (21%)",
+        "vat": "\u00a321.90"
+      },
+      "15": {
+        "stored_rate": 0.15,
+        "label": "VAT (15%)",
+        "vat": "\u00a315.00"
+      }
+    }
+  },
+  "N1_numbering": {
+    "bob_invoices_created_via_new_client_name": 3,
+    "first_suggestion": "INV-001",
+    "after_INV_2024_005": "INV-2025",
+    "after_PH_010": "INV-2025",
+    "empty_number_fallback": "PH-011",
+    "duplicate_status": 302,
+    "duplicate_redirect": "/invoice/create",
+    "rows_with_PH_010": 1
+  },
+  "S1_statuses": {
+    "saved_status": "Pending",
+    "computed_status_past_due": "Pending",
+    "dashboard_total_owed": "\u00a3500.00",
+    "dashboard_overdue_count": "0",
+    "clients_page_outstanding_map": {
+      "15": 500.0
+    },
+    "after_mark_paid": {
+      "status": "Paid",
+      "paid_date_set": true
+    },
+    "after_editing_paid_invoice": {
+      "status": "Pending",
+      "paid_date": "2026-10-18 14:43:11.959925"
+    },
+    "status_Paid_from_form": {
+      "status": "Paid",
+      "paid_date": "None"
+    },
+    "arbitrary_status_accepted": "Banana",
+    "old_mark_paid_route_status": 200,
+    "old_route_result": {
+      "status": "Paid",
+      "paid_date": "None"
+    }
+  },
+  "X1_cross_account": {
+    "leak_contains_email_and_note": {
+      "GET /invoice/create?client_id=<other>": [
+        true,
+        true
+      ]
+    },
+    "other_routes_status": {
+      "GET /invoice/1": 404,
+      "GET /invoice/edit/1": 302,
+      "GET /invoice/1/download": 302,
+      "POST /api/invoice/1/mark-paid": 404,
+      "POST /invoice/1/mark_paid": 403,
+      "GET /client/1": 404,
+      "GET /clients/edit/1": 302,
+      "POST /clients/delete/1": 302
+    },
+    "alice_invoice_status_after_probes": "Pending"
+  },
+  "X2_logo_upload": {
+    "alice_and_bob_logo_paths": [
+      "static/uploads/logos/logo.png",
+      "static/uploads/logos/logo.png"
+    ],
+    "bytes_on_disk_for_logo_png": "bob-logo-bytes",
+    "html_upload_status": 200,
+    "html_served_status": 200,
+    "html_served_type": "text/html; charset=utf-8"
+  },
+  "X3_apostrophe": {
+    "invoices_page_x_data": "invoicesPage([{\"id\": 18, \"invoice_number\": \"INV-001\", \"invoice_date\": \"2026-10-01T00:00:00+00:00\", \"due_date\": null, \"to",
+    "attribute_complete": false,
+    "client_detail_x_data": "clientDetailPage([{\"id\": 18, \"invoice_number\": \"INV-001\", \"invoice_date\": \"2026-10-01T00:00:00+00:00\", \"due_date\": null,"
+  },
+  "A1_auth": {
+    "login_with_different_case_succeeds": false,
+    "accounts_for_same_address": 2,
+    "duplicate_username_status": 500,
+    "thirty_wrong_passwords_statuses": [
+      200
+    ],
+    "correct_password_after_30_failures": 302,
+    "six_char_password_accepted": true,
+    "send_email_status": 500,
+    "logout_method": "GET"
+  },
+  "C1_currency": {
+    "rates_unavailable": {
+      "dashboard_total_owed": "\u00a3100.00",
+      "invoices_total_billed": "\u00a3100.00",
+      "clients_outstanding_map_raw": {
+        "19": 1225.0
+      },
+      "client_detail_outstanding": "\u00a31,225.00"
+    },
+    "hypothetical_rates_USD_1.25_GHS_15": {
+      "dashboard_total_owed": "\u00a3266.67",
+      "invoices_total_billed": "\u00a3266.67",
+      "clients_outstanding_map_raw": {
+        "19": 1225.0
+      },
+      "client_detail_outstanding": "\u00a31,225.00"
+    }
+  },
+  "D1_dates": {
+    "invoice_date_type": "datetime",
+    "invoice_date_value": "2026-10-01 00:00:00",
+    "due_date_type": "date",
+    "to_dict_invoice_date": "2026-10-01T00:00:00+00:00"
+  }
+}
