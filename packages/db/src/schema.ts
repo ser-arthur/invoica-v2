@@ -260,6 +260,7 @@ export const document = pgTable('document', {
   createdBy: text('created_by'),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
+  idempotencyKey: text('idempotency_key'),
 });
 
 export const documentLine = pgTable('document_line', {

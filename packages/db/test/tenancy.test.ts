@@ -72,7 +72,9 @@ describe('cross-organisation access is refused', () => {
     await owner.end();
     expect(rows).toHaveLength(TENANT_TABLES.length);
     for (const r of rows) {
-      expect([r.relname, r.relrowsecurity, r.relforcerowsecurity]).toEqual([r.relname, true, true]);
+      // The outbox is read across organisations by the worker's security-definer functions only.
+      const forced = r.relname !== 'outbox';
+      expect([r.relname, r.relrowsecurity, r.relforcerowsecurity]).toEqual([r.relname, true, forced]);
     }
   });
 
