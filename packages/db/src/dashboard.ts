@@ -90,7 +90,7 @@ export async function getDashboard(tx: Tx, today: BusinessDate, baseCurrency: st
   const paidByClient = new Map<string, { clientId: string; name: string; currency: string; paid: number }>();
   for (const d of invoices) {
     if (d.currency !== baseCurrency || d.lifecycle === 'void' || d.lifecycle === 'draft') continue;
-    const paid = d.applied;
+    const paid = d.paid;
     if (paid <= 0) continue;
     const row = paidByClient.get(d.clientId) ?? {
       clientId: d.clientId,

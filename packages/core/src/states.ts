@@ -4,8 +4,9 @@ import { compareDates, type BusinessDate } from './dates';
 /** The stored part of a document's state. Part paid and paid are derived from payments. */
 export type Lifecycle = 'draft' | 'issued' | 'sent' | 'void';
 
-/** The state shown to people. */
-export type DocumentState = 'draft' | 'issued' | 'sent' | 'part_paid' | 'paid' | 'void';
+/** The state shown to people. Credited means closed by credit notes alone; settled, by payments and credit notes together. */
+export type DocumentState =
+  'draft' | 'issued' | 'sent' | 'part_paid' | 'paid' | 'credited' | 'settled' | 'void';
 
 export type DocumentEvent = 'issue' | 'mark_sent' | 'void';
 
@@ -15,14 +16,25 @@ export const STATE_LABELS: Record<DocumentState, string> = {
   sent: 'Sent',
   part_paid: 'Part paid',
   paid: 'Paid',
+  credited: 'Credited',
+  settled: 'Settled',
   void: 'Void',
 };
 
-export function deriveState(args: { lifecycle: Lifecycle; total: number; paid: number }): DocumentState {
+/** `paid` is money received; `credited` is credit notes issued against the document. */
+export function deriveState(args: {
+  lifecycle: Lifecycle;
+  total: number;
+  paid: number;
+  credited?: number;
+}): DocumentState {
   const { lifecycle, total, paid } = args;
+  const credited = args.credited ?? 0;
   if (lifecycle === 'draft' || lifecycle === 'void') return lifecycle;
-  if (total > 0 && paid >= total) return 'paid';
-  if (total === 0) return 'paid';
+  if (paid + credited >= total) {
+    if (credited === 0) return 'paid';
+    return paid === 0 ? 'credited' : 'settled';
+  }
   if (paid > 0) return 'part_paid';
   return lifecycle;
 }

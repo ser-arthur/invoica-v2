@@ -4,6 +4,8 @@ import { lineAmount } from './quantity';
 import {
   RATE_SCALE,
   assertTaxCode,
+  exactNetOfGross,
+  exactTaxes,
   splitGross,
   taxCodeKey,
   taxesOnNet,
@@ -26,6 +28,11 @@ export interface LineInput {
   /** Minor units, excluding tax unless the document's prices include tax. */
   unitPrice: number;
   tax: TaxCode | null;
+  /**
+   * A fixed amount taken off this line before tax, in minor units. Credit notes use it to give back a line's
+   * share of the invoice's discounts. A document has either line discounts or document discounts, not both.
+   */
+  discount?: number;
 }
 
 export type DiscountInput =
@@ -38,6 +45,8 @@ export interface DocumentInput {
   rounding: RoundingMode;
   lines: LineInput[];
   discounts?: DiscountInput[];
+  /** The label of the discount row when lines carry their own discounts. */
+  lineDiscountLabel?: string;
   /** Payments and credits already applied, in minor units. */
   paid?: number;
 }
@@ -100,6 +109,60 @@ function discountAmount(d: DiscountInput, subtotal: number, mode: RoundingMode):
   return toSafeNumber(divRound(BigInt(subtotal) * BigInt(d.ratePpm), BigInt(RATE_SCALE), mode), 'discount');
 }
 
+interface Group {
+  code: TaxCode | null;
+  groupAmount: number;
+}
+
+/**
+ * For each group, its taxes when the document's tax is rounded down once on the total: every component is worked
+ * out exactly, the exact total is rounded down, and the result is shared out by largest remainder. Reverse-charge
+ * tax, which is shown and not charged, is rounded down on its own.
+ */
+function roundDocumentTaxDown(groups: Group[], pricesIncludeTax: boolean) {
+  const prepared = groups.map((g) => {
+    const components = g.code?.components ?? [];
+    const reverse = g.code?.treatment === 'reverse_charge';
+    const inclusive = pricesIncludeTax && !reverse;
+    const exactNet = inclusive
+      ? exactNetOfGross(g.groupAmount, components)
+      : { num: BigInt(g.groupAmount), den: 1n };
+    return { g, components, reverse, inclusive, exact: exactTaxes(exactNet, components) };
+  });
+  const slots = prepared.flatMap((p, gi) => (p.reverse ? [] : p.exact.map((f, ci) => ({ gi, ci, f }))));
+  const floors = slots.map((s) => s.f.num / s.f.den);
+  let sumNum = 0n;
+  let sumDen = 1n;
+  for (const s of slots) {
+    sumNum = sumNum * s.f.den + s.f.num * sumDen;
+    sumDen = sumDen * s.f.den;
+  }
+  let leftover = sumNum / sumDen - floors.reduce((a, b) => a + b, 0n);
+  const order = slots
+    .map((s, i) => ({ i, rem: s.f.num % s.f.den, den: s.f.den }))
+    .sort((a, b) => (a.rem * b.den === b.rem * a.den ? a.i - b.i : a.rem * b.den > b.rem * a.den ? -1 : 1));
+  const assigned = [...floors];
+  for (const o of order) {
+    if (leftover <= 0n) break;
+    assigned[o.i] = (assigned[o.i] ?? 0n) + 1n;
+    leftover -= 1n;
+  }
+  const amountFor = new Map(slots.map((s, i) => [`${s.gi}:${s.ci}`, toSafeNumber(assigned[i]!, 'tax')]));
+  return prepared.map((p, gi) => {
+    const amounts = p.components.map((_, ci) =>
+      p.reverse ? toSafeNumber(p.exact[ci]!.num / p.exact[ci]!.den, 'tax') : amountFor.get(`${gi}:${ci}`)!,
+    );
+    const net = p.inclusive ? p.g.groupAmount - amounts.reduce((a, b) => a + b, 0) : p.g.groupAmount;
+    let charged = 0;
+    const taxes: ComponentAmount[] = p.components.map((component, ci) => {
+      const base = component.compound ? net + charged : net;
+      charged += amounts[ci]!;
+      return { component, base, amount: amounts[ci]! };
+    });
+    return { net, taxes, charged: !p.reverse };
+  });
+}
+
 function summaryKey(c: ComponentAmount['component'], treatment: TaxTreatment): string {
   return JSON.stringify([c.name, c.ratePpm, c.compound, treatment]);
 }
@@ -114,18 +177,38 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
   const codes = input.lines.map((l) => l.tax);
   codes.forEach((c) => c && assertTaxCode(c));
 
-  const amounts = input.lines.map((l) => lineAmount(l.quantity, l.unitPrice, mode));
+  // Line amounts and discounts are always rounded half up; the document's rounding setting applies to tax.
+  const amounts = input.lines.map((l) => lineAmount(l.quantity, l.unitPrice, 'half-up'));
   const subtotal = sumMinor(amounts);
 
-  const discounts = (input.discounts ?? []).map((d) => ({
-    label: d.label,
-    amount: discountAmount(d, subtotal, mode),
-  }));
+  const fixed = input.lines.map((l, i) => {
+    const d = l.discount ?? 0;
+    assertMinor(d, 'line discount');
+    const a = amounts[i] ?? 0;
+    if (a >= 0 ? d < 0 || d > a : d > 0 || d < a) {
+      throw new DomainError(
+        'discount_exceeds_line',
+        'A line discount must be between zero and the line amount.',
+      );
+    }
+    return d;
+  });
+  const fixedTotal = sumMinor(fixed);
+  if (fixedTotal !== 0 && (input.discounts ?? []).length > 0) {
+    throw new DomainError('discount_mixed', 'A document has either line discounts or document discounts.');
+  }
+  const discounts =
+    fixedTotal !== 0
+      ? [{ label: input.lineDiscountLabel ?? 'Discount', amount: fixedTotal }]
+      : (input.discounts ?? []).map((d) => ({
+          label: d.label,
+          amount: discountAmount(d, subtotal, 'half-up'),
+        }));
   const discountTotal = sumMinor(discounts.map((d) => d.amount));
   if (discountTotal > subtotal) {
     throw new DomainError('discount_exceeds_subtotal', 'Discounts cannot be more than the subtotal.');
   }
-  const lineDiscounts = allocate(discountTotal, amounts);
+  const lineDiscounts = fixedTotal !== 0 ? fixed : allocate(discountTotal, amounts);
   const afterDiscount = amounts.map((a, i) => a - (lineDiscounts[i] ?? 0));
 
   const lineNet = new Array<number>(amounts.length).fill(0);
@@ -196,21 +279,26 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
       const key = taxCodeKey(code);
       groups.set(key, [...(groups.get(key) ?? []), i]);
     });
-    for (const indexes of groups.values()) {
+    const list = [...groups.values()].map((indexes) => {
       const code = codes[indexes[0] ?? 0] ?? null;
       const groupAmounts = indexes.map((i) => afterDiscount[i] ?? 0);
-      const groupAmount = sumMinor(groupAmounts);
-      const { net, taxes, charged } = taxOf(groupAmount, code);
+      return { indexes, code, groupAmounts, groupAmount: sumMinor(groupAmounts) };
+    });
+    // Rounded down at document level: the exact tax of the whole document is rounded down once (VAT Notice 700, 17.5),
+    // then shared back to each tax in proportion to its exact amount.
+    const exactDown = mode === 'down' ? roundDocumentTaxDown(list, input.pricesIncludeTax) : null;
+    list.forEach((g, gi) => {
+      const { net, taxes, charged } = exactDown ? exactDown[gi]! : taxOf(g.groupAmount, g.code);
       const groupTax = charged ? sumMinor(taxes.map((t) => t.amount)) : 0;
-      const weights = groupAmounts.map((a) => Math.max(a, 0));
+      const weights = g.groupAmounts.map((a) => Math.max(a, 0));
       const netShares = allocate(net, weights);
       const taxShares = allocate(groupTax, weights);
-      indexes.forEach((lineIndex, j) => {
+      g.indexes.forEach((lineIndex, j) => {
         lineNet[lineIndex] = netShares[j] ?? 0;
         lineTax[lineIndex] = taxShares[j] ?? 0;
       });
-      addToSummary(code, taxes, net);
-    }
+      addToSummary(g.code, taxes, net);
+    });
   }
 
   const taxes = [...summary.values()];

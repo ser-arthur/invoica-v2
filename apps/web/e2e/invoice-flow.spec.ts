@@ -118,3 +118,48 @@ test('an issued invoice is emailed with its PDF and marked as sent', async ({ pa
   await page.reload();
   await expect(page.getByText('Sent').first()).toBeVisible();
 });
+
+test('two payments recorded from the same page both count, and a credit note credits part of a line', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await signUpAndOnboard(page, 'Calder Works', { vat: true });
+  await addClient(page, 'Ostrava Supplies Ltd');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Ostrava Supplies Ltd' });
+  await page.getByLabel('Line 1 description').fill('Site visits');
+  await page.getByLabel('Line 1 qty').fill('2');
+  await page.getByLabel('Line 1 price').fill('100');
+  await page.getByRole('button', { name: 'Add a line' }).click();
+  await page.getByLabel('Line 2 description').fill('Travel');
+  await page.getByLabel('Line 2 price').fill('50');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\?issued=1/);
+  const invoiceUrl = page.url().replace('?issued=1', '');
+
+  for (const [amount, balance] of [
+    ['100', '£200.00'],
+    ['50', '£150.00'],
+  ] as const) {
+    await page.getByRole('button', { name: 'Record payment' }).click();
+    await page.fill('#pay-amount', amount);
+    await page.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByText(balance).first()).toBeVisible();
+  }
+
+  await page.getByRole('button', { name: 'Credit note' }).click();
+  await page.locator('#cn-mode').selectOption('lines');
+  await page.getByLabel(/^Site visits/).fill('1');
+  // One of two site visits: £100.00 plus VAT at 20%, worked out from the invoice as issued.
+  await expect(page.getByRole('dialog').getByText('£120.00')).toBeVisible();
+  await expect(page.getByRole('dialog').getByText('£20.00')).toBeVisible();
+  await page.fill('#cn-reason', 'One visit was cancelled.');
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue credit note' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('CN-0001');
+
+  await page.goto(invoiceUrl);
+  await expect(page.getByText('£30.00').first()).toBeVisible();
+  expect(errors).toEqual([]);
+});

@@ -1,8 +1,22 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
-import { formatMoney, parseMoney, toDecimalString } from '@invoica/core';
+import { useMemo, useState, useTransition } from 'react';
+import {
+  DomainError,
+  checkCredit,
+  formatMoney,
+  formatRate,
+  parseMoney,
+  parseQuantity,
+  planAmountCredit,
+  planLineCredit,
+  quantityToString,
+  toDecimalString,
+  type CreditPlan,
+  type CreditSource,
+  type DocumentTotals,
+} from '@invoica/core';
 import {
   creditNoteAction,
   deleteDraftAction,
@@ -13,8 +27,8 @@ import {
   sendDocumentAction,
   voidAction,
 } from '@/lib/actions/documents';
+import { requestKey } from '@/lib/request-key';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
-import { newKey } from './invoice-editor';
 
 function Dialog({
   title,
@@ -116,9 +130,19 @@ export function RecordPaymentButton({
   const [paidOn, setPaidOn] = useState(today);
   const [method, setMethod] = useState('bank_transfer');
   const [reference, setReference] = useState('');
-  const [key] = useState(() => `pay-${newKey()}-${id.slice(0, 8)}`);
+  const [key, setKey] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  function openDialog() {
+    // Each time the dialog opens it is a new payment, with its own key; retrying inside the dialog reuses it.
+    setKey(requestKey());
+    setAmount(toDecimalString(balance, currency));
+    setPaidOn(today);
+    setReference('');
+    setMessage(null);
+    setOpen(true);
+  }
 
   function submit() {
     const minor = parseMoney(amount, currency);
@@ -140,6 +164,11 @@ export function RecordPaymentButton({
         setMessage(r.message);
         return;
       }
+      if (r.data.duplicate) {
+        setMessage('This payment was already recorded.');
+        router.refresh();
+        return;
+      }
       setOpen(false);
       router.refresh();
     });
@@ -147,7 +176,7 @@ export function RecordPaymentButton({
 
   return (
     <>
-      <Button type="button" onClick={() => setOpen(true)}>
+      <Button type="button" onClick={openDialog}>
         Record payment
       </Button>
       {open ? (
@@ -293,54 +322,123 @@ export function VoidButton({ id, number }: { id: string; number: string }) {
   );
 }
 
+export interface CreditableLine {
+  id: string;
+  /** The line's position on the invoice. */
+  index: number;
+  title: string;
+  /** Thousandths still uncredited. */
+  remaining: number;
+  unitPrice: number;
+  taxLabel: string | null;
+}
+
+type CreditMode = 'whole' | 'lines' | 'amount';
+
 export function CreditNoteButton({
   id,
   number,
   balance,
   currency,
   canCreditWhole,
-  taxCodeId,
-  taxLabel,
+  lines,
+  source,
+  credited,
+  invoiceTotals,
+  earlier,
 }: {
   id: string;
   number: string;
   balance: number;
   currency: string;
   canCreditWhole: boolean;
-  /** The tax code every line of the invoice uses, applied to a credited amount. */
-  taxCodeId: string | null;
-  taxLabel: string | null;
+  lines: CreditableLine[];
+  /** The invoice as issued, so the credit is worked out here exactly as the server will. */
+  source: CreditSource;
+  credited: number[];
+  invoiceTotals: DocumentTotals;
+  earlier: DocumentTotals[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<'whole' | 'amount'>(canCreditWhole ? 'whole' : 'amount');
-  const [title, setTitle] = useState(`Credit for ${number}`);
+  const firstMode: CreditMode = canCreditWhole ? 'whole' : lines.length ? 'lines' : 'amount';
+  const [mode, setMode] = useState<CreditMode>(firstMode);
+  const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
-  const [key] = useState(() => `credit-${newKey()}-${id.slice(0, 8)}`);
+  const [key, setKey] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const money = (n: number) => formatMoney(n, currency);
+
+  function openDialog() {
+    setKey(requestKey());
+    setMode(firstMode);
+    setQuantities({});
+    setAmount('');
+    setReason('');
+    setMessage(null);
+    setOpen(true);
+  }
+
+  const lineRequest = useMemo(
+    () =>
+      lines
+        .filter((l) => (quantities[l.id] ?? '').trim() !== '')
+        .map((l) => ({ line: l, quantity: parseQuantity(quantities[l.id] ?? '') })),
+    [lines, quantities],
+  );
+
+  const preview = useMemo((): { plan: CreditPlan | null; error: string | null } => {
+    try {
+      let plan: CreditPlan;
+      if (mode === 'whole') {
+        plan = planLineCredit(
+          source,
+          credited,
+          source.lines.map((l, index) => ({ index, quantity: l.quantity - (credited[index] ?? 0) })),
+        );
+      } else if (mode === 'lines') {
+        const bad = lineRequest.find((r) => r.quantity === null);
+        if (bad) return { plan: null, error: `Enter a quantity for ${bad.line.title}.` };
+        const request = lineRequest
+          .map((r) => ({ index: r.line.index, quantity: r.quantity ?? 0 }))
+          .filter((r) => r.quantity > 0);
+        if (request.length === 0) return { plan: null, error: null };
+        plan = planLineCredit(source, credited, request);
+      } else {
+        if (!amount.trim()) return { plan: null, error: null };
+        const minor = parseMoney(amount, currency);
+        if (minor === null || minor <= 0) return { plan: null, error: 'Enter the amount to credit.' };
+        plan = planAmountCredit(source, invoiceTotals, minor);
+      }
+      checkCredit({ invoice: invoiceTotals, balance, earlier, credit: plan.totals });
+      return { plan, error: null };
+    } catch (error) {
+      return {
+        plan: null,
+        error: error instanceof DomainError ? error.message : 'This credit cannot be worked out.',
+      };
+    }
+  }, [mode, lineRequest, amount, source, credited, invoiceTotals, earlier, balance, currency]);
 
   function submit() {
-    let lines: unknown[] | undefined;
-    if (mode === 'amount') {
-      const minor = parseMoney(amount, currency);
-      if (minor === null || minor <= 0) return setMessage('Enter the amount to credit.');
-      lines = [
-        {
-          title,
-          description: null,
-          quantity: 1000,
-          unit: null,
-          unitPrice: minor,
-          serviceDate: null,
-          taxCodeId,
-          itemId: null,
-        },
-      ];
-    }
+    if (!preview.plan) return setMessage(preview.error ?? 'Choose what to credit.');
+    const base = { invoiceId: id, reason, idempotencyKey: key };
+    const input =
+      mode === 'whole'
+        ? { ...base, mode }
+        : mode === 'lines'
+          ? {
+              ...base,
+              mode,
+              lines: lineRequest
+                .filter((r) => (r.quantity ?? 0) > 0)
+                .map((r) => ({ lineId: r.line.id, quantity: r.quantity ?? 0 })),
+            }
+          : { ...base, mode, amount: parseMoney(amount, currency) ?? 0 };
     start(async () => {
-      const r = await creditNoteAction({ invoiceId: id, reason, lines, idempotencyKey: key });
+      const r = await creditNoteAction(input);
       if (!r.ok) return setMessage(r.fieldErrors?.reason ?? r.message);
       setOpen(false);
       router.push(`/invoices/${r.data.id}`);
@@ -350,7 +448,7 @@ export function CreditNoteButton({
 
   return (
     <>
-      <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
+      <Button type="button" variant="secondary" onClick={openDialog}>
         Credit note
       </Button>
       {open ? (
@@ -358,34 +456,77 @@ export function CreditNoteButton({
           <div className="flex flex-col gap-4">
             {message ? <FormMessage>{message}</FormMessage> : null}
             <p className="text-[14px] text-muted">
-              A credit note corrects an issued invoice. It gets its own number and reduces what the client
-              owes, now {formatMoney(balance, currency)}.
+              A credit note corrects an issued invoice. It gets its own number, cannot be undone, and reduces
+              what the client owes, now {money(balance)}. Prices and tax are taken from the invoice.
             </p>
             <Field label="What to credit" htmlFor="cn-mode">
-              <Select
-                id="cn-mode"
-                value={mode}
-                onChange={(e) => setMode(e.target.value as 'whole' | 'amount')}
-              >
-                {canCreditWhole ? <option value="whole">The whole invoice, line by line</option> : null}
-                <option value="amount">{taxLabel ? `An amount, plus ${taxLabel}` : 'An amount'}</option>
+              <Select id="cn-mode" value={mode} onChange={(e) => setMode(e.target.value as CreditMode)}>
+                {canCreditWhole ? <option value="whole">The whole invoice</option> : null}
+                {lines.length ? <option value="lines">Some of the lines</option> : null}
+                <option value="amount">An amount, including tax</option>
               </Select>
             </Field>
+            {mode === 'lines' ? (
+              <fieldset className="flex flex-col gap-2">
+                <legend className="sr-only">Quantities to credit</legend>
+                {lines.map((l) => (
+                  <div key={l.id} className="grid grid-cols-[1fr_6.5rem] items-center gap-3">
+                    <label htmlFor={`cn-q-${l.id}`} className="min-w-0 text-[14px]">
+                      <span className="block truncate font-medium">{l.title}</span>
+                      <span className="block text-[13px] text-muted">
+                        {quantityToString(l.remaining)} left at {money(l.unitPrice)}
+                        {l.taxLabel ? `, ${l.taxLabel}` : ''}
+                      </span>
+                    </label>
+                    <Input
+                      id={`cn-q-${l.id}`}
+                      inputMode="decimal"
+                      placeholder="0"
+                      value={quantities[l.id] ?? ''}
+                      onChange={(e) => setQuantities((q) => ({ ...q, [l.id]: e.target.value }))}
+                      className="text-right tabular"
+                    />
+                  </div>
+                ))}
+              </fieldset>
+            ) : null}
             {mode === 'amount' ? (
-              <div className="grid grid-cols-[1fr_8rem] gap-3">
-                <Field label="Line" htmlFor="cn-title">
-                  <Input id="cn-title" value={title} onChange={(e) => setTitle(e.target.value)} />
-                </Field>
-                <Field label={currency} htmlFor="cn-amount">
-                  <Input
-                    id="cn-amount"
-                    inputMode="decimal"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="text-right tabular"
-                  />
-                </Field>
-              </div>
+              <Field
+                label={`Amount (${currency})`}
+                htmlFor="cn-amount"
+                hint="Shared across the invoice's tax rates in proportion to what was invoiced at each."
+              >
+                <Input
+                  id="cn-amount"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="text-right tabular"
+                />
+              </Field>
+            ) : null}
+            {preview.plan ? (
+              <dl className="rounded-[12px] bg-sunk px-4 py-3 text-[14px]">
+                <div className="flex justify-between">
+                  <dt className="text-muted">Credit note total</dt>
+                  <dd className="font-medium tabular">{money(preview.plan.totals.total)}</dd>
+                </div>
+                {preview.plan.totals.taxes
+                  .filter((t) => t.ratePpm > 0)
+                  .map((t) => (
+                    <div key={t.key} className="flex justify-between text-muted">
+                      <dt>
+                        {t.name} {formatRate(t.ratePpm)}
+                        {t.charged ? '' : ', reverse charge'}
+                      </dt>
+                      <dd className="tabular">{money(t.amount)}</dd>
+                    </div>
+                  ))}
+              </dl>
+            ) : preview.error ? (
+              <p className="text-[14px] text-danger" role="status">
+                {preview.error}
+              </p>
             ) : null}
             <Field label="Reason" htmlFor="cn-reason" hint="Printed on the credit note.">
               <Textarea
@@ -399,7 +540,7 @@ export function CreditNoteButton({
               <Button variant="ghost" onClick={() => setOpen(false)}>
                 Cancel
               </Button>
-              <Button disabled={pending} onClick={submit}>
+              <Button disabled={pending || !preview.plan} onClick={submit}>
                 {pending ? 'Issuing' : 'Issue credit note'}
               </Button>
             </div>
@@ -448,10 +589,18 @@ export function SendEmailButton({
   const [to, setTo] = useState(defaultTo);
   const [subject, setSubject] = useState(defaultSubject);
   const [message, setMessage] = useState(defaultMessage);
-  const [key] = useState(() => `send-${newKey()}-${id.slice(0, 8)}`);
+  const [key, setKey] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [pending, start] = useTransition();
+
+  function openDialog() {
+    // A new key for each send; a retry inside the dialog reuses it, so the email goes once.
+    setKey(requestKey());
+    setDone(false);
+    setError(null);
+    setOpen(true);
+  }
 
   function submit() {
     setError(null);
@@ -465,7 +614,7 @@ export function SendEmailButton({
 
   return (
     <>
-      <Button type="button" variant={sent ? 'secondary' : 'primary'} onClick={() => setOpen(true)}>
+      <Button type="button" variant={sent ? 'secondary' : 'primary'} onClick={openDialog}>
         {sent ? 'Send again' : 'Send'}
       </Button>
       {open ? (

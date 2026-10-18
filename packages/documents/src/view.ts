@@ -193,8 +193,13 @@ export function buildView(s: DocumentSnapshot, options: { draft?: boolean } = {}
     });
 
   const reverse = t.taxes.filter((r) => !r.charged && r.amount > 0);
+  // The HMRC wording applies to UK sellers only; elsewhere the note names the reverse charge and its figures.
+  const reverseLead =
+    s.seller.address.countryCode === 'GB'
+      ? 'Reverse charge: customer to pay the VAT to HMRC.'
+      : 'Reverse charge.';
   const reverseChargeNote = reverse.length
-    ? `Reverse charge: customer to pay the VAT to HMRC. ${reverse.map((r) => `${r.name} ${formatRate(r.ratePpm)} of ${money(r.amount)} on ${money(r.base)}`).join('; ')}.`
+    ? `${reverseLead} ${reverse.map((r) => `${r.name} ${formatRate(r.ratePpm)} of ${money(r.amount)} on ${money(r.base)}`).join('; ')}.`
     : null;
 
   const untaxed = t.taxes.filter((r) => r.charged && r.ratePpm === 0 && r.base > 0);

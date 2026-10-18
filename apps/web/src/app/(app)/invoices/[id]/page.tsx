@@ -2,8 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Download } from 'lucide-react';
-import { formatBusinessDate, formatMoney, type DocumentSnapshot } from '@invoica/core';
-import { documentActivity, getDocument } from '@invoica/db';
+import {
+  creditSource,
+  formatBusinessDate,
+  formatMoney,
+  formatRate,
+  type DocumentSnapshot,
+} from '@invoica/core';
+import { creditableLines, documentActivity, getDocument } from '@invoica/db';
 import { renderDocumentHtml } from '@invoica/documents';
 import { FormMessage, PageHeader, Panel, PanelHeading, StatePill, buttonClass } from '@/components/ui';
 import {
@@ -58,10 +64,11 @@ export default async function InvoicePage({
     const detail = await getDocument(tx, id, ws.today);
     if (!detail) return null;
     const activity = detail.document.lifecycle === 'draft' ? [] : await documentActivity(tx, id);
-    return { detail, activity, today: ws.today, logo: ws.organisation.logoFileId };
+    const creditable = detail.document.kind === 'invoice' ? await creditableLines(tx, id) : [];
+    return { detail, activity, creditable, today: ws.today, timeZone: ws.organisation.timeZone };
   });
   if (!data) notFound();
-  const { detail, activity, today } = data;
+  const { detail, activity, creditable, today, timeZone } = data;
   const doc = detail.document;
   if (doc.lifecycle === 'draft') redirect(`/invoices/${id}/edit`);
   const snapshot = doc.snapshot as unknown as DocumentSnapshot;
@@ -72,9 +79,25 @@ export default async function InvoicePage({
     logoUrl: snapshot.seller.logoFileId ? `/files/${snapshot.seller.logoFileId}` : null,
   });
   const open = !isCredit && (doc.lifecycle === 'issued' || doc.lifecycle === 'sent') && detail.balance > 0;
-  const codes = new Set(detail.lines.map((l) => l.taxCodeId));
-  const singleCode = codes.size === 1 ? [...codes][0]! : null;
-  const singleTax = singleCode ? (detail.lines[0]?.tax ?? null) : null;
+  const source = isCredit
+    ? null
+    : creditSource(
+        {
+          currency: doc.currency,
+          pricesIncludeTax: snapshot.pricesIncludeTax,
+          taxLevel: snapshot.taxLevel,
+          rounding: snapshot.rounding,
+          lines: snapshot.lines.map((l) => ({ quantity: l.quantity, unitPrice: l.unitPrice, tax: l.tax })),
+        },
+        snapshot.totals,
+      );
+  const earlierCredits = detail.creditNotes
+    .filter((c) => c.lifecycle === 'issued' || c.lifecycle === 'sent')
+    .map((c) => (c.snapshot as unknown as DocumentSnapshot).totals);
+  const taxLabel = (tax: (typeof creditable)[number]['tax']) =>
+    tax && tax.components.length
+      ? tax.components.map((c) => `${c.name} ${formatRate(c.ratePpm)}`).join(' + ')
+      : null;
   const emailText = `Hello,\n\nPlease find attached invoice ${doc.number} for ${money(snapshot.balanceDue)}${
     snapshot.dueDate ? `, due ${formatBusinessDate(snapshot.dueDate, 'long')}` : ''
   }.\n\nThank you,\n${snapshot.seller.name}`;
@@ -234,19 +257,27 @@ export default async function InvoicePage({
                 raised in error.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
-                {detail.balance > 0 ? (
+                {detail.balance > 0 && source ? (
                   <CreditNoteButton
                     id={id}
                     number={doc.number ?? ''}
                     balance={detail.balance}
                     currency={doc.currency}
                     canCreditWhole={detail.applied.paid + detail.applied.credited === 0}
-                    taxCodeId={singleCode}
-                    taxLabel={
-                      singleTax && singleTax.components.length
-                        ? singleTax.components.map((c) => `${c.name} ${c.ratePpm / 10_000}%`).join(' + ')
-                        : null
-                    }
+                    lines={creditable
+                      .map((l, index) => ({
+                        id: l.id,
+                        index,
+                        title: l.title,
+                        remaining: l.quantity - l.credited,
+                        unitPrice: l.unitPrice,
+                        taxLabel: taxLabel(l.tax),
+                      }))
+                      .filter((l) => l.remaining > 0)}
+                    source={source}
+                    credited={creditable.map((l) => l.credited)}
+                    invoiceTotals={snapshot.totals}
+                    earlier={earlierCredits}
                   />
                 ) : null}
                 {detail.applied.paid === 0 && detail.applied.credited === 0 ? (
@@ -277,6 +308,7 @@ export default async function InvoicePage({
                           month: 'short',
                           hour: '2-digit',
                           minute: '2-digit',
+                          timeZone,
                         }).format(a.at)}
                       </time>
                     </li>

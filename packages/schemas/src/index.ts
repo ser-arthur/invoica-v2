@@ -258,6 +258,8 @@ export const draftInput = z
     template: z.string().min(1).max(40),
     options: documentOptionsInput.default({}),
     lines: z.array(lineInput).max(200, 'An invoice can have at most 200 lines.'),
+    /** Sent with the first save of a new invoice, so a repeated save finds the same draft. */
+    idempotencyKey: z.string().min(8).max(100).optional(),
   })
   .refine((d) => !d.dueDate || !d.issueDate || d.dueDate >= d.issueDate, {
     message: 'The due date cannot be before the issue date.',
@@ -280,13 +282,32 @@ export const paymentInput = z.object({
 });
 export type PaymentInput = z.infer<typeof paymentInput>;
 
-export const creditNoteInput = z.object({
+const creditNoteBase = {
   invoiceId: z.uuid(),
   reason: requiredText(500, 'Say why the credit note is issued.'),
-  /** Credit the whole balance, or these lines. */
-  lines: z.array(lineInput).max(200).optional(),
   idempotencyKey: z.string().min(8).max(100),
-});
+};
+
+/**
+ * A credit note credits the whole invoice, quantities of its lines, or an amount including tax that is shared
+ * across the invoice's tax rates. Prices and tax always come from the invoice.
+ */
+export const creditNoteInput = z.discriminatedUnion('mode', [
+  z.object({ mode: z.literal('whole'), ...creditNoteBase }),
+  z.object({
+    mode: z.literal('lines'),
+    ...creditNoteBase,
+    lines: z
+      .array(z.object({ lineId: z.uuid(), quantity: z.number().int().min(0).max(MAX_QUANTITY) }))
+      .min(1, 'Choose at least one line to credit.')
+      .max(200),
+  }),
+  z.object({
+    mode: z.literal('amount'),
+    ...creditNoteBase,
+    amount: minorAmount.min(1, 'Enter the amount to credit.'),
+  }),
+]);
 export type CreditNoteInput = z.infer<typeof creditNoteInput>;
 
 export const voidInput = z.object({

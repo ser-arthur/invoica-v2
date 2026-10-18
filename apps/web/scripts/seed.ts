@@ -5,6 +5,7 @@ import { addDays, todayIn } from '@invoica/core';
 import {
   createClient,
   createCreditNote,
+  creditableLines,
   createDraft,
   createItem,
   createOrganisation,
@@ -418,13 +419,15 @@ async function agency() {
       ],
       paid: null,
     });
+    const workbooks = (await creditableLines(tx, disputed)).find((l) => l.title === 'Printed workbooks')!;
     await createCreditNote(
       tx,
       actor,
       {
+        mode: 'lines',
         invoiceId: disputed,
         reason: 'Ten workbooks were not needed.',
-        lines: [{ ...line('Printed workbooks returned', 1_250, { quantity: 10_000 }), taxCodeId: zero }],
+        lines: [{ lineId: workbooks.id, quantity: 10_000 }],
         idempotencyKey: `seed-credit-${disputed}`,
       },
       now,

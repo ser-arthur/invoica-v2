@@ -129,6 +129,8 @@ const pillTone: Record<DocumentState | 'overdue', string> = {
   sent: 'bg-info-soft text-info',
   part_paid: 'bg-warn-soft text-warn',
   paid: 'bg-brand-soft text-brand',
+  credited: 'bg-sunk text-ink-soft',
+  settled: 'bg-brand-soft text-brand',
   void: 'bg-sunk text-muted line-through',
   overdue: 'bg-danger-soft text-danger',
 };

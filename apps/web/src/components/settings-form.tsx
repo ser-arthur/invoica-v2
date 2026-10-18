@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
-import { SUPPORTED_CURRENCIES } from '@invoica/core';
+import { SUPPORTED_CURRENCIES, allowedRounding, type RoundingChoice } from '@invoica/core';
 import { saveProfileAction } from '@/lib/actions/settings';
 import { COUNTRIES, TIME_ZONES } from '@/lib/countries';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
@@ -76,23 +76,49 @@ function Section({
   );
 }
 
-const ROUNDING_CHOICES = [
-  {
-    value: 'line:half-up',
-    label: 'Per line, to the nearest penny',
-    hint: 'HMRC allows this for every business. The usual choice.',
-  },
-  {
-    value: 'document:down',
-    label: 'On the invoice total, rounded down',
-    hint: 'HMRC allows this for invoice traders, not retailers.',
-  },
-  {
-    value: 'document:half-up',
-    label: 'On the invoice total, to the nearest unit',
-    hint: 'Used for Ghana, where each tax is worked out on the total.',
-  },
-];
+/** How a rounding choice reads in Settings, for the country it is offered in. */
+function describeRounding(choice: RoundingChoice, country: string): { label: string; hint: string } {
+  const unit = country === 'GB' ? 'penny' : 'unit';
+  const key = `${choice.taxLevel}:${choice.rounding}`;
+  switch (key) {
+    case 'line:half-up':
+      return {
+        label: `Per line, to the nearest ${unit}`,
+        hint:
+          country === 'GB'
+            ? 'HMRC allows this for every business. The usual choice.'
+            : 'Each line is taxed and rounded on its own.',
+      };
+    case 'document:down':
+      return {
+        label: 'On the invoice total, rounded down',
+        hint:
+          country === 'GB'
+            ? 'HMRC allows this for invoice traders, not retailers.'
+            : 'Tax is worked out on the total and rounded down once.',
+      };
+    case 'document:half-up':
+      return {
+        label: `On the invoice total, to the nearest ${unit}`,
+        hint:
+          country === 'GH'
+            ? 'Each tax is worked out once on the total. The usual choice in Ghana.'
+            : 'Tax is worked out on the total and rounded once.',
+      };
+    case 'line:half-even':
+      return {
+        label: 'Per line, ties to the nearest even unit',
+        hint: 'Each line is rounded on its own; a tie goes to the even unit.',
+      };
+    case 'document:half-even':
+      return {
+        label: 'On the invoice total, ties to the nearest even unit',
+        hint: 'Rounded once on the total; a tie goes to the even unit.',
+      };
+    default:
+      return { label: 'Per line, rounded down', hint: 'Each line is taxed and rounded down on its own.' };
+  }
+}
 
 export function SettingsForm({ initial, logoUrl }: { initial: ProfileValues; logoUrl: string | null }) {
   const router = useRouter();
@@ -141,11 +167,17 @@ export function SettingsForm({ initial, logoUrl }: { initial: ProfileValues; log
     [v],
   );
 
+  const roundingChoices = allowedRounding(v.countryCode);
+  const rounding =
+    roundingChoices.find((c) => c.taxLevel === v.taxLevel && c.rounding === v.rounding) ??
+    roundingChoices[0]!;
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
     start(async () => {
-      const r = await saveProfileAction(v);
+      // A choice not offered for the country (after the country changed) becomes the country's usual one.
+      const r = await saveProfileAction({ ...v, taxLevel: rounding.taxLevel, rounding: rounding.rounding });
       if (!r.ok) {
         setErrors(r.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: r.message });
@@ -268,11 +300,11 @@ export function SettingsForm({ initial, logoUrl }: { initial: ProfileValues; log
           <Field
             label="How tax is rounded"
             htmlFor="s-round"
-            hint={ROUNDING_CHOICES.find((r) => r.value === `${v.taxLevel}:${v.rounding}`)?.hint}
+            hint={describeRounding(rounding, v.countryCode).hint}
           >
             <Select
               id="s-round"
-              value={`${v.taxLevel}:${v.rounding}`}
+              value={`${rounding.taxLevel}:${rounding.rounding}`}
               onChange={(e) => {
                 const [level, mode] = e.target.value.split(':') as [
                   ProfileValues['taxLevel'],
@@ -281,14 +313,9 @@ export function SettingsForm({ initial, logoUrl }: { initial: ProfileValues; log
                 setV((p) => ({ ...p, taxLevel: level, rounding: mode }));
               }}
             >
-              {[
-                ...ROUNDING_CHOICES,
-                ...(ROUNDING_CHOICES.some((r) => r.value === `${v.taxLevel}:${v.rounding}`)
-                  ? []
-                  : [{ value: `${v.taxLevel}:${v.rounding}`, label: 'Custom', hint: '' }]),
-              ].map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
+              {roundingChoices.map((c) => (
+                <option key={`${c.taxLevel}:${c.rounding}`} value={`${c.taxLevel}:${c.rounding}`}>
+                  {describeRounding(c, v.countryCode).label}
                 </option>
               ))}
             </Select>

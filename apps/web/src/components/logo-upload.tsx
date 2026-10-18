@@ -50,6 +50,8 @@ export function LogoUpload({ logoUrl, name }: { logoUrl: string | null; name: st
             type="file"
             accept="image/png,image/jpeg,image/webp"
             className="sr-only"
+            aria-label="Logo image file"
+            tabIndex={-1}
             id="logo-file"
             onChange={(e) => upload(e.target.files?.[0])}
           />

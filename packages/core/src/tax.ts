@@ -102,26 +102,52 @@ export function taxesOnNet(
   return out;
 }
 
-/** The exact multiplier from net to gross for a set of components, as a fraction. */
-function grossMultiplier(components: readonly TaxComponent[]): { num: bigint; den: bigint } {
-  // Factors are kept over a common denominator of RATE_SCALE^n so the arithmetic stays exact.
-  const scale = BigInt(RATE_SCALE);
-  let den = 1n;
-  let sumFactors = 0n; // over `den`
-  for (const c of components) {
-    const rate = BigInt(c.ratePpm);
-    const newDen = den * scale;
-    const base = c.compound ? den + sumFactors : den; // (1 + previous factors) over den
-    sumFactors = sumFactors * scale + rate * base;
-    den = newDen;
-  }
-  return { num: den + sumFactors, den };
+/** A non-negative exact fraction. */
+interface Fraction {
+  num: bigint;
+  den: bigint;
 }
 
+const frac = (num: bigint, den: bigint): Fraction => ({ num, den });
+const addF = (a: Fraction, b: Fraction): Fraction => frac(a.num * b.den + b.num * a.den, a.den * b.den);
+const mulRate = (a: Fraction, ratePpm: number): Fraction =>
+  frac(a.num * BigInt(ratePpm), a.den * BigInt(RATE_SCALE));
+
+/** The exact multiplier from net to gross for a set of components, as a fraction. */
+function grossMultiplier(components: readonly TaxComponent[]): Fraction {
+  let factors = frac(0n, 1n);
+  for (const c of components) {
+    const base = c.compound ? addF(frac(1n, 1n), factors) : frac(1n, 1n);
+    factors = addF(factors, mulRate(base, c.ratePpm));
+  }
+  return addF(frac(1n, 1n), factors);
+}
+
+/** Each component's exact tax on an exact net, applied in order. */
+export function exactTaxes(net: Fraction, components: readonly TaxComponent[]): Fraction[] {
+  const out: Fraction[] = [];
+  let charged = frac(0n, 1n);
+  for (const c of components) {
+    const base = c.compound ? addF(net, charged) : net;
+    const amount = mulRate(base, c.ratePpm);
+    out.push(amount);
+    charged = addF(charged, amount);
+  }
+  return out;
+}
+
+/** The exact net inside a tax-inclusive amount. */
+export function exactNetOfGross(gross: number, components: readonly TaxComponent[]): Fraction {
+  const m = grossMultiplier(components);
+  return frac(BigInt(gross) * m.den, m.num);
+}
+
+export type { Fraction };
+
 /**
- * Splits a tax-inclusive amount into its net part and each component's tax, so that the net plus the taxes
- * equal the gross exactly. The net is rounded once; any difference left by rounding the components goes to
- * the last component with a rate above zero.
+ * Splits a tax-inclusive amount into its net part and each component's tax. Each tax is worked out exactly
+ * on the exact net and rounded once, so every printed tax matches its rate; the net takes what is left,
+ * so the net plus the taxes equal the gross exactly.
  */
 export function splitGross(
   gross: number,
@@ -129,15 +155,15 @@ export function splitGross(
   mode: RoundingMode,
 ): { net: number; taxes: ComponentAmount[] } {
   assertMinor(gross, 'gross');
-  const { num, den } = grossMultiplier(components);
-  const net = toSafeNumber(divRound(BigInt(gross) * den, num, mode), 'net');
-  const taxes = taxesOnNet(net, components, mode);
-  const difference = gross - net - taxes.reduce((a, t) => a + t.amount, 0);
-  if (difference !== 0) {
-    const index = taxes.map((t) => t.component.ratePpm > 0).lastIndexOf(true);
-    const target = taxes[index];
-    if (!target) throw new DomainError('tax_split_failed', 'Could not split the tax-inclusive amount.');
-    target.amount += difference;
-  }
+  const exactNet = exactNetOfGross(gross, components);
+  const exact = exactTaxes(exactNet, components);
+  const amounts = exact.map((f) => toSafeNumber(divRound(f.num, f.den, mode), 'tax'));
+  const net = gross - amounts.reduce((a, b) => a + b, 0);
+  let charged = 0;
+  const taxes = components.map((component, i) => {
+    const base = component.compound ? net + charged : net;
+    charged += amounts[i]!;
+    return { component, base, amount: amounts[i]! };
+  });
   return { net, taxes };
 }

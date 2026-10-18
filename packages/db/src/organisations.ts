@@ -1,5 +1,5 @@
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
-import { NO_TAX, presetFor, roundingDefaultFor } from '@invoica/core';
+import { DomainError, NO_TAX, allowedRounding, presetFor, roundingDefaultFor } from '@invoica/core';
 import type { OnboardingInput, OrganisationProfileInput } from '@invoica/schemas';
 import type { Database, Tx } from './client';
 import { organisation, taxCode } from './schema';
@@ -84,6 +84,13 @@ export async function updateOrganisationProfile(
   actor: Actor,
   input: OrganisationProfileInput,
 ): Promise<void> {
+  const allowed = allowedRounding(input.countryCode);
+  if (!allowed.some((c) => c.taxLevel === input.taxLevel && c.rounding === input.rounding)) {
+    throw new DomainError(
+      'rounding_not_allowed',
+      'Choose one of the rounding options offered for your country.',
+    );
+  }
   await tx
     .update(organisation)
     .set({

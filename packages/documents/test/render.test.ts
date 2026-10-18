@@ -52,6 +52,34 @@ describe('document view', () => {
   });
 });
 
+describe('reverse charge note (review L7)', () => {
+  const reverseRow = {
+    key: 'rc',
+    name: 'VAT',
+    ratePpm: 200_000,
+    compound: false,
+    treatment: 'reverse_charge' as const,
+    base: 10_000,
+    amount: 2000,
+    charged: false,
+  };
+  const withReverse = (countryCode: string) => {
+    const s = FIXTURES.ukVat!;
+    return {
+      ...s,
+      seller: { ...s.seller, address: { ...s.seller.address, countryCode } },
+      totals: { ...s.totals, taxes: [reverseRow] },
+    };
+  };
+
+  it('names HMRC only for a UK seller', () => {
+    expect(buildView(withReverse('GB')).reverseChargeNote).toMatch(/HMRC/);
+    const other = buildView(withReverse('GH')).reverseChargeNote;
+    expect(other).not.toMatch(/HMRC/);
+    expect(other).toMatch(/^Reverse charge\. VAT 20%/);
+  });
+});
+
 describe('rendering', () => {
   it('renders every fixture with each of the seven templates and escapes text', () => {
     expect(TEMPLATE_LIST).toHaveLength(7);

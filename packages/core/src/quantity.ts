@@ -9,10 +9,9 @@ export const MAX_UNIT_PRICE = 1_000_000_000_000;
 
 /** Reads a quantity typed by a person ("1.5", "2", "0.125") into thousandths. Null when invalid. */
 export function parseQuantity(input: string): number | null {
-  const text = input.trim().replace(/,/g, '');
-  const match = /^(\d+)?(?:\.(\d{0,3}))?$/.exec(text);
+  const match = /^(\d{1,3}(?:,\d{3})+|\d+)?(?:\.(\d{0,3}))?$/.exec(input.trim());
   if (!match || (match[1] === undefined && !match[2])) return null;
-  const whole = BigInt(match[1] ?? '0');
+  const whole = BigInt((match[1] ?? '0').replace(/,/g, ''));
   const fraction = BigInt((match[2] ?? '').padEnd(3, '0'));
   const value = whole * 1000n + fraction;
   if (value > BigInt(MAX_QUANTITY)) return null;

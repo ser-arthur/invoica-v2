@@ -261,6 +261,8 @@ export const document = pgTable('document', {
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
   idempotencyKey: text('idempotency_key'),
+  /** What the request that created this document asked for, so a reused key with a different request is refused. */
+  requestFingerprint: text('request_fingerprint'),
 });
 
 export const documentLine = pgTable('document_line', {
@@ -277,6 +279,8 @@ export const documentLine = pgTable('document_line', {
   taxCodeId: uuid('tax_code_id'),
   tax: jsonb('tax').$type<TaxCode | null>(),
   itemId: uuid('item_id'),
+  /** On a credit note: the invoice line this line credits. */
+  creditedLineId: uuid('credited_line_id'),
 });
 
 export type PaymentMethod = Prepayment['method'];
@@ -292,6 +296,8 @@ export const payment = pgTable('payment', {
   reference: text('reference'),
   note: text('note'),
   idempotencyKey: text('idempotency_key').notNull(),
+  /** What the request that recorded this payment asked for. */
+  requestFingerprint: text('request_fingerprint'),
   createdBy: text('created_by'),
   createdAt: ts('created_at').notNull().defaultNow(),
   removedAt: ts('removed_at'),

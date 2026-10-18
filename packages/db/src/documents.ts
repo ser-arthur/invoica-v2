@@ -1,15 +1,22 @@
-import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { createHash } from 'node:crypto';
+import { and, asc, desc, eq, inArray, isNull, isNotNull, sql } from 'drizzle-orm';
 import {
   DomainError,
   addDays,
+  checkCredit,
   checkPayment,
   computeDocument,
+  creditSource,
   deriveState,
   formatDocumentNumber,
   isOverdue,
+  planAmountCredit,
+  planLineCredit,
   sumMinor,
+  taxCodeKey,
   todayIn,
   transition,
+  type CreditPlan,
   type BusinessDate,
   type DocumentSnapshot,
   type DocumentState,
@@ -82,6 +89,11 @@ export interface DocumentSummary {
   dueDate: string | null;
   title: string | null;
   total: number;
+  /** Payments received. */
+  paid: number;
+  /** Credit notes issued against the document. */
+  credited: number;
+  /** Payments and credits together: what has been taken off the total. */
   applied: number;
   balance: number;
   createdAt: Date;
@@ -101,7 +113,12 @@ function summarise(
     kind: row.kind,
     number: row.number,
     lifecycle: row.lifecycle,
-    state: deriveState({ lifecycle: row.lifecycle, total: row.total, paid: appliedTotal }),
+    state: deriveState({
+      lifecycle: row.lifecycle,
+      total: row.total,
+      paid: applied.paid,
+      credited: applied.credited,
+    }),
     overdue: isOverdue({ lifecycle: row.lifecycle, balance, dueDate: row.dueDate, today }),
     clientId: row.clientId,
     clientName: row.clientName,
@@ -110,6 +127,8 @@ function summarise(
     dueDate: row.dueDate,
     title: row.title,
     total: row.total,
+    paid: applied.paid,
+    credited: applied.credited,
     applied: appliedTotal,
     balance,
     createdAt: row.createdAt,
@@ -167,7 +186,7 @@ export async function listDocuments(
       out = out.filter((d) => d.overdue);
       break;
     case 'paid':
-      out = out.filter((d) => d.state === 'paid');
+      out = out.filter((d) => d.state === 'paid' || d.state === 'settled');
       break;
     case 'void':
       out = out.filter((d) => d.state === 'void');
@@ -340,6 +359,7 @@ export async function createDraft(tx: Tx, actor: Actor, input: DraftInput): Prom
       kind: 'invoice',
       clientId: input.clientId,
       currency: input.currency,
+      idempotencyKey: input.idempotencyKey ?? null,
       createdBy: actor.userId,
     })
     .returning({ id: document.id });
@@ -353,6 +373,30 @@ export async function createDraft(tx: Tx, actor: Actor, input: DraftInput): Prom
   if (lines.length) await tx.insert(documentLine).values(lines);
   await audit(tx, actor, 'document.draft_created', 'document', id);
   return id;
+}
+
+/** The document a request key created, if any, so a repeated save returns it. */
+export async function documentForKey(
+  tx: Tx,
+  key: string,
+): Promise<{ id: string; kind: DocumentKind; lifecycle: Lifecycle; number: string | null } | null> {
+  const [row] = await tx
+    .select({ id: document.id, kind: document.kind, lifecycle: document.lifecycle, number: document.number })
+    .from(document)
+    .where(eq(document.idempotencyKey, key));
+  return row ?? null;
+}
+
+/** A short digest of what a request asked for, stored with its key. */
+function fingerprint(request: unknown): string {
+  return createHash('sha256').update(JSON.stringify(request)).digest('hex');
+}
+
+function keyReused(): DomainError {
+  return new DomainError(
+    'idempotency_conflict',
+    'This request was already used for something else. Reload the page and try again.',
+  );
 }
 
 async function lockDocument(tx: Tx, id: string): Promise<DocumentRow> {
@@ -428,6 +472,12 @@ export async function issueDocument(
     throw new DomainError(
       'tax_number_missing',
       'Add your tax registration number in Settings before issuing.',
+    );
+  }
+  if (!org.taxRegistered && lines.some((l) => (l.tax?.components.length ?? 0) > 0)) {
+    throw new DomainError(
+      'tax_not_registered',
+      'You are not registered for tax, so an invoice cannot show a tax rate. Change the tax on each line, or add your registration in Settings.',
     );
   }
   const { client: buyer, fields } = await loadClientWithFields(tx, doc.clientId);
@@ -519,8 +569,17 @@ export async function voidDocument(
   now: Date,
 ): Promise<void> {
   const doc = await lockDocument(tx, id);
+  if (doc.kind === 'credit_note') {
+    throw new DomainError(
+      'void_credit_note',
+      'A credit note cannot be voided. To undo it, issue a new invoice for the amount.',
+    );
+  }
   const applied = (await appliedAmounts(tx, [id])).get(id)!;
-  transition(doc.lifecycle, 'void', { paid: applied.paid + applied.credited });
+  if (applied.credited > 0) {
+    throw new DomainError('void_has_credits', 'An invoice with credit notes cannot be voided.');
+  }
+  transition(doc.lifecycle, 'void', { paid: applied.paid });
   await tx
     .update(document)
     .set({ lifecycle: 'void', voidedAt: now, voidReason: reason })
@@ -534,11 +593,20 @@ export async function recordPayment(
   input: PaymentInput,
 ): Promise<{ id: string; duplicate: boolean }> {
   const doc = await lockDocument(tx, input.documentId);
+  const requestFingerprint = fingerprint({
+    documentId: input.documentId,
+    amount: input.amount,
+    paidOn: input.paidOn,
+    method: input.method,
+  });
   const [existing] = await tx
-    .select({ id: payment.id })
+    .select({ id: payment.id, requestFingerprint: payment.requestFingerprint })
     .from(payment)
     .where(eq(payment.idempotencyKey, input.idempotencyKey));
-  if (existing) return { id: existing.id, duplicate: true };
+  if (existing) {
+    if (existing.requestFingerprint !== requestFingerprint) throw keyReused();
+    return { id: existing.id, duplicate: true };
+  }
   if (doc.kind !== 'invoice')
     throw new DomainError('payment_wrong_kind', 'Payments are recorded on invoices.');
   const applied = (await appliedAmounts(tx, [doc.id])).get(doc.id)!;
@@ -555,6 +623,7 @@ export async function recordPayment(
       reference: input.reference,
       note: input.note,
       idempotencyKey: input.idempotencyKey,
+      requestFingerprint,
       createdBy: actor.userId,
     })
     .returning({ id: payment.id });
@@ -577,9 +646,49 @@ export async function removePayment(tx: Tx, actor: Actor, paymentId: string, rea
   await audit(tx, actor, 'payment.removed', 'payment', paymentId, { documentId: row.documentId, reason });
 }
 
+/** An invoice's lines, with the quantity of each already credited by issued credit notes. */
+export async function creditableLines(tx: Tx, invoiceId: string) {
+  const lines = await tx
+    .select()
+    .from(documentLine)
+    .where(eq(documentLine.documentId, invoiceId))
+    .orderBy(asc(documentLine.position));
+  const credited = new Map<string, number>();
+  if (lines.length > 0) {
+    const rows = await tx
+      .select({ lineId: documentLine.creditedLineId, quantity: sql<string>`sum(${documentLine.quantity})` })
+      .from(documentLine)
+      .innerJoin(document, eq(document.id, documentLine.documentId))
+      .where(
+        and(
+          isNotNull(documentLine.creditedLineId),
+          inArray(
+            documentLine.creditedLineId,
+            lines.map((l) => l.id),
+          ),
+          eq(document.kind, 'credit_note'),
+          inArray(document.lifecycle, ['issued', 'sent']),
+        ),
+      )
+      .groupBy(documentLine.creditedLineId);
+    for (const r of rows) if (r.lineId) credited.set(r.lineId, Number(r.quantity));
+  }
+  return lines.map((l) => ({
+    id: l.id,
+    title: l.title,
+    quantity: l.quantity,
+    unit: l.unit,
+    unitPrice: l.unitPrice,
+    tax: l.tax,
+    credited: credited.get(l.id) ?? 0,
+  }));
+}
+
 /**
- * Issues a credit note against an invoice: either for the whole invoice (only while nothing is paid or credited)
- * or for the lines given. The credit note gets its own number and reduces the invoice's balance.
+ * Issues a credit note against an invoice: for the whole invoice (only while nothing is paid or credited), for
+ * quantities of its lines, or for an amount shared across its tax rates. Prices and tax come from the invoice as
+ * issued, never from the tax codes as they stand now. The credit note gets its own number and reduces the
+ * invoice's balance.
  */
 export async function createCreditNote(
   tx: Tx,
@@ -588,77 +697,95 @@ export async function createCreditNote(
   now: Date,
 ): Promise<{ id: string; number: string; duplicate: boolean }> {
   const invoice = await lockDocument(tx, input.invoiceId);
+  const requestFingerprint = fingerprint({
+    invoiceId: input.invoiceId,
+    mode: input.mode,
+    lines: input.mode === 'lines' ? input.lines : null,
+    amount: input.mode === 'amount' ? input.amount : null,
+  });
   const [existing] = await tx
-    .select({ id: document.id, number: document.number })
+    .select({ id: document.id, number: document.number, requestFingerprint: document.requestFingerprint })
     .from(document)
     .where(eq(document.idempotencyKey, input.idempotencyKey));
-  if (existing) return { id: existing.id, number: existing.number ?? '', duplicate: true };
+  if (existing) {
+    if (existing.requestFingerprint !== requestFingerprint) throw keyReused();
+    return { id: existing.id, number: existing.number ?? '', duplicate: true };
+  }
   if (invoice.kind !== 'invoice' || (invoice.lifecycle !== 'issued' && invoice.lifecycle !== 'sent')) {
     throw new DomainError('credit_wrong_state', 'Credit notes can only be issued against issued invoices.');
   }
   const applied = (await appliedAmounts(tx, [invoice.id])).get(invoice.id)!;
   const balance = invoice.total - applied.paid - applied.credited;
   const snapshot = invoice.snapshot as unknown as DocumentSnapshot;
-
-  let lineValues: {
-    title: string;
-    description: string | null;
-    quantity: number;
-    unit: string | null;
-    unitPrice: number;
-    serviceDate: string | null;
-    taxCodeId: string | null;
-    tax: TaxCode | null;
-    itemId: string | null;
-  }[];
-  let discounts = invoice.discounts;
-  if (input.lines && input.lines.length > 0) {
-    const codes = await resolveTaxCodes(
-      tx,
-      input.lines.map((l) => l.taxCodeId),
+  const lines = await creditableLines(tx, invoice.id);
+  const invoiceLines = await tx
+    .select()
+    .from(documentLine)
+    .where(eq(documentLine.documentId, invoice.id))
+    .orderBy(asc(documentLine.position));
+  const matches =
+    invoiceLines.length === snapshot.lines.length &&
+    invoiceLines.every(
+      (l, i) => l.quantity === snapshot.lines[i]!.quantity && l.unitPrice === snapshot.lines[i]!.unitPrice,
     );
-    lineValues = input.lines.map((l) => ({ ...l, tax: l.taxCodeId ? codes.get(l.taxCodeId)! : null }));
-    discounts = [];
-  } else {
+  if (!matches) throw new Error('The lines of this invoice do not match its issued snapshot.');
+
+  const source = creditSource(
+    {
+      currency: invoice.currency,
+      pricesIncludeTax: snapshot.pricesIncludeTax,
+      taxLevel: snapshot.taxLevel,
+      rounding: snapshot.rounding,
+      lines: snapshot.lines.map((l) => ({ quantity: l.quantity, unitPrice: l.unitPrice, tax: l.tax })),
+    },
+    snapshot.totals,
+  );
+  const credited = lines.map((l) => l.credited);
+  let plan: CreditPlan;
+  if (input.mode === 'whole') {
     if (applied.paid + applied.credited > 0) {
       throw new DomainError(
         'credit_full_after_payment',
-        'This invoice has payments or credits, so credit specific lines instead.',
+        'This invoice has payments or credits, so credit lines or an amount instead.',
       );
     }
-    const lines = await tx
-      .select()
-      .from(documentLine)
-      .where(eq(documentLine.documentId, invoice.id))
-      .orderBy(asc(documentLine.position));
-    lineValues = lines.map((l) => ({
-      title: l.title,
-      description: l.description,
-      quantity: l.quantity,
-      unit: l.unit,
-      unitPrice: l.unitPrice,
-      serviceDate: l.serviceDate,
-      taxCodeId: l.taxCodeId,
-      tax: l.tax,
-      itemId: l.itemId,
-    }));
-  }
-  const totals = computeDocument({
-    currency: invoice.currency,
-    pricesIncludeTax: invoice.pricesIncludeTax,
-    taxLevel: invoice.taxLevel,
-    rounding: invoice.rounding,
-    lines: lineValues,
-    discounts,
-  });
-  if (totals.total <= 0)
-    throw new DomainError('credit_not_positive', 'A credit note must be for more than zero.');
-  if (totals.total > balance) {
-    throw new DomainError(
-      'credit_exceeds_balance',
-      'A credit note cannot be more than the balance still owed.',
+    plan = planLineCredit(
+      source,
+      credited,
+      lines.map((l, index) => ({ index, quantity: l.quantity })),
     );
+  } else if (input.mode === 'lines') {
+    const position = new Map(lines.map((l, i) => [l.id, i]));
+    plan = planLineCredit(
+      source,
+      credited,
+      input.lines.map((r) => {
+        const index = position.get(r.lineId);
+        if (index === undefined) {
+          throw new DomainError('credit_line_not_found', 'A line to credit is not on this invoice.');
+        }
+        return { index, quantity: r.quantity };
+      }),
+    );
+  } else {
+    plan = planAmountCredit(source, snapshot.totals, input.amount);
   }
+  const earlier = await tx
+    .select({ snapshot: document.snapshot })
+    .from(document)
+    .where(
+      and(
+        eq(document.creditedDocumentId, invoice.id),
+        eq(document.kind, 'credit_note'),
+        inArray(document.lifecycle, ['issued', 'sent']),
+      ),
+    );
+  checkCredit({
+    invoice: snapshot.totals,
+    balance,
+    earlier: earlier.map((e) => (e.snapshot as unknown as DocumentSnapshot).totals),
+    credit: plan.totals,
+  });
 
   const org = await getOrganisation(tx, actor);
   const today = todayIn(org.timeZone, now);
@@ -670,28 +797,57 @@ export async function createCreditNote(
       clientId: invoice.clientId,
       creditedDocumentId: invoice.id,
       currency: invoice.currency,
-      lineStyle: invoice.lineStyle,
-      pricesIncludeTax: invoice.pricesIncludeTax,
-      taxLevel: invoice.taxLevel,
-      rounding: invoice.rounding,
-      discounts,
+      lineStyle: input.mode === 'amount' ? 'amount' : invoice.lineStyle,
+      pricesIncludeTax: plan.pricesIncludeTax,
+      taxLevel: snapshot.taxLevel,
+      rounding: snapshot.rounding,
+      discounts: [],
       template: invoice.template,
       options: invoice.options,
       idempotencyKey: input.idempotencyKey,
+      requestFingerprint,
       createdBy: actor.userId,
     })
     .returning();
   const creditNote = created!;
-  const lineRows = lineValues.map((l, position) => ({
-    ...l,
-    organisationId: actor.organisationId,
-    documentId: creditNote.id,
-    position,
-  }));
+  const lineRows = plan.lines.map((p, position) => {
+    const base = { organisationId: actor.organisationId, documentId: creditNote.id, position };
+    if (p.index !== null) {
+      const l = invoiceLines[p.index]!;
+      return {
+        ...base,
+        title: l.title,
+        description: l.description,
+        quantity: p.quantity,
+        unit: l.unit,
+        unitPrice: p.unitPrice,
+        serviceDate: l.serviceDate,
+        taxCodeId: l.taxCodeId,
+        tax: p.tax,
+        itemId: l.itemId,
+        creditedLineId: l.id,
+      };
+    }
+    const sameTax = invoiceLines.find((l) => taxCodeKey(l.tax) === taxCodeKey(p.tax));
+    return {
+      ...base,
+      title: `Credit against ${invoice.number ?? 'the invoice'}`,
+      description: null,
+      quantity: p.quantity,
+      unit: null,
+      unitPrice: p.unitPrice,
+      serviceDate: null,
+      taxCodeId: sameTax?.taxCodeId ?? null,
+      tax: p.tax,
+      itemId: null,
+      creditedLineId: null,
+    };
+  });
   await tx.insert(documentLine).values(lineRows);
   const sequence = await nextSequence(tx, 'credit_note');
   const number = formatDocumentNumber({ prefix: org.creditNotePrefix, padding: org.numberPadding }, sequence);
   const { client: buyer, fields } = await loadClientWithFields(tx, invoice.clientId);
+  const totals = plan.totals;
   const creditSnapshot = buildSnapshot({
     org,
     client: buyer,
@@ -721,6 +877,7 @@ export async function createCreditNote(
   await audit(tx, actor, 'credit_note.issued', 'document', creditNote.id, {
     number,
     invoiceId: invoice.id,
+    mode: input.mode,
     total: totals.total,
     reason: input.reason,
   });

@@ -28,7 +28,9 @@ const handlers = {
     const pdf = await keptPdf(actor, documentId);
     if (!pdf) throw new Error('Document not found or not issued.');
     const state = await withOrganisation(getDb(), actor, (tx) => documentPdfState(tx, documentId));
-    const snapshot = state!.snapshot as unknown as DocumentSnapshot;
+    // A document voided after its email was queued is not sent; the job finishes without sending.
+    if (!state || state.lifecycle === 'void') return;
+    const snapshot = state.snapshot as unknown as DocumentSnapshot;
     const sent = await getEmailAdapter().send({
       from: EMAIL_FROM().replace(/^[^<]*</, `${snapshot.seller.name.replace(/[<>"]/g, '')} via Invoica <`),
       replyTo: snapshot.seller.email,
@@ -44,7 +46,7 @@ const handlers = {
       ],
     });
     await withOrganisation(getDb(), actor, async (tx) => {
-      if (state!.lifecycle === 'issued') await markSent(tx, actor, documentId, new Date(), 'email');
+      if (state.lifecycle === 'issued') await markSent(tx, actor, documentId, new Date(), 'email');
       await audit(tx, actor, 'document.emailed', 'document', documentId, { messageId: sent.id });
     });
   },

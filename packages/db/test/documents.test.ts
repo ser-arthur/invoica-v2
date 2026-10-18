@@ -351,7 +351,7 @@ describe('credit notes', () => {
       createCreditNote(
         tx,
         actor,
-        { invoiceId: id, reason: 'Cancelled order', idempotencyKey: 'credit-key-01' },
+        { mode: 'whole', invoiceId: id, reason: 'Cancelled order', idempotencyKey: 'credit-key-01' },
         NOW,
       ),
     );
@@ -359,7 +359,7 @@ describe('credit notes', () => {
       createCreditNote(
         tx,
         actor,
-        { invoiceId: id, reason: 'Cancelled order', idempotencyKey: 'credit-key-01' },
+        { mode: 'whole', invoiceId: id, reason: 'Cancelled order', idempotencyKey: 'credit-key-01' },
         NOW,
       ),
     );
@@ -376,23 +376,13 @@ describe('credit notes', () => {
   it('refuses a credit larger than the balance', async () => {
     const id = await run((tx) => createDraft(tx, actor, draft()));
     await run((tx) => issueDocument(tx, actor, id, NOW));
-    const line = {
-      title: 'Too much',
-      quantity: 1000,
-      unitPrice: 20_000,
-      taxCodeId: null,
-      description: null,
-      unit: null,
-      serviceDate: null,
-      itemId: null,
-    };
     expect(
       await failure(
         run((tx) =>
           createCreditNote(
             tx,
             actor,
-            { invoiceId: id, reason: 'x', lines: [line], idempotencyKey: 'credit-key-02' },
+            { mode: 'amount', invoiceId: id, reason: 'x', amount: 20_000, idempotencyKey: 'credit-key-02' },
             NOW,
           ),
         ),

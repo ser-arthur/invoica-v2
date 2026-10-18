@@ -155,3 +155,31 @@ export function roundingDefaultFor(country: string) {
 export function presetFor(country: string): TaxPreset | undefined {
   return TAX_PRESETS.find((p) => p.country === country);
 }
+
+export type RoundingChoice = { taxLevel: 'document' | 'line'; rounding: 'half-up' | 'half-even' | 'down' };
+
+/**
+ * The rounding choices a business in this country may make (decision 0007). UK: VAT per line to the nearest
+ * penny, or on the invoice total rounded down (VAT Notice 700, 17.5). Elsewhere every combination is allowed.
+ */
+export function allowedRounding(country: string): RoundingChoice[] {
+  if (country === 'GB') {
+    return [
+      { taxLevel: 'line', rounding: 'half-up' },
+      { taxLevel: 'document', rounding: 'down' },
+    ];
+  }
+  const all: RoundingChoice[] = [];
+  for (const taxLevel of ['line', 'document'] as const)
+    for (const rounding of ['half-up', 'half-even', 'down'] as const) all.push({ taxLevel, rounding });
+  return [
+    roundingDefaultFor(country),
+    ...all.filter(
+      (c) =>
+        !(
+          c.taxLevel === roundingDefaultFor(country).taxLevel &&
+          c.rounding === roundingDefaultFor(country).rounding
+        ),
+    ),
+  ];
+}

@@ -7,6 +7,7 @@ import {
   createCreditNote,
   createDraft,
   deleteDraft,
+  documentForKey,
   enqueue,
   getDocument,
   duplicateDocument,
@@ -46,9 +47,13 @@ export async function saveDraftAction(
   if (!parsed.success) return invalid(parsed.error);
   try {
     const savedId = await inWorkspace(async (tx, ws) => {
-      if (id) {
-        await updateDraft(tx, ws.actor, id, parsed.data);
-        return id;
+      // A repeated first save (its answer lost on the way back) finds the draft it created.
+      const earlier =
+        !id && parsed.data.idempotencyKey ? await documentForKey(tx, parsed.data.idempotencyKey) : null;
+      const existing = id ?? earlier?.id ?? null;
+      if (existing) {
+        if (!earlier || earlier.lifecycle === 'draft') await updateDraft(tx, ws.actor, existing, parsed.data);
+        return existing;
       }
       return createDraft(tx, ws.actor, parsed.data);
     });
@@ -68,7 +73,11 @@ export async function saveAndIssueAction(
   if (!parsed.success) return invalid(parsed.error);
   try {
     const result = await inWorkspace(async (tx, ws) => {
-      let draftId = id;
+      const earlier =
+        !id && parsed.data.idempotencyKey ? await documentForKey(tx, parsed.data.idempotencyKey) : null;
+      // The same request already issued this invoice: return it.
+      if (earlier && earlier.lifecycle !== 'draft') return { id: earlier.id, number: earlier.number ?? '' };
+      let draftId = id ?? earlier?.id ?? null;
       if (draftId) await updateDraft(tx, ws.actor, draftId, parsed.data);
       else draftId = await createDraft(tx, ws.actor, parsed.data);
       const { number } = await issueDocument(tx, ws.actor, draftId, new Date());

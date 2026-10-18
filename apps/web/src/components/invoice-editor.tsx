@@ -14,6 +14,7 @@ import {
   parseQuantity,
   parseRate,
   QUANTITY_SCALE,
+  sumMinor,
   toDecimalString,
   type DocumentSnapshot,
   type DocumentTotals,
@@ -25,6 +26,7 @@ import {
 } from '@invoica/core';
 import { renderDocumentHtml, TEMPLATE_LIST } from '@invoica/documents';
 import { saveAndIssueAction, saveDraftAction } from '@/lib/actions/documents';
+import { requestKey } from '@/lib/request-key';
 import { ClientForm } from './client-form';
 import { DocumentFrame } from './document-frame';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea, cx } from './ui';
@@ -154,7 +156,7 @@ const METHODS: { value: EditorDeposit['method']; label: string }[] = [
 ];
 
 interface Parsed {
-  input: unknown;
+  input: Record<string, unknown>;
   lineErrors: Record<string, string>;
   totals: DocumentTotals | null;
   totalsError: string | null;
@@ -188,8 +190,10 @@ function parse(state: EditorState, taxCodes: EditorTaxCode[], org: EditorProps['
       lineErrors[l.key] = 'Enter a price, for example 450 or 450.00.';
     else if (state.lineStyle === 'dated' && l.serviceDate && !isBusinessDate(l.serviceDate))
       lineErrors[l.key] = 'Enter a real date.';
-    if (lineErrors[l.key]) continue;
     const tax = l.taxCodeId ? (codes.get(l.taxCodeId) ?? null) : null;
+    if (!lineErrors[l.key] && !org.seller.taxRegistered && tax && tax.components.length > 0)
+      lineErrors[l.key] = 'You are not registered for tax, so this line cannot show a tax rate.';
+    if (lineErrors[l.key]) continue;
     lines.push({
       title: l.title.trim(),
       description: l.description.trim() || null,
@@ -244,7 +248,7 @@ function parse(state: EditorState, taxCodes: EditorTaxCode[], org: EditorProps['
       rounding: org.rounding,
       lines,
       discounts,
-      paid: deposits.reduce((a, d) => a + d.amount, 0),
+      paid: sumMinor(deposits.map((d) => d.amount)),
     });
     if (totals.balance < 0) totalsError = 'Payments already received are more than the total.';
   } catch (error) {
@@ -281,6 +285,8 @@ export function InvoiceEditor(props: EditorProps) {
   const [state, setState] = useState<EditorState>(props.initial);
   const [clients, setClients] = useState(props.clients);
   const [docId, setDocId] = useState(props.id);
+  // Sent with the first save of a new invoice, so a repeat of that save finds the same draft.
+  const [createKey] = useState(() => requestKey());
   const [dirty, setDirty] = useState(false);
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit');
   const [addingClient, setAddingClient] = useState(false);
@@ -402,7 +408,7 @@ export function InvoiceEditor(props: EditorProps) {
           unit: from?.unit ?? '',
           unitPrice: from ? toDecimalString(from.unitPrice, state.currency) : '',
           serviceDate: state.lineStyle === 'dated' ? today : '',
-          taxCodeId: from?.taxCodeId ?? (registered ? defaultTax : null),
+          taxCodeId: registered ? (from?.taxCodeId ?? defaultTax) : null,
           itemId: from?.id ?? null,
         },
       ],
@@ -436,9 +442,8 @@ export function InvoiceEditor(props: EditorProps) {
       return;
     }
     start(async () => {
-      const result = issue
-        ? await saveAndIssueAction(docId, parsed.input)
-        : await saveDraftAction(docId, parsed.input);
+      const input = docId ? parsed.input : { ...parsed.input, idempotencyKey: createKey };
+      const result = issue ? await saveAndIssueAction(docId, input) : await saveDraftAction(docId, input);
       setConfirmIssue(false);
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
@@ -838,7 +843,7 @@ export function InvoiceEditor(props: EditorProps) {
                         placeholder={state.lineStyle === 'amount' ? 'Amount' : priceLabel}
                         className="w-32 text-right tabular"
                       />
-                      {registered ? (
+                      {registered || l.taxCodeId ? (
                         <Select
                           aria-label={`Line ${index + 1} tax`}
                           value={l.taxCodeId ?? ''}
@@ -846,11 +851,15 @@ export function InvoiceEditor(props: EditorProps) {
                           className="w-auto max-w-44"
                         >
                           <option value="">No tax</option>
-                          {taxCodes.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.label}
-                            </option>
-                          ))}
+                          {taxCodes
+                            .filter(
+                              (t) => registered || t.code.components.length === 0 || t.id === l.taxCodeId,
+                            )
+                            .map((t) => (
+                              <option key={t.id} value={t.id}>
+                                {t.label}
+                              </option>
+                            ))}
                         </Select>
                       ) : null}
                       <output
