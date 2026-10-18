@@ -62,6 +62,11 @@ export interface TaxSummaryRow {
   /** The amount the tax was charged on. */
   base: number;
   amount: number;
+  /**
+   * False under a reverse charge: the tax is worked out and shown, but the customer accounts for it,
+   * so it is not added to the total.
+   */
+  charged: boolean;
 }
 
 export interface DocumentTotals {
@@ -129,6 +134,7 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
 
   const addToSummary = (code: TaxCode | null, charged: ComponentAmount[], untaxedBase: number) => {
     if (!code) return;
+    const isCharged = code.treatment !== 'reverse_charge';
     if (code.components.length === 0) {
       const key = JSON.stringify([code.label, code.treatment]);
       const row = summary.get(key) ?? {
@@ -139,6 +145,7 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
         treatment: code.treatment,
         base: 0,
         amount: 0,
+        charged: isCharged,
       };
       row.base += untaxedBase;
       summary.set(key, row);
@@ -154,6 +161,7 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
         treatment: code.treatment,
         base: 0,
         amount: 0,
+        charged: isCharged,
       };
       row.base += c.base;
       row.amount += c.amount;
@@ -161,21 +169,25 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
     }
   };
 
+  /** Tax on an amount. Reverse-charge tax is worked out on the amount as a net price and never charged. */
   const taxOf = (amount: number, code: TaxCode | null) => {
     const components = code?.components ?? [];
+    if (code?.treatment === 'reverse_charge') {
+      return { net: amount, taxes: taxesOnNet(amount, components, mode), charged: false };
+    }
     if (input.pricesIncludeTax) {
       const { net, taxes } = splitGross(amount, components, mode);
-      return { net, taxes };
+      return { net, taxes, charged: true };
     }
-    return { net: amount, taxes: taxesOnNet(amount, components, mode) };
+    return { net: amount, taxes: taxesOnNet(amount, components, mode), charged: true };
   };
 
   if (input.taxLevel === 'line') {
     afterDiscount.forEach((amount, i) => {
       const code = codes[i] ?? null;
-      const { net, taxes } = taxOf(amount, code);
+      const { net, taxes, charged } = taxOf(amount, code);
       lineNet[i] = net;
-      lineTax[i] = sumMinor(taxes.map((t) => t.amount));
+      lineTax[i] = charged ? sumMinor(taxes.map((t) => t.amount)) : 0;
       addToSummary(code, taxes, net);
     });
   } else {
@@ -188,8 +200,8 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
       const code = codes[indexes[0] ?? 0] ?? null;
       const groupAmounts = indexes.map((i) => afterDiscount[i] ?? 0);
       const groupAmount = sumMinor(groupAmounts);
-      const { net, taxes } = taxOf(groupAmount, code);
-      const groupTax = sumMinor(taxes.map((t) => t.amount));
+      const { net, taxes, charged } = taxOf(groupAmount, code);
+      const groupTax = charged ? sumMinor(taxes.map((t) => t.amount)) : 0;
       const weights = groupAmounts.map((a) => Math.max(a, 0));
       const netShares = allocate(net, weights);
       const taxShares = allocate(groupTax, weights);
@@ -202,9 +214,9 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
   }
 
   const taxes = [...summary.values()];
-  const taxTotal = sumMinor(taxes.map((t) => t.amount));
+  const taxTotal = sumMinor(taxes.filter((t) => t.charged).map((t) => t.amount));
   const netTotal = sumMinor(lineNet);
-  const total = input.pricesIncludeTax ? subtotal - discountTotal : netTotal + taxTotal;
+  const total = netTotal + taxTotal;
   const paid = assertMinor(input.paid ?? 0, 'paid');
 
   return {

@@ -157,6 +157,33 @@ describe('prices that include tax', () => {
   });
 });
 
+describe('reverse charge', () => {
+  it('shows the VAT but leaves it out of the total', () => {
+    const drc: TaxCode = {
+      label: 'Reverse charge: VAT 20%',
+      treatment: 'reverse_charge',
+      components: [{ name: 'VAT', ratePpm: 200_000, compound: false }],
+    };
+    const t = computeDocument(doc([line(1000, 100_000, drc), line(1000, 10_000, vat(200_000))]));
+    expect(t.taxes.map((r) => [r.name, r.treatment, r.amount, r.charged])).toEqual([
+      ['VAT', 'reverse_charge', 20_000, false],
+      ['VAT', 'standard', 2000, true],
+    ]);
+    expect([t.taxTotal, t.total]).toEqual([2000, 112_000]);
+    expect(t.lines.map((l) => l.tax)).toEqual([0, 2000]);
+  });
+
+  it('treats a reverse-charge price as net even when other prices include tax', () => {
+    const drc: TaxCode = {
+      label: 'Reverse charge: VAT 20%',
+      treatment: 'reverse_charge',
+      components: [{ name: 'VAT', ratePpm: 200_000, compound: false }],
+    };
+    const t = computeDocument(doc([line(1000, 100_000, drc)], { pricesIncludeTax: true }));
+    expect([t.net, t.taxTotal, t.total, t.taxes[0]?.amount]).toEqual([100_000, 0, 100_000, 20_000]);
+  });
+});
+
 describe('balance', () => {
   it('takes payments and credits off the total', () => {
     const t = computeDocument(doc([line(1000, 10_000, vat(200_000))], { paid: 5000 }));
@@ -211,10 +238,11 @@ describe('every document adds up as printed', () => {
         expect(sum(t.lines.map((l) => l.discount))).toBe(t.discountTotal);
         expect(sum(t.lines.map((l) => l.tax))).toBe(t.taxTotal);
         expect(sum(t.lines.map((l) => l.net))).toBe(t.net);
-        expect(sum(t.taxes.map((r) => r.amount))).toBe(t.taxTotal);
+        expect(sum(t.taxes.filter((r) => r.charged).map((r) => r.amount))).toBe(t.taxTotal);
         expect(t.net + t.taxTotal).toBe(t.total);
-        if (i.pricesIncludeTax) expect(t.total).toBe(t.subtotal - t.discountTotal);
-        else expect(t.net).toBe(t.subtotal - t.discountTotal);
+        const reverse = i.lines.some((l) => l.tax?.treatment === 'reverse_charge');
+        if (i.pricesIncludeTax && !reverse) expect(t.total).toBe(t.subtotal - t.discountTotal);
+        if (!i.pricesIncludeTax) expect(t.net).toBe(t.subtotal - t.discountTotal);
         expect(t.total).toBeGreaterThanOrEqual(0);
         t.lines.forEach((l) => expect(Number.isSafeInteger(l.net) && Number.isSafeInteger(l.tax)).toBe(true));
       }),

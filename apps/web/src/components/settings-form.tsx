@@ -1,0 +1,437 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
+import { SUPPORTED_CURRENCIES } from '@invoica/core';
+import { saveProfileAction } from '@/lib/actions/settings';
+import { COUNTRIES, TIME_ZONES } from '@/lib/countries';
+import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
+import { TEMPLATES } from '@/lib/templates';
+
+export interface ProfileValues {
+  name: string;
+  legalName: string | null;
+  businessType: string;
+  companyNumber: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  region: string | null;
+  postcode: string | null;
+  countryCode: string;
+  baseCurrency: string;
+  timeZone: string;
+  taxRegistered: boolean;
+  taxNumber: string | null;
+  pricesIncludeTax: boolean;
+  taxLevel: 'document' | 'line';
+  rounding: 'half-up' | 'half-even' | 'down';
+  defaultPaymentTermsDays: number;
+  invoicePrefix: string;
+  creditNotePrefix: string;
+  numberPadding: number;
+  brandColour: string;
+  defaultTemplate: string;
+  paymentDetails: {
+    bank?: {
+      accountName?: string | null;
+      bankName?: string | null;
+      sortCode?: string | null;
+      accountNumber?: string | null;
+      iban?: string | null;
+      swift?: string | null;
+    };
+    mobileMoney?: { provider?: string | null; number?: string | null; accountName?: string | null };
+    paymentLink?: string | null;
+  };
+  defaultNotes: string | null;
+  defaultTerms: string | null;
+}
+
+function Section({
+  id,
+  title,
+  description,
+  children,
+}: {
+  id: string;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Panel id={id} className="scroll-mt-24">
+      <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[240px_1fr]">
+        <div>
+          <h2 className="text-[16px] font-semibold">{title}</h2>
+          <p className="mt-1 text-[14px] text-muted">{description}</p>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2">{children}</div>
+      </div>
+    </Panel>
+  );
+}
+
+const ROUNDING_CHOICES = [
+  {
+    value: 'line:half-up',
+    label: 'Per line, to the nearest penny',
+    hint: 'HMRC allows this for every business. The usual choice.',
+  },
+  {
+    value: 'document:down',
+    label: 'On the invoice total, rounded down',
+    hint: 'HMRC allows this for invoice traders, not retailers.',
+  },
+  {
+    value: 'document:half-up',
+    label: 'On the invoice total, to the nearest unit',
+    hint: 'Used for Ghana, where each tax is worked out on the total.',
+  },
+];
+
+export function SettingsForm({ initial }: { initial: ProfileValues }) {
+  const router = useRouter();
+  const [v, setV] = useState(initial);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState<{ tone: 'danger' | 'info'; text: string } | null>(null);
+  const [pending, start] = useTransition();
+
+  const set = <K extends keyof ProfileValues>(key: K, value: ProfileValues[K]) =>
+    setV((prev) => ({ ...prev, [key]: value }));
+  const text = (key: keyof ProfileValues) => ({
+    value: (v[key] as string | null) ?? '',
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+      set(key, e.target.value as never),
+    'aria-invalid': !!errors[key as string],
+  });
+  const bank = v.paymentDetails.bank ?? {};
+  const mm = v.paymentDetails.mobileMoney ?? {};
+  const setBank = (k: keyof NonNullable<ProfileValues['paymentDetails']['bank']>, value: string) =>
+    set('paymentDetails', { ...v.paymentDetails, bank: { ...bank, [k]: value } });
+  const setMm = (k: keyof NonNullable<ProfileValues['paymentDetails']['mobileMoney']>, value: string) =>
+    set('paymentDetails', { ...v.paymentDetails, mobileMoney: { ...mm, [k]: value } });
+  const taxWord = v.countryCode === 'GB' || v.countryCode === 'GH' || v.countryCode === 'IE' ? 'VAT' : 'tax';
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setMessage(null);
+    start(async () => {
+      const r = await saveProfileAction(v);
+      if (!r.ok) {
+        setErrors(r.fieldErrors ?? {});
+        setMessage({ tone: 'danger', text: r.message });
+        return;
+      }
+      setErrors({});
+      setMessage({
+        tone: 'info',
+        text: 'Settings saved. New invoices use them; issued invoices keep what they were issued with.',
+      });
+      router.refresh();
+    });
+  }
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-6" noValidate>
+      {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
+      <Section
+        id="business"
+        title="Business"
+        description="Who your invoices are from. Limited companies show their registered name and number."
+      >
+        <Field label="Trading name" htmlFor="s-name" error={errors.name}>
+          <Input id="s-name" {...text('name')} />
+        </Field>
+        <Field label="Registered or legal name" htmlFor="s-legal" hint="If different from your trading name.">
+          <Input id="s-legal" {...text('legalName')} />
+        </Field>
+        <Field label="Kind of business" htmlFor="s-type">
+          <Select id="s-type" {...text('businessType')}>
+            <option value="sole_trader">Sole trader or freelancer</option>
+            <option value="limited_company">Limited company</option>
+            <option value="partnership">Partnership</option>
+            <option value="other">Something else</option>
+          </Select>
+        </Field>
+        <Field
+          label="Company number"
+          htmlFor="s-company"
+          hint={v.businessType === 'limited_company' ? 'Printed on your invoices.' : 'Optional'}
+        >
+          <Input id="s-company" {...text('companyNumber')} />
+        </Field>
+        <Field label="Email" htmlFor="s-email" error={errors.email}>
+          <Input id="s-email" type="email" {...text('email')} />
+        </Field>
+        <Field label="Phone" htmlFor="s-phone">
+          <Input id="s-phone" type="tel" {...text('phone')} />
+        </Field>
+        <Field label="Website" htmlFor="s-web" className="sm:col-span-2">
+          <Input id="s-web" {...text('website')} />
+        </Field>
+        <Field label="Address line 1" htmlFor="s-a1" className="sm:col-span-2">
+          <Input id="s-a1" {...text('addressLine1')} />
+        </Field>
+        <Field label="Address line 2" htmlFor="s-a2" className="sm:col-span-2">
+          <Input id="s-a2" {...text('addressLine2')} />
+        </Field>
+        <Field label="Town or city" htmlFor="s-city">
+          <Input id="s-city" {...text('city')} />
+        </Field>
+        <Field label="County, state or region" htmlFor="s-region">
+          <Input id="s-region" {...text('region')} />
+        </Field>
+        <Field label="Postcode" htmlFor="s-post">
+          <Input id="s-post" {...text('postcode')} />
+        </Field>
+        <Field label="Country" htmlFor="s-country">
+          <Select id="s-country" {...text('countryCode')}>
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Main currency" htmlFor="s-cur" hint="Dashboard totals are in this currency.">
+          <Select id="s-cur" {...text('baseCurrency')}>
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.code}, {c.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Time zone" htmlFor="s-tz">
+          <Select id="s-tz" {...text('timeZone')}>
+            {[...new Set([v.timeZone, ...TIME_ZONES])].map((z) => (
+              <option key={z} value={z}>
+                {z.replace('_', ' ')}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </Section>
+
+      <Section
+        id="tax"
+        title={taxWord === 'VAT' ? 'VAT' : 'Tax'}
+        description="Whether you charge tax and how it is worked out. Your tax codes are listed below this form."
+      >
+        <div className="sm:col-span-2">
+          <Checkbox
+            label={`Registered for ${taxWord}`}
+            hint={`Unticked: your invoices show no ${taxWord} and no ${taxWord} number.`}
+            checked={v.taxRegistered}
+            onChange={(e) => set('taxRegistered', e.target.checked)}
+          />
+        </div>
+        {v.taxRegistered ? (
+          <Field
+            label={`${taxWord === 'VAT' ? 'VAT' : 'Tax'} registration number`}
+            htmlFor="s-taxno"
+            error={errors.taxNumber}
+          >
+            <Input id="s-taxno" {...text('taxNumber')} />
+          </Field>
+        ) : null}
+        {v.taxRegistered ? (
+          <Field
+            label="How tax is rounded"
+            htmlFor="s-round"
+            hint={ROUNDING_CHOICES.find((r) => r.value === `${v.taxLevel}:${v.rounding}`)?.hint}
+          >
+            <Select
+              id="s-round"
+              value={`${v.taxLevel}:${v.rounding}`}
+              onChange={(e) => {
+                const [level, mode] = e.target.value.split(':') as [
+                  ProfileValues['taxLevel'],
+                  ProfileValues['rounding'],
+                ];
+                setV((p) => ({ ...p, taxLevel: level, rounding: mode }));
+              }}
+            >
+              {[
+                ...ROUNDING_CHOICES,
+                ...(ROUNDING_CHOICES.some((r) => r.value === `${v.taxLevel}:${v.rounding}`)
+                  ? []
+                  : [{ value: `${v.taxLevel}:${v.rounding}`, label: 'Custom', hint: '' }]),
+              ].map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        ) : null}
+        {v.taxRegistered ? (
+          <div className="sm:col-span-2">
+            <Checkbox
+              label="My prices include tax"
+              hint="Tax is worked out of the prices you enter. Leave unticked to add tax on top."
+              checked={v.pricesIncludeTax}
+              onChange={(e) => set('pricesIncludeTax', e.target.checked)}
+            />
+          </div>
+        ) : null}
+      </Section>
+
+      <Section
+        id="invoices"
+        title="Invoices"
+        description="Numbering, terms and the look new invoices start with."
+      >
+        <Field
+          label="Invoice number prefix"
+          htmlFor="s-ip"
+          error={errors.invoicePrefix}
+          hint={`Next invoices look like ${v.invoicePrefix}${'1'.padStart(v.numberPadding, '0')}.`}
+        >
+          <Input id="s-ip" {...text('invoicePrefix')} />
+        </Field>
+        <Field label="Credit note prefix" htmlFor="s-cp" error={errors.creditNotePrefix}>
+          <Input id="s-cp" {...text('creditNotePrefix')} />
+        </Field>
+        <Field label="Digits in the number" htmlFor="s-pad">
+          <Select
+            id="s-pad"
+            value={String(v.numberPadding)}
+            onChange={(e) => set('numberPadding', Number(e.target.value))}
+          >
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <option key={n} value={n}>
+                {n} ({'1'.padStart(n, '0')})
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Payment due after (days)" htmlFor="s-terms" error={errors.defaultPaymentTermsDays}>
+          <Input
+            id="s-terms"
+            inputMode="numeric"
+            value={String(v.defaultPaymentTermsDays)}
+            onChange={(e) => set('defaultPaymentTermsDays', Number(e.target.value.replace(/\D/g, '') || 0))}
+          />
+        </Field>
+        <Field label="Template" htmlFor="s-tpl">
+          <Select id="s-tpl" {...text('defaultTemplate')}>
+            {TEMPLATES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field
+          label="Brand colour"
+          htmlFor="s-colour"
+          error={errors.brandColour}
+          hint="Used for accents on your invoices."
+        >
+          <div className="flex items-center gap-3">
+            <input
+              id="s-colour"
+              type="color"
+              value={v.brandColour}
+              onChange={(e) => set('brandColour', e.target.value)}
+              className="h-10 w-14 cursor-pointer rounded-[10px] border border-line-strong bg-surface p-1"
+            />
+            <Input
+              aria-label="Brand colour code"
+              value={v.brandColour}
+              onChange={(e) => set('brandColour', e.target.value)}
+              className="max-w-32"
+            />
+          </div>
+        </Field>
+        <Field
+          label="Note to clients"
+          htmlFor="s-notes"
+          hint="Printed on every new invoice. You can change it on each one."
+          className="sm:col-span-2"
+        >
+          <Textarea id="s-notes" {...text('defaultNotes')} />
+        </Field>
+        <Field label="Terms" htmlFor="s-tc" hint="For example late payment terms." className="sm:col-span-2">
+          <Textarea id="s-tc" {...text('defaultTerms')} />
+        </Field>
+      </Section>
+
+      <Section
+        id="payment"
+        title="Getting paid"
+        description="How clients pay you. Each invoice can show or hide these."
+      >
+        <Field label="Account name" htmlFor="s-bn">
+          <Input
+            id="s-bn"
+            value={bank.accountName ?? ''}
+            onChange={(e) => setBank('accountName', e.target.value)}
+          />
+        </Field>
+        <Field label="Bank" htmlFor="s-bank">
+          <Input
+            id="s-bank"
+            value={bank.bankName ?? ''}
+            onChange={(e) => setBank('bankName', e.target.value)}
+          />
+        </Field>
+        <Field label="Sort code" htmlFor="s-sc">
+          <Input
+            id="s-sc"
+            value={bank.sortCode ?? ''}
+            onChange={(e) => setBank('sortCode', e.target.value)}
+          />
+        </Field>
+        <Field label="Account number" htmlFor="s-an">
+          <Input
+            id="s-an"
+            value={bank.accountNumber ?? ''}
+            onChange={(e) => setBank('accountNumber', e.target.value)}
+          />
+        </Field>
+        <Field label="IBAN" htmlFor="s-iban" hint="For payments from abroad.">
+          <Input id="s-iban" value={bank.iban ?? ''} onChange={(e) => setBank('iban', e.target.value)} />
+        </Field>
+        <Field label="SWIFT or BIC" htmlFor="s-swift">
+          <Input id="s-swift" value={bank.swift ?? ''} onChange={(e) => setBank('swift', e.target.value)} />
+        </Field>
+        <Field label="Mobile money provider" htmlFor="s-mmp" hint="For example MTN MoMo or Vodafone Cash.">
+          <Input id="s-mmp" value={mm.provider ?? ''} onChange={(e) => setMm('provider', e.target.value)} />
+        </Field>
+        <Field label="Mobile money number" htmlFor="s-mmn">
+          <Input id="s-mmn" value={mm.number ?? ''} onChange={(e) => setMm('number', e.target.value)} />
+        </Field>
+        <Field label="Name on the mobile money account" htmlFor="s-mma">
+          <Input
+            id="s-mma"
+            value={mm.accountName ?? ''}
+            onChange={(e) => setMm('accountName', e.target.value)}
+          />
+        </Field>
+        <Field
+          label="Payment link"
+          htmlFor="s-link"
+          hint="A page where clients can pay by card, if you have one."
+        >
+          <Input
+            id="s-link"
+            value={v.paymentDetails.paymentLink ?? ''}
+            onChange={(e) => set('paymentDetails', { ...v.paymentDetails, paymentLink: e.target.value })}
+          />
+        </Field>
+      </Section>
+
+      <div className="sticky bottom-20 z-20 flex justify-end md:bottom-4">
+        <Button type="submit" size="lg" disabled={pending} className="shadow-lift">
+          {pending ? 'Saving' : 'Save settings'}
+        </Button>
+      </div>
+    </form>
+  );
+}

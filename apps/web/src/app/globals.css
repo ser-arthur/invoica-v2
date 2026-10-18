@@ -1,0 +1,117 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/onest';
+@import '@fontsource-variable/sora';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
+ * Design tokens. Light is the default; dark is chosen in Settings (or follows the system when set to "system").
+ * Contrast: ink, muted and brand all pass 4.5:1 on canvas and surface in both themes.
+ */
+:root {
+  --canvas: #f3f6f4;
+  --surface: #ffffff;
+  --surface-sunk: #ebf0ed;
+  --ink: #13201a;
+  --ink-soft: #2f3f37;
+  --muted: #56675e;
+  --line: #d9e1dc;
+  --line-strong: #b9c7bf;
+  --brand: #0d7550;
+  --brand-hover: #0a613f;
+  --brand-ink: #ffffff;
+  --brand-soft: #def2e6;
+  --brand-bright: #2fbf6a;
+  --danger: #b3261e;
+  --danger-soft: #fbe8e6;
+  --warn: #8a5300;
+  --warn-soft: #fbefd9;
+  --info: #2b5a86;
+  --info-soft: #e4edf6;
+  --shadow: 0 1px 0 rgb(19 32 26 / 0.04), 0 8px 24px -12px rgb(19 32 26 / 0.18);
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --canvas: #0c1310;
+  --surface: #131c18;
+  --surface-sunk: #0f1714;
+  --ink: #e5eee9;
+  --ink-soft: #c5d3cb;
+  --muted: #98a9a0;
+  --line: #24322b;
+  --line-strong: #34463d;
+  --brand: #4cc987;
+  --brand-hover: #6ad69c;
+  --brand-ink: #06170e;
+  --brand-soft: #173326;
+  --brand-bright: #4cc987;
+  --danger: #f2877d;
+  --danger-soft: #3a1714;
+  --warn: #e9b35c;
+  --warn-soft: #33250c;
+  --info: #8db8e6;
+  --info-soft: #14263a;
+  --shadow: 0 1px 0 rgb(0 0 0 / 0.3), 0 10px 30px -14px rgb(0 0 0 / 0.7);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-sunk: var(--surface-sunk);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-bright: var(--brand-bright);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --font-sans: 'Onest Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Sora Variable', 'Onest Variable', ui-sans-serif, sans-serif;
+  --shadow-lift: var(--shadow);
+}
+
+@layer base {
+  html {
+    background: var(--canvas);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    min-height: 100dvh;
+  }
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--brand-soft);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}

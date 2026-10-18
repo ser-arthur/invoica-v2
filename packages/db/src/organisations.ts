@@ -1,5 +1,5 @@
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
-import { NO_TAX, presetFor } from '@invoica/core';
+import { NO_TAX, presetFor, roundingDefaultFor } from '@invoica/core';
 import type { OnboardingInput, OrganisationProfileInput } from '@invoica/schemas';
 import type { Database, Tx } from './client';
 import { organisation, taxCode } from './schema';
@@ -44,6 +44,7 @@ export async function createOrganisation(
         taxRegistered: input.taxRegistered,
         taxNumber: input.taxRegistered ? input.taxNumber : null,
         locale: input.countryCode === 'US' ? 'en-US' : 'en-GB',
+        ...roundingDefaultFor(input.countryCode),
       })
       .where(eq(organisation.id, id));
 

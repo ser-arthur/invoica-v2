@@ -1,0 +1,22 @@
+{
+  "name": "@invoica/documents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./fonts-dir": "./src/fonts-dir.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@invoica/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "vitest": "4.1.12"
+  }
+}
