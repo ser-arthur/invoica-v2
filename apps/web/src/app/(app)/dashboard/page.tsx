@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
 import { formatBusinessDate, formatMoney, type ReceivablesSummary } from '@invoica/core';
 import { getDashboard, listClients, withOrganisation } from '@invoica/db';
 import { ButtonLink, Money, Panel, PanelHeading, StatePill, cx } from '@/components/ui';
@@ -73,7 +72,7 @@ function OwedBand({ summary, currency }: { summary: ReceivablesSummary | undefin
               : null}
           </div>
           <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-5">
-            {AGEING.map((a) => (
+            {AGEING.filter((a) => a.key === 'notDue' || (summary?.ageing[a.key] ?? 0) > 0).map((a) => (
               <div key={a.key} className="flex flex-col gap-0.5">
                 <dt className="flex items-center gap-2 text-[12px] text-muted">
                   <span aria-hidden className={cx('size-2 rounded-full', a.tone)} />
@@ -202,11 +201,6 @@ export default async function DashboardPage() {
           <p className="mt-1 text-muted">
             {formatBusinessDate(today, 'long')}, {organisation.name}
           </p>
-        </div>
-        <div className="hidden sm:block">
-          <ButtonLink href="/invoices/new">
-            <Plus className="size-4" aria-hidden /> New invoice
-          </ButtonLink>
         </div>
       </div>
 

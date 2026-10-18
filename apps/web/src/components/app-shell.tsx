@@ -14,21 +14,6 @@ const NAV = [
   { href: '/items', label: 'Items', icon: Package },
 ];
 
-/** The cedilla from the wordmark, used to mark where you are. */
-function Cedilla({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 10 8" aria-hidden className={className} width="10" height="8">
-      <path
-        d="M5 0v2.6c1.9 0 3 .8 3 2.2C8 6.4 6.6 7.4 4 7.4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -83,7 +68,7 @@ export function AppShell({
                 >
                   {item.label}
                   {active ? (
-                    <Cedilla className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-brand-bright" />
+                    <span aria-hidden className="absolute inset-x-3 bottom-0 h-[3px] rounded-t-full bg-brand-bright" />
                   ) : null}
                 </Link>
               );

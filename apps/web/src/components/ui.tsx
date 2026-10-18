@@ -135,11 +135,11 @@ const pillTone: Record<DocumentState | 'overdue', string> = {
 
 export function StatePill({ state, overdue }: { state: DocumentState; overdue?: boolean }) {
   const key = overdue ? 'overdue' : state;
-  const label = overdue ? (state === 'part_paid' ? 'Overdue, part paid' : 'Overdue') : STATE_LABELS[state];
+  const label = overdue ? (state === 'part_paid' ? 'Part paid, late' : 'Overdue') : STATE_LABELS[state];
   return (
     <span
       className={cx(
-        'inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-medium',
+        'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-medium whitespace-nowrap',
         pillTone[key],
       )}
     >

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Plus, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { formatBusinessDate, formatMoney } from '@invoica/core';
 import { listDocuments, type DocumentFilter } from '@invoica/db';
 import { ButtonLink, EmptyState, Input, Money, PageHeader, Panel, StatePill, cx } from '@/components/ui';
@@ -61,11 +61,6 @@ export default async function InvoicesPage({
               ))}
             </>
           ) : undefined
-        }
-        actions={
-          <ButtonLink href="/invoices/new">
-            <Plus className="size-4" aria-hidden /> New invoice
-          </ButtonLink>
         }
       />
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -158,16 +153,26 @@ export default async function InvoicesPage({
               {docs.map((d) => (
                 <tr key={d.id} className="relative hover:bg-sunk">
                   <td className="px-5 py-3.5">
-                    <Link
-                      href={d.state === 'draft' ? `/invoices/${d.id}/edit` : `/invoices/${d.id}`}
-                      className="font-medium after:absolute after:inset-0"
-                    >
-                      {d.clientName}
-                    </Link>
-                    <p className="text-[13px] text-muted md:hidden">
-                      {d.number ?? 'Draft'}
-                      {d.dueDate && d.state !== 'draft' ? `, due ${formatBusinessDate(d.dueDate)}` : ''}
-                    </p>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <Link
+                        href={d.state === 'draft' ? `/invoices/${d.id}/edit` : `/invoices/${d.id}`}
+                        className="min-w-0 truncate font-medium after:absolute after:inset-0"
+                      >
+                        {d.clientName}
+                      </Link>
+                      <Money
+                        amount={d.total}
+                        currency={d.currency}
+                        className="shrink-0 font-medium md:hidden"
+                      />
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-3 md:hidden">
+                      <p className="min-w-0 truncate text-[13px] text-muted">
+                        {d.number ?? 'Draft'}
+                        {d.dueDate && d.state !== 'draft' ? `, due ${formatBusinessDate(d.dueDate)}` : ''}
+                      </p>
+                      <StatePill state={d.state} overdue={d.overdue} />
+                    </div>
                     {d.title ? (
                       <p className="hidden max-w-[40ch] truncate text-[13px] text-muted md:block">
                         {d.title}
@@ -183,16 +188,13 @@ export default async function InvoicesPage({
                   <td className="hidden px-5 py-3.5 md:table-cell">
                     <StatePill state={d.state} overdue={d.overdue} />
                   </td>
-                  <td className="px-5 py-3.5 text-right">
+                  <td className="hidden px-5 py-3.5 text-right md:table-cell">
                     <Money amount={d.total} currency={d.currency} className="font-medium" />
                     {d.balance > 0 && d.balance !== d.total && d.state !== 'draft' ? (
                       <p className="text-[13px] text-muted tabular">
                         {formatMoney(d.balance, d.currency)} left
                       </p>
                     ) : null}
-                    <span className="md:hidden">
-                      <StatePill state={d.state} overdue={d.overdue} />
-                    </span>
                   </td>
                 </tr>
               ))}
