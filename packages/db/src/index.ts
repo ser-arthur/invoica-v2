@@ -1,7 +1,6 @@
 export * from './client';
 export * from './tenancy';
 export * from './audit';
-export * from './migrate';
 export * from './organisations';
 export * from './taxes';
 export * from './clients';
