@@ -1,11 +1,15 @@
 'use server';
 
 import { after } from 'next/server';
+import { DomainError } from '@invoica/core';
 import { revalidatePath } from 'next/cache';
 import {
   createCreditNote,
   createDraft,
   deleteDraft,
+  enqueue,
+  getDocument,
+  duplicateDocument,
   issueDocument,
   markSent,
   recordPayment,
@@ -13,7 +17,7 @@ import {
   updateDraft,
   voidDocument,
 } from '@invoica/db';
-import { creditNoteInput, draftInput, paymentInput, voidInput } from '@invoica/schemas';
+import { creditNoteInput, draftInput, paymentInput, sendDocumentInput, voidInput } from '@invoica/schemas';
 import { inWorkspace } from '../workspace';
 import { runJobs } from '../jobs';
 import { failure, invalid, type ActionResult } from './result';
@@ -27,7 +31,7 @@ function refresh(id?: string) {
 function runJobsLater() {
   after(async () => {
     try {
-      await runJobs(5);
+      await runJobs(25);
     } catch (error) {
       console.error('background jobs failed', (error as Error).message);
     }
@@ -149,6 +153,43 @@ export async function creditNoteAction(
     refresh(parsed.data.invoiceId);
     runJobsLater();
     return { ok: true, data: { id: r.id, number: r.number } };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+export async function duplicateAction(id: string): Promise<ActionResult<{ id: string }>> {
+  try {
+    const newId = await inWorkspace((tx, ws) => duplicateDocument(tx, ws.actor, id));
+    refresh(newId);
+    return { ok: true, data: { id: newId } };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/** Queues an issued invoice to be emailed with its PDF. A repeated request with the same key sends once. */
+export async function sendDocumentAction(input: unknown): Promise<ActionResult> {
+  const parsed = sendDocumentInput.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const { documentId, to, subject, message, idempotencyKey } = parsed.data;
+  try {
+    await inWorkspace(async (tx, ws) => {
+      const detail = await getDocument(tx, documentId, ws.today);
+      if (!detail || detail.document.lifecycle === 'draft' || detail.document.lifecycle === 'void') {
+        throw new DomainError('send_wrong_state', 'Only issued invoices can be sent.');
+      }
+      await enqueue(
+        tx,
+        ws.actor,
+        'document.email',
+        { documentId, to, subject, message },
+        `email:${idempotencyKey}`,
+      );
+    });
+    runJobsLater();
+    refresh(documentId);
+    return { ok: true, data: undefined };
   } catch (error) {
     return failure(error);
   }

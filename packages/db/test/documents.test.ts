@@ -8,6 +8,7 @@ import {
   createCreditNote,
   createDraft,
   deleteDraft,
+  duplicateDocument,
   getDocument,
   issueDocument,
   listDocuments,
@@ -442,5 +443,32 @@ describe('lists and dashboard', () => {
     expect(dash.draftCount).toBe(all.filter((d) => d.state === 'draft').length);
     const later = await run((tx) => getDashboard(tx, '2026-12-01', 'GBP'));
     expect(later.receivables[0]!.overdueCount).toBe(open.length);
+  });
+});
+
+describe('duplicating', () => {
+  it('copies lines and wording into a new draft without dates, number or deposits', async () => {
+    const id = await run((tx) =>
+      createDraft(
+        tx,
+        actor,
+        draft({
+          title: 'Monthly retainer',
+          prepayments: [{ label: 'Deposit', amount: 1000, paidOn: TODAY, method: 'cash' }],
+        }),
+      ),
+    );
+    await run((tx) => issueDocument(tx, actor, id, NOW));
+    const copy = await run((tx) => duplicateDocument(tx, actor, id));
+    const d = await run((tx) => getDocument(tx, copy, TODAY));
+    expect([d!.document.lifecycle, d!.document.number, d!.document.issueDate, d!.document.title]).toEqual([
+      'draft',
+      null,
+      null,
+      'Monthly retainer',
+    ]);
+    expect(d!.document.prepayments).toEqual([]);
+    expect(d!.lines.map((l) => l.title)).toEqual(['Design', 'Hosting']);
+    expect(d!.document.total).toBe(13_199);
   });
 });

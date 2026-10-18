@@ -1,24 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { Download, Mail } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { formatBusinessDate, formatMoney, type DocumentSnapshot } from '@invoica/core';
 import { documentActivity, getDocument } from '@invoica/db';
 import { renderDocumentHtml } from '@invoica/documents';
-import {
-  ButtonLink,
-  FormMessage,
-  PageHeader,
-  Panel,
-  PanelHeading,
-  StatePill,
-  buttonClass,
-} from '@/components/ui';
+import { FormMessage, PageHeader, Panel, PanelHeading, StatePill, buttonClass } from '@/components/ui';
 import {
   CreditNoteButton,
+  DuplicateButton,
   MarkSentButton,
   RecordPaymentButton,
   RemovePaymentButton,
+  SendEmailButton,
   VoidButton,
 } from '@/components/document-actions';
 import { DocumentFrame } from '@/components/document-frame';
@@ -37,6 +31,8 @@ const ACTIVITY: Record<string, string> = {
   'payment.recorded': 'Payment recorded',
   'payment.removed': 'Payment removed',
   'credit_note.issued': 'Credit note issued',
+  'document.duplicated': 'Copied from another invoice',
+  'document.emailed': 'Emailed',
 };
 
 const METHOD: Record<string, string> = {
@@ -79,11 +75,9 @@ export default async function InvoicePage({
   const codes = new Set(detail.lines.map((l) => l.taxCodeId));
   const singleCode = codes.size === 1 ? [...codes][0]! : null;
   const singleTax = singleCode ? (detail.lines[0]?.tax ?? null) : null;
-  const mailto = detail.client.email
-    ? `mailto:${encodeURIComponent(detail.client.email)}?subject=${encodeURIComponent(`Invoice ${doc.number} from ${snapshot.seller.name}`)}&body=${encodeURIComponent(
-        `Hello,\n\nPlease find attached invoice ${doc.number} for ${money(snapshot.balanceDue)}${snapshot.dueDate ? `, due ${formatBusinessDate(snapshot.dueDate, 'long')}` : ''}.\n\nThank you,\n${snapshot.seller.name}`,
-      )}`
-    : null;
+  const emailText = `Hello,\n\nPlease find attached invoice ${doc.number} for ${money(snapshot.balanceDue)}${
+    snapshot.dueDate ? `, due ${formatBusinessDate(snapshot.dueDate, 'long')}` : ''
+  }.\n\nThank you,\n${snapshot.seller.name}`;
 
   return (
     <div>
@@ -115,10 +109,14 @@ export default async function InvoicePage({
             <a href={`/invoices/${id}/pdf?download=1`} className={buttonClass('secondary')}>
               <Download className="size-4" aria-hidden /> PDF
             </a>
-            {!isCredit && mailto && doc.lifecycle !== 'void' ? (
-              <a href={mailto} className={buttonClass('secondary')}>
-                <Mail className="size-4" aria-hidden /> Email
-              </a>
+            {!isCredit && doc.lifecycle !== 'void' ? (
+              <SendEmailButton
+                id={id}
+                sent={doc.lifecycle === 'sent'}
+                defaultTo={detail.client.email ?? ''}
+                defaultSubject={`Invoice ${doc.number} from ${snapshot.seller.name}`}
+                defaultMessage={emailText}
+              />
             ) : null}
             {!isCredit && doc.lifecycle === 'issued' ? <MarkSentButton id={id} /> : null}
             {open ? (
@@ -254,9 +252,7 @@ export default async function InvoicePage({
                 {detail.applied.paid === 0 && detail.applied.credited === 0 ? (
                   <VoidButton id={id} number={doc.number ?? ''} />
                 ) : null}
-                <ButtonLink href={`/invoices/new?client=${detail.client.id}`} variant="ghost">
-                  New invoice for {detail.client.name}
-                </ButtonLink>
+                <DuplicateButton id={id} />
               </div>
             </Panel>
           ) : null}

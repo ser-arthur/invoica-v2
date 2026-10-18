@@ -775,6 +775,7 @@ export function InvoiceEditor(props: EditorProps) {
                           type="button"
                           variant="ghost"
                           size="sm"
+                          className="h-11 min-w-11 sm:h-8 sm:min-w-0"
                           aria-label={`Move line ${index + 1} up`}
                           disabled={index === 0}
                           onClick={() => moveLine(index, -1)}
@@ -785,6 +786,7 @@ export function InvoiceEditor(props: EditorProps) {
                           type="button"
                           variant="ghost"
                           size="sm"
+                          className="h-11 min-w-11 sm:h-8 sm:min-w-0"
                           aria-label={`Move line ${index + 1} down`}
                           disabled={index === state.lines.length - 1}
                           onClick={() => moveLine(index, 1)}
@@ -795,6 +797,7 @@ export function InvoiceEditor(props: EditorProps) {
                           type="button"
                           variant="ghost"
                           size="sm"
+                          className="h-11 min-w-11 sm:h-8 sm:min-w-0"
                           aria-label={`Remove line ${index + 1}`}
                           onClick={() => update({ lines: state.lines.filter((x) => x.key !== l.key) })}
                         >

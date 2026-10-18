@@ -753,3 +753,72 @@ export async function clientsForEditor(tx: Tx) {
     fields: fields.filter((f) => f.clientId === c.id).map((f) => ({ label: f.label, value: f.value })),
   }));
 }
+
+/** A new draft with the same client, lines, discounts and wording as an existing invoice. Dates and deposits are left out. */
+export async function duplicateDocument(tx: Tx, actor: Actor, id: string): Promise<string> {
+  const [source] = await tx.select().from(document).where(eq(document.id, id));
+  if (!source || source.kind !== 'invoice')
+    throw new DomainError('document_not_found', 'This invoice does not exist.');
+  const lines = await tx
+    .select()
+    .from(documentLine)
+    .where(eq(documentLine.documentId, id))
+    .orderBy(asc(documentLine.position));
+  const org = await getOrganisation(tx, actor);
+  const [created] = await tx
+    .insert(document)
+    .values({
+      organisationId: actor.organisationId,
+      kind: 'invoice',
+      clientId: source.clientId,
+      currency: source.currency,
+      reference: null,
+      title: source.title,
+      summary: source.summary,
+      lineStyle: source.lineStyle,
+      pricesIncludeTax: source.pricesIncludeTax,
+      taxLevel: org.taxLevel,
+      rounding: org.rounding,
+      discounts: source.discounts,
+      notes: source.notes,
+      terms: source.terms,
+      template: source.template,
+      options: source.options,
+      createdBy: actor.userId,
+    })
+    .returning({ id: document.id });
+  const newId = created!.id;
+  if (lines.length) {
+    await tx.insert(documentLine).values(
+      lines.map((l) => ({
+        organisationId: actor.organisationId,
+        documentId: newId,
+        position: l.position,
+        title: l.title,
+        description: l.description,
+        quantity: l.quantity,
+        unit: l.unit,
+        unitPrice: l.unitPrice,
+        serviceDate: null,
+        taxCodeId: l.taxCodeId,
+        tax: l.tax,
+        itemId: l.itemId,
+      })),
+    );
+  }
+  const totals = draftTotals(
+    { ...source, taxLevel: org.taxLevel, rounding: org.rounding, prepayments: [] },
+    lines,
+  );
+  await tx
+    .update(document)
+    .set({
+      subtotal: totals.subtotal,
+      discountTotal: totals.discountTotal,
+      taxTotal: totals.taxTotal,
+      total: totals.total,
+    })
+    .where(eq(document.id, newId));
+  await audit(tx, actor, 'document.duplicated', 'document', newId, { from: id });
+  return newId;
+}

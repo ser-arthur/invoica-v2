@@ -68,7 +68,10 @@ export function AppShell({
                 >
                   {item.label}
                   {active ? (
-                    <span aria-hidden className="absolute inset-x-3 bottom-0 h-[3px] rounded-t-full bg-brand-bright" />
+                    <span
+                      aria-hidden
+                      className="absolute inset-x-3 bottom-0 h-[3px] rounded-t-full bg-brand-bright"
+                    />
                   ) : null}
                 </Link>
               );

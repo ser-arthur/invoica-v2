@@ -6,9 +6,11 @@ import { formatMoney, parseMoney, toDecimalString } from '@invoica/core';
 import {
   creditNoteAction,
   deleteDraftAction,
+  duplicateAction,
   markSentAction,
   recordPaymentAction,
   removePaymentAction,
+  sendDocumentAction,
   voidAction,
 } from '@/lib/actions/documents';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
@@ -402,6 +404,114 @@ export function CreditNoteButton({
               </Button>
             </div>
           </div>
+        </Dialog>
+      ) : null}
+    </>
+  );
+}
+
+export function DuplicateButton({ id }: { id: string }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      disabled={pending}
+      onClick={() =>
+        start(async () => {
+          const r = await duplicateAction(id);
+          if (r.ok) router.push(`/invoices/${r.data.id}/edit`);
+        })
+      }
+    >
+      {pending ? 'Copying' : 'Duplicate'}
+    </Button>
+  );
+}
+
+export function SendEmailButton({
+  id,
+  defaultTo,
+  defaultSubject,
+  defaultMessage,
+  sent,
+}: {
+  id: string;
+  defaultTo: string;
+  defaultSubject: string;
+  defaultMessage: string;
+  sent: boolean;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [to, setTo] = useState(defaultTo);
+  const [subject, setSubject] = useState(defaultSubject);
+  const [message, setMessage] = useState(defaultMessage);
+  const [key] = useState(() => `send-${newKey()}-${id.slice(0, 8)}`);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [pending, start] = useTransition();
+
+  function submit() {
+    setError(null);
+    start(async () => {
+      const r = await sendDocumentAction({ documentId: id, to, subject, message, idempotencyKey: key });
+      if (!r.ok) return setError(r.fieldErrors ? Object.values(r.fieldErrors)[0]! : r.message);
+      setDone(true);
+      router.refresh();
+    });
+  }
+
+  return (
+    <>
+      <Button type="button" variant={sent ? 'secondary' : 'primary'} onClick={() => setOpen(true)}>
+        {sent ? 'Send again' : 'Send'}
+      </Button>
+      {open ? (
+        <Dialog title="Send by email" onClose={() => setOpen(false)}>
+          {done ? (
+            <div className="flex flex-col gap-4">
+              <FormMessage tone="info">
+                On its way to {to}, with the PDF attached. It is marked as sent once delivered.
+              </FormMessage>
+              <Button className="self-end" onClick={() => setOpen(false)}>
+                Done
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {error ? <FormMessage>{error}</FormMessage> : null}
+              <Field label="To" htmlFor="send-to">
+                <Input
+                  id="send-to"
+                  type="email"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  autoFocus
+                />
+              </Field>
+              <Field label="Subject" htmlFor="send-subject">
+                <Input id="send-subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
+              </Field>
+              <Field label="Message" htmlFor="send-message" hint="The invoice PDF is attached.">
+                <Textarea
+                  id="send-message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="min-h-40"
+                />
+              </Field>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
+                <Button disabled={pending} onClick={submit}>
+                  {pending ? 'Sending' : 'Send invoice'}
+                </Button>
+              </div>
+            </div>
+          )}
         </Dialog>
       ) : null}
     </>

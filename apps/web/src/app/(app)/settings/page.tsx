@@ -3,6 +3,7 @@ import { presetFor } from '@invoica/core';
 import { listTaxCodes } from '@invoica/db';
 import { SettingsForm, type ProfileValues } from '@/components/settings-form';
 import { TaxCodes } from '@/components/tax-codes';
+import { LogoUpload } from '@/components/logo-upload';
 import { PageHeader } from '@/components/ui';
 import { inWorkspace } from '@/lib/workspace';
 
@@ -55,6 +56,7 @@ export default async function SettingsPage() {
       />
       <nav aria-label="Settings sections" className="mb-6 flex gap-1 overflow-x-auto text-[14px]">
         {[
+          ['logo', 'Logo'],
           ['business', 'Business'],
           ['tax', 'Tax'],
           ['invoices', 'Invoices'],
@@ -71,6 +73,7 @@ export default async function SettingsPage() {
         ))}
       </nav>
       <div className="flex flex-col gap-6">
+        <LogoUpload logoUrl={org.logoFileId ? `/files/${org.logoFileId}` : null} name={org.name} />
         <SettingsForm initial={initial} />
         <TaxCodes
           country={org.countryCode}

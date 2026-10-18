@@ -303,3 +303,11 @@ export function fieldErrors(error: z.ZodError): Record<string, string> {
   }
   return out;
 }
+
+export const sendDocumentInput = z.object({
+  documentId: z.uuid(),
+  to: z.email('Enter the client’s email address.').max(254),
+  subject: requiredText(200, 'Add a subject.'),
+  message: requiredText(4000, 'Add a short message.'),
+  idempotencyKey: z.string().min(8).max(100),
+});

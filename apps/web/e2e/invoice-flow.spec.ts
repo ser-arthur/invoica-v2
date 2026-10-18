@@ -77,3 +77,44 @@ test('an issued invoice cannot be opened by another business', async ({ browser 
   const pdf = await b.goto(`${url.toString()}/pdf`);
   expect(pdf?.status()).toBe(404);
 });
+
+test('an issued invoice is emailed with its PDF and marked as sent', async ({ page }) => {
+  const { readdirSync, readFileSync, statSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  await signUpAndOnboard(page, 'Field Office');
+  await addClient(page, 'Mara Linden Ceramics');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Mara Linden Ceramics' });
+  await page.getByLabel('Line 1 description').fill('Website design');
+  await page.getByLabel('Line 1 price').fill('2400');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\?issued=1/);
+  const number = (await page.getByRole('heading', { level: 1 }).textContent())!.match(/INV-\d+/)![0];
+
+  const started = Date.now();
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page.getByLabel('To', { exact: true })).toHaveValue('accounts@client.example');
+  await page.getByRole('dialog').getByRole('button', { name: 'Send invoice' }).click();
+  await expect(page.getByText(/On its way to accounts@client.example/)).toBeVisible();
+
+  const dir = join(process.cwd(), '.data/mail');
+  let found = '';
+  for (let i = 0; i < 40 && !found; i++) {
+    await page.waitForTimeout(500);
+    try {
+      for (const f of readdirSync(dir)) {
+        const full = join(dir, f);
+        if (statSync(full).mtimeMs < started) continue;
+        const text = readFileSync(full, 'utf8');
+        if (text.includes(`Subject: Invoice ${number} from Field Office`)) found = text;
+      }
+    } catch {
+      // The mailbox folder appears with the first email.
+    }
+  }
+  expect(found).toContain('To: accounts@client.example');
+  expect(found).toContain(`filename="${number}.pdf"`);
+  await page.reload();
+  await expect(page.getByText('Sent').first()).toBeVisible();
+});
