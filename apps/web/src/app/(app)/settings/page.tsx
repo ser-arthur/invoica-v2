@@ -4,7 +4,7 @@ import { listTaxCodes } from '@invoica/db';
 import { SettingsForm, type ProfileValues } from '@/components/settings-form';
 import { TaxCodes } from '@/components/tax-codes';
 import { LogoUpload } from '@/components/logo-upload';
-import { PageHeader } from '@/components/ui';
+import { PageHeader, Panel, buttonClass } from '@/components/ui';
 import { inWorkspace } from '@/lib/workspace';
 
 export const metadata: Metadata = { title: 'Settings' };
@@ -62,6 +62,7 @@ export default async function SettingsPage() {
           ['invoices', 'Invoices'],
           ['payment', 'Getting paid'],
           ['tax-codes', 'Tax codes'],
+          ['data', 'Your data'],
         ].map(([id, label]) => (
           <a
             key={id}
@@ -86,6 +87,30 @@ export default async function SettingsPage() {
             isDefault: c.isDefault,
           }))}
         />
+        <Panel id="data" className="scroll-mt-24">
+          <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[240px_1fr]">
+            <div>
+              <h2 className="text-[16px] font-semibold">Your data</h2>
+              <p className="mt-1 text-[14px] text-muted">
+                Download everything Invoica holds for {org.name}. Issued invoices are exported as issued.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 self-start">
+              <a className={buttonClass('secondary')} href="/settings/export?format=json">
+                Everything (JSON)
+              </a>
+              <a className={buttonClass('secondary')} href="/settings/export?format=csv&type=invoices">
+                Invoices (CSV)
+              </a>
+              <a className={buttonClass('secondary')} href="/settings/export?format=csv&type=payments">
+                Payments (CSV)
+              </a>
+              <a className={buttonClass('secondary')} href="/settings/export?format=csv&type=clients">
+                Clients (CSV)
+              </a>
+            </div>
+          </div>
+        </Panel>
       </div>
     </div>
   );
