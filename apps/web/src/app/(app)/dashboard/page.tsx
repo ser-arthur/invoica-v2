@@ -182,9 +182,10 @@ function GettingStarted({ hasProfile, hasClient }: { hasProfile: boolean; hasCli
 export default async function DashboardPage() {
   const { actor, organisation, today } = await requireWorkspace();
   const base = organisation.baseCurrency;
-  const [dash, clients] = await withOrganisation(getDb(), actor, async (tx) =>
-    Promise.all([getDashboard(tx, today, base), listClients(tx)]),
-  );
+  const [dash, clients] = await withOrganisation(getDb(), actor, async (tx) => {
+    const dashboard = await getDashboard(tx, today, base);
+    return [dashboard, await listClients(tx)] as const;
+  });
   const baseSummary = dash.receivables.find((r) => r.currency === base);
   const otherOwed = dash.receivables.filter((r) => r.currency !== base);
   const paid30 = dash.paidLast30Days.find((p) => p.currency === base)?.amount ?? 0;
@@ -249,7 +250,7 @@ export default async function DashboardPage() {
             </dl>
           </Panel>
 
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
             <Panel>
               <PanelHeading
                 action={

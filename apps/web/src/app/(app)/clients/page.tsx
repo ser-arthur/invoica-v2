@@ -16,10 +16,8 @@ export default async function ClientsPage({
 }) {
   const { q, archived } = await searchParams;
   const { clients, owed, counts } = await inWorkspace(async (tx, ws) => {
-    const [clients, invoices] = await Promise.all([
-      listClients(tx, { search: q, archived: archived === '1' }),
-      listDocuments(tx, { today: ws.today }),
-    ]);
+    const clients = await listClients(tx, { search: q, archived: archived === '1' });
+    const invoices = await listDocuments(tx, { today: ws.today });
     const owed = new Map<string, Map<string, number>>();
     const counts = new Map<string, number>();
     for (const d of invoices) {

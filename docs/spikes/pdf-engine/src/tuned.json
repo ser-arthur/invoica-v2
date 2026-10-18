@@ -1,0 +1,51 @@
+{
+ "boundaryChromium": 33,
+ "boundaryReactPdf": 34,
+ "threePage": 35,
+ "evidence": {
+  "boundaryChromiumStraddles": [
+   11,
+   12,
+   32,
+   33,
+   34,
+   54,
+   55,
+   56
+  ],
+  "boundaryReactPdfStraddles": [
+   11,
+   12,
+   13,
+   33,
+   34,
+   35,
+   55,
+   56,
+   57
+  ],
+  "threePageCounts": [
+   25,
+   26,
+   27,
+   28,
+   29,
+   30,
+   31,
+   32,
+   33,
+   34,
+   35,
+   36,
+   37,
+   38,
+   39,
+   40,
+   41,
+   42,
+   43,
+   44,
+   45
+  ]
+ }
+}

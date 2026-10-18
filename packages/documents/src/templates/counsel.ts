@@ -4,9 +4,11 @@ import { esc, linesTable, lines, notesBlock, paymentBlock, para, totalsBlock } f
 /** For professional practices: a centred letterhead, a serif voice and a formal tax summary. */
 export const counsel = {
   id: 'counsel',
+  footer: { font: 'Newsreader', inset: '0' },
   fonts: ['Newsreader'] as const,
   css: (v: DocumentView) => `
 @page{size:A4;margin:16mm 20mm 22mm}
+@media screen{body{padding:16mm 20mm 22mm}}
 body{font-family:'Newsreader',serif;font-size:10.2pt;line-height:1.45;color:#1d2430}
 .letterhead{text-align:center;padding-bottom:4.5mm;border-bottom:.6pt solid ${v.brandColour}}
 .rule{border-top:.6pt solid ${v.brandColour};margin-top:1mm;margin-bottom:9mm}

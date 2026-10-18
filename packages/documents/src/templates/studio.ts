@@ -4,10 +4,12 @@ import { esc, linesTable, lines, notesBlock, paymentBlock, para, totalsBlock } f
 /** For studios and agencies: the brand colour as a band, the studio's name set large, the balance up front. */
 export const studio = {
   id: 'studio',
+  footer: { font: 'Onest', inset: '16mm' },
   fonts: ['Bricolage Grotesque', 'Onest'] as const,
   css: (v: DocumentView) => `
 @page{size:A4;margin:0 0 20mm}
 @page :first{margin-top:0}
+@media screen{body{padding-bottom:20mm}}
 body{font-family:'Onest',sans-serif;font-size:9.4pt;line-height:1.5;color:#161616}
 .band{background:${v.brandColour};color:${v.onBrand};padding:14mm 16mm 10mm;display:grid;grid-template-columns:1fr auto;gap:10mm;align-items:end}
 .band .name{font-family:'Bricolage Grotesque',sans-serif;font-size:30pt;font-weight:700;letter-spacing:-.035em;line-height:.95;max-width:110mm}

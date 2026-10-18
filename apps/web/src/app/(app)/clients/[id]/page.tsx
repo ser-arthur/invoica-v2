@@ -66,7 +66,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
           </>
         }
       />
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex flex-col gap-6">
           <Panel>
             <dl className="grid divide-y divide-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">

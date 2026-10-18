@@ -91,3 +91,17 @@ export function lines(arr: (string | null)[]): string {
     .map((l) => esc(l))
     .join('<br>');
 }
+
+/** A string as a CSS string literal. */
+export function cssString(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\A ')}"`;
+}
+
+/**
+ * The running footer on every printed page, drawn by the browser in the page margin (CSS margin boxes,
+ * decision 0006), so it uses the document's own font. Screens ignore it.
+ */
+export function pageFooterCss(label: string, font: string, color: string, inset = '0'): string {
+  const box = `font-family:'${font}',sans-serif;font-size:7.5pt;font-weight:400;color:${color};vertical-align:middle;`;
+  return `@page{@bottom-left{content:${cssString(label)};${box}text-align:left;padding-left:${inset}}@bottom-right{content:"Page " counter(page) " of " counter(pages);${box}text-align:right;white-space:nowrap;padding-right:${inset}}}`;
+}

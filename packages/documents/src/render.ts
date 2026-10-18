@@ -1,6 +1,6 @@
 import type { DocumentSnapshot } from '@invoica/core';
 import { fontFaceCss } from './fonts';
-import { BASE_CSS, esc } from './templates/shared';
+import { BASE_CSS, esc, pageFooterCss } from './templates/shared';
 import { signature } from './templates/signature';
 import { studio } from './templates/studio';
 import { counsel } from './templates/counsel';
@@ -42,7 +42,13 @@ export interface RenderOptions {
 export function renderDocumentHtml(snapshot: DocumentSnapshot, options: RenderOptions): string {
   const view = buildView(snapshot, { draft: options.draft });
   const template = templateFor(snapshot.template);
-  const css = `${fontFaceCss(template.fonts, options.fontUrl)}\n${BASE_CSS}\n${template.css(view)}`;
+  const footer = pageFooterCss(
+    `${view.heading} ${view.number}`,
+    template.footer.font,
+    '#6b746f',
+    template.footer.inset,
+  );
+  const css = `${fontFaceCss(template.fonts, options.fontUrl)}\n${BASE_CSS}\n${template.css(view)}\n${footer}`;
   const title = `${view.heading} ${view.number}`;
   return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${css}</style></head><body>${
     options.draft ? '<div class="draft-mark" aria-hidden="true">DRAFT</div>' : ''

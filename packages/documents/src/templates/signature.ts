@@ -4,9 +4,11 @@ import { esc, linesTable, lines, notesBlock, paymentBlock, para, totalsBlock } f
 /** Invoica's own template: quiet, exact, with the amount due as the one strong moment. */
 export const signature = {
   id: 'signature',
+  footer: { font: 'Onest', inset: '0' },
   fonts: ['Sora', 'Onest'] as const,
   css: (v: DocumentView) => `
 @page{size:A4;margin:16mm 16mm 20mm}
+@media screen{body{padding:16mm 16mm 20mm}}
 body{font-family:'Onest',sans-serif;font-size:9.4pt;line-height:1.5;color:#18211d}
 .head{display:flex;justify-content:space-between;align-items:flex-start;gap:12mm;padding-bottom:7mm;border-bottom:1.6pt solid ${v.brandColour}}
 .brand{font-family:'Sora',sans-serif;font-weight:600;font-size:15pt;letter-spacing:-.02em;line-height:1.15;max-width:95mm}

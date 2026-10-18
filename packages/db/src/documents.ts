@@ -204,17 +204,24 @@ function draftTotals(doc: DocumentRow, lines: LineRow[]): DocumentTotals {
 export async function getDocument(tx: Tx, id: string, today: BusinessDate): Promise<DocumentDetail | null> {
   const [doc] = await tx.select().from(document).where(eq(document.id, id));
   if (!doc) return null;
-  const [lines, [owner], payments, creditNotes, applied] = await Promise.all([
-    tx.select().from(documentLine).where(eq(documentLine.documentId, id)).orderBy(asc(documentLine.position)),
-    tx.select().from(client).where(eq(client.id, doc.clientId)),
-    tx
-      .select()
-      .from(payment)
-      .where(eq(payment.documentId, id))
-      .orderBy(asc(payment.paidOn), asc(payment.createdAt)),
-    tx.select().from(document).where(eq(document.creditedDocumentId, id)).orderBy(asc(document.issuedAt)),
-    appliedAmounts(tx, [id]),
-  ]);
+  // One connection serves the whole transaction, so these run one after another.
+  const lines = await tx
+    .select()
+    .from(documentLine)
+    .where(eq(documentLine.documentId, id))
+    .orderBy(asc(documentLine.position));
+  const [owner] = await tx.select().from(client).where(eq(client.id, doc.clientId));
+  const payments = await tx
+    .select()
+    .from(payment)
+    .where(eq(payment.documentId, id))
+    .orderBy(asc(payment.paidOn), asc(payment.createdAt));
+  const creditNotes = await tx
+    .select()
+    .from(document)
+    .where(eq(document.creditedDocumentId, id))
+    .orderBy(asc(document.issuedAt));
+  const applied = await appliedAmounts(tx, [id]);
   const a = applied.get(id)!;
   const totals =
     doc.lifecycle === 'draft'
@@ -719,4 +726,30 @@ export async function createCreditNote(
   });
   await enqueue(tx, actor, 'document.render_pdf', { documentId: creditNote.id }, `pdf:${creditNote.id}`);
   return { id: creditNote.id, number, duplicate: false };
+}
+
+/** The number the next document of a kind will get when issued. Only a preview: numbers are assigned at issue. */
+export async function peekNextNumber(tx: Tx, kind: DocumentKind, org: Organisation): Promise<string> {
+  const [row] = await tx
+    .select({ next: numberCounter.nextValue })
+    .from(numberCounter)
+    .where(eq(numberCounter.kind, kind));
+  return formatDocumentNumber(
+    { prefix: kind === 'invoice' ? org.invoicePrefix : org.creditNotePrefix, padding: org.numberPadding },
+    row?.next ?? 1,
+  );
+}
+
+/** Clients with the details an invoice shows, for the editor. */
+export async function clientsForEditor(tx: Tx) {
+  const rows = await tx.select().from(client).where(isNull(client.archivedAt)).orderBy(asc(client.name));
+  const fields = await tx
+    .select()
+    .from(clientField)
+    .where(eq(clientField.showOnDocuments, true))
+    .orderBy(asc(clientField.sort));
+  return rows.map((c) => ({
+    row: c,
+    fields: fields.filter((f) => f.clientId === c.id).map((f) => ({ label: f.label, value: f.value })),
+  }));
 }

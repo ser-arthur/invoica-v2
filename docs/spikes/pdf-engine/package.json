@@ -1,0 +1,24 @@
+{
+  "name": "invoica-spike-pdf",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Throwaway spike comparing PDF engines for Invoica invoices",
+  "license": "UNLICENSED",
+  "scripts": {
+    "fonts": "python3 -I fontconfig/convert-inter.py && FONTCONFIG_FILE=$PWD/fontconfig/with-inter.conf fc-cache -f $PWD/fontconfig/fonts",
+    "tune": "node src/tune.js",
+    "render": "node src/render.js",
+    "cold-start": "node src/cold-start.js > out/cold-start.json",
+    "check": "python3 -I src/check.py && python3 -I src/summary.py",
+    "images": "python3 -I src/sheets.py && python3 -I src/sheets.py --footers d4-long-names",
+    "all": "npm run render && npm run cold-start && npm run check && npm run images"
+  },
+  "dependencies": {
+    "@fontsource/inter": "5.3.0",
+    "@react-pdf/renderer": "4.9.0",
+    "@vivliostyle/cli": "11.3.3",
+    "pagedjs": "0.4.3",
+    "playwright": "1.56.0",
+    "react": "18.3.1"
+  }
+}

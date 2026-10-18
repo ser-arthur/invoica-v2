@@ -44,6 +44,12 @@ importers:
       '@invoica/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@invoica/documents':
+        specifier: workspace:*
+        version: link:../../packages/documents
+      '@invoica/pdf':
+        specifier: workspace:*
+        version: link:../../packages/pdf
       '@invoica/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
