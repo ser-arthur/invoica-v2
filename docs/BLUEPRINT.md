@@ -2,7 +2,7 @@
 
 The plan for building Invoica v2, and where the work stands. Updated at the end of every phase. A new chat starts here.
 
-Last updated: 19 October 2026, about 01:15 (session 1 of the build).
+Last updated: 19 October 2026, about 02:15 (session 1 of the build).
 
 ---
 
@@ -43,7 +43,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 2e | Independent money and tenancy review (review 1) and all 17 fixes; logo upload; duplicate an invoice | Done |
 | 2f | Sending by email through the outbox: adapter, development mailbox, marking sent on delivery | Done for development; the production provider waits on decision 0008 |
 | 2g | Data export: everything as JSON; invoices, payments and clients as CSV | Done |
-| 2h | Second independent review (of the review-1 fixes); design polish: quick actions in lists, the owed figure, the editor on phones, empty states, a dark mode pass | In progress |
+| 2h | Review 2 of the review-1 fixes and its fixes (credit notes rebuilt as a ledger by tax group, migration 0006); design polish: quick actions on invoice rows, the owed figure says who to chase first, folded lines in the editor on phones, empty states, dark mode pass, keyboard check; the hard document pack (decision 0003) on every template | Done; review 3 of the ledger running |
+| 2i | The 30-day trial and the free plan behind a feature flag (decision 0005): three active clients, the Signature template, the "Made with Invoica" mark | Next |
 | 3 | Invoice templates round 2: four new templates (Ledger, Poster, Letter, Ticket) beside Signature, Studio and Counsel; template picker with live previews of your own details; landing page built around real invoices | Built; waiting for Kobby's review on the design canvas |
 | 4 | Getting paid: payment links, reminders | After v1 |
 | 5 | Cash flow and dashboards beyond v1 | After v1 |
@@ -60,6 +61,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **18 Oct 2026, 22:30 onwards.** Kobby handed over with full autonomy for about ten hours: scope into phases, build, check, continue. Background work started: a PDF engine spike (decision 0006 draft) and UK and Ghana tax research (`docs/specs/`). Phases 1a to 1c built and checked: 113 core tests (including property tests and the audit's worked examples W1 to W7, each mutation-checked), 13 database tests (tenancy suite and schema drift).
 - **18 Oct, 23:00 to midnight.** Phases 1d to 2d built: the web app end to end. Tax research landed: Ghana's 2026 structure (VAT 15%, NHIL 2.5%, GETFund 2.5%, none compound, 20% in all) and HMRC's rounding rules, giving decision 0007. The PDF spike landed: Chromium with CSS margin boxes passed 91 of 91 checks, giving decision 0006; the footer now uses the document's own font. End-to-end tests pass at desktop and phone widths with zero axe violations. First design critique applied. Repository bundle 01 delivered.
 - **19 Oct, midnight to 01:15.** Email sending through the outbox (development mailbox), logo upload, duplicate, data export (JSON and CSV), a landing page built around real invoices, and a template picker that previews your own details. Templates round 2: Ledger, Poster, Letter and Ticket, each fitting an ordinary invoice on one page. Independent review 1 (`docs/reviews/review-1.md`): no tenancy holes; 3 high, 6 medium and 8 low findings, all fixed with tests written first (credit notes rebuilt from the invoice as issued, repeat-request fingerprints, migration 0005 guards, rounding fixes in core). Checks: core 150, schemas 4, documents 8, PDF 15, database 51, web unit 5, end to end 14 (desktop and phone, accessibility included); all passed. A second independent review of the fixes started. Round 2 templates added to the design canvas. Repository bundle 02 delivered.
+- **19 Oct, 01:15 to 02:15.** Review 2 (`docs/reviews/review-2.md`) checked the review-1 fixes: the cases review 1 described were fixed, but mixing line and amount credits, amount credits in parts, and line credits under "rounded down" did not add up row by row (1 high, 3 medium, 5 low). Credit notes were rebuilt as a ledger by tax group (`docs/specs/credit-notes.md`), with a property test over random mixes of credits; migration 0006 adds the database checks. Design polish: quick actions on invoice rows, the owed figure names who to chase first, folded editor lines on phones, empty states, client rows that fit narrow phones, dialogs above the tab bar, a VOID mark on screen. The hard document pack (long names, unbroken references, a description longer than a page, 120 lines, every currency) runs on every template and found references that pushed four templates past the page edge; fixed. Decision 0008 filled with checked provider facts and a recommendation. Checks: core 152, database 59, documents 10, PDF 50, schemas 4, web unit 5, end to end 19 passed with 3 skipped by design. Repository bundle 03 delivered.
 
 ## Decisions in force
 
@@ -85,7 +87,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **Known gaps:** UK VAT invoices in a foreign currency must show the VAT in sterling; Invoica does not yet capture an exchange rate, so this case is not handled. Fonts embed as Type 3 in PDFs (Chromium's handling of variable fonts); static font files would embed as TrueType.
 - **Discounts** are named, per document, percentage or amount, applied before tax and shared across lines in proportion.
 - **Deposits** taken before an invoice are entered on the draft and become payments when it is issued, so the invoice shows the balance due.
-- **Credit notes** have their own number sequence (CN-0001) and reduce the balance of the invoice they credit. They credit the whole invoice (only while nothing is paid or credited), quantities of its lines, or an amount including tax shared across its tax rates. Price and tax always come from the invoice as issued. Credits taken in parts add up to the invoice to the penny. A credit note cannot be voided; an invoice with credit notes cannot be voided.
+- **Credit notes** have their own number sequence (CN-0001) and reduce the balance of the invoice they credit. They credit the whole invoice (only while nothing is paid or credited), quantities of its lines, or an amount in the invoice's price basis, shared across its tax groups by what each has left. Price and tax always come from the invoice as issued, through a ledger by tax group (`docs/specs/credit-notes.md`), so credits in any order and mix add up to the invoice row by row. A credit note cannot be voided; an invoice with credit notes cannot be voided. A line credited in parts can show an amount a penny away from its own quantity times price, so the parts add up exactly.
 - **States:** "Paid" means money received. An invoice closed by credit notes alone is "Credited"; by payments and credit notes together, "Settled". A partial credit with nothing paid leaves the invoice "Issued" or "Sent".
 - **Not registered for tax:** such a business cannot issue an invoice whose lines carry a tax rate, zero-rated included (GOV.UK: no VAT on invoices before registration). Flagged in case Kobby wants zero-rated allowed.
 - **Repeated requests:** payments, credit notes, sends and the first save of a new invoice carry a key made when the dialog opens; the server stores a fingerprint of the request with it, returns the earlier result for a true repeat and refuses a reused key with a different request.
@@ -102,8 +104,10 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 6. Email provider (decision 0008: Postmark, Resend or Amazon SES) and hosting region.
 7. Review 1, finding L3: give the outbox worker its own database role so the app role can no longer call the outbox functions. Ready to build; it changes tenancy rules, so it waits for approval.
 8. Should a business that is not registered for tax be allowed to mark lines zero-rated? Currently refused.
+9. Crediting a paid invoice (review 2, R2-L5): a credit note above the balance owed needs a refund or a client credit balance. Which should Invoica offer?
+10. Decision 0008 now recommends Amazon SES in London for email, if the app is hosted in the UK or EU.
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-02.zip`.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-03.zip`.
 - Nothing else: everything else is in the repository or the project docs.
