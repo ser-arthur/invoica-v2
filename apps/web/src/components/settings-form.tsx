@@ -120,7 +120,16 @@ function describeRounding(choice: RoundingChoice, country: string): { label: str
   }
 }
 
-export function SettingsForm({ initial, logoUrl }: { initial: ProfileValues; logoUrl: string | null }) {
+export function SettingsForm({
+  initial,
+  logoUrl,
+  brandNote = null,
+}: {
+  initial: ProfileValues;
+  logoUrl: string | null;
+  /** Shown beside the template and colour when the plan keeps documents in Invoica's own look. */
+  brandNote?: string | null;
+}) {
   const router = useRouter();
   const [v, setV] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -370,6 +379,11 @@ export function SettingsForm({ initial, logoUrl }: { initial: ProfileValues; log
             onChange={(e) => set('defaultPaymentTermsDays', Number(e.target.value.replace(/\D/g, '') || 0))}
           />
         </Field>
+        {brandNote ? (
+          <p className="text-[14px] text-muted sm:col-span-2" role="note">
+            {brandNote}
+          </p>
+        ) : null}
         <TemplatePicker
           value={v.defaultTemplate}
           onChange={(id) => set('defaultTemplate', id)}

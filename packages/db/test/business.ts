@@ -100,8 +100,9 @@ export function draftFor(
 export async function issued(
   b: Business,
   lines: { quantity: number; unitPrice: number; code: string | null }[],
+  over: Partial<DraftInput> = {},
 ) {
-  const id = await b.run((tx) => createDraft(tx, b.actor, draftFor(b, lines)));
+  const id = await b.run((tx) => createDraft(tx, b.actor, draftFor(b, lines, over)));
   await b.run((tx) => issueDocument(tx, b.actor, id, NOW));
   return id;
 }

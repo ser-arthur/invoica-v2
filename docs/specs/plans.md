@@ -1,0 +1,30 @@
+# Plans: the trial and the free plan
+
+What decision 0005 means in the product, before billing exists. Everything here is behind one setting, `INVOICA_PLANS=enforced`. Without it, every organisation has everything, as today.
+
+## Plans
+
+- **Trial:** every new organisation, for 30 days from when it is created. Everything Pro has.
+- **Free:** after the trial, without a subscription.
+- **Pro** and **Studio:** with a subscription. Billing is not built yet, so no organisation has one.
+
+## What the free plan limits
+
+| | Free | Trial, Pro, Studio |
+| --- | --- | --- |
+| Active clients | 3 | unlimited |
+| Template | Signature | any |
+| Own logo and brand colour on documents | no: Invoica's colour, no logo | yes |
+| "Made with Invoica" on documents | shown | not shown |
+
+Never limited, on any plan: drafting and issuing invoices to any client already in the account, credit notes, kept PDFs, sending by email, payments, export. Producing a correct invoice is never paywalled (decision 0005).
+
+## Acceptance criteria
+
+Each is a test in `packages/core/test/plans.test.ts` or `packages/db/test/plans.test.ts`.
+
+1. An organisation is on the trial until its trial ends, then free, unless it has a subscription.
+2. With plans enforced, a free organisation with three active clients cannot add a client or restore an archived one; archiving one makes room. A trial organisation can add any number.
+3. Clients added during the trial stay usable after it: invoices can still be issued to them.
+4. With plans enforced, a document issued on the free plan uses the Signature template, Invoica's colour and no logo, and shows "Made with Invoica". The editor's preview shows the same.
+5. On the trial, or with plans not enforced, documents keep the organisation's template, colour and logo, without the mark.

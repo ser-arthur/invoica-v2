@@ -5,6 +5,7 @@ import {
   clientsForEditor,
   listItems,
   listTaxCodes,
+  organisationEntitlements,
   peekNextNumber,
   sellerFrom,
   type Tx,
@@ -55,6 +56,7 @@ export async function loadEditorData(tx: Tx, ws: Workspace): Promise<Omit<Editor
       nextNumber,
     },
     logoUrl: org.logoFileId ? `/files/${org.logoFileId}` : null,
+    entitlements: organisationEntitlements(org, new Date()),
   };
 }
 

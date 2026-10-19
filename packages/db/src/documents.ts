@@ -36,6 +36,7 @@ import { getOrganisation, type Organisation } from './organisations';
 import { toTaxCode } from './taxes';
 import type { Actor } from './tenancy';
 import { buildSnapshot } from './snapshot';
+import { organisationEntitlements } from './plans';
 
 export type DocumentRow = typeof document.$inferSelect;
 export type LineRow = typeof documentLine.$inferSelect;
@@ -507,6 +508,7 @@ export async function issueDocument(
     lines,
     totals,
     credits: null,
+    entitlements: organisationEntitlements(org, now),
   });
   await tx
     .update(document)
@@ -898,6 +900,7 @@ export async function createCreditNote(
     lines: lineRows.map((l) => ({ ...l, id: '' })),
     totals,
     credits: { number: invoice.number ?? '', issueDate: invoice.issueDate ?? today, reason: input.reason },
+    entitlements: organisationEntitlements(org, now),
   });
   await tx
     .update(document)

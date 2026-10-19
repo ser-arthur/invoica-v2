@@ -83,5 +83,7 @@ export function renderDocumentHtml(snapshot: DocumentSnapshot, options: RenderOp
       : options.voided
         ? '<div class="void-mark" aria-hidden="true">VOID</div>'
         : ''
-  }${template.body(view, options.logoUrl ?? null)}</body></html>`;
+  }${template.body(view, options.logoUrl ?? null)}${
+    snapshot.madeWithInvoica ? '<p class="made-with">Made with Invoica</p>' : ''
+  }</body></html>`;
 }

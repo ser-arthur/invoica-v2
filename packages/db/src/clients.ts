@@ -4,6 +4,7 @@ import type { Tx } from './client';
 import { client, clientField } from './schema';
 import { audit } from './audit';
 import type { Actor } from './tenancy';
+import { assertRoomForClient } from './plans';
 
 export type ClientRow = typeof client.$inferSelect;
 export type ClientFieldRow = typeof clientField.$inferSelect;
@@ -57,6 +58,7 @@ async function replaceFields(tx: Tx, actor: Actor, clientId: string, input: Clie
 }
 
 export async function createClient(tx: Tx, actor: Actor, input: ClientInput): Promise<string> {
+  await assertRoomForClient(tx, actor.organisationId, new Date());
   const [row] = await tx
     .insert(client)
     .values({ organisationId: actor.organisationId, ...columns(input) })
@@ -78,6 +80,7 @@ export async function updateClient(tx: Tx, actor: Actor, id: string, input: Clie
 }
 
 export async function setClientArchived(tx: Tx, actor: Actor, id: string, archived: boolean): Promise<void> {
+  if (!archived) await assertRoomForClient(tx, actor.organisationId, new Date());
   const updated = await tx
     .update(client)
     .set({ archivedAt: archived ? new Date() : null })

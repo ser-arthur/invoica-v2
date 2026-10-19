@@ -17,6 +17,7 @@ import {
   sumMinor,
   toDecimalString,
   type DocumentSnapshot,
+  type Entitlements,
   type DocumentTotals,
   type LineStyle,
   type RawPaymentDetails,
@@ -130,6 +131,8 @@ export interface EditorProps {
     nextNumber: string;
   };
   logoUrl: string | null;
+  /** What the organisation's plan allows, so the preview looks as the issued invoice will. */
+  entitlements: Entitlements;
 }
 
 let keyCounter = 0;
@@ -392,13 +395,14 @@ export function InvoiceEditor(props: EditorProps) {
       options: state.options,
       paymentDetails: org.paymentDetails,
       credits: null,
+      entitlements: props.entitlements,
     });
     return renderDocumentHtml(snap, {
       fontUrl: (f) => `/doc-fonts/${f}`,
-      logoUrl: props.logoUrl,
+      logoUrl: props.entitlements.ownBrand ? props.logoUrl : null,
       draft: true,
     });
-  }, [deferred, state, org, client, today, props.logoUrl]);
+  }, [deferred, state, org, client, today, props.logoUrl, props.entitlements]);
 
   function addLine(from?: EditorItem) {
     const key = newKey();
@@ -847,7 +851,7 @@ export function InvoiceEditor(props: EditorProps) {
                           </Button>
                         </div>
                       </div>
-                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
                         {state.lineStyle !== 'amount' ? (
                           <Input
                             aria-label={`Line ${index + 1} ${qtyLabel.toLowerCase()}`}
@@ -855,7 +859,7 @@ export function InvoiceEditor(props: EditorProps) {
                             value={l.quantity}
                             onChange={(e) => updateLine(l.key, { quantity: e.target.value })}
                             placeholder={qtyLabel}
-                            className="w-20 text-right tabular"
+                            className="w-16 text-right tabular"
                           />
                         ) : null}
                         {state.lineStyle === 'quantity' ? (
@@ -864,7 +868,7 @@ export function InvoiceEditor(props: EditorProps) {
                             value={l.unit}
                             onChange={(e) => updateLine(l.key, { unit: e.target.value })}
                             placeholder="Unit"
-                            className="w-24"
+                            className="w-16"
                           />
                         ) : null}
                         {state.lineStyle !== 'amount' ? (
@@ -878,14 +882,14 @@ export function InvoiceEditor(props: EditorProps) {
                           value={l.unitPrice}
                           onChange={(e) => updateLine(l.key, { unitPrice: e.target.value })}
                           placeholder={state.lineStyle === 'amount' ? 'Amount' : priceLabel}
-                          className="w-32 text-right tabular"
+                          className="w-28 text-right tabular"
                         />
                         {registered || l.taxCodeId ? (
                           <Select
                             aria-label={`Line ${index + 1} tax`}
                             value={l.taxCodeId ?? ''}
                             onChange={(e) => updateLine(l.key, { taxCodeId: e.target.value || null })}
-                            className="w-auto max-w-44"
+                            className="w-auto max-w-40"
                           >
                             <option value="">No tax</option>
                             {taxCodes

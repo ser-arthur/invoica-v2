@@ -28,6 +28,7 @@ tr,.keep{break-inside:avoid;page-break-inside:avoid}
 .void-mark{position:fixed;top:40%;left:0;right:0;text-align:center;font-size:110pt;font-weight:700;color:#b42318;opacity:.16;transform:rotate(-24deg);pointer-events:none;letter-spacing:.1em;z-index:5}
 .word{overflow-wrap:anywhere}
 .no{white-space:nowrap}
+.made-with{margin-top:8mm;text-align:center;font-family:'Onest',sans-serif;font-size:7.5pt;letter-spacing:.02em;color:#6b746f;break-inside:avoid}
 dd{min-width:0}
 `;
 

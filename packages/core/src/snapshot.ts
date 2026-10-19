@@ -3,6 +3,7 @@ import type { DocumentTotals, TaxLevel } from './totals';
 import type { RoundingMode } from './money';
 import type { TaxCode } from './tax';
 import type { DocumentKind } from './numbering';
+import { UNLIMITED, applyEntitlements, type Entitlements } from './plans';
 
 export type LineStyle = 'amount' | 'quantity' | 'hours' | 'dated';
 
@@ -103,6 +104,8 @@ export interface DocumentSnapshot {
   payment: SnapshotPaymentDetails;
   /** For a credit note: the invoice it credits and why. */
   credits: { number: string; issueDate: BusinessDate; reason: string } | null;
+  /** Shows "Made with Invoica", on the free plan. Absent on documents issued before plans existed. */
+  madeWithInvoica?: boolean;
 }
 
 export function lineHasQuantity(style: LineStyle): boolean {
@@ -179,6 +182,8 @@ export interface SnapshotInput {
   options: DocumentDisplayOptions;
   paymentDetails: RawPaymentDetails;
   credits: DocumentSnapshot['credits'];
+  /** What the organisation's plan allows; everything when omitted. */
+  entitlements?: Entitlements;
 }
 
 const blankToNull = (v: string | null | undefined) => (v && v.trim() ? v : null);
@@ -218,7 +223,7 @@ function paymentFor(raw: RawPaymentDetails, options: DocumentDisplayOptions): Sn
  */
 export function assembleSnapshot(s: SnapshotInput): DocumentSnapshot {
   const isCredit = s.kind === 'credit_note';
-  return {
+  const snapshot: DocumentSnapshot = {
     version: 1,
     kind: s.kind,
     number: s.number,
@@ -266,4 +271,5 @@ export function assembleSnapshot(s: SnapshotInput): DocumentSnapshot {
       : paymentFor(s.paymentDetails, s.options),
     credits: s.credits,
   };
+  return applyEntitlements(snapshot, s.entitlements ?? UNLIMITED);
 }

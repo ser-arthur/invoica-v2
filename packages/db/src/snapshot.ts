@@ -1,4 +1,5 @@
 import {
+  type Entitlements,
   assembleSnapshot,
   type DocumentSnapshot,
   type DocumentTotals,
@@ -21,6 +22,8 @@ export interface SnapshotSource {
   lines: SnapshotLineSource[];
   totals: DocumentTotals;
   credits: DocumentSnapshot['credits'];
+  /** What the organisation's plan allows at issue. */
+  entitlements: Entitlements;
 }
 
 export function sellerFrom(org: Organisation): DocumentSnapshot['seller'] {
@@ -99,5 +102,6 @@ export function buildSnapshot(s: SnapshotSource): DocumentSnapshot {
     options: doc.options,
     paymentDetails: org.paymentDetails,
     credits: s.credits,
+    entitlements: s.entitlements,
   });
 }

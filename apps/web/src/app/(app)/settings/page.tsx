@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { presetFor } from '@invoica/core';
-import { listTaxCodes } from '@invoica/db';
+import { listTaxCodes, organisationEntitlements, organisationPlan, plansEnforced } from '@invoica/db';
 import { SettingsForm, type ProfileValues } from '@/components/settings-form';
 import { TaxCodes } from '@/components/tax-codes';
 import { LogoUpload } from '@/components/logo-upload';
@@ -14,6 +14,22 @@ export default async function SettingsPage() {
     org: ws.organisation,
     codes: await listTaxCodes(tx),
   }));
+  const now = new Date();
+  const enforced = plansEnforced();
+  const plan = organisationPlan(org, now);
+  const brandNote = organisationEntitlements(org, now).ownBrand
+    ? null
+    : 'On the free plan, invoices use the Signature template in Invoica’s colour, without your logo, and say “Made with Invoica” at the foot. Your choices here are kept for when you upgrade.';
+  const daysLeft = org.trialEndsAt
+    ? Math.max(0, Math.ceil((org.trialEndsAt.getTime() - now.getTime()) / 86_400_000))
+    : 0;
+  const planLine = !enforced
+    ? null
+    : plan === 'trial'
+      ? `Trial: ${daysLeft === 1 ? '1 day' : `${daysLeft} days`} left, with everything included. After it, the free plan keeps three active clients and the Signature template.`
+      : plan === 'free'
+        ? 'Free plan: up to three active clients, and invoices in the Signature template.'
+        : null;
   const preset = presetFor(org.countryCode);
   const haveKeys = new Set(codes.map((c) => c.presetKey));
   const presetMissing = preset && preset.codes.some((c) => !haveKeys.has(c.key)) ? preset.name : null;
@@ -54,6 +70,9 @@ export default async function SettingsPage() {
         title="Settings"
         description="Your business details, taxes and how invoices look. Issued invoices are never changed by these."
       />
+      {planLine ? (
+        <p className="-mt-2 mb-6 rounded-[12px] bg-brand-soft px-4 py-3 text-[14px] text-ink">{planLine}</p>
+      ) : null}
       <nav aria-label="Settings sections" className="mb-6 flex gap-1 overflow-x-auto text-[14px]">
         {[
           ['logo', 'Logo'],
@@ -75,7 +94,11 @@ export default async function SettingsPage() {
       </nav>
       <div className="flex flex-col gap-6">
         <LogoUpload logoUrl={org.logoFileId ? `/files/${org.logoFileId}` : null} name={org.name} />
-        <SettingsForm initial={initial} logoUrl={org.logoFileId ? `/files/${org.logoFileId}` : null} />
+        <SettingsForm
+          initial={initial}
+          logoUrl={org.logoFileId ? `/files/${org.logoFileId}` : null}
+          brandNote={brandNote}
+        />
         <TaxCodes
           country={org.countryCode}
           presetAvailable={presetMissing}

@@ -91,20 +91,26 @@ export function Field({
 }
 
 export const inputClass =
-  'h-10 w-full rounded-[10px] border border-line-strong bg-surface px-3 text-[15px] text-ink placeholder:text-muted/70 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 aria-[invalid=true]:border-danger';
+  'h-10 rounded-[10px] border border-line-strong bg-surface px-3 text-[15px] text-ink placeholder:text-muted/70 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 aria-[invalid=true]:border-danger';
+
+/** Fields fill their container unless the caller gives them a width of their own. */
+const width = (className?: string) => (/(^|\s)w-/.test(className ?? '') ? null : 'w-full');
 
 export function Input({ className, ...props }: ComponentProps<'input'>) {
-  return <input className={cx(inputClass, className)} {...props} />;
+  return <input className={cx(inputClass, width(className), className)} {...props} />;
 }
 
 export function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
   return (
-    <textarea className={cx(inputClass, 'h-auto min-h-24 py-2 leading-relaxed', className)} {...props} />
+    <textarea
+      className={cx(inputClass, width(className), 'h-auto min-h-24 py-2 leading-relaxed', className)}
+      {...props}
+    />
   );
 }
 
 export function Select({ className, ...props }: ComponentProps<'select'>) {
-  return <select className={cx(inputClass, 'pr-8', className)} {...props} />;
+  return <select className={cx(inputClass, width(className), 'pr-8', className)} {...props} />;
 }
 
 export function Checkbox({

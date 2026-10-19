@@ -104,6 +104,13 @@ describe('rendering', () => {
     }
   });
 
+  it('shows "Made with Invoica" on documents of the free plan only', () => {
+    expect(renderDocumentHtml({ ...FIXTURES.ukVat!, madeWithInvoica: true }, { fontUrl })).toContain(
+      'Made with Invoica',
+    );
+    expect(renderDocumentHtml(FIXTURES.ukVat!, { fontUrl })).not.toContain('Made with Invoica');
+  });
+
   it('marks drafts', () => {
     expect(renderDocumentHtml(FIXTURES.ukVat!, { fontUrl, draft: true })).toContain('draft-mark');
   });
