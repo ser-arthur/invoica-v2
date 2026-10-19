@@ -8,7 +8,7 @@ import {
   withOrganisation,
   type ClaimedJob,
 } from '@invoica/db';
-import { getDb } from './db';
+import { getDb, getWorkerDb } from './db';
 import { keptPdf } from './pdf';
 import { EMAIL_FROM, getEmailAdapter } from './email';
 
@@ -55,5 +55,5 @@ const handlers = {
 
 /** Runs due background jobs. Called after requests that queue work, and on a schedule for retries. */
 export async function runJobs(max = 10) {
-  return drainOutbox(getDb(), handlers, max);
+  return drainOutbox(getWorkerDb(), handlers, max);
 }

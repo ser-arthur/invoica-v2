@@ -399,7 +399,7 @@ describe('outbox', () => {
     expect(pending.length).toBeGreaterThan(0);
     const seen: string[] = [];
     const ok = await drainOutbox(
-      t.db,
+      t.worker.db,
       { 'document.render_pdf': async (job) => void seen.push(String(job.payload.documentId)) },
       500,
     );
@@ -408,7 +408,7 @@ describe('outbox', () => {
 
     const id = await run((tx) => createDraft(tx, actor, draft()));
     await run((tx) => issueDocument(tx, actor, id, NOW));
-    const failed = await drainOutbox(t.db, {
+    const failed = await drainOutbox(t.worker.db, {
       'document.render_pdf': async () => Promise.reject(new Error('renderer down')),
     });
     expect(failed).toEqual({ done: 0, failed: 1 });

@@ -12,6 +12,9 @@ export interface TestDatabase extends DatabaseHandle {
   name: string;
   ownerUrl: string;
   appUrl: string;
+  workerUrl: string;
+  /** Connected as the worker role, which only runs the outbox functions. */
+  worker: DatabaseHandle;
   close(): Promise<void>;
 }
 
@@ -28,12 +31,15 @@ export async function createTestDatabase(): Promise<TestDatabase> {
   });
   await migrate(urls.ownerUrl);
   const handle = createDatabase(urls.appUrl, { max: 5 });
+  const worker = createDatabase(urls.workerUrl, { max: 2 });
   return {
     ...handle,
     name,
     ...urls,
+    worker,
     async close() {
       await handle.pool.end();
+      await worker.pool.end();
       await dropDatabase(ADMIN_URL, name);
     },
   };

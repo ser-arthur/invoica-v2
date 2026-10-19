@@ -444,7 +444,7 @@ describe('L3: the security-definer functions check what they are given', () => {
     const [job] = await a.run((tx) =>
       tx.select().from(outbox).where(eq(outbox.idempotencyKey, 'l3-job-0001')),
     );
-    await a.run((tx) => tx.execute(sql`select app.finish_outbox(${job!.id}::uuid, true, null)`));
+    await t.worker.db.execute(sql`select app.finish_outbox(${job!.id}::uuid, true, null::text, true)`);
     const [after] = await a.run((tx) => tx.select().from(outbox).where(eq(outbox.id, job!.id)));
     expect(after!.status).toBe('pending');
   });

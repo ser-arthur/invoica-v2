@@ -9,6 +9,10 @@ export const env = {
   get databaseUrl() {
     return read('DATABASE_URL');
   },
+  /** The worker role, which only claims and finishes background jobs. */
+  get workerDatabaseUrl() {
+    return read('DATABASE_WORKER_URL');
+  },
   get authSecret() {
     return read('BETTER_AUTH_SECRET');
   },

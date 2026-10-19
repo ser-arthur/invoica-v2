@@ -15,8 +15,10 @@ const urls = await provisionDatabase({
   database,
   appPassword: 'invoica_app',
   ownerPassword: 'invoica_owner',
+  workerPassword: 'invoica_worker',
 });
 const result = await migrate(urls.ownerUrl);
 console.log(`Database ${database} ready. Applied: ${result.applied.join(', ') || 'none'}.`);
 console.log(`DATABASE_URL=${urls.appUrl}`);
 console.log(`DATABASE_OWNER_URL=${urls.ownerUrl}`);
+console.log(`DATABASE_WORKER_URL=${urls.workerUrl}`);

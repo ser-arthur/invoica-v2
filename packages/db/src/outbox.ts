@@ -32,6 +32,7 @@ export interface ClaimedJob {
   attempts: number;
 }
 
+/** Claims due jobs across every organisation. `db` connects as the worker role. */
 export async function claimJobs(db: Database, limit: number): Promise<ClaimedJob[]> {
   const r = await db.execute<{
     id: string;
@@ -51,37 +52,44 @@ export async function claimJobs(db: Database, limit: number): Promise<ClaimedJob
   }));
 }
 
+/** Records a job's outcome. A failure with `retry` false fails the job at once. `db` connects as the worker role. */
 export async function finishJob(
   db: Database,
   id: string,
   ok: boolean,
   error: string | null = null,
+  retry = true,
 ): Promise<void> {
-  await db.execute(sql`select app.finish_outbox(${id}::uuid, ${ok}, ${error})`);
+  await db.execute(sql`select app.finish_outbox(${id}::uuid, ${ok}, ${error}::text, ${retry})`);
 }
 
 export type JobHandler = (job: ClaimedJob) => Promise<void>;
 
-/** Runs due jobs until none are left or `max` have run. Returns how many succeeded and failed. */
+/**
+ * Runs due jobs until none are left or `max` have run, claiming and finishing them through `worker` (the worker
+ * role). Handlers do their own work inside the job's organisation. An error with `retry: false` is not retried.
+ * Returns how many succeeded and failed.
+ */
 export async function drainOutbox(
-  db: Database,
+  worker: Database,
   handlers: Record<string, JobHandler>,
   max = 20,
 ): Promise<{ done: number; failed: number }> {
   let done = 0;
   let failed = 0;
   while (done + failed < max) {
-    const jobs = await claimJobs(db, Math.min(5, max - done - failed));
+    const jobs = await claimJobs(worker, Math.min(5, max - done - failed));
     if (jobs.length === 0) break;
     for (const job of jobs) {
       const handler = handlers[job.topic];
       try {
         if (!handler) throw new Error(`No handler for ${job.topic}`);
         await handler(job);
-        await finishJob(db, job.id, true);
+        await finishJob(worker, job.id, true);
         done += 1;
       } catch (error) {
-        await finishJob(db, job.id, false, (error as Error).message);
+        const retry = (error as { retry?: unknown }).retry !== false;
+        await finishJob(worker, job.id, false, (error as Error).message, retry);
         failed += 1;
       }
     }

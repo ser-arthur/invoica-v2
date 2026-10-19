@@ -59,6 +59,7 @@ jobs:
     env:
       DATABASE_URL: postgres://invoica_app:invoica_app@localhost:5432/invoica
       DATABASE_OWNER_URL: postgres://invoica_owner:invoica_owner@localhost:5432/invoica
+      DATABASE_WORKER_URL: postgres://invoica_worker:invoica_worker@localhost:5432/invoica
       BETTER_AUTH_SECRET: ci-only-not-a-secret-ci-only-not-a-secret
       BETTER_AUTH_URL: http://localhost:3000
       FILE_STORAGE_DIR: ${{ github.workspace }}/.data/files
