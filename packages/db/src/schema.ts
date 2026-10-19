@@ -10,6 +10,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -23,6 +24,8 @@ import type {
   TaxLevel,
   Lifecycle,
   SterlingRateMethod,
+  ReminderKind,
+  ReminderWording,
 } from '@invoica/core';
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
@@ -131,6 +134,15 @@ export const organisation = pgTable('organisation', {
     .$type<SterlingRateMethod>()
     .notNull()
     .default('hmrc_period'),
+  /** Reminders about unpaid invoices (docs/specs/reminders.md). */
+  remindersEnabled: boolean('reminders_enabled').notNull().default(false),
+  /** Days from the due date: negative before it. */
+  reminderOffsets: integer('reminder_offsets').array().notNull().default([-3, 0, 7, 14, 30]),
+  /** The owner's own wording, by kind of reminder; a kind left out uses the default. */
+  reminderWording: jsonb('reminder_wording')
+    .$type<Partial<Record<ReminderKind, ReminderWording>>>()
+    .notNull()
+    .default({}),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });
@@ -176,6 +188,8 @@ export const client = pgTable('client', {
   paymentTermsDays: integer('payment_terms_days'),
   notes: text('notes'),
   archivedAt: ts('archived_at'),
+  /** Whether this client is sent reminders about unpaid invoices. */
+  remindersEnabled: boolean('reminders_enabled').notNull().default(true),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });
@@ -334,6 +348,18 @@ export const refund = pgTable('refund', {
   createdBy: text('created_by'),
   createdAt: ts('created_at').notNull().defaultNow(),
 });
+
+/** An invoice whose reminders are paused. */
+export const reminderPause = pgTable(
+  'reminder_pause',
+  {
+    organisationId: uuid('organisation_id').notNull(),
+    documentId: uuid('document_id').notNull(),
+    pausedBy: text('paused_by'),
+    pausedAt: ts('paused_at').notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.organisationId, t.documentId] })],
+);
 
 export const numberCounter = pgTable('number_counter', {
   organisationId: uuid('organisation_id').notNull(),

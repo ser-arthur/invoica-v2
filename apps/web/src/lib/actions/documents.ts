@@ -16,6 +16,8 @@ import {
   markSent,
   recordPayment,
   removePayment,
+  sendReminderNow,
+  setRemindersPaused,
   updateDraft,
   voidDocument,
   type Tx,
@@ -205,6 +207,30 @@ export async function sendDocumentAction(input: unknown): Promise<ActionResult> 
     });
     runJobsLater();
     refresh(documentId);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+export async function setRemindersPausedAction(id: string, paused: boolean): Promise<ActionResult> {
+  try {
+    await inWorkspace((tx, ws) => setRemindersPaused(tx, ws.actor, id, paused));
+    refresh(id);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+export async function sendReminderNowAction(id: string, key: string): Promise<ActionResult> {
+  if (typeof key !== 'string' || key.length < 8 || key.length > 100) {
+    return { ok: false, message: 'Something went wrong and nothing was sent. Try again.' };
+  }
+  try {
+    await inWorkspace((tx, ws) => sendReminderNow(tx, ws.actor, id, key, new Date()));
+    refresh(id);
+    runJobsLater();
     return { ok: true, data: undefined };
   } catch (error) {
     return failure(error);

@@ -6,9 +6,10 @@ import {
   createTaxCode,
   loadPreset,
   updateOrganisationProfile,
+  updateReminderSettings,
   updateTaxCode,
 } from '@invoica/db';
-import { organisationProfileInput, taxCodeInput } from '@invoica/schemas';
+import { organisationProfileInput, reminderSettingsInput, taxCodeInput } from '@invoica/schemas';
 import { inWorkspace } from '../workspace';
 import { failure, invalid, type ActionResult } from './result';
 
@@ -60,6 +61,18 @@ export async function loadPresetAction(country: string): Promise<ActionResult<{ 
     const added = await inWorkspace((tx, ws) => loadPreset(tx, ws.actor, country));
     revalidatePath('/settings');
     return { ok: true, data: { added } };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+export async function saveReminderSettingsAction(input: unknown): Promise<ActionResult> {
+  const parsed = reminderSettingsInput.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  try {
+    await inWorkspace((tx, ws) => updateReminderSettings(tx, ws.actor, parsed.data));
+    revalidatePath('/settings');
+    return { ok: true, data: undefined };
   } catch (error) {
     return failure(error);
   }

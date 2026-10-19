@@ -9,6 +9,7 @@ import {
 } from '@invoica/db';
 import { SettingsForm, type ProfileValues } from '@/components/settings-form';
 import { TaxCodes } from '@/components/tax-codes';
+import { ReminderSettings } from '@/components/reminder-settings';
 import { LogoUpload } from '@/components/logo-upload';
 import { PageHeader, Panel, buttonClass } from '@/components/ui';
 import { inWorkspace } from '@/lib/workspace';
@@ -93,6 +94,7 @@ export default async function SettingsPage() {
           ['invoices', 'Invoices'],
           ['payment', 'Getting paid'],
           ['tax-codes', 'Tax codes'],
+          ['reminders', 'Reminders'],
           ['data', 'Your data'],
         ].map(([id, label]) => (
           <a
@@ -123,6 +125,14 @@ export default async function SettingsPage() {
             components: c.components,
             isDefault: c.isDefault,
           }))}
+        />
+        <ReminderSettings
+          initial={{
+            remindersEnabled: org.remindersEnabled,
+            reminderOffsets: org.reminderOffsets,
+            reminderWording: org.reminderWording,
+          }}
+          inPlan={organisationEntitlements(org, new Date()).reminders}
         />
         <Panel id="data" className="scroll-mt-24">
           <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[240px_1fr]">

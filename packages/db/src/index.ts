@@ -13,3 +13,4 @@ export * from './dashboard';
 export * from './plans';
 export * from './export';
 export * as schema from './schema';
+export * from './reminders';

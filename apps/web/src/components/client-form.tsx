@@ -6,7 +6,7 @@ import { Plus, X } from 'lucide-react';
 import { SUPPORTED_CURRENCIES } from '@invoica/core';
 import { saveClientAction } from '@/lib/actions/clients';
 import { COUNTRIES } from '@/lib/countries';
-import { Button, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
+import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
 
 export interface ClientFormValues {
   name: string;
@@ -23,6 +23,7 @@ export interface ClientFormValues {
   currency: string | null;
   paymentTermsDays: number | null;
   notes: string | null;
+  remindersEnabled: boolean;
   fields: { label: string; value: string; showOnDocuments: boolean }[];
 }
 
@@ -67,6 +68,7 @@ export function ClientForm({
       currency: text('currency'),
       paymentTermsDays: terms === '' ? null : Number(terms),
       notes: text('notes'),
+      remindersEnabled: compact ? (initial?.remindersEnabled ?? true) : f.get('remindersEnabled') === 'on',
       fields,
     };
     startTransition(async () => {
@@ -174,6 +176,14 @@ export function ClientForm({
           <Field label="Their tax number" htmlFor="c-tax" hint="Optional">
             <Input id="c-tax" name="taxNumber" defaultValue={v('taxNumber')} />
           </Field>
+          <div className="sm:col-span-2">
+            <Checkbox
+              name="remindersEnabled"
+              label="Send reminders to this client"
+              hint="When reminders are on in Settings. Untick for clients who prefer a phone call."
+              defaultChecked={initial?.remindersEnabled ?? true}
+            />
+          </div>
         </fieldset>
       )}
       {compact ? null : (

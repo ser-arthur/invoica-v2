@@ -22,12 +22,13 @@ describe('criterion 1: which plan', () => {
 });
 
 describe('what each plan allows', () => {
-  it('limits the free plan to three active clients, the Signature template and the mark', () => {
+  it('limits the free plan to three active clients, the Signature template and the mark, without reminders', () => {
     expect(entitlementsFor('free')).toEqual({
       activeClients: 3,
       ownTemplate: false,
       ownBrand: false,
       mark: true,
+      reminders: false,
     });
     for (const plan of ['trial', 'pro', 'studio'] as const) {
       expect(entitlementsFor(plan)).toEqual({
@@ -35,6 +36,7 @@ describe('what each plan allows', () => {
         ownTemplate: true,
         ownBrand: true,
         mark: false,
+        reminders: true,
       });
     }
   });

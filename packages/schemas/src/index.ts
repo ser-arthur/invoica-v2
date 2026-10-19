@@ -175,9 +175,33 @@ export const clientInput = z.object({
     .optional()
     .transform((v) => v ?? null),
   notes: optionalText(2000),
+  /** Left out, a new client gets reminders and an existing one keeps its setting. */
+  remindersEnabled: z.boolean().optional(),
   fields: z.array(clientFieldInput).max(10).default([]),
 });
 export type ClientInput = z.infer<typeof clientInput>;
+
+const reminderWordingInput = z.object({
+  subject: requiredText(200, 'Write a subject.'),
+  body: requiredText(4000, 'Write the email.'),
+});
+
+/** Reminder settings (docs/specs/reminders.md). A kind of reminder left out uses the default wording. */
+export const reminderSettingsInput = z.object({
+  remindersEnabled: z.boolean(),
+  reminderOffsets: z
+    .array(z.union([z.literal(-3), z.literal(0), z.literal(7), z.literal(14), z.literal(30)]))
+    .max(5)
+    .transform((list) => [...new Set(list)].sort((a, b) => a - b)),
+  reminderWording: z
+    .object({
+      before: reminderWordingInput.optional(),
+      due: reminderWordingInput.optional(),
+      late: reminderWordingInput.optional(),
+    })
+    .default({}),
+});
+export type ReminderSettingsInput = z.infer<typeof reminderSettingsInput>;
 
 export const itemInput = z.object({
   name: requiredText(200, 'Name the item.'),

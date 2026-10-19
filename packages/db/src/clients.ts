@@ -43,8 +43,8 @@ export async function getClient(
 }
 
 function columns(input: ClientInput) {
-  const { fields: _fields, ...rest } = input;
-  return rest;
+  const { fields: _fields, remindersEnabled, ...rest } = input;
+  return remindersEnabled === undefined ? rest : { ...rest, remindersEnabled };
 }
 
 async function replaceFields(tx: Tx, actor: Actor, clientId: string, input: ClientInput) {

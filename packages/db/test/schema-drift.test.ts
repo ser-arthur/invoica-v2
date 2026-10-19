@@ -24,6 +24,7 @@ const TYPE_MAP: Record<string, string> = {
   PgDateString: 'date',
   PgTimestamp: 'timestamp with time zone',
   PgJsonb: 'jsonb',
+  PgArray: 'ARRAY',
 };
 
 describe('the Drizzle schema matches the migrated database', () => {
@@ -61,7 +62,7 @@ describe('the Drizzle schema matches the migrated database', () => {
           problems.push(`${config.name}.${column.name}: nullability differs`);
       }
     }
-    expect(tables.length).toBe(18);
+    expect(tables.length).toBe(19);
     expect(examined).toBeGreaterThan(150);
     expect(problems).toEqual([]);
   });

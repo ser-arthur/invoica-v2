@@ -31,6 +31,8 @@ import {
   recordPaymentAction,
   removePaymentAction,
   sendDocumentAction,
+  sendReminderNowAction,
+  setRemindersPausedAction,
   voidAction,
 } from '@/lib/actions/documents';
 import { requestKey } from '@/lib/request-key';
@@ -750,5 +752,63 @@ export function SendEmailButton({
         </Dialog>
       ) : null}
     </>
+  );
+}
+
+/** Pauses or resumes an invoice's reminders, and sends one now. */
+export function ReminderControls({
+  id,
+  paused,
+  canPause,
+  canSend,
+}: {
+  id: string;
+  paused: boolean;
+  canPause: boolean;
+  canSend: boolean;
+}) {
+  const router = useRouter();
+  const [message, setMessage] = useState<{ tone: 'danger' | 'info'; text: string } | null>(null);
+  const [pending, start] = useTransition();
+  return (
+    <div className="flex flex-col gap-3">
+      {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
+      <div className="flex flex-wrap gap-2">
+        {canSend ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={pending}
+            onClick={() =>
+              start(async () => {
+                const r = await sendReminderNowAction(id, requestKey());
+                if (!r.ok) return setMessage({ tone: 'danger', text: r.message });
+                setMessage({ tone: 'info', text: 'A reminder is on its way.' });
+                router.refresh();
+              })
+            }
+          >
+            Send a reminder now
+          </Button>
+        ) : null}
+        {canPause ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={pending}
+            onClick={() =>
+              start(async () => {
+                const r = await setRemindersPausedAction(id, !paused);
+                if (!r.ok) return setMessage({ tone: 'danger', text: r.message });
+                setMessage(null);
+                router.refresh();
+              })
+            }
+          >
+            {paused ? 'Resume reminders' : 'Pause reminders for this invoice'}
+          </Button>
+        ) : null}
+      </div>
+    </div>
   );
 }

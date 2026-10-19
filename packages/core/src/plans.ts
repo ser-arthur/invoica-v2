@@ -15,6 +15,8 @@ export interface Entitlements {
   ownBrand: boolean;
   /** Whether documents show "Made with Invoica". */
   mark: boolean;
+  /** Whether clients are reminded about unpaid invoices (docs/specs/reminders.md). */
+  reminders: boolean;
 }
 
 /** The plan an organisation is on: its subscription, else the trial until it ends, else free. */
@@ -29,8 +31,9 @@ export function currentPlan(args: {
 }
 
 export function entitlementsFor(plan: Plan): Entitlements {
-  if (plan === 'free') return { activeClients: 3, ownTemplate: false, ownBrand: false, mark: true };
-  return { activeClients: null, ownTemplate: true, ownBrand: true, mark: false };
+  if (plan === 'free')
+    return { activeClients: 3, ownTemplate: false, ownBrand: false, mark: true, reminders: false };
+  return { activeClients: null, ownTemplate: true, ownBrand: true, mark: false, reminders: true };
 }
 
 /** Every plan's allowances: what an organisation has when plans are not enforced. */

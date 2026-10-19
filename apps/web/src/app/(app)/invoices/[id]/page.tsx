@@ -3,7 +3,14 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Download } from 'lucide-react';
 import { formatBusinessDate, formatMoney, formatRate, sumMinor, type DocumentSnapshot } from '@invoica/core';
-import { creditPosition, creditableLines, documentActivity, getDocument } from '@invoica/db';
+import {
+  creditPosition,
+  creditableLines,
+  documentActivity,
+  getDocument,
+  organisationEntitlements,
+  reminderStatus,
+} from '@invoica/db';
 import { renderDocumentHtml } from '@invoica/documents';
 import { FormMessage, PageHeader, Panel, PanelHeading, StatePill, buttonClass } from '@/components/ui';
 import {
@@ -11,6 +18,7 @@ import {
   DuplicateButton,
   MarkSentButton,
   RecordPaymentButton,
+  ReminderControls,
   RemovePaymentButton,
   SendEmailButton,
   VoidButton,
@@ -32,6 +40,9 @@ const ACTIVITY: Record<string, string> = {
   'payment.removed': 'Payment removed',
   'credit_note.issued': 'Credit note issued',
   'refund.recorded': 'Refund recorded',
+  'reminder.sent': 'Reminder sent',
+  'reminders.paused': 'Reminders paused',
+  'reminders.resumed': 'Reminders resumed',
   'document.duplicated': 'Copied from another invoice',
   'document.emailed': 'Emailed',
 };
@@ -64,10 +75,21 @@ export default async function InvoicePage({
     const isInvoice = detail.document.kind === 'invoice' && detail.document.lifecycle !== 'draft';
     const creditable = isInvoice ? await creditableLines(tx, id) : [];
     const position = isInvoice ? await creditPosition(tx, detail.document) : null;
-    return { detail, activity, creditable, position, today: ws.today, timeZone: ws.organisation.timeZone };
+    const reminders = isInvoice ? await reminderStatus(tx, id, ws.today) : null;
+    const remindersInPlan = organisationEntitlements(ws.organisation, new Date()).reminders;
+    return {
+      detail,
+      activity,
+      creditable,
+      position,
+      reminders,
+      remindersInPlan,
+      today: ws.today,
+      timeZone: ws.organisation.timeZone,
+    };
   });
   if (!data) notFound();
-  const { detail, activity, creditable, position, today, timeZone } = data;
+  const { detail, activity, creditable, position, reminders, remindersInPlan, today, timeZone } = data;
   const doc = detail.document;
   if (doc.lifecycle === 'draft') redirect(`/invoices/${id}/edit`);
   const snapshot = doc.snapshot as unknown as DocumentSnapshot;
@@ -265,6 +287,48 @@ export default async function InvoicePage({
             </Panel>
           ) : null}
 
+          {open && reminders ? (
+            <Panel className="p-5">
+              <h2 className="text-[15px] font-semibold">Reminders</h2>
+              <p className="mt-1 text-[14px] text-muted">
+                {!remindersInPlan
+                  ? 'Reminders are part of the Pro and Studio plans.'
+                  : !reminders.on
+                    ? 'Reminders are off for your business.'
+                    : !reminders.hasEmail
+                      ? `Add an email address for ${detail.client.name} to remind them.`
+                      : !reminders.clientOn
+                        ? `${detail.client.name} is not sent reminders.`
+                        : reminders.paused
+                          ? 'Reminders are paused for this invoice.'
+                          : reminders.next
+                            ? reminders.next.date === today
+                              ? 'Next reminder today.'
+                              : `Next reminder on ${formatBusinessDate(reminders.next.date, 'long')}.`
+                            : 'No more reminders are scheduled.'}
+                {remindersInPlan && !reminders.on ? (
+                  <>
+                    {' '}
+                    <Link href="/settings#reminders" className="text-brand hover:underline">
+                      Turn them on in Settings
+                    </Link>
+                    .
+                  </>
+                ) : null}
+              </p>
+              {remindersInPlan && reminders.hasEmail ? (
+                <div className="mt-4">
+                  <ReminderControls
+                    id={id}
+                    paused={reminders.paused}
+                    canPause={reminders.on && reminders.clientOn}
+                    canSend
+                  />
+                </div>
+              ) : null}
+            </Panel>
+          ) : null}
+
           {!isCredit && detail.creditNotes.length ? (
             <Panel>
               <PanelHeading>Credit notes</PanelHeading>
@@ -337,6 +401,9 @@ export default async function InvoicePage({
                         {ACTIVITY[a.action]}
                         {a.action === 'payment.recorded' && typeof a.data.amount === 'number'
                           ? `, ${money(a.data.amount)}`
+                          : ''}
+                        {a.action === 'reminder.sent' && typeof a.data.to === 'string'
+                          ? ` to ${a.data.to}`
                           : ''}
                         {a.action === 'refund.recorded' && typeof a.data.amount === 'number'
                           ? `, ${money(a.data.amount)} with ${String(a.data.creditNote ?? 'a credit note')}`
