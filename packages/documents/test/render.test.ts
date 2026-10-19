@@ -52,6 +52,14 @@ describe('document view', () => {
   });
 });
 
+describe('the total before tax (review 2, R2-M3)', () => {
+  it('is shown when prices include VAT, so the amount excluding VAT is on the document', () => {
+    const s = { ...FIXTURES.ukVat!, pricesIncludeTax: true };
+    const row = buildView(s).totals.find((t) => t.label === 'Total before VAT');
+    expect(row?.value).toBe('£5,600.00');
+  });
+});
+
 describe('reverse charge note (review L7)', () => {
   const reverseRow = {
     key: 'rc',

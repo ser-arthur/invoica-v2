@@ -1,8 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
-import { draftInput, type DraftInput } from '@invoica/schemas';
 import type { DocumentSnapshot } from '@invoica/core';
-import { createClient } from '../src/clients';
 import {
   createCreditNote,
   createDraft,
@@ -17,138 +15,24 @@ import {
 import { getDashboard } from '../src/dashboard';
 import { recordFile } from '../src/files';
 import { updateOrganisationProfile, getOrganisation } from '../src/organisations';
-import { createTaxCode, updateTaxCode } from '../src/taxes';
+import { updateTaxCode } from '../src/taxes';
 import { enqueue } from '../src/outbox';
 import { document, documentLine, organisation, outbox, storedFile } from '../src/schema';
-import { withOrganisation, withUser, type Actor } from '../src/tenancy';
-import { createTestDatabase, createUserWithOrganisation, type TestDatabase } from './helpers';
+import { withUser } from '../src/tenancy';
+import { createTestDatabase, type TestDatabase } from './helpers';
+import { NOW, TODAY, business, draftFor, failure, issued, lineIds, pay, type Business } from './business';
 
 /**
  * Tests for the findings of the first independent review (docs/reviews/review-1.md). Each names its finding.
  */
 
-const NOW = new Date('2026-10-18T10:00:00Z');
-const TODAY = '2026-10-18';
-
 let t: TestDatabase;
-
-async function failure(promise: Promise<unknown>): Promise<string> {
-  try {
-    await promise;
-  } catch (error) {
-    const e = error as Error & { cause?: Error };
-    return e.cause?.message ?? e.message;
-  }
-  return 'did not fail';
-}
-
-interface Business {
-  actor: Actor;
-  clientId: string;
-  codes: Record<'vat20' | 'zero' | 'none', string>;
-  run: <T>(fn: Parameters<typeof withOrganisation<T>>[2]) => Promise<T>;
-}
-
-async function business(name: string, registered = true): Promise<Business> {
-  const actor = await createUserWithOrganisation(t, name);
-  const run = <T>(fn: Parameters<typeof withOrganisation<T>>[2]) => withOrganisation(t.db, actor, fn);
-  return run(async (tx) => {
-    await tx
-      .update(organisation)
-      .set({ taxRegistered: registered, taxNumber: registered ? 'GB000000000' : null })
-      .where(eq(organisation.id, actor.organisationId));
-    const clientId = await createClient(tx, actor, {
-      name: 'Northlane Ltd',
-      contactName: null,
-      email: 'accounts@northlane.example',
-      phone: null,
-      addressLine1: null,
-      addressLine2: null,
-      city: null,
-      region: null,
-      postcode: null,
-      countryCode: 'GB',
-      taxNumber: null,
-      currency: 'GBP',
-      paymentTermsDays: 14,
-      notes: null,
-      fields: [],
-    });
-    const vat20 = await createTaxCode(tx, actor, {
-      label: 'Standard rate',
-      treatment: 'standard',
-      components: [{ name: 'VAT', ratePpm: 200_000, compound: false }],
-      isDefault: true,
-    });
-    const zero = await createTaxCode(tx, actor, {
-      label: 'Zero-rated',
-      treatment: 'zero',
-      components: [{ name: 'VAT', ratePpm: 0, compound: false }],
-      isDefault: false,
-    });
-    const none = await createTaxCode(tx, actor, {
-      label: 'No VAT',
-      treatment: 'outside_scope',
-      components: [],
-      isDefault: false,
-    });
-    return { actor, clientId, codes: { vat20, zero, none }, run };
-  });
-}
-
-function draftFor(
-  b: Business,
-  lines: { quantity: number; unitPrice: number; code: string | null }[],
-  over: Partial<DraftInput> = {},
-) {
-  return draftInput.parse({
-    clientId: b.clientId,
-    currency: 'GBP',
-    lineStyle: 'quantity',
-    pricesIncludeTax: false,
-    template: 'signature',
-    lines: lines.map((l, i) => ({
-      title: `Line ${i + 1}`,
-      quantity: l.quantity,
-      unitPrice: l.unitPrice,
-      taxCodeId: l.code,
-    })),
-    ...over,
-  });
-}
-
-async function issued(b: Business, lines: { quantity: number; unitPrice: number; code: string | null }[]) {
-  const id = await b.run((tx) => createDraft(tx, b.actor, draftFor(b, lines)));
-  await b.run((tx) => issueDocument(tx, b.actor, id, NOW));
-  return id;
-}
-
-async function lineIds(b: Business, documentId: string) {
-  const rows = await b.run((tx) =>
-    tx
-      .select({ id: documentLine.id })
-      .from(documentLine)
-      .where(eq(documentLine.documentId, documentId))
-      .orderBy(documentLine.position),
-  );
-  return rows.map((r) => r.id);
-}
-
-const pay = (documentId: string, amount: number, idempotencyKey: string) => ({
-  documentId,
-  amount,
-  paidOn: TODAY,
-  method: 'bank_transfer' as const,
-  reference: null,
-  note: null,
-  idempotencyKey,
-});
 
 let a: Business;
 
 beforeAll(async () => {
   t = await createTestDatabase();
-  a = await business('Review Office');
+  a = await business(t, 'Review Office');
 });
 
 afterAll(async () => {
@@ -298,8 +182,9 @@ describe('H3: an amount is credited across the tax rates the invoice charged', (
     );
     const d = await a.run((tx) => getDocument(tx, cn.id, TODAY));
     const snap = d!.document.snapshot as unknown as DocumentSnapshot;
-    expect([d!.document.total, d!.document.taxTotal]).toEqual([30_000, 4286]);
-    expect(snap.pricesIncludeTax).toBe(true);
+    // The amount is in the invoice's price basis (review 2, R2-M3): £300.00 before VAT, shared 250 : 50.
+    expect([d!.document.total, d!.document.taxTotal]).toEqual([35_000, 5000]);
+    expect(snap.pricesIncludeTax).toBe(false);
     expect(snap.lines.map((l) => l.tax?.label)).toEqual(['Standard rate', 'Zero-rated']);
   });
 
@@ -443,7 +328,7 @@ describe('M1 and M2: the database guards issued documents', () => {
 
 describe('M5: a business that is not registered cannot charge tax', () => {
   it('refuses to issue an invoice with VAT, and issues one without', async () => {
-    const b = await business('Sole Trader', false);
+    const b = await business(t, 'Sole Trader', false);
     const withVat = await b.run((tx) =>
       createDraft(tx, b.actor, draftFor(b, [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }])),
     );
@@ -463,7 +348,7 @@ describe('M5: a business that is not registered cannot charge tax', () => {
 
 describe('M6: credit notes are not counted as paid', () => {
   it('an invoice closed by a credit note is credited, not paid, and top clients count payments only', async () => {
-    const b = await business('Credit Office');
+    const b = await business(t, 'Credit Office');
     const id = await issued(b, [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }]);
     const part = await issued(b, [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }]);
     await b.run((tx) =>
@@ -482,7 +367,7 @@ describe('M6: credit notes are not counted as paid', () => {
         {
           mode: 'amount',
           invoiceId: part,
-          amount: 10_000,
+          amount: 8333,
           reason: 'Discount agreed',
           idempotencyKey: 'm6-rest-0001',
         },

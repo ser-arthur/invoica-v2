@@ -80,7 +80,11 @@ A document is in exactly one state. Every transition is explicit, tested and log
 | **Sent** | Issued and delivered to the client (by email or another recorded channel). |
 | **Part paid** | Issued, with at least one payment recorded and a balance above zero. |
 | **Paid** | Payments recorded equal the total. |
-| **Void** | Cancelled after issue. Keeps its number and its snapshot; nothing is owed. |
+| **Credited** | Closed by credit notes alone; nothing was received. |
+| **Settled** | Closed by payments and credit notes together. |
+| **Void** | Cancelled after issue, before any payment or credit note. Keeps its number and its snapshot; nothing is owed. |
+
+A credit note alone does not make an invoice part paid: with nothing received, a part-credited invoice keeps its own state (issued or sent) with a lower balance. Credit notes cannot be voided.
 
 **Overdue.** Not a state. A document is overdue when it is issued, has a balance above zero, and its due date is before today's date in the organisation's time zone. It is derived every time it is shown and never stored.
 
@@ -154,6 +158,8 @@ A document is in exactly one state. Every transition is explicit, tested and log
 
 **Cash position.** The money the organisation holds at a date, derived from records (payments in, expenses out, and bank data once imported).
 *Current app:* does not exist.
+
+**Invoiced this month.** The totals of invoices issued this month, less the totals of credit notes issued this month, per currency. Drafts and void invoices are not counted.
 
 **Forecast.** A projection of future cash position from records and stated assumptions. A forecast always states its assumptions and shows them on screen.
 

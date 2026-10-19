@@ -7,16 +7,18 @@ import {
   checkPayment,
   computeDocument,
   creditSource,
+  creditState,
   deriveState,
   formatDocumentNumber,
   isOverdue,
   planAmountCredit,
   planLineCredit,
   sumMinor,
-  taxCodeKey,
   todayIn,
   transition,
   type CreditPlan,
+  type CreditSource,
+  type CreditedLine,
   type BusinessDate,
   type DocumentSnapshot,
   type DocumentState,
@@ -685,10 +687,72 @@ export async function creditableLines(tx: Tx, invoiceId: string) {
 }
 
 /**
+ * What earlier credit notes have taken from an invoice, as the credit ledger needs it: each issued credit note's
+ * lines (the invoice line each credits, its quantity, tax and value) and its figures.
+ */
+export async function creditLedger(
+  tx: Tx,
+  invoiceId: string,
+): Promise<{ lines: CreditedLine[]; totals: DocumentTotals[] }> {
+  const invoiceLines = await tx
+    .select({ id: documentLine.id })
+    .from(documentLine)
+    .where(eq(documentLine.documentId, invoiceId))
+    .orderBy(asc(documentLine.position));
+  const position = new Map(invoiceLines.map((l, i) => [l.id, i]));
+  const notes = await tx
+    .select({ id: document.id, snapshot: document.snapshot })
+    .from(document)
+    .where(
+      and(
+        eq(document.creditedDocumentId, invoiceId),
+        eq(document.kind, 'credit_note'),
+        inArray(document.lifecycle, ['issued', 'sent']),
+      ),
+    )
+    .orderBy(asc(document.sequence));
+  const lines: CreditedLine[] = [];
+  for (const note of notes) {
+    const snap = note.snapshot as unknown as DocumentSnapshot;
+    const rows = await tx
+      .select()
+      .from(documentLine)
+      .where(eq(documentLine.documentId, note.id))
+      .orderBy(asc(documentLine.position));
+    rows.forEach((r, i) => {
+      const shown = snap.lines[i];
+      if (!shown) throw new Error('A credit note line is missing from its snapshot.');
+      lines.push({
+        index: r.creditedLineId ? (position.get(r.creditedLineId) ?? null) : null,
+        quantity: r.quantity,
+        tax: r.tax,
+        value: shown.amount - shown.discount,
+      });
+    });
+  }
+  return { lines, totals: notes.map((n) => (n.snapshot as unknown as DocumentSnapshot).totals) };
+}
+
+/** The credit source for an issued invoice, from its snapshot. */
+export function invoiceCreditSource(invoice: DocumentRow): CreditSource {
+  const snapshot = invoice.snapshot as unknown as DocumentSnapshot;
+  return creditSource(
+    {
+      currency: invoice.currency,
+      pricesIncludeTax: snapshot.pricesIncludeTax,
+      taxLevel: snapshot.taxLevel,
+      rounding: snapshot.rounding,
+      lines: snapshot.lines.map((l) => ({ quantity: l.quantity, unitPrice: l.unitPrice, tax: l.tax })),
+    },
+    snapshot.totals,
+  );
+}
+
+/**
  * Issues a credit note against an invoice: for the whole invoice (only while nothing is paid or credited), for
- * quantities of its lines, or for an amount shared across its tax rates. Prices and tax come from the invoice as
- * issued, never from the tax codes as they stand now. The credit note gets its own number and reduces the
- * invoice's balance.
+ * quantities of its lines, or for an amount in the invoice's price basis. The figures come from the credit ledger
+ * (docs/specs/credit-notes.md), never from the tax codes as they stand now. The credit note gets its own number and
+ * reduces the invoice's balance.
  */
 export async function createCreditNote(
   tx: Tx,
@@ -717,7 +781,6 @@ export async function createCreditNote(
   const applied = (await appliedAmounts(tx, [invoice.id])).get(invoice.id)!;
   const balance = invoice.total - applied.paid - applied.credited;
   const snapshot = invoice.snapshot as unknown as DocumentSnapshot;
-  const lines = await creditableLines(tx, invoice.id);
   const invoiceLines = await tx
     .select()
     .from(documentLine)
@@ -730,17 +793,9 @@ export async function createCreditNote(
     );
   if (!matches) throw new Error('The lines of this invoice do not match its issued snapshot.');
 
-  const source = creditSource(
-    {
-      currency: invoice.currency,
-      pricesIncludeTax: snapshot.pricesIncludeTax,
-      taxLevel: snapshot.taxLevel,
-      rounding: snapshot.rounding,
-      lines: snapshot.lines.map((l) => ({ quantity: l.quantity, unitPrice: l.unitPrice, tax: l.tax })),
-    },
-    snapshot.totals,
-  );
-  const credited = lines.map((l) => l.credited);
+  const source = invoiceCreditSource(invoice);
+  const ledger = await creditLedger(tx, invoice.id);
+  const state = creditState(source, ledger.lines);
   let plan: CreditPlan;
   if (input.mode === 'whole') {
     if (applied.paid + applied.credited > 0) {
@@ -751,14 +806,14 @@ export async function createCreditNote(
     }
     plan = planLineCredit(
       source,
-      credited,
-      lines.map((l, index) => ({ index, quantity: l.quantity })),
+      state,
+      source.lines.map((l, index) => ({ index, quantity: l.quantity })),
     );
   } else if (input.mode === 'lines') {
-    const position = new Map(lines.map((l, i) => [l.id, i]));
+    const position = new Map(invoiceLines.map((l, i) => [l.id, i]));
     plan = planLineCredit(
       source,
-      credited,
+      state,
       input.lines.map((r) => {
         const index = position.get(r.lineId);
         if (index === undefined) {
@@ -768,24 +823,9 @@ export async function createCreditNote(
       }),
     );
   } else {
-    plan = planAmountCredit(source, snapshot.totals, input.amount);
+    plan = planAmountCredit(source, state, input.amount);
   }
-  const earlier = await tx
-    .select({ snapshot: document.snapshot })
-    .from(document)
-    .where(
-      and(
-        eq(document.creditedDocumentId, invoice.id),
-        eq(document.kind, 'credit_note'),
-        inArray(document.lifecycle, ['issued', 'sent']),
-      ),
-    );
-  checkCredit({
-    invoice: snapshot.totals,
-    balance,
-    earlier: earlier.map((e) => (e.snapshot as unknown as DocumentSnapshot).totals),
-    credit: plan.totals,
-  });
+  checkCredit({ invoice: snapshot.totals, balance, earlier: ledger.totals, credit: plan.totals });
 
   const org = await getOrganisation(tx, actor);
   const today = todayIn(org.timeZone, now);
@@ -828,16 +868,17 @@ export async function createCreditNote(
         creditedLineId: l.id,
       };
     }
-    const sameTax = invoiceLines.find((l) => taxCodeKey(l.tax) === taxCodeKey(p.tax));
+    const inGroup = source.groups.find((g) => g.key === p.group)!.lines.map((i) => invoiceLines[i]!);
+    const titles = inGroup.map((l) => l.title).join(', ');
     return {
       ...base,
-      title: `Credit against ${invoice.number ?? 'the invoice'}`,
+      title: `Reduction on ${invoice.number ?? 'the invoice'}: ${titles.length > 160 ? `${titles.slice(0, 157)}...` : titles}`,
       description: null,
       quantity: p.quantity,
       unit: null,
       unitPrice: p.unitPrice,
       serviceDate: null,
-      taxCodeId: sameTax?.taxCodeId ?? null,
+      taxCodeId: inGroup[0]?.taxCodeId ?? null,
       tax: p.tax,
       itemId: null,
       creditedLineId: null,
@@ -883,6 +924,11 @@ export async function createCreditNote(
   });
   await enqueue(tx, actor, 'document.render_pdf', { documentId: creditNote.id }, `pdf:${creditNote.id}`);
   return { id: creditNote.id, number, duplicate: false };
+}
+
+/** Holds a request key for the rest of the transaction, so two requests with the same key run one after the other. */
+export async function lockRequestKey(tx: Tx, key: string): Promise<void> {
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${key}))`);
 }
 
 /** The number the next document of a kind will get when issued. Only a preview: numbers are assigned at issue. */

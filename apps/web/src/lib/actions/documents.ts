@@ -8,6 +8,7 @@ import {
   createDraft,
   deleteDraft,
   documentForKey,
+  lockRequestKey,
   enqueue,
   getDocument,
   duplicateDocument,
@@ -17,6 +18,7 @@ import {
   removePayment,
   updateDraft,
   voidDocument,
+  type Tx,
 } from '@invoica/db';
 import { creditNoteInput, draftInput, paymentInput, sendDocumentInput, voidInput } from '@invoica/schemas';
 import { inWorkspace } from '../workspace';
@@ -39,6 +41,12 @@ function runJobsLater() {
   });
 }
 
+async function earlierForKey(tx: Tx, key: string | undefined) {
+  if (!key) return null;
+  await lockRequestKey(tx, key);
+  return documentForKey(tx, key);
+}
+
 export async function saveDraftAction(
   id: string | null,
   input: unknown,
@@ -47,9 +55,9 @@ export async function saveDraftAction(
   if (!parsed.success) return invalid(parsed.error);
   try {
     const savedId = await inWorkspace(async (tx, ws) => {
-      // A repeated first save (its answer lost on the way back) finds the draft it created.
-      const earlier =
-        !id && parsed.data.idempotencyKey ? await documentForKey(tx, parsed.data.idempotencyKey) : null;
+      // A repeated first save (its answer lost on the way back) finds the draft it created. The key is held for the
+      // transaction, so a repeat that overlaps the first waits for it.
+      const earlier = id ? null : await earlierForKey(tx, parsed.data.idempotencyKey);
       const existing = id ?? earlier?.id ?? null;
       if (existing) {
         if (!earlier || earlier.lifecycle === 'draft') await updateDraft(tx, ws.actor, existing, parsed.data);
@@ -73,8 +81,7 @@ export async function saveAndIssueAction(
   if (!parsed.success) return invalid(parsed.error);
   try {
     const result = await inWorkspace(async (tx, ws) => {
-      const earlier =
-        !id && parsed.data.idempotencyKey ? await documentForKey(tx, parsed.data.idempotencyKey) : null;
+      const earlier = id ? null : await earlierForKey(tx, parsed.data.idempotencyKey);
       // The same request already issued this invoice: return it.
       if (earlier && earlier.lifecycle !== 'draft') return { id: earlier.id, number: earlier.number ?? '' };
       let draftId = id ?? earlier?.id ?? null;

@@ -163,8 +163,24 @@ function roundDocumentTaxDown(groups: Group[], pricesIncludeTax: boolean) {
   });
 }
 
-function summaryKey(c: ComponentAmount['component'], treatment: TaxTreatment): string {
+export function summaryKey(c: ComponentAmount['component'], treatment: TaxTreatment): string {
   return JSON.stringify([c.name, c.ratePpm, c.compound, treatment]);
+}
+
+/** The lines that share a tax code, and what the document charged on them together. */
+export interface TaxGroupDetail {
+  /** `taxCodeKey` of the code. */
+  key: string;
+  code: TaxCode | null;
+  /** Indexes of the group's lines on the document. */
+  lines: number[];
+  /** The group's lines after discounts, in the document's price basis: including tax when prices include it. */
+  value: number;
+  /** The group's amount excluding tax. */
+  net: number;
+  /** Each component's base and amount for the group, in the code's order. Reverse-charge tax is shown, not charged. */
+  taxes: ComponentAmount[];
+  charged: boolean;
 }
 
 /**
@@ -172,6 +188,14 @@ function summaryKey(c: ComponentAmount['component'], treatment: TaxTreatment): s
  * so a figure is computed in one place only.
  */
 export function computeDocument(input: DocumentInput): DocumentTotals {
+  return computeDocumentDetail(input).totals;
+}
+
+/** The document's figures, with each tax group's own figures, which credit notes are worked out from. */
+export function computeDocumentDetail(input: DocumentInput): {
+  totals: DocumentTotals;
+  groups: TaxGroupDetail[];
+} {
   currency(input.currency);
   const mode = input.rounding;
   const codes = input.lines.map((l) => l.tax);
@@ -265,6 +289,35 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
     return { net: amount, taxes: taxesOnNet(amount, components, mode), charged: true };
   };
 
+  const details = new Map<string, TaxGroupDetail>();
+  const detailFor = (code: TaxCode | null) => {
+    const key = taxCodeKey(code);
+    let d = details.get(key);
+    if (!d) {
+      d = {
+        key,
+        code,
+        lines: [],
+        value: 0,
+        net: 0,
+        taxes: (code?.components ?? []).map((component) => ({ component, base: 0, amount: 0 })),
+        charged: code?.treatment !== 'reverse_charge',
+      };
+      details.set(key, d);
+    }
+    return d;
+  };
+  const addToDetail = (code: TaxCode | null, indexes: number[], net: number, taxes: ComponentAmount[]) => {
+    const d = detailFor(code);
+    d.lines.push(...indexes);
+    d.value += sumMinor(indexes.map((i) => afterDiscount[i] ?? 0));
+    d.net += net;
+    taxes.forEach((t, k) => {
+      d.taxes[k]!.base += t.base;
+      d.taxes[k]!.amount += t.amount;
+    });
+  };
+
   if (input.taxLevel === 'line') {
     afterDiscount.forEach((amount, i) => {
       const code = codes[i] ?? null;
@@ -272,6 +325,7 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
       lineNet[i] = net;
       lineTax[i] = charged ? sumMinor(taxes.map((t) => t.amount)) : 0;
       addToSummary(code, taxes, net);
+      addToDetail(code, [i], net, taxes);
     });
   } else {
     const groups = new Map<string, number[]>();
@@ -298,6 +352,7 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
         lineTax[lineIndex] = taxShares[j] ?? 0;
       });
       addToSummary(g.code, taxes, net);
+      addToDetail(g.code, g.indexes, net, taxes);
     });
   }
 
@@ -307,7 +362,7 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
   const total = netTotal + taxTotal;
   const paid = assertMinor(input.paid ?? 0, 'paid');
 
-  return {
+  const totals: DocumentTotals = {
     currency: input.currency,
     pricesIncludeTax: input.pricesIncludeTax,
     lines: amounts.map((amount, i) => ({
@@ -326,4 +381,5 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
     paid,
     balance: total - paid,
   };
+  return { totals, groups: [...details.values()] };
 }

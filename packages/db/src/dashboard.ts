@@ -68,18 +68,18 @@ export async function getDashboard(tx: Tx, today: BusinessDate, baseCurrency: st
       .map((p) => ({ currency: p.currency, amount: p.amount })),
   );
   const monthStart = `${today.slice(0, 7)}-01`;
-  const invoicedThisMonth = byCurrency(
-    invoices
-      .filter(
-        (d) =>
-          d.lifecycle !== 'draft' &&
-          d.lifecycle !== 'void' &&
-          d.issueDate &&
-          d.issueDate >= monthStart &&
-          d.issueDate <= today,
-      )
-      .map((d) => ({ currency: d.currency, amount: d.total })),
-  );
+  const inMonth = (d: DocumentSummary) =>
+    d.lifecycle !== 'draft' &&
+    d.lifecycle !== 'void' &&
+    !!d.issueDate &&
+    d.issueDate >= monthStart &&
+    d.issueDate <= today;
+  // Invoiced this month: invoices issued this month, less credit notes issued this month (docs/domain.md).
+  const creditNotes = await listDocuments(tx, { kind: 'credit_note', today });
+  const invoicedThisMonth = byCurrency([
+    ...invoices.filter(inMonth).map((d) => ({ currency: d.currency, amount: d.total })),
+    ...creditNotes.filter(inMonth).map((d) => ({ currency: d.currency, amount: -d.total })),
+  ]);
   const monthlyPaid = monthlyTotals(
     payments.map((p) => ({ currency: p.currency, date: p.paidOn, amount: p.amount })),
     baseCurrency,

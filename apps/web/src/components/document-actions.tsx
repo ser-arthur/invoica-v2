@@ -13,8 +13,10 @@ import {
   planLineCredit,
   quantityToString,
   toDecimalString,
+  creditState,
   type CreditPlan,
   type CreditSource,
+  type CreditedLine,
   type DocumentTotals,
 } from '@invoica/core';
 import {
@@ -343,7 +345,7 @@ export function CreditNoteButton({
   canCreditWhole,
   lines,
   source,
-  credited,
+  ledger,
   invoiceTotals,
   earlier,
 }: {
@@ -355,7 +357,8 @@ export function CreditNoteButton({
   lines: CreditableLine[];
   /** The invoice as issued, so the credit is worked out here exactly as the server will. */
   source: CreditSource;
-  credited: number[];
+  /** The lines of the credit notes already issued against the invoice. */
+  ledger: CreditedLine[];
   invoiceTotals: DocumentTotals;
   earlier: DocumentTotals[];
 }) {
@@ -370,6 +373,9 @@ export function CreditNoteButton({
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const money = (n: number) => formatMoney(n, currency);
+  const state = useMemo(() => creditState(source, ledger), [source, ledger]);
+  const valueLeft = Object.values(state.groups).reduce((a, g) => a + g.left, 0);
+  const basis = source.pricesIncludeTax ? 'including tax' : 'before tax';
 
   function openDialog() {
     setKey(requestKey());
@@ -395,8 +401,8 @@ export function CreditNoteButton({
       if (mode === 'whole') {
         plan = planLineCredit(
           source,
-          credited,
-          source.lines.map((l, index) => ({ index, quantity: l.quantity - (credited[index] ?? 0) })),
+          state,
+          source.lines.map((l, index) => ({ index, quantity: l.quantity - (state.quantities[index] ?? 0) })),
         );
       } else if (mode === 'lines') {
         const bad = lineRequest.find((r) => r.quantity === null);
@@ -405,12 +411,12 @@ export function CreditNoteButton({
           .map((r) => ({ index: r.line.index, quantity: r.quantity ?? 0 }))
           .filter((r) => r.quantity > 0);
         if (request.length === 0) return { plan: null, error: null };
-        plan = planLineCredit(source, credited, request);
+        plan = planLineCredit(source, state, request);
       } else {
         if (!amount.trim()) return { plan: null, error: null };
         const minor = parseMoney(amount, currency);
         if (minor === null || minor <= 0) return { plan: null, error: 'Enter the amount to credit.' };
-        plan = planAmountCredit(source, invoiceTotals, minor);
+        plan = planAmountCredit(source, state, minor);
       }
       checkCredit({ invoice: invoiceTotals, balance, earlier, credit: plan.totals });
       return { plan, error: null };
@@ -420,7 +426,7 @@ export function CreditNoteButton({
         error: error instanceof DomainError ? error.message : 'This credit cannot be worked out.',
       };
     }
-  }, [mode, lineRequest, amount, source, credited, invoiceTotals, earlier, balance, currency]);
+  }, [mode, lineRequest, amount, source, state, invoiceTotals, earlier, balance, currency]);
 
   function submit() {
     if (!preview.plan) return setMessage(preview.error ?? 'Choose what to credit.');
@@ -463,7 +469,7 @@ export function CreditNoteButton({
               <Select id="cn-mode" value={mode} onChange={(e) => setMode(e.target.value as CreditMode)}>
                 {canCreditWhole ? <option value="whole">The whole invoice</option> : null}
                 {lines.length ? <option value="lines">Some of the lines</option> : null}
-                <option value="amount">An amount, including tax</option>
+                <option value="amount">An amount, {basis}</option>
               </Select>
             </Field>
             {mode === 'lines' ? (
@@ -494,7 +500,7 @@ export function CreditNoteButton({
               <Field
                 label={`Amount (${currency})`}
                 htmlFor="cn-amount"
-                hint="Shared across the invoice's tax rates in proportion to what was invoiced at each."
+                hint={`Up to ${money(valueLeft)} ${basis}. Shared across the invoice's tax rates in proportion to what is left at each.`}
               >
                 <Input
                   id="cn-amount"

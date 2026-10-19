@@ -169,7 +169,9 @@ export function buildView(s: DocumentSnapshot, options: { draft?: boolean } = {}
   }
   for (const d of t.discounts)
     totals.push({ label: d.label, value: `${MINUS}${money(d.amount)}`, kind: 'discount' });
-  if (t.discounts.length > 0 && !s.pricesIncludeTax && t.taxTotal > 0) {
+  // The amount excluding tax is printed whenever it is not already the subtotal: after discounts, or when prices
+  // include tax.
+  if ((t.discounts.length > 0 || s.pricesIncludeTax) && t.taxTotal > 0) {
     totals.push({
       label: `Total before ${taxWord === 'VAT' ? 'VAT' : 'tax'}`,
       value: money(t.net),

@@ -3,13 +3,19 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Download } from 'lucide-react';
 import {
-  creditSource,
+  creditState,
   formatBusinessDate,
   formatMoney,
   formatRate,
   type DocumentSnapshot,
 } from '@invoica/core';
-import { creditableLines, documentActivity, getDocument } from '@invoica/db';
+import {
+  creditLedger,
+  creditableLines,
+  documentActivity,
+  getDocument,
+  invoiceCreditSource,
+} from '@invoica/db';
 import { renderDocumentHtml } from '@invoica/documents';
 import { FormMessage, PageHeader, Panel, PanelHeading, StatePill, buttonClass } from '@/components/ui';
 import {
@@ -64,11 +70,13 @@ export default async function InvoicePage({
     const detail = await getDocument(tx, id, ws.today);
     if (!detail) return null;
     const activity = detail.document.lifecycle === 'draft' ? [] : await documentActivity(tx, id);
-    const creditable = detail.document.kind === 'invoice' ? await creditableLines(tx, id) : [];
-    return { detail, activity, creditable, today: ws.today, timeZone: ws.organisation.timeZone };
+    const isInvoice = detail.document.kind === 'invoice' && detail.document.lifecycle !== 'draft';
+    const creditable = isInvoice ? await creditableLines(tx, id) : [];
+    const ledger = isInvoice ? await creditLedger(tx, id) : { lines: [], totals: [] };
+    return { detail, activity, creditable, ledger, today: ws.today, timeZone: ws.organisation.timeZone };
   });
   if (!data) notFound();
-  const { detail, activity, creditable, today, timeZone } = data;
+  const { detail, activity, creditable, ledger, today, timeZone } = data;
   const doc = detail.document;
   if (doc.lifecycle === 'draft') redirect(`/invoices/${id}/edit`);
   const snapshot = doc.snapshot as unknown as DocumentSnapshot;
@@ -77,23 +85,11 @@ export default async function InvoicePage({
   const html = renderDocumentHtml(snapshot, {
     fontUrl: (f) => `/doc-fonts/${f}`,
     logoUrl: snapshot.seller.logoFileId ? `/files/${snapshot.seller.logoFileId}` : null,
+    voided: doc.lifecycle === 'void',
   });
   const open = !isCredit && (doc.lifecycle === 'issued' || doc.lifecycle === 'sent') && detail.balance > 0;
-  const source = isCredit
-    ? null
-    : creditSource(
-        {
-          currency: doc.currency,
-          pricesIncludeTax: snapshot.pricesIncludeTax,
-          taxLevel: snapshot.taxLevel,
-          rounding: snapshot.rounding,
-          lines: snapshot.lines.map((l) => ({ quantity: l.quantity, unitPrice: l.unitPrice, tax: l.tax })),
-        },
-        snapshot.totals,
-      );
-  const earlierCredits = detail.creditNotes
-    .filter((c) => c.lifecycle === 'issued' || c.lifecycle === 'sent')
-    .map((c) => (c.snapshot as unknown as DocumentSnapshot).totals);
+  const source = isCredit ? null : invoiceCreditSource(doc);
+  const state = source ? creditState(source, ledger.lines) : null;
   const taxLabel = (tax: (typeof creditable)[number]['tax']) =>
     tax && tax.components.length
       ? tax.components.map((c) => `${c.name} ${formatRate(c.ratePpm)}`).join(' + ')
@@ -177,20 +173,36 @@ export default async function InvoicePage({
                       <dd className="tabular">{money(detail.applied.credited)}</dd>
                     </div>
                   ) : null}
-                  <div className="flex items-baseline justify-between px-5 py-4">
-                    <dt className="font-medium">Balance due</dt>
-                    <dd
-                      className={`font-display text-xl font-semibold tabular ${detail.overdue ? 'text-danger' : ''}`}
-                    >
-                      {money(detail.balance)}
-                    </dd>
-                  </div>
-                  {doc.dueDate ? (
-                    <div className="flex items-baseline justify-between px-5 py-3 text-[14px]">
-                      <dt className="text-muted">Due</dt>
-                      <dd>{formatBusinessDate(doc.dueDate, 'long')}</dd>
+                  {doc.lifecycle === 'void' ? (
+                    <div className="px-5 py-4 text-[14px]">
+                      <dt className="font-medium">
+                        Voided
+                        {doc.voidedAt
+                          ? ` on ${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone }).format(doc.voidedAt)}`
+                          : ''}
+                      </dt>
+                      <dd className="mt-1 text-muted">
+                        {doc.voidReason ? `Reason: ${doc.voidReason}. ` : ''}Nothing is owed on it.
+                      </dd>
                     </div>
-                  ) : null}
+                  ) : (
+                    <>
+                      <div className="flex items-baseline justify-between px-5 py-4">
+                        <dt className="font-medium">Balance due</dt>
+                        <dd
+                          className={`font-display text-xl font-semibold tabular ${detail.overdue ? 'text-danger' : ''}`}
+                        >
+                          {money(detail.balance)}
+                        </dd>
+                      </div>
+                      {doc.dueDate ? (
+                        <div className="flex items-baseline justify-between px-5 py-3 text-[14px]">
+                          <dt className="text-muted">Due</dt>
+                          <dd>{formatBusinessDate(doc.dueDate, 'long')}</dd>
+                        </div>
+                      ) : null}
+                    </>
+                  )}
                 </>
               ) : snapshot.credits ? (
                 <div className="px-5 py-3 text-[14px]">
@@ -269,15 +281,15 @@ export default async function InvoicePage({
                         id: l.id,
                         index,
                         title: l.title,
-                        remaining: l.quantity - l.credited,
+                        remaining: l.quantity - (state?.quantities[index] ?? 0),
                         unitPrice: l.unitPrice,
                         taxLabel: taxLabel(l.tax),
                       }))
                       .filter((l) => l.remaining > 0)}
                     source={source}
-                    credited={creditable.map((l) => l.credited)}
+                    ledger={ledger.lines}
                     invoiceTotals={snapshot.totals}
-                    earlier={earlierCredits}
+                    earlier={ledger.totals}
                   />
                 ) : null}
                 {detail.applied.paid === 0 && detail.applied.credited === 0 ? (

@@ -387,7 +387,7 @@ describe('credit notes', () => {
           ),
         ),
       ),
-    ).toMatch(/more than the balance/);
+    ).toMatch(/more than is left to credit/);
   });
 });
 
