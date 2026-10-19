@@ -94,6 +94,8 @@ export interface DocumentSummary {
   issueDate: string | null;
   dueDate: string | null;
   title: string | null;
+  /** For a credit note: the number of the invoice it credits. */
+  credits: string | null;
   total: number;
   /** Payments received. */
   paid: number;
@@ -132,6 +134,10 @@ function summarise(
     issueDate: row.issueDate,
     dueDate: row.dueDate,
     title: row.title,
+    credits:
+      row.kind === 'credit_note'
+        ? ((row.snapshot as unknown as DocumentSnapshot | null)?.credits?.number ?? null)
+        : null,
     total: row.total,
     paid: applied.paid,
     credited: applied.credited,

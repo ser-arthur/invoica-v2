@@ -140,7 +140,7 @@ export default async function InvoicesPage({
                   Number
                 </th>
                 <th scope="col" className="px-5 py-3 font-medium">
-                  Due
+                  {kind === 'credit_note' ? 'Issued' : 'Due'}
                 </th>
                 <th scope="col" className="px-5 py-3 font-medium">
                   Status
@@ -175,7 +175,11 @@ export default async function InvoicesPage({
                     <div className="mt-1 flex items-center justify-between gap-3 md:hidden">
                       <p className="min-w-0 truncate text-[13px] text-muted">
                         {d.number ?? 'Draft'}
-                        {d.dueDate && d.state !== 'draft' ? `, due ${formatBusinessDate(d.dueDate)}` : ''}
+                        {d.kind === 'credit_note' && d.issueDate
+                          ? `, issued ${formatBusinessDate(d.issueDate)}`
+                          : d.dueDate && d.state !== 'draft'
+                            ? `, due ${formatBusinessDate(d.dueDate)}`
+                            : ''}
                       </p>
                       <StatePill state={d.state} overdue={d.overdue} />
                     </div>
@@ -184,17 +188,25 @@ export default async function InvoicesPage({
                         {formatMoney(d.balance, d.currency)} left
                       </p>
                     ) : null}
-                    {d.title ? (
+                    {d.credits ? (
+                      <p className="mt-1 truncate text-[13px] text-muted md:mt-0">Credits {d.credits}</p>
+                    ) : d.title ? (
                       <p className="hidden max-w-[40ch] truncate text-[13px] text-muted md:block">
                         {d.title}
                       </p>
                     ) : null}
                   </td>
-                  <td className="hidden px-5 py-3.5 text-muted tabular md:table-cell">
+                  <td className="hidden px-5 py-3.5 whitespace-nowrap text-muted tabular md:table-cell">
                     {d.number ?? 'Draft'}
                   </td>
-                  <td className="hidden px-5 py-3.5 text-muted md:table-cell">
-                    {d.dueDate && d.state !== 'draft' ? formatBusinessDate(d.dueDate) : ''}
+                  <td className="hidden px-5 py-3.5 whitespace-nowrap text-muted md:table-cell">
+                    {d.kind === 'credit_note'
+                      ? d.issueDate
+                        ? formatBusinessDate(d.issueDate)
+                        : ''
+                      : d.dueDate && d.state !== 'draft'
+                        ? formatBusinessDate(d.dueDate)
+                        : ''}
                   </td>
                   <td className="hidden px-5 py-3.5 md:table-cell">
                     <StatePill state={d.state} overdue={d.overdue} />

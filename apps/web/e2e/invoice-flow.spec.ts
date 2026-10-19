@@ -161,6 +161,17 @@ test('two payments recorded from the same page both count, and a credit note cre
 
   await page.goto(invoiceUrl);
   await expect(page.getByText('£30.00').first()).toBeVisible();
+
+  // The credit notes list says which invoice each one credits, and when it was issued.
+  await page.goto('/invoices?kind=credit_note');
+  await expect(page.getByText('Credits INV-0001').filter({ visible: true }).first()).toBeVisible();
+  await expect(
+    page
+      .getByRole('columnheader', { name: 'Issued' })
+      .or(page.getByText(/issued \d/))
+      .filter({ visible: true })
+      .first(),
+  ).toBeVisible();
   expect(errors).toEqual([]);
 });
 
