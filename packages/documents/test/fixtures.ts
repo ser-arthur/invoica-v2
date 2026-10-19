@@ -15,7 +15,7 @@ const GH: TaxCode = {
   ],
 };
 
-interface LineSpec {
+export interface LineSpec {
   title: string;
   description?: string;
   quantity: number;
@@ -25,7 +25,7 @@ interface LineSpec {
   tax?: TaxCode | null;
 }
 
-function snapshot(o: {
+export function snapshot(o: {
   number: string;
   currency: string;
   lineStyle: LineStyle;

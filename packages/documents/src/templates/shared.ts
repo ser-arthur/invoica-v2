@@ -17,7 +17,7 @@ export function para(value: string | null | undefined): string {
 export const BASE_CSS = `
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-body{margin:0;font-kerning:normal;font-variant-numeric:lining-nums tabular-nums;text-rendering:optimizeLegibility}
+body{margin:0;font-kerning:normal;font-variant-numeric:lining-nums tabular-nums;text-rendering:optimizeLegibility;overflow-wrap:anywhere}
 p{margin:0}
 table{border-collapse:collapse;width:100%}
 thead{display:table-header-group}
@@ -27,6 +27,8 @@ tr,.keep{break-inside:avoid;page-break-inside:avoid}
 .draft-mark{position:fixed;top:40%;left:0;right:0;text-align:center;font-size:96pt;font-weight:700;opacity:.06;transform:rotate(-24deg);pointer-events:none;letter-spacing:.08em}
 .void-mark{position:fixed;top:40%;left:0;right:0;text-align:center;font-size:110pt;font-weight:700;color:#b42318;opacity:.16;transform:rotate(-24deg);pointer-events:none;letter-spacing:.1em;z-index:5}
 .word{overflow-wrap:anywhere}
+.no{white-space:nowrap}
+dd{min-width:0}
 `;
 
 /** The lines table, with only the columns this document needs. */

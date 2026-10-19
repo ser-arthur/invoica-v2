@@ -14,7 +14,7 @@ body{font-family:'Newsreader',serif;font-size:10.6pt;line-height:1.5;color:#2220
 .from .name{font-size:20pt;font-style:italic;font-weight:500;letter-spacing:-.01em;color:${v.brandColour};line-height:1.1}
 .from img{max-height:16mm;max-width:70mm;display:block}
 .from .addr{font-size:9.4pt;color:#5d5850;margin-top:2mm}
-.meta{text-align:right;font-size:9.6pt;color:#5d5850}
+.meta{text-align:right;font-size:9.6pt;color:#5d5850;min-width:0;overflow-wrap:anywhere}
 .meta strong{color:#22201c;font-weight:600}
 .to{margin-bottom:7mm}
 .dear{margin:0 0 4mm}
