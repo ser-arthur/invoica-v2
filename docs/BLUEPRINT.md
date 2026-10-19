@@ -2,7 +2,7 @@
 
 The plan for building Invoica v2, and where the work stands. Updated at the end of every phase. A new chat starts here.
 
-Last updated: 19 October 2026, about 04:30 (session 1 of the build).
+Last updated: 19 October 2026, about 05:45 (session 1 of the build).
 
 ---
 
@@ -48,6 +48,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 2j | Review 3 of the credit ledger and its fixes: credit notes worked out slot by slot from what the invoice kept (decision 0009), "Everything still owed", migration 0007 | Done |
 | 2k | Robustness and checks: dialogs keep focus, not-found and error pages, the credit notes list shows what each credits, approved-image tests for every template, the end-to-end suite in CI, axe with dialogs open; VAT in sterling (spec and calculation; printing waits on wording); reminders proposal (`docs/specs/reminders.md`) | Done |
 | 2l | Review 4 of the slot ledger and the plans, and its fixes: "everything still owed" settles every balance, bases are the net taken, numbering cannot repeat, archived clients can be invoiced, migration 0008 | Done |
+| 2m | Review 5 of the review 4 fixes, and its fixes (migration 0010); performance at 2,000 invoices (migration 0009, paged invoice list) | Done |
 | 3 | Invoice templates round 2: four new templates (Ledger, Poster, Letter, Ticket) beside Signature, Studio and Counsel; template picker with live previews of your own details; landing page built around real invoices | Built; waiting for Kobby's review on the design canvas |
 | 4 | Getting paid: payment links, reminders | After v1 |
 | 5 | Cash flow and dashboards beyond v1 | After v1 |
@@ -73,6 +74,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **19 Oct, about 03:45 to 04:30.** Review 4 (`docs/reviews/review-4.md`): no critical or high findings; 1 medium and 7 low. Under Ghana's defaults a last pesewa could not be credited; after a settling note, removing its payment could leave a penny; long amount-credit descriptions were cut; a prefix change could repeat a number; the database did not check a credit note's figures; archived clients could not be invoiced from the editor on the free plan. All fixed with tests first except plan limits in the database (a tenancy question for Kobby). Checks: core 179, database 79, documents 11, PDF 64, schemas 4, web unit 5, end to end 29 passed with 3 skipped by design. Repository bundle 05 delivered.
 
 - **19 Oct, 04:30 onwards.** Review 5 of the review 4 fixes started. Performance measured on a business with 2,000 invoices of six lines each, half part paid and a tenth with a credit note: the invoice list's query took 260 ms and the dashboard's 285 ms; lists now read only summary columns and work out payments and credits in the same query (65 ms and 100 ms), credit notes are indexed by the invoice they credit (migration 0009), and the invoice list shows fifty at a time. A full export of that business is 22 MB and takes half a second.
+
+- **19 Oct, about 05:00 to 05:45.** Review 5 (`docs/reviews/review-5.md`): no critical, high or medium findings; 6 low. A pesewa of levy could stick after a settling note, a reversed payment and a part payment again; migration 0008 could still be passed by direct SQL; the numbering check read before it locked; the two series could share a prefix; totals past the safe range were stored a penny out. All fixed with tests first (migration 0010). Checks: core 184, database 86, documents 11, PDF 64, schemas 4, web unit 8, end to end 29 passed with 3 skipped by design. Repository bundle 06 delivered.
 
 ## Decisions in force
 
@@ -104,6 +107,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **Not registered for tax:** such a business cannot issue an invoice whose lines carry a tax rate, zero-rated included (GOV.UK: no VAT on invoices before registration). Flagged in case Kobby wants zero-rated allowed.
 - **Repeated requests:** payments, credit notes, sends and the first save of a new invoice carry a key made when the dialog opens; the server stores a fingerprint of the request with it, returns the earlier result for a true repeat and refuses a reused key with a different request.
 - **Commits:** made on a local `main` and delivered as bundles. Once GitHub is linked, work moves to branches and pull requests.
+- **Numbering:** invoice and credit note prefixes must differ by more than digits, and a change that would repeat a used number is refused.
 - **Outstanding** has one definition (issued or sent, balance above zero), and amounts in different currencies are never added together.
 
 ## Open questions for Kobby
@@ -126,8 +130,9 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 16. Password reset and email verification are not built yet. They change sign-in, so they wait for approval.
 17. Plan limits are kept by the application only (review 4, R4-L6): should the database enforce them too? It changes tenancy rules.
 18. A note for everything still owed can, in rare cases, credit tax alone (a levy on a base of zero) after a payment is removed. Is that acceptable on a printed credit note, alongside question 11?
+19. Ghana's default price basis: onboarding sets prices excluding tax for a Ghana business. Should it include tax, as is common for consumer prices there? Both are handled.
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-05.zip`.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-06.zip`.
 - Nothing else: everything else is in the repository or the project docs.
