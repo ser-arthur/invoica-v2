@@ -5,7 +5,15 @@ import { addClient, signUpAndOnboard } from './helpers';
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 test('public pages have no automated accessibility violations', async ({ page }) => {
-  for (const path of ['/', '/sign-in', '/sign-up', '/no-such-page']) {
+  for (const path of [
+    '/',
+    '/sign-in',
+    '/sign-up',
+    '/forgot-password',
+    '/reset-password?error=INVALID_TOKEN',
+    '/confirm-email',
+    '/no-such-page',
+  ]) {
     await page.goto(path);
     const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();
     expect(result.violations.map((v) => `${path}: ${v.id} (${v.nodes.length})`)).toEqual([]);

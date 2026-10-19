@@ -5,7 +5,13 @@ import { AuthForm } from '../auth-form';
 
 export const metadata: Metadata = { title: 'Sign in' };
 
-export default async function SignInPage() {
+export default async function SignInPage({ searchParams }: { searchParams: Promise<{ reset?: string }> }) {
   if (await getUser()) redirect('/dashboard');
-  return <AuthForm mode="sign-in" />;
+  const { reset } = await searchParams;
+  return (
+    <AuthForm
+      mode="sign-in"
+      notice={reset === 'done' ? 'Your password has been changed. Sign in with the new one.' : undefined}
+    />
+  );
 }

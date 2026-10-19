@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { linkIn, waitForEmail } from './mailbox';
 
 export const PASSWORD = 'correct horse battery';
 
@@ -6,14 +7,29 @@ export function uniqueEmail(prefix: string) {
   return `${prefix}${Date.now()}${Math.floor(Math.random() * 1000)}@example.test`;
 }
 
-/** Signs up and completes onboarding. Returns the email used. */
-export async function signUpAndOnboard(page: Page, business: string, options: { vat?: boolean } = {}) {
-  const email = uniqueEmail('e2e');
+const octet = () => Math.floor(Math.random() * 254) + 1;
+
+/**
+ * Fills in and sends the sign-up form. Each sign-up comes from its own client address, as separate people would, so
+ * the suite's many sign-ups stay within the per-address sign-up limit (the development server reads the address
+ * from X-Forwarded-For).
+ */
+export async function signUp(page: Page, email: string) {
+  await page.context().setExtraHTTPHeaders({ 'x-forwarded-for': `10.${octet()}.${octet()}.${octet()}` });
   await page.goto('/sign-up');
   await page.fill('#name', 'Test Owner');
   await page.fill('#email', email);
   await page.fill('#password', PASSWORD);
   await page.getByRole('button', { name: 'Create account' }).click();
+}
+
+/** Signs up, opens the confirmation link from the development mailbox and completes onboarding. Returns the email. */
+export async function signUpAndOnboard(page: Page, business: string, options: { vat?: boolean } = {}) {
+  const email = uniqueEmail('e2e');
+  const started = Date.now();
+  await signUp(page, email);
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  await page.goto(linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started)));
   await page.waitForURL('**/onboarding');
   await page.fill('#name', business);
   if (options.vat) {
