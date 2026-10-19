@@ -2,7 +2,7 @@
 
 The plan for building Invoica v2, and where the work stands. Updated at the end of every phase. A new chat starts here.
 
-Last updated: 19 October 2026, about 04:00 (session 1 of the build).
+Last updated: 19 October 2026, about 05:00 (session 1 of the build).
 
 ---
 
@@ -47,6 +47,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 2i | The 30-day trial and the free plan behind a feature flag (decision 0005): three active clients, the Signature template, the "Made with Invoica" mark (`docs/specs/plans.md`, `INVOICA_PLANS=enforced`) | Done; off unless the flag is set |
 | 2j | Review 3 of the credit ledger and its fixes: credit notes worked out slot by slot from what the invoice kept (decision 0009), "Everything still owed", migration 0007 | Done |
 | 2k | Robustness and checks: dialogs keep focus, not-found and error pages, the credit notes list shows what each credits, approved-image tests for every template, the end-to-end suite in CI, axe with dialogs open; VAT in sterling (spec and calculation; printing waits on wording); reminders proposal (`docs/specs/reminders.md`) | Done |
+| 2l | Review 4 of the slot ledger and the plans, and its fixes: "everything still owed" settles every balance, bases are the net taken, numbering cannot repeat, archived clients can be invoiced, migration 0008 | Done |
 | 3 | Invoice templates round 2: four new templates (Ledger, Poster, Letter, Ticket) beside Signature, Studio and Counsel; template picker with live previews of your own details; landing page built around real invoices | Built; waiting for Kobby's review on the design canvas |
 | 4 | Getting paid: payment links, reminders | After v1 |
 | 5 | Cash flow and dashboards beyond v1 | After v1 |
@@ -68,6 +69,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **19 Oct, 02:15 to 03:30.** Phase 2i: the trial and the free plan behind `INVOICA_PLANS=enforced` (`docs/specs/plans.md`), off by default; the editor's line fields fit their row. Review 3 (`docs/reviews/review-3.md`) of the credit ledger: it met its spec in every random run (no critical or high findings), with 1 medium and 6 low. After a part payment, an invoice priced excluding VAT could be left with a penny no credit could clear; a whole line under VAT per line credited a share of its group's rounding; crediting depended on working old figures out again. Credit notes are now worked out slot by slot from what the invoice kept at issue (decision 0009), with "Everything still owed" crediting the balance exactly and the amount hint giving the most the balance allows. Migration 0007 guards a document's kind, its printed number and the tax of unlinked credit lines. The dashboard shows invoiced and credited beside the net figure. Tests first, all failing before the change. Checks: core 168, database 71, documents 11, PDF 50, schemas 4, web unit 5, end to end 21 passed with 3 skipped by design. Repository bundle 04 delivered.
 
 - **19 Oct, 03:30 onwards.** Review 4 (an independent review of the slot ledger and the plans) started. Meanwhile: one dialog for every modal that keeps focus inside and returns it; not-found and error pages in Invoica's own words; the credit preview reads like the document; dashboard figures line up; the credit notes list shows what each credits; every template compared with approved images (`packages/pdf/test/visual.test.ts`, `UPDATE_BASELINES=1` to approve a change); the end-to-end suite added to CI; VAT in sterling for invoices in another currency, spec (`docs/specs/vat-in-sterling.md`) and core calculation, with the printed wording waiting on Kobby; a reminders proposal.
+
+- **19 Oct, about 04:00 to 05:00.** Review 4 (`docs/reviews/review-4.md`): no critical or high findings; 1 medium and 7 low. Under Ghana's defaults a last pesewa could not be credited; after a settling note, removing its payment could leave a penny; long amount-credit descriptions were cut; a prefix change could repeat a number; the database did not check a credit note's figures; archived clients could not be invoiced from the editor on the free plan. All fixed with tests first except plan limits in the database (a tenancy question for Kobby). Checks: core 179, database 79, documents 11, PDF 64, schemas 4, web unit 5, end to end 29 passed with 3 skipped by design. Repository bundle 05 delivered.
 
 ## Decisions in force
 
@@ -119,8 +122,10 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 14. VAT in sterling (`docs/specs/vat-in-sterling.md`): approve the printed wording, and choose the default rate method (market rate or HMRC period rate). Until then, invoices from UK VAT-registered businesses in another currency do not show the VAT in sterling.
 15. Reminders (`docs/specs/reminders.md`): approve a narrow database function that finds due reminders across organisations (a tenancy rule), and the reminder wording.
 16. Password reset and email verification are not built yet. They change sign-in, so they wait for approval.
+17. Plan limits are kept by the application only (review 4, R4-L6): should the database enforce them too? It changes tenancy rules.
+18. A note for everything still owed can, in rare cases, credit tax alone (a levy on a base of zero) after a payment is removed. Is that acceptable on a printed credit note, alongside question 11?
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-04.zip`.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-05.zip`.
 - Nothing else: everything else is in the repository or the project docs.
