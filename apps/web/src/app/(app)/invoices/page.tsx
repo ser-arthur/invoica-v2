@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
-import { formatBusinessDate, formatMoney } from '@invoica/core';
+import { formatBusinessDate, formatMoney, sumMinor } from '@invoica/core';
 import { listDocuments, type DocumentFilter } from '@invoica/db';
 import { ButtonLink, EmptyState, Input, Money, PageHeader, Panel, StatePill, cx } from '@/components/ui';
 import { inWorkspace } from '@/lib/workspace';
@@ -31,7 +31,7 @@ export default async function InvoicesPage({
     return { docs, open };
   });
   const owed = new Map<string, number>();
-  for (const d of open) owed.set(d.currency, (owed.get(d.currency) ?? 0) + d.balance);
+  for (const d of open) owed.set(d.currency, sumMinor([owed.get(d.currency) ?? 0, d.balance]));
   const link = (patch: Record<string, string | undefined>) => {
     const params = new URLSearchParams();
     const merged = {
