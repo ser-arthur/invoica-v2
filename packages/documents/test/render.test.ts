@@ -99,4 +99,11 @@ describe('rendering', () => {
   it('marks drafts', () => {
     expect(renderDocumentHtml(FIXTURES.ukVat!, { fontUrl, draft: true })).toContain('draft-mark');
   });
+
+  it('marks a voided document across the page when shown on screen', () => {
+    const html = renderDocumentHtml(FIXTURES.ukVat!, { fontUrl, voided: true });
+    expect(html).toContain('class="void-mark"');
+    expect(html).toContain('>VOID<');
+    expect(renderDocumentHtml(FIXTURES.ukVat!, { fontUrl })).not.toContain('class="void-mark"');
+  });
 });

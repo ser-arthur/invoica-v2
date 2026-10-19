@@ -61,6 +61,8 @@ export interface RenderOptions {
   fontUrl: (file: string) => string;
   logoUrl?: string | null;
   draft?: boolean;
+  /** Marks a voided document across the page. For the screen only: the kept PDF stays as it was issued. */
+  voided?: boolean;
 }
 
 /** A complete HTML page for a document snapshot. The editor preview and the PDF both come from this. */
@@ -76,6 +78,10 @@ export function renderDocumentHtml(snapshot: DocumentSnapshot, options: RenderOp
   const css = `${fontFaceCss(template.fonts, options.fontUrl)}\n${BASE_CSS}\n${template.css(view)}\n${footer}`;
   const title = `${view.heading} ${view.number}`;
   return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${css}</style></head><body>${
-    options.draft ? '<div class="draft-mark" aria-hidden="true">DRAFT</div>' : ''
+    options.draft
+      ? '<div class="draft-mark" aria-hidden="true">DRAFT</div>'
+      : options.voided
+        ? '<div class="void-mark" aria-hidden="true">VOID</div>'
+        : ''
   }${template.body(view, options.logoUrl ?? null)}</body></html>`;
 }
