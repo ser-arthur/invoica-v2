@@ -12,6 +12,7 @@ import { TaxCodes } from '@/components/tax-codes';
 import { LogoUpload } from '@/components/logo-upload';
 import { PageHeader, Panel, buttonClass } from '@/components/ui';
 import { inWorkspace } from '@/lib/workspace';
+import { countryName } from '@/lib/countries';
 
 export const metadata: Metadata = { title: 'Settings' };
 
@@ -113,6 +114,7 @@ export default async function SettingsPage() {
         <TaxCodes
           country={org.countryCode}
           presetAvailable={presetMissing}
+          noStandardRates={preset ? null : countryName(org.countryCode)}
           codes={codes.map((c) => ({
             id: c.id,
             label: c.label,

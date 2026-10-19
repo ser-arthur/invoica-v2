@@ -158,10 +158,13 @@ export function TaxCodes({
   codes,
   country,
   presetAvailable,
+  noStandardRates,
 }: {
   codes: TaxCodeValue[];
   country: string;
   presetAvailable: string | null;
+  /** The country's name when Invoica has no standard rates for it. */
+  noStandardRates?: string | null;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState<string | null>(null);
@@ -194,6 +197,12 @@ export function TaxCodes({
       >
         Tax codes
       </PanelHeading>
+      {noStandardRates ? (
+        <p className="px-5 pb-3 text-[13px] text-muted">
+          Invoica has no standard rates for {noStandardRates}. Add a code for each rate you charge, and check
+          the rates with your tax authority.
+        </p>
+      ) : null}
       {editing === 'new' ? <Editor code={null} onDone={() => setEditing(null)} /> : null}
       <ul className="divide-y divide-line">
         {codes.map((c) =>

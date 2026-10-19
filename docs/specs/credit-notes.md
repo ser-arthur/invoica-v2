@@ -83,6 +83,9 @@ Each is a test in `packages/core/test/credits.test.ts` or `credits-review-3.test
 18. A line priced including tax whose taxes, rounded one by one, come to more than its price is refused when the invoice is worked out, so no invoice is issued with a net below zero (review 7, R7-L4).
 19. The database refuses a credit note whose tax row is charged where the invoice's row for that tax was only shown, or the other way round (review 7, R7-L1).
 
+20. Printed wording, approved 19 October 2026: every credit note from a registered seller prints the decrease before tax ("Total before VAT", or "Total before taxes" in Ghana, where the figure is also before NHIL and GETFund Levy); a UK reverse-charge credit note reads "Reverse charge: customer to account for the output tax adjustment of £X to HMRC."; zero-rated amounts on a credit note are a "Zero-rated reduction" (`packages/documents/test/credit-wording.test.ts`).
+21. A note for everything still owed may credit tax alone (a levy left on a base of zero after a payment is removed); it prints a net of nothing and the tax it credits (approved 19 October 2026).
+
 ## Not covered
 
-A credit note above the balance owed (after full payment) is refused. Crediting a paid invoice needs a refund or a client credit balance, which waits for Kobby's decision.
+A credit note above the balance owed (after full payment) needs a refund: `docs/specs/refunds.md`.

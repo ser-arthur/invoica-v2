@@ -159,24 +159,24 @@ export function buildView(s: DocumentSnapshot, options: { draft?: boolean } = {}
 
   const t = s.totals;
   const totals: DocumentView['totals'] = [];
+  // In Ghana the figure comes before NHIL and GETFund Levy as well as VAT.
+  const beforeTax =
+    sellerCountry === 'GH' ? 'Total before taxes' : `Total before ${taxWord === 'VAT' ? 'VAT' : 'tax'}`;
+  // Every credit note from a registered seller prints the decrease before tax (approved 19 October 2026).
+  const creditBeforeTax = isCredit && vatInvoice;
+  const subtotalIsNet = t.discounts.length === 0 && !s.pricesIncludeTax;
   const hasAdjustments = t.discounts.length > 0 || t.taxes.some((r) => r.charged && r.amount > 0);
-  if (hasAdjustments || s.paymentsShown.length > 0) {
-    totals.push({
-      label: s.pricesIncludeTax ? 'Subtotal' : 'Subtotal',
-      value: money(t.subtotal),
-      kind: 'line',
-    });
+  if (creditBeforeTax && subtotalIsNet) {
+    totals.push({ label: beforeTax, value: money(t.subtotal), kind: 'line' });
+  } else if (hasAdjustments || s.paymentsShown.length > 0) {
+    totals.push({ label: 'Subtotal', value: money(t.subtotal), kind: 'line' });
   }
   for (const d of t.discounts)
     totals.push({ label: d.label, value: `${MINUS}${money(d.amount)}`, kind: 'discount' });
   // The amount excluding tax is printed whenever it is not already the subtotal: after discounts, or when prices
   // include tax.
-  if ((t.discounts.length > 0 || s.pricesIncludeTax) && t.taxTotal > 0) {
-    totals.push({
-      label: `Total before ${taxWord === 'VAT' ? 'VAT' : 'tax'}`,
-      value: money(t.net),
-      kind: 'line',
-    });
+  if (!subtotalIsNet && (t.taxTotal > 0 || creditBeforeTax)) {
+    totals.push({ label: beforeTax, value: money(t.net), kind: 'line' });
   }
   const charged = t.taxes.filter((r) => r.charged && r.ratePpm > 0);
   for (const r of charged) {
@@ -195,11 +195,14 @@ export function buildView(s: DocumentSnapshot, options: { draft?: boolean } = {}
     });
 
   const reverse = t.taxes.filter((r) => !r.charged && r.amount > 0);
-  // The HMRC wording applies to UK sellers only; elsewhere the note names the reverse charge and its figures.
+  // The HMRC wording applies to UK sellers only; elsewhere the note names the reverse charge and its figures. A UK
+  // credit note asks the customer to adjust the output tax they accounted for.
   const reverseLead =
-    s.seller.address.countryCode === 'GB'
-      ? 'Reverse charge: customer to pay the VAT to HMRC.'
-      : 'Reverse charge.';
+    s.seller.address.countryCode !== 'GB'
+      ? 'Reverse charge.'
+      : isCredit
+        ? `Reverse charge: customer to account for the output tax adjustment of ${money(sumMinor(reverse.map((r) => r.amount)))} to HMRC.`
+        : 'Reverse charge: customer to pay the VAT to HMRC.';
   const reverseChargeNote = reverse.length
     ? `${reverseLead} ${reverse.map((r) => `${r.name} ${formatRate(r.ratePpm)} of ${money(r.amount)} on ${money(r.base)}`).join('; ')}.`
     : null;
@@ -207,7 +210,12 @@ export function buildView(s: DocumentSnapshot, options: { draft?: boolean } = {}
   const untaxed = t.taxes.filter((r) => r.charged && r.ratePpm === 0 && r.base > 0);
   for (const r of untaxed) {
     totals.push({
-      label: `${r.treatment === 'zero' ? 'Zero-rated' : r.name} supplies`,
+      label:
+        r.treatment === 'zero'
+          ? isCredit
+            ? 'Zero-rated reduction'
+            : 'Zero-rated supplies'
+          : `${r.name} supplies`,
       value: money(r.base),
       kind: 'note',
     });

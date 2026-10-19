@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, ne } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, ne } from 'drizzle-orm';
 import { DomainError, assertTaxCode, presetFor, type TaxCode } from '@invoica/core';
 import type { TaxCodeInput } from '@invoica/schemas';
 import type { Tx } from './client';
@@ -88,26 +88,48 @@ export async function archiveTaxCode(tx: Tx, actor: Actor, id: string): Promise<
   await audit(tx, actor, 'tax_code.archived', 'tax_code', id);
 }
 
-/** Adds any codes from the country's preset that the organisation does not have yet. Returns how many were added. */
+/**
+ * Gives the organisation every code of its country's preset: adds those it never had and brings back those it
+ * archived. Codes it has edited stay as they are. Returns how many codes were added or brought back.
+ */
 export async function loadPreset(tx: Tx, actor: Actor, country: string): Promise<number> {
   const preset = presetFor(country);
   if (!preset) return 0;
-  const have = new Set((await tx.select({ key: taxCode.presetKey }).from(taxCode)).map((r) => r.key));
+  const rows = await tx
+    .select({ id: taxCode.id, key: taxCode.presetKey, archivedAt: taxCode.archivedAt })
+    .from(taxCode);
+  const wanted = new Set(preset.codes.map((c) => c.key));
+  const archived = rows.filter((r) => r.key && wanted.has(r.key) && r.archivedAt);
+  const have = new Set(rows.map((r) => r.key));
   const missing = preset.codes.filter((c) => !have.has(c.key));
-  if (missing.length === 0) return 0;
-  await tx.insert(taxCode).values(
-    missing.map((c, i) => ({
-      organisationId: actor.organisationId,
-      presetKey: c.key,
-      label: c.label,
-      treatment: c.treatment,
-      components: c.components,
-      sort: 100 + i,
-    })),
-  );
+  if (missing.length === 0 && archived.length === 0) return 0;
+  if (missing.length > 0) {
+    await tx.insert(taxCode).values(
+      missing.map((c, i) => ({
+        organisationId: actor.organisationId,
+        presetKey: c.key,
+        label: c.label,
+        treatment: c.treatment,
+        components: c.components,
+        sort: 100 + i,
+      })),
+    );
+  }
+  if (archived.length > 0) {
+    await tx
+      .update(taxCode)
+      .set({ archivedAt: null })
+      .where(
+        inArray(
+          taxCode.id,
+          archived.map((r) => r.id),
+        ),
+      );
+  }
   await audit(tx, actor, 'tax_code.preset_loaded', 'tax_code', null, {
     country,
     added: missing.map((c) => c.key),
+    restored: archived.map((r) => r.key),
   });
-  return missing.length;
+  return missing.length + archived.length;
 }
