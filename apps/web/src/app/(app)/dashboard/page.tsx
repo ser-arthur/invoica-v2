@@ -278,7 +278,7 @@ export default async function DashboardPage() {
               ].map((s) => (
                 <div
                   key={s.label}
-                  className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 sm:flex-col sm:flex-nowrap sm:items-start"
+                  className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 sm:flex-col sm:flex-nowrap sm:items-start sm:justify-start"
                 >
                   <dt className="text-[13px] text-muted">{s.label}</dt>
                   <dd className="font-display text-[22px] font-semibold tracking-[-0.02em] tabular">

@@ -503,9 +503,14 @@ export function CreditNoteButton({
             ) : null}
             {preview.plan ? (
               <dl className="rounded-[12px] bg-sunk px-4 py-3 text-[14px]">
-                <div className="flex justify-between">
-                  <dt className="text-muted">Credit note total</dt>
-                  <dd className="font-medium tabular">{money(preview.plan.totals.total)}</dd>
+                <div className="flex justify-between text-muted">
+                  <dt>
+                    Before{' '}
+                    {preview.plan.totals.taxes.every((t) => t.ratePpm === 0 || t.name === 'VAT')
+                      ? 'VAT'
+                      : 'tax'}
+                  </dt>
+                  <dd className="tabular">{money(preview.plan.totals.net)}</dd>
                 </div>
                 {preview.plan.totals.taxes
                   .filter((t) => t.ratePpm > 0)
@@ -518,6 +523,10 @@ export function CreditNoteButton({
                       <dd className="tabular">{money(t.amount)}</dd>
                     </div>
                   ))}
+                <div className="mt-2 flex justify-between border-t border-line pt-2">
+                  <dt className="font-medium">Credit note total</dt>
+                  <dd className="font-medium tabular">{money(preview.plan.totals.total)}</dd>
+                </div>
               </dl>
             ) : preview.error ? (
               <p className="text-[14px] text-danger" role="status">
