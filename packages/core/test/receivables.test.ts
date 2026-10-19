@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { monthlyTotals, summariseReceivables, type ReceivableDocument } from '../src/receivables';
+import { monthlyTotals, summariseReceivables, type ReceivableDocument, chaseOrder } from '../src/receivables';
 
 const d = (over: Partial<ReceivableDocument>): ReceivableDocument => ({
   currency: 'GBP',
@@ -56,5 +56,25 @@ describe('receivables', () => {
       { month: '2026-09', amount: 0 },
       { month: '2026-10', amount: 150 },
     ]);
+  });
+});
+
+describe('chasing order', () => {
+  const doc = (id: string, dueDate: string, balance: number) => ({ id, dueDate, balance });
+
+  it('puts the invoice late longest first, and the larger balance first when equally late', () => {
+    const order = chaseOrder(
+      [doc('a', '2026-10-08', 240_000), doc('b', '2026-09-15', 66_000), doc('c', '2026-09-15', 90_000)],
+      '2026-10-19',
+    );
+    expect(order.map((o) => [o.id, o.daysLate])).toEqual([
+      ['c', 34],
+      ['b', 34],
+      ['a', 11],
+    ]);
+  });
+
+  it('leaves out anything not yet late', () => {
+    expect(chaseOrder([doc('a', '2026-10-19', 100), doc('b', '2026-10-25', 100)], '2026-10-19')).toEqual([]);
   });
 });

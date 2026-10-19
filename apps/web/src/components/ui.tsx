@@ -163,6 +163,33 @@ export function Money({
   return <span className={cx('tabular', className)}>{formatMoney(amount, currency)}</span>;
 }
 
+/** A large amount with its minor units set smaller, so the whole figure reads first. */
+export function Headline({
+  amount,
+  currency,
+  className,
+}: {
+  amount: number;
+  currency: string;
+  className?: string;
+}) {
+  const text = formatMoney(amount, currency);
+  const m = /^(.*\d)([.,]\d+)(\D*)$/.exec(text);
+  return (
+    <span className={cx('tabular', className)}>
+      {m ? (
+        <>
+          {m[1]}
+          <span className="ml-[0.04em] align-[0.95em] text-[0.4em] tracking-normal text-muted">{m[2]}</span>
+          {m[3]}
+        </>
+      ) : (
+        text
+      )}
+    </span>
+  );
+}
+
 export function PageHeader({
   title,
   description,
@@ -209,9 +236,29 @@ export function PanelHeading({ children, action }: { children: ReactNode; action
   );
 }
 
+/** A blank sheet of paper with a line of brand colour where the amount goes. Decoration for empty states. */
+function PaperMark() {
+  return (
+    <svg width="56" height="68" viewBox="0 0 56 68" aria-hidden="true" className="mb-1">
+      <path
+        d="M6 2h32l14 14v46a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4Z"
+        fill="var(--surface)"
+        stroke="var(--line-strong)"
+        strokeWidth="1.5"
+      />
+      <path d="M38 2v10a4 4 0 0 0 4 4h10" fill="none" stroke="var(--line-strong)" strokeWidth="1.5" />
+      <rect x="10" y="22" width="20" height="3" rx="1.5" fill="var(--line-strong)" />
+      <rect x="10" y="31" width="30" height="3" rx="1.5" fill="var(--line)" />
+      <rect x="10" y="38" width="26" height="3" rx="1.5" fill="var(--line)" />
+      <rect x="22" y="52" width="24" height="6" rx="3" fill="var(--brand-bright)" />
+    </svg>
+  );
+}
+
 export function EmptyState({ title, body, action }: { title: string; body: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-start gap-3 px-5 py-10 sm:items-center sm:text-center">
+      <PaperMark />
       <p className="font-display text-lg font-semibold text-ink">{title}</p>
       <p className="max-w-[46ch] text-muted">{body}</p>
       {action}

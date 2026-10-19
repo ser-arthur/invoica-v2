@@ -92,3 +92,18 @@ export function monthlyTotals(
   }
   return keys.map((month) => ({ month, amount: totals.get(month) ?? 0 }));
 }
+
+/**
+ * Late invoices in the order to chase them: the one late longest first, and the larger balance first when two
+ * are equally late. Each comes back with how many days late it is.
+ */
+export function chaseOrder<T extends { dueDate: BusinessDate | null; balance: number }>(
+  docs: readonly T[],
+  today: BusinessDate,
+): (T & { daysLate: number })[] {
+  return docs
+    .filter((d): d is T & { dueDate: BusinessDate } => d.dueDate !== null && d.balance > 0)
+    .map((d) => ({ ...d, daysLate: daysBetween(d.dueDate, today) }))
+    .filter((d) => d.daysLate > 0)
+    .sort((a, b) => b.daysLate - a.daysLate || b.balance - a.balance);
+}

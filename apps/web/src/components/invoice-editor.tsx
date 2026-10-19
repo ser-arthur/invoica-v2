@@ -295,12 +295,17 @@ export function InvoiceEditor(props: EditorProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, start] = useTransition();
 
+  // The line open for editing on phones.
+  const [openLine, setOpenLine] = useState<string | null>(null);
   const update = (patch: Partial<EditorState>) => {
     setState((s) => ({ ...s, ...patch }));
     setDirty(true);
   };
-  const updateLine = (key: string, patch: Partial<EditorLine>) =>
+  const updateLine = (key: string, patch: Partial<EditorLine>) => {
+    // The line being typed in stays open on phones.
+    setOpenLine(key);
     update({ lines: state.lines.map((l) => (l.key === key ? { ...l, ...patch } : l)) });
+  };
 
   const client = clients.find((c) => c.id === state.clientId) ?? null;
   const defaultTax = taxCodes.find((t) => t.isDefault)?.id ?? null;
@@ -396,11 +401,13 @@ export function InvoiceEditor(props: EditorProps) {
   }, [deferred, state, org, client, today, props.logoUrl]);
 
   function addLine(from?: EditorItem) {
+    const key = newKey();
+    setOpenLine(key);
     update({
       lines: [
         ...state.lines,
         {
-          key: newKey(),
+          key,
           title: from?.name ?? '',
           description: from?.description ?? '',
           showDescription: !!from?.description,
@@ -732,144 +739,186 @@ export function InvoiceEditor(props: EditorProps) {
                   }
                 })();
                 const error = parsed.lineErrors[l.key];
+                // On phones a finished line folds to one row; the line being edited, a blank one and one with an
+                // error stay open. Wider screens always show every line in full.
+                const expanded = l.key === openLine || !!error || (!l.title.trim() && !l.unitPrice.trim());
+                const taxLabel = l.taxCodeId ? taxCodes.find((t) => t.id === l.taxCodeId)?.label : null;
                 return (
                   <li
                     key={l.key}
                     className={cx(
-                      'rounded-[12px] border bg-surface p-3',
+                      'rounded-[12px] border bg-surface',
+                      expanded ? 'p-3' : 'sm:p-3',
                       error ? 'border-danger' : 'border-line',
                     )}
                   >
-                    <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                      <div className="grid gap-3">
-                        {state.lineStyle === 'dated' ? (
+                    {!expanded ? (
+                      <button
+                        type="button"
+                        onClick={() => setOpenLine(l.key)}
+                        className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2.5 text-left sm:hidden"
+                      >
+                        <span className="min-w-0">
+                          <span className="sr-only">Edit line {index + 1}: </span>
+                          <span className="block truncate font-medium">{l.title}</span>
+                          {(() => {
+                            const detail =
+                              state.lineStyle === 'amount'
+                                ? [l.description.split('\n')[0], taxLabel].filter(Boolean).join(', ')
+                                : `${l.quantity}${l.unit ? ` ${l.unit}` : ''} × ${l.unitPrice ? money(parseMoney(l.unitPrice, state.currency) ?? 0) : ''}${taxLabel ? `, ${taxLabel}` : ''}`;
+                            return detail ? (
+                              <span className="block truncate text-[13px] text-muted">{detail}</span>
+                            ) : null;
+                          })()}
+                        </span>
+                        <span className="shrink-0 font-medium tabular">
+                          {amount === null ? '' : money(amount)}
+                        </span>
+                      </button>
+                    ) : null}
+                    <div className={expanded ? '' : 'hidden sm:block'}>
+                      <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                        <div className="grid gap-3">
+                          {state.lineStyle === 'dated' ? (
+                            <Input
+                              type="date"
+                              aria-label={`Line ${index + 1} date`}
+                              value={l.serviceDate}
+                              onChange={(e) => updateLine(l.key, { serviceDate: e.target.value })}
+                              className="sm:w-44"
+                            />
+                          ) : null}
                           <Input
-                            type="date"
-                            aria-label={`Line ${index + 1} date`}
-                            value={l.serviceDate}
-                            onChange={(e) => updateLine(l.key, { serviceDate: e.target.value })}
-                            className="sm:w-44"
+                            aria-label={`Line ${index + 1} description`}
+                            placeholder="What you are charging for"
+                            value={l.title}
+                            onChange={(e) => updateLine(l.key, { title: e.target.value })}
+                          />
+                          {l.showDescription ? (
+                            <Textarea
+                              aria-label={`Line ${index + 1} detail`}
+                              placeholder="More detail, shown under the line"
+                              value={l.description}
+                              onChange={(e) => updateLine(l.key, { description: e.target.value })}
+                              className="min-h-14"
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              className="min-h-11 justify-self-start text-[13px] text-brand hover:underline sm:min-h-0"
+                              onClick={() => updateLine(l.key, { showDescription: true })}
+                            >
+                              Add detail
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex items-start gap-1 sm:flex-col">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-11 min-w-11 sm:h-8 sm:min-w-0"
+                            aria-label={`Move line ${index + 1} up`}
+                            disabled={index === 0}
+                            onClick={() => moveLine(index, -1)}
+                          >
+                            <ArrowUp className="size-4" aria-hidden />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-11 min-w-11 sm:h-8 sm:min-w-0"
+                            aria-label={`Move line ${index + 1} down`}
+                            disabled={index === state.lines.length - 1}
+                            onClick={() => moveLine(index, 1)}
+                          >
+                            <ArrowDown className="size-4" aria-hidden />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-11 min-w-11 sm:h-8 sm:min-w-0"
+                            aria-label={`Remove line ${index + 1}`}
+                            onClick={() => update({ lines: state.lines.filter((x) => x.key !== l.key) })}
+                          >
+                            <Trash2 className="size-4" aria-hidden />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        {state.lineStyle !== 'amount' ? (
+                          <Input
+                            aria-label={`Line ${index + 1} ${qtyLabel.toLowerCase()}`}
+                            inputMode="decimal"
+                            value={l.quantity}
+                            onChange={(e) => updateLine(l.key, { quantity: e.target.value })}
+                            placeholder={qtyLabel}
+                            className="w-20 text-right tabular"
                           />
                         ) : null}
-                        <Input
-                          aria-label={`Line ${index + 1} description`}
-                          placeholder="What you are charging for"
-                          value={l.title}
-                          onChange={(e) => updateLine(l.key, { title: e.target.value })}
-                        />
-                        {l.showDescription ? (
-                          <Textarea
-                            aria-label={`Line ${index + 1} detail`}
-                            placeholder="More detail, shown under the line"
-                            value={l.description}
-                            onChange={(e) => updateLine(l.key, { description: e.target.value })}
-                            className="min-h-14"
+                        {state.lineStyle === 'quantity' ? (
+                          <Input
+                            aria-label={`Line ${index + 1} unit`}
+                            value={l.unit}
+                            onChange={(e) => updateLine(l.key, { unit: e.target.value })}
+                            placeholder="Unit"
+                            className="w-24"
                           />
-                        ) : (
-                          <button
-                            type="button"
-                            className="self-start text-[13px] text-brand hover:underline"
-                            onClick={() => updateLine(l.key, { showDescription: true })}
-                          >
-                            Add detail
-                          </button>
-                        )}
-                      </div>
-                      <div className="flex items-start gap-1 sm:flex-col">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-11 min-w-11 sm:h-8 sm:min-w-0"
-                          aria-label={`Move line ${index + 1} up`}
-                          disabled={index === 0}
-                          onClick={() => moveLine(index, -1)}
-                        >
-                          <ArrowUp className="size-4" aria-hidden />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-11 min-w-11 sm:h-8 sm:min-w-0"
-                          aria-label={`Move line ${index + 1} down`}
-                          disabled={index === state.lines.length - 1}
-                          onClick={() => moveLine(index, 1)}
-                        >
-                          <ArrowDown className="size-4" aria-hidden />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-11 min-w-11 sm:h-8 sm:min-w-0"
-                          aria-label={`Remove line ${index + 1}`}
-                          onClick={() => update({ lines: state.lines.filter((x) => x.key !== l.key) })}
-                        >
-                          <Trash2 className="size-4" aria-hidden />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-3">
-                      {state.lineStyle !== 'amount' ? (
+                        ) : null}
+                        {state.lineStyle !== 'amount' ? (
+                          <span aria-hidden className="text-muted">
+                            ×
+                          </span>
+                        ) : null}
                         <Input
-                          aria-label={`Line ${index + 1} ${qtyLabel.toLowerCase()}`}
+                          aria-label={`Line ${index + 1} ${priceLabel.toLowerCase()}`}
                           inputMode="decimal"
-                          value={l.quantity}
-                          onChange={(e) => updateLine(l.key, { quantity: e.target.value })}
-                          placeholder={qtyLabel}
-                          className="w-20 text-right tabular"
+                          value={l.unitPrice}
+                          onChange={(e) => updateLine(l.key, { unitPrice: e.target.value })}
+                          placeholder={state.lineStyle === 'amount' ? 'Amount' : priceLabel}
+                          className="w-32 text-right tabular"
                         />
-                      ) : null}
-                      {state.lineStyle === 'quantity' ? (
-                        <Input
-                          aria-label={`Line ${index + 1} unit`}
-                          value={l.unit}
-                          onChange={(e) => updateLine(l.key, { unit: e.target.value })}
-                          placeholder="Unit"
-                          className="w-24"
-                        />
-                      ) : null}
-                      {state.lineStyle !== 'amount' ? (
-                        <span aria-hidden className="text-muted">
-                          ×
-                        </span>
-                      ) : null}
-                      <Input
-                        aria-label={`Line ${index + 1} ${priceLabel.toLowerCase()}`}
-                        inputMode="decimal"
-                        value={l.unitPrice}
-                        onChange={(e) => updateLine(l.key, { unitPrice: e.target.value })}
-                        placeholder={state.lineStyle === 'amount' ? 'Amount' : priceLabel}
-                        className="w-32 text-right tabular"
-                      />
-                      {registered || l.taxCodeId ? (
-                        <Select
-                          aria-label={`Line ${index + 1} tax`}
-                          value={l.taxCodeId ?? ''}
-                          onChange={(e) => updateLine(l.key, { taxCodeId: e.target.value || null })}
-                          className="w-auto max-w-44"
+                        {registered || l.taxCodeId ? (
+                          <Select
+                            aria-label={`Line ${index + 1} tax`}
+                            value={l.taxCodeId ?? ''}
+                            onChange={(e) => updateLine(l.key, { taxCodeId: e.target.value || null })}
+                            className="w-auto max-w-44"
+                          >
+                            <option value="">No tax</option>
+                            {taxCodes
+                              .filter(
+                                (t) => registered || t.code.components.length === 0 || t.id === l.taxCodeId,
+                              )
+                              .map((t) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.label}
+                                </option>
+                              ))}
+                          </Select>
+                        ) : null}
+                        <output
+                          className="ml-auto min-w-24 text-right font-medium tabular"
+                          aria-label={`Line ${index + 1} amount`}
                         >
-                          <option value="">No tax</option>
-                          {taxCodes
-                            .filter(
-                              (t) => registered || t.code.components.length === 0 || t.id === l.taxCodeId,
-                            )
-                            .map((t) => (
-                              <option key={t.id} value={t.id}>
-                                {t.label}
-                              </option>
-                            ))}
-                        </Select>
+                          {amount === null ? '' : money(amount)}
+                        </output>
+                      </div>
+                      {error ? <p className="mt-2 text-[13px] text-danger">{error}</p> : null}
+                      {l.key === openLine && !error && l.title.trim() ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2 h-11 sm:hidden"
+                          onClick={() => setOpenLine(null)}
+                        >
+                          Done with this line
+                        </Button>
                       ) : null}
-                      <output
-                        className="ml-auto min-w-24 text-right font-medium tabular"
-                        aria-label={`Line ${index + 1} amount`}
-                      >
-                        {amount === null ? '' : money(amount)}
-                      </output>
                     </div>
-                    {error ? <p className="mt-2 text-[13px] text-danger">{error}</p> : null}
                   </li>
                 );
               })}

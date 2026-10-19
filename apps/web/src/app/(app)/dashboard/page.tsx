@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { formatBusinessDate, formatMoney, type ReceivablesSummary } from '@invoica/core';
+import { chaseOrder, formatBusinessDate, formatMoney, type ReceivablesSummary } from '@invoica/core';
 import { getDashboard, listClients, withOrganisation } from '@invoica/db';
-import { ButtonLink, Money, Panel, PanelHeading, StatePill, cx } from '@/components/ui';
+import { ButtonLink, Headline, Money, Panel, PanelHeading, StatePill, cx } from '@/components/ui';
 import { getDb } from '@/lib/db';
 import { requireWorkspace } from '@/lib/session';
 
@@ -23,7 +23,26 @@ function greeting(timeZone: string) {
   return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 }
 
-function OwedBand({ summary, currency }: { summary: ReceivablesSummary | undefined; currency: string }) {
+interface Late {
+  id: string;
+  clientName: string;
+  number: string | null;
+  balance: number;
+  currency: string;
+  daysLate: number;
+}
+
+const daysLate = (n: number) => (n === 1 ? '1 day late' : `${n} days late`);
+
+function OwedBand({
+  summary,
+  currency,
+  first,
+}: {
+  summary: ReceivablesSummary | undefined;
+  currency: string;
+  first: Late | null;
+}) {
   const outstanding = summary?.outstanding ?? 0;
   const total = Math.max(outstanding, 1);
   return (
@@ -32,8 +51,8 @@ function OwedBand({ summary, currency }: { summary: ReceivablesSummary | undefin
         <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-[14px] font-medium text-muted">Owed to you</h2>
-            <p className="mt-1 font-display text-[40px] leading-none font-semibold tracking-[-0.03em] text-ink tabular sm:text-[52px]">
-              {formatMoney(outstanding, currency)}
+            <p className="mt-1 font-display text-[44px] leading-none font-semibold tracking-[-0.035em] text-ink sm:text-[60px]">
+              <Headline amount={outstanding} currency={currency} />
             </p>
           </div>
           <p className="text-[14px] text-muted">
@@ -85,6 +104,23 @@ function OwedBand({ summary, currency }: { summary: ReceivablesSummary | undefin
             ))}
           </dl>
         </div>
+        {first ? (
+          <div className="flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[15px]">
+              Chase <span className="font-medium">{first.clientName}</span> first:{' '}
+              <span className="font-medium tabular">{formatMoney(first.balance, first.currency)}</span> on{' '}
+              {first.number}, <span className="text-danger">{daysLate(first.daysLate)}</span>.
+            </p>
+            <ButtonLink
+              href={`/invoices/${first.id}`}
+              variant="secondary"
+              size="sm"
+              className="self-start sm:self-auto"
+            >
+              Open {first.number}
+            </ButtonLink>
+          </div>
+        ) : null}
       </div>
     </Panel>
   );
@@ -190,6 +226,7 @@ export default async function DashboardPage() {
   const paid30 = dash.paidLast30Days.find((p) => p.currency === base)?.amount ?? 0;
   const invoiced = dash.invoicedThisMonth.find((p) => p.currency === base)?.amount ?? 0;
   const isNew = dash.recent.length === 0;
+  const late = chaseOrder(dash.overdue, today);
 
   return (
     <div className="flex flex-col gap-6">
@@ -208,7 +245,7 @@ export default async function DashboardPage() {
         <GettingStarted hasProfile={!!organisation.addressLine1} hasClient={clients.length > 0} />
       ) : null}
 
-      {isNew ? null : <OwedBand summary={baseSummary} currency={base} />}
+      {isNew ? null : <OwedBand summary={baseSummary} currency={base} first={late[0] ?? null} />}
 
       {otherOwed.length > 0 ? (
         <p className="-mt-2 text-[14px] text-muted">
@@ -255,11 +292,11 @@ export default async function DashboardPage() {
               >
                 Needs chasing
               </PanelHeading>
-              {dash.overdue.length === 0 ? (
+              {late.length === 0 ? (
                 <p className="px-5 py-8 text-muted">Nothing overdue. Every client is paying on time.</p>
               ) : (
                 <ul className="divide-y divide-line">
-                  {dash.overdue.slice(0, 5).map((d) => (
+                  {late.slice(0, 5).map((d) => (
                     <li key={d.id}>
                       <Link
                         href={`/invoices/${d.id}`}
@@ -268,7 +305,7 @@ export default async function DashboardPage() {
                         <div className="min-w-0">
                           <p className="truncate font-medium">{d.clientName}</p>
                           <p className="text-[13px] text-muted">
-                            {d.number}, due {d.dueDate ? formatBusinessDate(d.dueDate) : ''}
+                            {d.number}, <span className="text-danger">{daysLate(d.daysLate)}</span>
                           </p>
                         </div>
                         <Money amount={d.balance} currency={d.currency} className="font-medium" />
