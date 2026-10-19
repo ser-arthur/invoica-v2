@@ -159,7 +159,7 @@ A credit note alone does not make an invoice part paid: with nothing received, a
 **Cash position.** The money the organisation holds at a date, derived from records (payments in, expenses out, and bank data once imported).
 *Current app:* does not exist.
 
-**Invoiced this month.** The totals of invoices issued this month, less the totals of credit notes issued this month, per currency. Drafts and void invoices are not counted. When credit notes were issued this month, the dashboard labels it "Invoiced this month, less credit notes" and shows what was invoiced and what was credited beneath it.
+**Invoiced this month.** The totals of invoices issued this month, less the totals of credit notes issued this month, per currency. Drafts and void invoices are not counted. When credit notes were issued this month, the dashboard labels it "Net invoiced this month" and shows what was invoiced and what was credited beneath it.
 
 **Forecast.** A projection of future cash position from records and stated assumptions. A forecast always states its assumptions and shows them on screen.
 

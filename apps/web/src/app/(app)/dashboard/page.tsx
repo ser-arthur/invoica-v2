@@ -269,7 +269,7 @@ export default async function DashboardPage() {
                 { label: 'Paid in the last 30 days', value: formatMoney(paid30, base), note: null },
                 creditedMonth > 0
                   ? {
-                      label: 'Invoiced this month, less credit notes',
+                      label: 'Net invoiced this month',
                       value: formatMoney(invoiced, base),
                       note: `${formatMoney(issuedMonth, base)} invoiced, ${formatMoney(creditedMonth, base)} credited`,
                     }
