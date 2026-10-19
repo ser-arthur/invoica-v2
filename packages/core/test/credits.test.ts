@@ -1,116 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { computeDocument, type DocumentInput, type DocumentTotals, type LineInput } from '../src/totals';
+import { computeDocument } from '../src/totals';
 import type { TaxCode } from '../src/tax';
-import {
-  checkCredit,
-  creditSource,
-  creditState,
-  creditedLines,
-  planAmountCredit,
-  planLineCredit,
-  type CreditPlan,
-  type CreditSource,
-  type CreditedLine,
-} from '../src/credits';
+import { checkCredit, creditState, planAmountCredit, planLineCredit } from '../src/credits';
 import { DomainError } from '../src/errors';
-import { presetFor } from '../src/presets';
+import {
+  codeOf,
+  exempt,
+  expectExact,
+  expectWellFormed,
+  ghanaCode,
+  invoice,
+  ledger,
+  line,
+  reverse,
+  sourceOf,
+  vat,
+} from './credit-harness';
 
 /** Acceptance criteria: docs/specs/credit-notes.md. */
-
-const vat = (ratePpm: number): TaxCode => ({
-  label: `VAT ${ratePpm / 10_000}%`,
-  treatment: ratePpm === 0 ? 'zero' : 'standard',
-  components: [{ name: 'VAT', ratePpm, compound: false }],
-});
-const reverse: TaxCode = {
-  label: 'Reverse charge 20%',
-  treatment: 'reverse_charge',
-  components: [{ name: 'VAT', ratePpm: 200_000, compound: false }],
-};
-const exempt: TaxCode = { label: 'Exempt', treatment: 'exempt', components: [] };
-const ghana = presetFor('GH')!.codes.find((c) => c.key === 'gh_standard')!;
-const ghanaCode: TaxCode = { label: ghana.label, treatment: ghana.treatment, components: ghana.components };
-
-const invoice = (lines: LineInput[], extra: Partial<DocumentInput> = {}): DocumentInput => ({
-  currency: 'GBP',
-  pricesIncludeTax: false,
-  taxLevel: 'line',
-  rounding: 'half-up',
-  lines,
-  ...extra,
-});
-const line = (quantity: number, unitPrice: number, tax: TaxCode | null = null): LineInput => ({
-  quantity,
-  unitPrice,
-  tax,
-});
-
-function sourceOf(input: DocumentInput): { source: CreditSource; totals: DocumentTotals } {
-  const totals = computeDocument(input);
-  return { source: creditSource(input, totals), totals };
-}
-
-/** Issues credit notes one after another, keeping the ledger as the database would. */
-function ledger(source: CreditSource) {
-  const earlier: CreditedLine[] = [];
-  const notes: DocumentTotals[] = [];
-  return {
-    notes,
-    lines(request: { index: number; quantity: number }[]): CreditPlan {
-      const plan = planLineCredit(source, creditState(source, earlier), request);
-      earlier.push(...creditedLines(plan));
-      notes.push(plan.totals);
-      return plan;
-    },
-    amount(amount: number): CreditPlan {
-      const plan = planAmountCredit(source, creditState(source, earlier), amount);
-      earlier.push(...creditedLines(plan));
-      notes.push(plan.totals);
-      return plan;
-    },
-    state: () => creditState(source, earlier),
-  };
-}
-
-function rowSums(notes: DocumentTotals[]) {
-  const sums = new Map<string, { base: number; amount: number }>();
-  for (const n of notes)
-    for (const r of n.taxes) {
-      const s = sums.get(r.key) ?? { base: 0, amount: 0 };
-      s.base += r.base;
-      s.amount += r.amount;
-      sums.set(r.key, s);
-    }
-  return sums;
-}
-
-function expectExact(totals: DocumentTotals, notes: DocumentTotals[]) {
-  const sums = rowSums(notes);
-  for (const r of totals.taxes) expect(sums.get(r.key), r.key).toEqual({ base: r.base, amount: r.amount });
-  expect([...sums.keys()].every((k) => totals.taxes.some((r) => r.key === k))).toBe(true);
-  expect(notes.reduce((a, n) => a + n.total, 0)).toBe(totals.total);
-  expect(notes.reduce((a, n) => a + n.taxTotal, 0)).toBe(totals.taxTotal);
-}
-
-function expectWellFormed(note: DocumentTotals) {
-  for (const r of note.taxes) {
-    expect(r.amount, r.key).toBeGreaterThanOrEqual(0);
-    expect(r.base, r.key).toBeGreaterThanOrEqual(0);
-  }
-  expect(note.lines.reduce((a, l) => a + l.tax, 0)).toBe(note.taxTotal);
-  expect(note.total).toBe(note.net + note.taxTotal);
-  expect(note.subtotal - note.discountTotal).toBe(note.lines.reduce((a, l) => a + l.amount - l.discount, 0));
-}
-
-function codeOf(fn: () => unknown): string | null {
-  try {
-    fn();
-  } catch (error) {
-    return error instanceof DomainError ? error.code : 'not a domain error';
-  }
-  return null;
-}
 
 describe('criterion 1: the whole invoice', () => {
   it('reproduces the invoice exactly, discounts included', () => {
@@ -166,7 +74,7 @@ describe('criteria 2 to 4: any mix of credits', () => {
           });
           const totals = computeDocument(input);
           fc.pre(totals.total > 0);
-          const source = creditSource(input, totals);
+          const { source } = sourceOf(input);
           const l = ledger(source);
           for (const step of steps) {
             const state = l.state();
@@ -191,7 +99,7 @@ describe('criteria 2 to 4: any mix of credits', () => {
                 );
               }
             } else {
-              const left = Object.values(state.groups).reduce((a, v) => a + v.left, 0);
+              const left = Object.values(state.slots).reduce((a, v) => a + v.left, 0);
               const amount = Math.floor((left * step.share) / 1000);
               if (amount <= 0) continue;
               try {
@@ -202,7 +110,7 @@ describe('criteria 2 to 4: any mix of credits', () => {
               }
             }
           }
-          const left = Object.values(l.state().groups).reduce((a, v) => a + v.left, 0);
+          const left = l.valueLeft();
           if (left > 0) l.amount(left);
           for (const note of l.notes) expectWellFormed(note);
           expectExact(totals, l.notes);

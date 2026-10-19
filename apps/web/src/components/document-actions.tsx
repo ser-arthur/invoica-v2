@@ -10,14 +10,16 @@ import {
   formatRate,
   parseMoney,
   parseQuantity,
+  amountLimit,
   planAmountCredit,
+  planBalanceCredit,
   planLineCredit,
   quantityToString,
   toDecimalString,
   creditState,
   type CreditPlan,
   type CreditSource,
-  type CreditedLine,
+  type CreditTaken,
   type DocumentTotals,
 } from '@invoica/core';
 import {
@@ -338,7 +340,7 @@ export interface CreditableLine {
   taxLabel: string | null;
 }
 
-type CreditMode = 'whole' | 'lines' | 'amount';
+type CreditMode = 'whole' | 'lines' | 'amount' | 'balance';
 
 export function CreditNoteButton({
   id,
@@ -360,14 +362,14 @@ export function CreditNoteButton({
   lines: CreditableLine[];
   /** The invoice as issued, so the credit is worked out here exactly as the server will. */
   source: CreditSource;
-  /** The lines of the credit notes already issued against the invoice. */
-  ledger: CreditedLine[];
+  /** What the credit notes already issued against the invoice took from it. */
+  ledger: CreditTaken[];
   invoiceTotals: DocumentTotals;
   earlier: DocumentTotals[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const firstMode: CreditMode = canCreditWhole ? 'whole' : lines.length ? 'lines' : 'amount';
+  const firstMode: CreditMode = canCreditWhole ? 'whole' : lines.length ? 'lines' : 'balance';
   const [mode, setMode] = useState<CreditMode>(firstMode);
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [amount, setAmount] = useState('');
@@ -377,7 +379,8 @@ export function CreditNoteButton({
   const [pending, start] = useTransition();
   const money = (n: number) => formatMoney(n, currency);
   const state = useMemo(() => creditState(source, ledger), [source, ledger]);
-  const valueLeft = Object.values(state.groups).reduce((a, g) => a + g.left, 0);
+  const valueLeft = Object.values(state.slots).reduce((a, g) => a + g.left, 0);
+  const limit = useMemo(() => amountLimit(source, state, balance), [source, state, balance]);
   const basis = source.pricesIncludeTax ? 'including tax' : 'before tax';
 
   function openDialog() {
@@ -415,6 +418,8 @@ export function CreditNoteButton({
           .filter((r) => r.quantity > 0);
         if (request.length === 0) return { plan: null, error: null };
         plan = planLineCredit(source, state, request);
+      } else if (mode === 'balance') {
+        plan = planBalanceCredit(source, state, balance);
       } else {
         if (!amount.trim()) return { plan: null, error: null };
         const minor = parseMoney(amount, currency);
@@ -435,7 +440,7 @@ export function CreditNoteButton({
     if (!preview.plan) return setMessage(preview.error ?? 'Choose what to credit.');
     const base = { invoiceId: id, reason, idempotencyKey: key };
     const input =
-      mode === 'whole'
+      mode === 'whole' || mode === 'balance'
         ? { ...base, mode }
         : mode === 'lines'
           ? {
@@ -473,6 +478,9 @@ export function CreditNoteButton({
                 {canCreditWhole ? <option value="whole">The whole invoice</option> : null}
                 {lines.length ? <option value="lines">Some of the lines</option> : null}
                 <option value="amount">An amount, {basis}</option>
+                {canCreditWhole ? null : (
+                  <option value="balance">Everything still owed, {money(balance)}</option>
+                )}
               </Select>
             </Field>
             {mode === 'lines' ? (
@@ -503,7 +511,11 @@ export function CreditNoteButton({
               <Field
                 label={`Amount (${currency})`}
                 htmlFor="cn-amount"
-                hint={`Up to ${money(valueLeft)} ${basis}. Shared across the invoice's tax rates in proportion to what is left at each.`}
+                hint={`${
+                  limit < valueLeft
+                    ? `Up to ${money(limit)} ${basis}, which keeps the credit note within the ${money(balance)} still owed.`
+                    : `Up to ${money(valueLeft)} ${basis}.`
+                } Shared across the invoice's tax rates in proportion to what is left at each.`}
               >
                 <Input
                   id="cn-amount"

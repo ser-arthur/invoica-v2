@@ -163,3 +163,38 @@ test('two payments recorded from the same page both count, and a credit note cre
   await expect(page.getByText('£30.00').first()).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('after a part payment, a credit note for everything still owed settles the invoice to the penny', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await signUpAndOnboard(page, 'Penny Lane Studio', { vat: true });
+  await addClient(page, 'Harbour Kilns Ltd');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Harbour Kilns Ltd' });
+  await page.getByLabel('Line 1 description').fill('Glaze testing');
+  await page.getByLabel('Line 1 price').fill('100');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\?issued=1/);
+  const invoiceUrl = page.url().replace('?issued=1', '');
+
+  await page.getByRole('button', { name: 'Record payment' }).click();
+  await page.fill('#pay-amount', '60.03');
+  await page.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Credit note' }).click();
+  await page.locator('#cn-mode').selectOption('amount');
+  // £49.97 before VAT is the most that keeps the credit note within the £59.97 still owed.
+  await expect(page.getByRole('dialog').getByText(/Up to £49\.97 before tax/)).toBeVisible();
+  await page.locator('#cn-mode').selectOption('balance');
+  await expect(page.getByRole('dialog').getByText('£59.97').last()).toBeVisible();
+  await page.fill('#cn-reason', 'The rest is waived.');
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue credit note' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('CN-0001');
+
+  await page.goto(invoiceUrl);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Settled');
+  expect(errors).toEqual([]);
+});

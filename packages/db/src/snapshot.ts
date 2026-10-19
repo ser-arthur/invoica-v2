@@ -1,4 +1,6 @@
 import {
+  type CreditSlot,
+  type CreditTaken,
   type Entitlements,
   assembleSnapshot,
   type DocumentSnapshot,
@@ -24,6 +26,10 @@ export interface SnapshotSource {
   credits: DocumentSnapshot['credits'];
   /** What the organisation's plan allows at issue. */
   entitlements: Entitlements;
+  /** An invoice's tax slots, kept for crediting. */
+  slots?: CreditSlot[];
+  /** What a credit note took from its invoice. */
+  ledger?: CreditTaken;
 }
 
 export function sellerFrom(org: Organisation): DocumentSnapshot['seller'] {
@@ -103,5 +109,7 @@ export function buildSnapshot(s: SnapshotSource): DocumentSnapshot {
     paymentDetails: org.paymentDetails,
     credits: s.credits,
     entitlements: s.entitlements,
+    slots: s.slots,
+    ledger: s.ledger,
   });
 }

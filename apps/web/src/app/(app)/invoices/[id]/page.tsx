@@ -2,20 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Download } from 'lucide-react';
-import {
-  creditState,
-  formatBusinessDate,
-  formatMoney,
-  formatRate,
-  type DocumentSnapshot,
-} from '@invoica/core';
-import {
-  creditLedger,
-  creditableLines,
-  documentActivity,
-  getDocument,
-  invoiceCreditSource,
-} from '@invoica/db';
+import { formatBusinessDate, formatMoney, formatRate, type DocumentSnapshot } from '@invoica/core';
+import { creditPosition, creditableLines, documentActivity, getDocument } from '@invoica/db';
 import { renderDocumentHtml } from '@invoica/documents';
 import { FormMessage, PageHeader, Panel, PanelHeading, StatePill, buttonClass } from '@/components/ui';
 import {
@@ -72,11 +60,11 @@ export default async function InvoicePage({
     const activity = detail.document.lifecycle === 'draft' ? [] : await documentActivity(tx, id);
     const isInvoice = detail.document.kind === 'invoice' && detail.document.lifecycle !== 'draft';
     const creditable = isInvoice ? await creditableLines(tx, id) : [];
-    const ledger = isInvoice ? await creditLedger(tx, id) : { lines: [], totals: [] };
-    return { detail, activity, creditable, ledger, today: ws.today, timeZone: ws.organisation.timeZone };
+    const position = isInvoice ? await creditPosition(tx, detail.document) : null;
+    return { detail, activity, creditable, position, today: ws.today, timeZone: ws.organisation.timeZone };
   });
   if (!data) notFound();
-  const { detail, activity, creditable, ledger, today, timeZone } = data;
+  const { detail, activity, creditable, position, today, timeZone } = data;
   const doc = detail.document;
   if (doc.lifecycle === 'draft') redirect(`/invoices/${id}/edit`);
   const snapshot = doc.snapshot as unknown as DocumentSnapshot;
@@ -88,8 +76,7 @@ export default async function InvoicePage({
     voided: doc.lifecycle === 'void',
   });
   const open = !isCredit && (doc.lifecycle === 'issued' || doc.lifecycle === 'sent') && detail.balance > 0;
-  const source = isCredit ? null : invoiceCreditSource(doc);
-  const state = source ? creditState(source, ledger.lines) : null;
+  const credit = position?.ok ? position : null;
   const taxLabel = (tax: (typeof creditable)[number]['tax']) =>
     tax && tax.components.length
       ? tax.components.map((c) => `${c.name} ${formatRate(c.ratePpm)}`).join(' + ')
@@ -268,8 +255,11 @@ export default async function InvoicePage({
                 Issued invoices stay as they were sent. Correct one with a credit note, or void it if it was
                 raised in error.
               </p>
+              {position && !position.ok && detail.balance > 0 ? (
+                <p className="mt-3 text-[14px] text-muted">{position.reason}</p>
+              ) : null}
               <div className="mt-4 flex flex-wrap gap-2">
-                {detail.balance > 0 && source ? (
+                {detail.balance > 0 && credit ? (
                   <CreditNoteButton
                     id={id}
                     number={doc.number ?? ''}
@@ -281,15 +271,15 @@ export default async function InvoicePage({
                         id: l.id,
                         index,
                         title: l.title,
-                        remaining: l.quantity - (state?.quantities[index] ?? 0),
+                        remaining: l.quantity - (credit.state.quantities[index] ?? 0),
                         unitPrice: l.unitPrice,
                         taxLabel: taxLabel(l.tax),
                       }))
                       .filter((l) => l.remaining > 0)}
-                    source={source}
-                    ledger={ledger.lines}
+                    source={credit.source}
+                    ledger={credit.ledger.taken}
                     invoiceTotals={snapshot.totals}
-                    earlier={ledger.totals}
+                    earlier={credit.ledger.totals}
                   />
                 ) : null}
                 {detail.applied.paid === 0 && detail.applied.credited === 0 ? (

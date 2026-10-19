@@ -31,7 +31,7 @@ The last line of each entry maps the term to the current app, so the characteris
 **Invoice.** A document asking a client to pay an amount by a due date.
 *Current app:* `invoice`, editable at any time in any status.
 
-**Credit note.** A document that reduces the amount a client owes on an issued invoice, or records money returned. Corrections to an issued invoice are made with a credit note, never by editing the invoice. **[Placeholder: whether credit notes share the invoice number sequence or have their own.]**
+**Credit note.** A document that reduces the amount a client owes on an issued invoice, or records money returned. Corrections to an issued invoice are made with a credit note, never by editing the invoice. A credit note credits the whole invoice, quantities of its lines, an amount, or everything still owed; its figures are worked out slot by slot, a slot being each place the invoice's tax was worked out (`docs/specs/credit-notes.md`). **[Placeholder: whether credit notes share the invoice number sequence or have their own.]**
 *Current app:* does not exist.
 
 **Quote.** A document offering work at a price before any invoice. Listed in the foundation's "Beyond" ideas; not in scope until decided.
@@ -159,7 +159,7 @@ A credit note alone does not make an invoice part paid: with nothing received, a
 **Cash position.** The money the organisation holds at a date, derived from records (payments in, expenses out, and bank data once imported).
 *Current app:* does not exist.
 
-**Invoiced this month.** The totals of invoices issued this month, less the totals of credit notes issued this month, per currency. Drafts and void invoices are not counted.
+**Invoiced this month.** The totals of invoices issued this month, less the totals of credit notes issued this month, per currency. Drafts and void invoices are not counted. When credit notes were issued this month, the dashboard labels it "Invoiced this month, less credit notes" and shows what was invoiced and what was credited beneath it.
 
 **Forecast.** A projection of future cash position from records and stated assumptions. A forecast always states its assumptions and shows them on screen.
 

@@ -289,8 +289,9 @@ const creditNoteBase = {
 };
 
 /**
- * A credit note credits the whole invoice, quantities of its lines, or an amount including tax that is shared
- * across the invoice's tax rates. Prices and tax always come from the invoice.
+ * A credit note credits the whole invoice, quantities of its lines, an amount in the invoice's price basis (before
+ * tax when its prices exclude tax, including tax when they include it), or everything still owed. Prices and tax
+ * always come from the invoice.
  */
 export const creditNoteInput = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('whole'), ...creditNoteBase }),
@@ -307,6 +308,7 @@ export const creditNoteInput = z.discriminatedUnion('mode', [
     ...creditNoteBase,
     amount: minorAmount.min(1, 'Enter the amount to credit.'),
   }),
+  z.object({ mode: z.literal('balance'), ...creditNoteBase }),
 ]);
 export type CreditNoteInput = z.infer<typeof creditNoteInput>;
 

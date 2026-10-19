@@ -22,7 +22,12 @@ export interface Dashboard {
   baseCurrency: string;
   receivables: ReceivablesSummary[];
   paidLast30Days: CurrencyAmount[];
+  /** Invoices issued this month, less credit notes issued this month. */
   invoicedThisMonth: CurrencyAmount[];
+  /** Invoices issued this month. */
+  issuedThisMonth: CurrencyAmount[];
+  /** Credit notes issued this month. */
+  creditedThisMonth: CurrencyAmount[];
   monthlyPaid: { month: string; amount: number }[];
   recent: DocumentSummary[];
   overdue: DocumentSummary[];
@@ -76,9 +81,15 @@ export async function getDashboard(tx: Tx, today: BusinessDate, baseCurrency: st
     d.issueDate <= today;
   // Invoiced this month: invoices issued this month, less credit notes issued this month (docs/domain.md).
   const creditNotes = await listDocuments(tx, { kind: 'credit_note', today });
+  const issuedThisMonth = byCurrency(
+    invoices.filter(inMonth).map((d) => ({ currency: d.currency, amount: d.total })),
+  );
+  const creditedThisMonth = byCurrency(
+    creditNotes.filter(inMonth).map((d) => ({ currency: d.currency, amount: d.total })),
+  );
   const invoicedThisMonth = byCurrency([
-    ...invoices.filter(inMonth).map((d) => ({ currency: d.currency, amount: d.total })),
-    ...creditNotes.filter(inMonth).map((d) => ({ currency: d.currency, amount: -d.total })),
+    ...issuedThisMonth,
+    ...creditedThisMonth.map((c) => ({ currency: c.currency, amount: -c.amount })),
   ]);
   const monthlyPaid = monthlyTotals(
     payments.map((p) => ({ currency: p.currency, date: p.paidOn, amount: p.amount })),
@@ -108,6 +119,8 @@ export async function getDashboard(tx: Tx, today: BusinessDate, baseCurrency: st
     receivables,
     paidLast30Days,
     invoicedThisMonth,
+    issuedThisMonth,
+    creditedThisMonth,
     monthlyPaid,
     recent: invoices.slice(0, 6),
     overdue: invoices

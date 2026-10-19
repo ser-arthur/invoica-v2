@@ -225,6 +225,8 @@ export default async function DashboardPage() {
   const otherOwed = dash.receivables.filter((r) => r.currency !== base);
   const paid30 = dash.paidLast30Days.find((p) => p.currency === base)?.amount ?? 0;
   const invoiced = dash.invoicedThisMonth.find((p) => p.currency === base)?.amount ?? 0;
+  const issuedMonth = dash.issuedThisMonth.find((p) => p.currency === base)?.amount ?? 0;
+  const creditedMonth = dash.creditedThisMonth.find((p) => p.currency === base)?.amount ?? 0;
   const isNew = dash.recent.length === 0;
   const late = chaseOrder(dash.overdue, today);
 
@@ -264,18 +266,25 @@ export default async function DashboardPage() {
           <Panel>
             <dl className="grid divide-y divide-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
               {[
-                { label: 'Paid in the last 30 days', value: formatMoney(paid30, base) },
-                { label: 'Invoiced this month', value: formatMoney(invoiced, base) },
-                { label: 'Drafts waiting', value: String(dash.draftCount) },
+                { label: 'Paid in the last 30 days', value: formatMoney(paid30, base), note: null },
+                creditedMonth > 0
+                  ? {
+                      label: 'Invoiced this month, less credit notes',
+                      value: formatMoney(invoiced, base),
+                      note: `${formatMoney(issuedMonth, base)} invoiced, ${formatMoney(creditedMonth, base)} credited`,
+                    }
+                  : { label: 'Invoiced this month', value: formatMoney(invoiced, base), note: null },
+                { label: 'Drafts waiting', value: String(dash.draftCount), note: null },
               ].map((s) => (
                 <div
                   key={s.label}
-                  className="flex items-baseline justify-between gap-4 px-5 py-4 sm:flex-col sm:items-start sm:gap-1"
+                  className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 sm:flex-col sm:flex-nowrap sm:items-start"
                 >
                   <dt className="text-[13px] text-muted">{s.label}</dt>
                   <dd className="font-display text-[22px] font-semibold tracking-[-0.02em] tabular">
                     {s.value}
                   </dd>
+                  {s.note ? <dd className="w-full text-[13px] text-muted tabular">{s.note}</dd> : null}
                 </div>
               ))}
             </dl>

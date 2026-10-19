@@ -167,18 +167,21 @@ export function summaryKey(c: ComponentAmount['component'], treatment: TaxTreatm
   return JSON.stringify([c.name, c.ratePpm, c.compound, treatment]);
 }
 
-/** The lines that share a tax code, and what the document charged on them together. */
-export interface TaxGroupDetail {
-  /** `taxCodeKey` of the code. */
+/**
+ * A place the document's tax was worked out and rounded: each line when tax is worked out per line, the lines sharing
+ * a tax code when it is worked out on the total. Credit notes are worked out slot by slot.
+ */
+export interface TaxSlot {
+  /** `line:<index>` per line, `code:<taxCodeKey>` on the total. */
   key: string;
   code: TaxCode | null;
-  /** Indexes of the group's lines on the document. */
+  /** Indexes of the slot's lines on the document. */
   lines: number[];
-  /** The group's lines after discounts, in the document's price basis: including tax when prices include it. */
+  /** The slot's lines after discounts, in the document's price basis: including tax when prices include it. */
   value: number;
-  /** The group's amount excluding tax. */
+  /** The slot's amount excluding tax. */
   net: number;
-  /** Each component's base and amount for the group, in the code's order. Reverse-charge tax is shown, not charged. */
+  /** Each component's base and amount for the slot, in the code's order. Reverse-charge tax is shown, not charged. */
   taxes: ComponentAmount[];
   charged: boolean;
 }
@@ -191,10 +194,10 @@ export function computeDocument(input: DocumentInput): DocumentTotals {
   return computeDocumentDetail(input).totals;
 }
 
-/** The document's figures, with each tax group's own figures, which credit notes are worked out from. */
+/** The document's figures, with each tax slot's own figures, which credit notes are worked out from. */
 export function computeDocumentDetail(input: DocumentInput): {
   totals: DocumentTotals;
-  groups: TaxGroupDetail[];
+  slots: TaxSlot[];
 } {
   currency(input.currency);
   const mode = input.rounding;
@@ -289,9 +292,8 @@ export function computeDocumentDetail(input: DocumentInput): {
     return { net: amount, taxes: taxesOnNet(amount, components, mode), charged: true };
   };
 
-  const details = new Map<string, TaxGroupDetail>();
-  const detailFor = (code: TaxCode | null) => {
-    const key = taxCodeKey(code);
+  const details = new Map<string, TaxSlot>();
+  const detailFor = (key: string, code: TaxCode | null) => {
     let d = details.get(key);
     if (!d) {
       d = {
@@ -307,8 +309,14 @@ export function computeDocumentDetail(input: DocumentInput): {
     }
     return d;
   };
-  const addToDetail = (code: TaxCode | null, indexes: number[], net: number, taxes: ComponentAmount[]) => {
-    const d = detailFor(code);
+  const addToDetail = (
+    key: string,
+    code: TaxCode | null,
+    indexes: number[],
+    net: number,
+    taxes: ComponentAmount[],
+  ) => {
+    const d = detailFor(key, code);
     d.lines.push(...indexes);
     d.value += sumMinor(indexes.map((i) => afterDiscount[i] ?? 0));
     d.net += net;
@@ -325,7 +333,7 @@ export function computeDocumentDetail(input: DocumentInput): {
       lineNet[i] = net;
       lineTax[i] = charged ? sumMinor(taxes.map((t) => t.amount)) : 0;
       addToSummary(code, taxes, net);
-      addToDetail(code, [i], net, taxes);
+      addToDetail(`line:${i}`, code, [i], net, taxes);
     });
   } else {
     const groups = new Map<string, number[]>();
@@ -352,7 +360,7 @@ export function computeDocumentDetail(input: DocumentInput): {
         lineTax[lineIndex] = taxShares[j] ?? 0;
       });
       addToSummary(g.code, taxes, net);
-      addToDetail(g.code, g.indexes, net, taxes);
+      addToDetail(`code:${taxCodeKey(g.code)}`, g.code, g.indexes, net, taxes);
     });
   }
 
@@ -381,5 +389,5 @@ export function computeDocumentDetail(input: DocumentInput): {
     paid,
     balance: total - paid,
   };
-  return { totals, groups: [...details.values()] };
+  return { totals, slots: [...details.values()] };
 }
