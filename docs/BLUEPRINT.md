@@ -2,7 +2,7 @@
 
 The plan for building Invoica v2, and where the work stands. Updated at the end of every phase. A new chat starts here.
 
-Last updated: 19 October 2026, about 05:00 (session 1 of the build).
+Last updated: 19 October 2026, about 04:30 (session 1 of the build).
 
 ---
 
@@ -70,7 +70,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **19 Oct, 03:30 onwards.** Review 4 (an independent review of the slot ledger and the plans) started. Meanwhile: one dialog for every modal that keeps focus inside and returns it; not-found and error pages in Invoica's own words; the credit preview reads like the document; dashboard figures line up; the credit notes list shows what each credits; every template compared with approved images (`packages/pdf/test/visual.test.ts`, `UPDATE_BASELINES=1` to approve a change); the end-to-end suite added to CI; VAT in sterling for invoices in another currency, spec (`docs/specs/vat-in-sterling.md`) and core calculation, with the printed wording waiting on Kobby; a reminders proposal.
 
-- **19 Oct, about 04:00 to 05:00.** Review 4 (`docs/reviews/review-4.md`): no critical or high findings; 1 medium and 7 low. Under Ghana's defaults a last pesewa could not be credited; after a settling note, removing its payment could leave a penny; long amount-credit descriptions were cut; a prefix change could repeat a number; the database did not check a credit note's figures; archived clients could not be invoiced from the editor on the free plan. All fixed with tests first except plan limits in the database (a tenancy question for Kobby). Checks: core 179, database 79, documents 11, PDF 64, schemas 4, web unit 5, end to end 29 passed with 3 skipped by design. Repository bundle 05 delivered.
+- **19 Oct, about 03:45 to 04:30.** Review 4 (`docs/reviews/review-4.md`): no critical or high findings; 1 medium and 7 low. Under Ghana's defaults a last pesewa could not be credited; after a settling note, removing its payment could leave a penny; long amount-credit descriptions were cut; a prefix change could repeat a number; the database did not check a credit note's figures; archived clients could not be invoiced from the editor on the free plan. All fixed with tests first except plan limits in the database (a tenancy question for Kobby). Checks: core 179, database 79, documents 11, PDF 64, schemas 4, web unit 5, end to end 29 passed with 3 skipped by design. Repository bundle 05 delivered.
 
 ## Decisions in force
 

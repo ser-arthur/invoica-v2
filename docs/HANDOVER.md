@@ -2,13 +2,13 @@
 
 Read `docs/BLUEPRINT.md` first, then this file. Update both at the end of every session.
 
-## Current state (19 October 2026, about 05:00)
+## Current state (19 October 2026, about 04:30)
 
 This is the **v2 repository**: a re-architecture from scratch (decision 0001). The old Flask app lives in the old repository (`ser-arthur/invoica`) as a reference and receives no changes.
 
 **Working end to end, locally:** sign up, onboarding, settings (business, logo, tax, rounding choices allowed for the country, numbering with the real next numbers, brand colour, template with live previews, bank and mobile money, tax codes, plan line), clients (archived ones can still be invoiced), saved items, the invoice editor with live totals and preview (lines fold on phones), issuing with a gapless number and a frozen snapshot, the kept PDF in seven templates, sending by email through the outbox (development mailbox), payments, credit notes (whole, lines, an amount, or everything still owed, worked out slot by slot with a live preview), voiding, duplicating, quick actions on invoice rows, client pages, a dashboard that names who to chase first, data export, the trial and free plan behind `INVOICA_PLANS=enforced`, not-found and error pages, and a landing page.
 
-**Checks (last full run, 19 October 2026, about 05:00):**
+**Checks (last full run, 19 October 2026, about 04:30):**
 
 | Suite | Count | Result |
 | --- | --- | --- |
