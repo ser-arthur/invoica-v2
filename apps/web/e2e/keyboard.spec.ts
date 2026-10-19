@@ -5,6 +5,8 @@ test('every control on the main pages can be reached with Tab and shows where fo
   page,
 }, info) => {
   test.skip(info.project.name !== 'desktop', 'Keyboard use is checked at desktop width.');
+  // Tabbing through every control on five pages takes about 30 seconds alone, and longer in a full run.
+  test.setTimeout(240_000);
   await signUpAndOnboard(page, 'Keys Studio', { vat: true });
   await addClient(page, 'Wren Bakery');
   let examined = 0;

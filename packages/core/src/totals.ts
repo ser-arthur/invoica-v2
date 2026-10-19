@@ -316,6 +316,13 @@ export function computeDocumentDetail(input: DocumentInput): {
     net: number,
     taxes: ComponentAmount[],
   ) => {
+    // With prices including tax, taxes rounded one by one can come to more than a very small price.
+    if (net < 0) {
+      throw new DomainError(
+        'tax_exceeds_price',
+        'The taxes on a line come to more than its price. Raise the price or use another tax code.',
+      );
+    }
     const d = detailFor(key, code);
     d.lines.push(...indexes);
     d.value += sumMinor(indexes.map((i) => afterDiscount[i] ?? 0));

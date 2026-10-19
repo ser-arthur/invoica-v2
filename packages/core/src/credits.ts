@@ -621,14 +621,25 @@ export function amountLimit(source: CreditSource, state: CreditState, balance: n
   const left = sumMinor(openSlots(source, state).map((s) => state.slots[s.key]!.left));
   if (balance <= 0) return 0;
   if (!source.pricesIncludeTax) return largestWithin(source, state, balance);
-  // With prices including tax the amount is the note's total; step down past any amount too small to split.
-  for (let v = Math.min(balance, left), tries = 0; v > 0 && tries < 64; v--, tries++) {
+  // With prices including tax the amount is the note's total; step down past any amount too small to split. Whether
+  // an amount can be split does not fall steadily with it, so after the nearest amounts the search goes down in
+  // strides, then back up within the stride for the largest that works.
+  const works = (v: number) => {
     try {
       planAmountCredit(source, state, v);
-      return v;
+      return true;
     } catch (error) {
       if (!(error instanceof DomainError)) throw error;
+      return false;
     }
+  };
+  const start = Math.min(balance, left);
+  for (let v = start, tries = 0; v > 0 && tries < 64; v--, tries++) if (works(v)) return v;
+  const stride = Math.max(1, Math.ceil(start / 256));
+  for (let v = start - 64; v > 0; v -= stride) {
+    if (!works(v)) continue;
+    for (let up = Math.min(v + stride - 1, start - 65); up > v; up--) if (works(up)) return up;
+    return v;
   }
   return 0;
 }
