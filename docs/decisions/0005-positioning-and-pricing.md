@@ -1,7 +1,7 @@
 # 0005. Positioning and pricing
 
 - **Status:** Accepted, 18 October 2026 (Kobby).
-- **Related:** `0003-audience-and-v1-scope.md`; the reasoning, market prices and sources are in the claude.ai project doc `claude/invoica-product-directions.md`.
+- **Related:** `0003-audience-and-v1-scope.md`; the reasoning, market prices and sources are in the project doc `invoica-product-directions.md`.
 
 ## Context
 

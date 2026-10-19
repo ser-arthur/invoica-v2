@@ -23,7 +23,7 @@ At Invoica's expected volume (hundreds to low thousands of invoices a month, eac
 
 Sources: [Postmark pricing](https://postmarkapp.com/pricing), [Postmark EU privacy](https://postmarkapp.com/euprivacy), [Resend pricing](https://resend.com/pricing), [Resend regions](https://resend.com/docs/dashboard/domains/regions), [Amazon SES pricing](https://aws.amazon.com/ses/pricing/).
 
-## Recommendation (Claude, for Kobby to decide)
+## Recommendation (for Kobby to decide)
 
 Amazon SES in London, if the app is hosted in the UK or EU. It is the only option that keeps client names, addresses and invoice PDFs in the UK, which is the simplest position under UK GDPR for a product that holds other businesses' client records, and it costs almost nothing at this volume. The extra set-up (sandbox exit, bounce handling) is work Invoica needs anyway, since a bounced invoice email must show on the invoice. If deliverability tooling and speed of set-up matter more than data location, Postmark is the alternative; it would need its transfer terms checked for UK data.
 

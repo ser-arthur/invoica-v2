@@ -1,25 +1,25 @@
 # Invoica: independent review of the web layer (review 6)
 
-Reviewer: Claude, acting as an independent reviewer. I did not write this code and changed no file in the repository.
+Reviewer: a separate agent, acting as an independent reviewer. I did not write this code and changed no file in the repository.
 
 Date: 19 October 2026.
 
 ## Scope and commit
 
-This review covers commit `4e2f3d0` (the current HEAD: "docs: review 5 with its resolution; blueprint and handover after phase 2m"). It is about the web layer and everything a signed-in or anonymous person can reach over HTTP, so the money calculations and the database guards covered by reviews 1 to 5 are taken as given and only re-checked where a request reaches them. In order of priority:
+This review covers commit `b36db3e` (the current HEAD: "docs: review 5 with its resolution; blueprint and handover after phase 2m"). It is about the web layer and everything a signed-in or anonymous person can reach over HTTP, so the money calculations and the database guards covered by reviews 1 to 5 are taken as given and only re-checked where a request reaches them. In order of priority:
 
 1. Authorisation on every server action in `apps/web/src/lib/actions/*.ts` and on the route handlers `files/[id]/route.ts`, `(app)/invoices/[id]/pdf/route.ts`, `(app)/settings/export/route.ts`, `api/jobs/drain/route.ts`, `doc-fonts/[file]/route.ts` and `api/auth/[...all]/route.ts`.
 2. Sessions and auth: `apps/web/src/lib/auth.ts`, `session.ts`, `workspace.ts`, the sign-in, sign-up and onboarding pages and actions.
 3. Input handling: schema validation, the logo upload, path traversal, HTML injection into the rendered document and the PDF, CSV injection in the export, and email header injection.
 4. Headers and framing (`apps/web/next.config.ts`), redirects, server-action exposure and error messages.
 
-The repository is at `4e2f3d0` with nothing later, so the pinned export and HEAD are the same tree. Every probe ran against an export of `4e2f3d0` made with `git archive` at `/home/claude/review/round6/pinned`, built for production (`next build`) and served with `next start` on port 3100 against a fresh database. `node_modules` in the export are copies of the repository's installed packages with the same `@invoica/*` workspace links, so the pinned web app runs its own code against the pinned packages.
+The repository is at `b36db3e` with nothing later, so the pinned export and HEAD are the same tree. Every probe ran against an export of `b36db3e` made with `git archive` at `../review/round6/pinned`, built for production (`next build`) and served with `next start` on port 3100 against a fresh database. `node_modules` in the export are copies of the repository's installed packages with the same `@invoica/*` workspace links, so the pinned web app runs its own code against the pinned packages.
 
-Line numbers are for `4e2f3d0`.
+Line numbers are for `b36db3e`.
 
 ## What was run, and how to rerun it
 
-The pinned app was built and served on port 3100 against a fresh database `invoica_review6` (provisioned and migrated from the pinned `packages/db`), with `FILE_STORAGE_DIR` and `MAILBOX_DIR` under `/home/claude/review/round6` and `NODE_ENV=production`. A small HTTP client (`probes/lib.mts`) signs in through Better Auth and calls server actions exactly as the browser does, by encoding the arguments with the app's own React flight encoder and sending the action id from the build's `server-reference-manifest.json`.
+The pinned app was built and served on port 3100 against a fresh database `invoica_review6` (provisioned and migrated from the pinned `packages/db`), with `FILE_STORAGE_DIR` and `MAILBOX_DIR` under `../review/round6` and `NODE_ENV=production`. A small HTTP client (`probes/lib.mts`) signs in through Better Auth and calls server actions exactly as the browser does, by encoding the arguments with the app's own React flight encoder and sending the action id from the build's `server-reference-manifest.json`.
 
 | Probe | File | What it does |
 | --- | --- | --- |
@@ -33,11 +33,11 @@ The pinned app was built and served on port 3100 against a fresh database `invoi
 
 How to rerun:
 
-- Start Postgres if needed (the command in the brief), then `cd /home/claude/review/round6/scripts && .../tsx db-setup.mts create` to make `invoica_review6`, and `db-setup.mts drop` to remove it.
-- Build once: `cd /home/claude/review/round6/pinned/apps/web && node_modules/.bin/next build`.
-- Serve: `/home/claude/review/round6/start-server.sh` (reads `server.env`).
-- Run each probe with the pinned tsx: `cd /home/claude/review/round6/probes && /home/claude/review/round6/pinned/apps/web/node_modules/.bin/tsx <probe>.mts`, `setup.mts` first.
-- Database sanity: `cd /home/claude/review/round6/pinned/packages/db && TEST_DATABASE_ADMIN_URL=postgres://postgres@127.0.0.1:55432/postgres node node_modules/vitest/vitest.mjs run --no-file-parallelism tenancy schema-drift` (13 passed).
+- Start Postgres if needed (the command in the brief), then `cd ../review/round6/scripts && .../tsx db-setup.mts create` to make `invoica_review6`, and `db-setup.mts drop` to remove it.
+- Build once: `cd ../review/round6/pinned/apps/web && node_modules/.bin/next build`.
+- Serve: `../review/round6/start-server.sh` (reads `server.env`).
+- Run each probe with the pinned tsx: `cd ../review/round6/probes && ../review/round6/pinned/apps/web/node_modules/.bin/tsx <probe>.mts`, `setup.mts` first.
+- Database sanity: `cd ../review/round6/pinned/packages/db && TEST_DATABASE_ADMIN_URL=postgres://postgres@127.0.0.1:55432/postgres node node_modules/vitest/vitest.mjs run --no-file-parallelism tenancy schema-drift` (13 passed).
 
 The review database was dropped and the server stopped at the end. The `invoica` and `invoica_demo` databases were not touched. The builder's development server on port 3000 was left running.
 
@@ -167,10 +167,10 @@ What remains:
 
 ## Files produced by this review
 
-All in `/home/claude/review/round6/`:
+All in `../review/round6/`:
 
 - `review-6.md` (this report);
-- `pinned/` (an export of `4e2f3d0` with copied `node_modules` and the production build);
+- `pinned/` (an export of `b36db3e` with copied `node_modules` and the production build);
 - `server.env`, `start-server.sh`, `build.out`, `server.log`;
 - `scripts/db-setup.mts` (provision and drop the review database);
 - `probes/lib.mts` (the HTTP and server-action client) and the probes `setup.mts`, `tenancy.mts`, `anon.mts`, `ratelimit.mts`, `auth.mts`, `inject.mts`, `misc.mts`, with their `.json` outputs and `tenancy.out`, `anon.out`, `ratelimit.out`, `inject-screen-slice.txt`;

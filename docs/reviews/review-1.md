@@ -1,14 +1,14 @@
 # Invoica: independent review of money and tenancy (review 1)
 
-Reviewer: Claude, acting as an independent reviewer. I did not write this code and changed no file in the repository.
+Reviewer: a separate agent, acting as an independent reviewer. I did not write this code and changed no file in the repository.
 
 Date: 19 October 2026.
 
 ## Scope and version reviewed
 
-The repository changed while the review ran. Work started at commit `801fd65`; three further commits landed during the review (`c992aa6`, `1811431`, `854b0e8`). This report is pinned to **commit `854b0e8`** ("send invoices by email through the outbox, logo upload, duplicate an invoice"). Between `801fd65` and `854b0e8` nothing changed in `packages/core`, the migrations, `packages/documents` or `packages/pdf`; the changes in reviewed areas (`documents.ts` gained `duplicateDocument`, the web app gained email sending and logo upload) were read and are covered below. Uncommitted work that appeared afterwards (a CSV export) was not reviewed.
+The repository changed while the review ran. Work started at commit `90596ba`; three further commits landed during the review (`c295694`, `2fc2380`, `4bdaa18`). This report is pinned to **commit `4bdaa18`** ("send invoices by email through the outbox, logo upload, duplicate an invoice"). Between `90596ba` and `4bdaa18` nothing changed in `packages/core`, the migrations, `packages/documents` or `packages/pdf`; the changes in reviewed areas (`documents.ts` gained `duplicateDocument`, the web app gained email sending and logo upload) were read and are covered below. Uncommitted work that appeared afterwards (a CSV export) was not reviewed.
 
-Every database probe was run twice: once against the working tree and once against a clean export of `854b0e8` at `/home/claude/review/scratch/pinned` (made with `git archive`, outside the repository). Line numbers below are for `854b0e8`.
+Every database probe was run twice: once against the working tree and once against a clean export of `4bdaa18` at `../review/scratch/pinned` (made with `git archive`, outside the repository). Line numbers below are for `4bdaa18`.
 
 ## Summary
 
@@ -33,12 +33,12 @@ High:
 | --- | --- | --- |
 | `pnpm test:core` | repository, start of review | 118 run, 118 passed, 0 failed, 0 skipped |
 | `pnpm test:db` | repository, start of review | 29 run, 29 passed, 0 failed, 0 skipped |
-| core tests (`vitest run`) | pinned copy of `854b0e8` | 118 run, 118 passed |
-| database tests (`vitest run`) | pinned copy of `854b0e8` | 30 run, 30 passed, in three runs. One earlier run also reported 2 unhandled errors that did not reproduce; the builder was running tests against the same server at the time |
-| Review probes, database | `/home/claude/review/scratch/db-probe.test.ts` and `db-probe-pinned.test.ts` | 16 run, 16 passed. Each probe asserts the behaviour observed, so 13 passes confirm a problem and 3 confirm sound behaviour |
-| Review probes, core | `/home/claude/review/scratch/core-probe.ts`, `core-probe-2.ts` | Outputs saved beside each script (`.out` files) |
+| core tests (`vitest run`) | pinned copy of `4bdaa18` | 118 run, 118 passed |
+| database tests (`vitest run`) | pinned copy of `4bdaa18` | 30 run, 30 passed, in three runs. One earlier run also reported 2 unhandled errors that did not reproduce; the builder was running tests against the same server at the time |
+| Review probes, database | `../review/scratch/db-probe.test.ts` and `db-probe-pinned.test.ts` | 16 run, 16 passed. Each probe asserts the behaviour observed, so 13 passes confirm a problem and 3 confirm sound behaviour |
+| Review probes, core | `../review/scratch/core-probe.ts`, `core-probe-2.ts` | Outputs saved beside each script (`.out` files) |
 
-How to rerun the probes: `cd /home/claude/review/scratch && TEST_DATABASE_ADMIN_URL=postgres://postgres@127.0.0.1:55432/postgres ./node_modules/.bin/vitest run --root /home/claude/review/scratch --reporter=verbose --silent=false` (the scratch `node_modules` is a symlink to `packages/db/node_modules`). Core probes: `./node_modules/.bin/tsx core-probe.ts`. Each run creates and drops its own throwaway database through the existing test helper; the `invoica` database was not touched.
+How to rerun the probes: `cd ../review/scratch && TEST_DATABASE_ADMIN_URL=postgres://postgres@127.0.0.1:55432/postgres ./node_modules/.bin/vitest run --root ../review/scratch --reporter=verbose --silent=false` (the scratch `node_modules` is a symlink to `packages/db/node_modules`). Core probes: `./node_modules/.bin/tsx core-probe.ts`. Each run creates and drops its own throwaway database through the existing test helper; the `invoica` database was not touched.
 
 ---
 
@@ -54,7 +54,7 @@ How to rerun the probes: `cd /home/claude/review/scratch && TEST_DATABASE_ADMIN_
   3. A line invoiced as 1 unit can be credited as 50 units at a lower price.
   
   Corrections are meant to be credit notes that reverse what was invoiced; as built, the credit note can carry tax at rates and on supplies that never appeared on the invoice.
-- **How confirmed:** probes `probe: credit note tax` (both tests) and `probe: credit note uses the live tax code` in `/home/claude/review/scratch/db-probe.test.ts`. Output: `invoice VAT 0 credit note VAT 1667 credit total 10000 invoice balance 0`; `invoice VAT rate 20%, VAT 2000 | credit of 50.00 VAT 250 rate {..."ratePpm":50000...}`; the 50-unit credit was stored with quantity 50000.
+- **How confirmed:** probes `probe: credit note tax` (both tests) and `probe: credit note uses the live tax code` in `../review/scratch/db-probe.test.ts`. Output: `invoice VAT 0 credit note VAT 1667 credit total 10000 invoice balance 0`; `invoice VAT rate 20%, VAT 2000 | credit of 50.00 VAT 250 rate {..."ratePpm":50000...}`; the 50-unit credit was stored with quantity 50000.
 - **Suggested fix:** build partial credit notes from the invoice's own lines. The request names invoice line ids with a quantity or amount, capped at what is still uncredited on that line, and the tax for each credited line is copied from the invoice line's stored `tax` (or the snapshot); `tax_code` is not consulted. Add a check, per tax summary row, that tax credited across all credit notes never exceeds tax charged on the invoice. Write the tests first: zero-rated invoice credited at 20% is refused; a code edited after issue does not change the credited rate; credited quantity above invoiced quantity is refused.
 
 ### H2. A second payment recorded from the same invoice page is silently discarded
@@ -147,7 +147,7 @@ How to rerun the probes: `cd /home/claude/review/scratch && TEST_DATABASE_ADMIN_
 
 - **Severity:** low
 - **Where:** `packages/db/migrations/0003_outbox_worker.sql:13-52` (`app.claim_outbox`, `app.finish_outbox`, granted to `invoica_app`), `packages/db/migrations/0002_tenancy.sql:43-69` (`app.create_organisation` takes `p_trial_days`, `p_base_currency` and `p_time_zone` unchecked).
-- **What goes wrong:** inside a session scoped to organisation A, `select * from app.claim_outbox(100)` returned organisation B's jobs with their payloads, and `app.finish_outbox` marked one of B's jobs done. Since `854b0e8`, email job payloads hold the recipient's address, the subject and the message text, so this is personal data. Any code path running as the app role (a bug, or an injection if one ever appears) can read and close every organisation's jobs. The drain route itself is protected by `CRON_SECRET`, and jobs run as their own organisation, which is correct. Separately, `create_organisation` accepts any trial length, currency or time zone from its caller; the app passes a constant and validated values.
+- **What goes wrong:** inside a session scoped to organisation A, `select * from app.claim_outbox(100)` returned organisation B's jobs with their payloads, and `app.finish_outbox` marked one of B's jobs done. Since `4bdaa18`, email job payloads hold the recipient's address, the subject and the message text, so this is personal data. Any code path running as the app role (a bug, or an injection if one ever appears) can read and close every organisation's jobs. The drain route itself is protected by `CRON_SECRET`, and jobs run as their own organisation, which is correct. Separately, `create_organisation` accepts any trial length, currency or time zone from its caller; the app passes a constant and validated values.
 - **How confirmed:** probe `probe: outbox functions` (`jobs claimed inside org A session 17 of which org B 2 { documentId: ... }`, then B's job status `done`). `create_organisation` by reading.
 - **Suggested fix:** give the worker its own database role and grant the two functions to that role only; check in `finish_outbox` that the job is `running`. Fix the trial length inside `create_organisation` and validate the currency and time zone there.
 
@@ -198,13 +198,13 @@ How to rerun the probes: `cd /home/claude/review/scratch && TEST_DATABASE_ADMIN_
 - **Money arithmetic.** Amounts are integers in minor units throughout. `divRound`, `allocate`, `sumMinor`, `lineAmount`, `taxesOnNet` and `grossMultiplier` use BigInt and check the safe integer range. `allocate` always returns parts that add up to the total and never makes a part negative or larger than its weight allows. `parseMoney` and `toDecimalString` are exact, and `formatMoney` passes a decimal string to `Intl`. A search for `parseFloat`, `Math.round`, `toFixed` and division in money paths found only display widths on the dashboard and a rate label in the credit dialog.
 - **Totals as printed.** For prices excluding tax (with and without discounts), prices including tax, deposits and reverse charge, the printed rows add up to the printed total: the subtotal is the sum of line amounts, the tax rows sum to `taxTotal`, `total = net + taxTotal`, and the balance due equals the total less the deposits shown. Line tax shares sum to the tax total at both levels. Reverse-charge tax is shown and never added to the total. Zero-rated, exempt and outside-the-scope values get their own totals.
 - **UK default and Ghana default.** Per line, nearest penny, with VAT on the discounted net, matches Notice 700 paragraph 17.5.1. Ghana per document, per tax, half up, with prices excluding tax, matches the spec. With the default rounding, a tax-inclusive line with a single component (all UK presets) splits into a net and a VAT that add up to the gross, with the VAT within one rounding step of the rate times the net.
-- **Issued documents.** The snapshot is frozen at issue with its tax level and rounding; editing a client afterwards does not change it. An issued document and its lines cannot be edited in place or deleted (`guard_document`, `guard_document_line`, existing tests and my probe). `pdf_file_id` cannot be replaced. Voiding keeps the number. `updateDraft` and `deleteDraft` lock the row and refuse non-drafts. `duplicateDocument` (new in `854b0e8`) makes a draft only and recomputes its totals with the core.
+- **Issued documents.** The snapshot is frozen at issue with its tax level and rounding; editing a client afterwards does not change it. An issued document and its lines cannot be edited in place or deleted (`guard_document`, `guard_document_line`, existing tests and my probe). `pdf_file_id` cannot be replaced. Voiding keeps the number. `updateDraft` and `deleteDraft` lock the row and refuse non-drafts. `duplicateDocument` (new in `4bdaa18`) makes a draft only and recomputes its totals with the core.
 - **Numbering.** The counter row is updated inside the issuing transaction and stays locked until it ends; a failed issue rolls back, so no gap appears (existing test, plus ten concurrent issues). Invoices and credit notes have separate counters. Unique constraints stop duplicate sequences and numbers.
 - **Payments and balances.** `recordPayment`, `createCreditNote`, `voidDocument` and `issueDocument` lock the document row first, and `guard_payment` locks it again and checks state, currency and balance including issued credit notes. A payment and a credit note sent at the same moment, and two credit notes sent at the same moment, each ended with one refused and a balance never below zero (my probes). Two payments sent at the same moment behave the same (existing test). Payments can only be marked removed, once, with a reason. Voiding with payments is refused in the app and the database.
 - **Dates.** Overdue is derived each time (`isOverdue`) and never stored. "Today" is `todayIn(organisation time zone)` for issue dates, due dates, the payment form and the dashboard. `formatBusinessDate` formats in UTC so a date is never shifted. Due dates are checked against issue dates in the schema, at issue and in a CHECK constraint.
 - **Row-level security.** Forced on every tenant table except `outbox` (enabled there, by design for the worker functions). `invoica_app` owns nothing, has no BYPASSRLS and cannot switch RLS off or change role (existing tenancy suite). `app.current_organisation_id()` returns the organisation only for a member, and `withOrganisation` refuses otherwise. Composite foreign keys stop a document, line, payment, item or file from pointing at another organisation's rows. The organisation cookie is checked against the user's memberships.
-- **Routes and files.** `/files/[id]` and `/invoices/[id]/pdf` run inside the signed-in user's organisation, so another organisation's file or PDF is "Not found". The files route serves logos only, with a content type taken from the file's bytes at upload and `nosniff` (`854b0e8`). Fonts are served from a fixed list. The drain route requires `CRON_SECRET` with a timing-safe comparison. Storage keys are generated on the server and checked against the storage root.
-- **Background jobs.** Each job runs as its own organisation and requesting user, and `withOrganisation` checks membership again. A payload naming another organisation's document finds nothing. The email job (`854b0e8`) reads the document and its PDF inside the job's organisation and marks it sent there; the send action refuses drafts and void documents. (A document voided after its email was queued is still emailed; this is outside money and tenancy and is noted only.)
+- **Routes and files.** `/files/[id]` and `/invoices/[id]/pdf` run inside the signed-in user's organisation, so another organisation's file or PDF is "Not found". The files route serves logos only, with a content type taken from the file's bytes at upload and `nosniff` (`4bdaa18`). Fonts are served from a fixed list. The drain route requires `CRON_SECRET` with a timing-safe comparison. Storage keys are generated on the server and checked against the storage root.
+- **Background jobs.** Each job runs as its own organisation and requesting user, and `withOrganisation` checks membership again. A payload naming another organisation's document finds nothing. The email job (`4bdaa18`) reads the document and its PDF inside the job's organisation and marks it sent there; the send action refuses drafts and void documents. (A document voided after its email was queued is still emailed; this is outside money and tenancy and is noted only.)
 - **HTML and SQL.** Templates escape every interpolated value; the brand colour is constrained by a CHECK; the preview iframe is sandboxed without scripts; the PDF renderer runs with JavaScript off and blocks all requests except data URLs. All SQL is parametrised and search patterns are escaped. Email headers with non-ASCII or control characters are encoded.
 - **Input validation.** Every server action that takes a body validates it with `@invoica/schemas`. Plain id arguments (delete, mark sent, remove payment, duplicate, archive) skip the schemas; they reach only parametrised queries under row-level security, so a foreign or malformed id finds nothing.
 
@@ -214,17 +214,17 @@ How to rerun the probes: `cd /home/claude/review/scratch && TEST_DATABASE_ADMIN_
 - `pnpm check` (format, copy rules, lint, types) and `pnpm build`.
 - Better Auth itself (sign-up, sessions, rate limits, email verification) beyond how the user id reaches `withOrganisation`.
 - The migration runner, its refusal of edited migrations, and the schema drift test beyond running it.
-- The seed script, the e2e specs, and the CSV export that was in progress after `854b0e8`.
+- The seed script, the e2e specs, and the CSV export that was in progress after `4bdaa18`.
 - Production email and object storage adapters (neither is built yet).
 - VAT in sterling on foreign-currency invoices (`docs/specs/tax-uk.md` section 7): not implemented, so not reviewed as a defect; it will be needed before VAT-registered users invoice in other currencies.
 - Performance (the dashboard and lists load every invoice of the organisation).
 
 ## Files produced by this review
 
-- `/home/claude/review/review-1.md` (this report)
-- `/home/claude/review/scratch/db-probe.test.ts`, `/home/claude/review/scratch/db-probe-pinned.test.ts` and their outputs `/home/claude/review/scratch/db-probe.out`, `/home/claude/review/scratch/db-probe-pinned.out`
-- `/home/claude/review/scratch/core-probe.ts`, `/home/claude/review/scratch/core-probe-2.ts` and outputs `/home/claude/review/scratch/core-probe.out`, `/home/claude/review/scratch/core-probe-2.out`
-- `/home/claude/review/scratch/pinned/` (clean export of commit `854b0e8` used for the pinned runs)
+- `../review/review-1.md` (this report)
+- `../review/scratch/db-probe.test.ts`, `../review/scratch/db-probe-pinned.test.ts` and their outputs `../review/scratch/db-probe.out`, `../review/scratch/db-probe-pinned.out`
+- `../review/scratch/core-probe.ts`, `../review/scratch/core-probe-2.ts` and outputs `../review/scratch/core-probe.out`, `../review/scratch/core-probe-2.out`
+- `../review/scratch/pinned/` (clean export of commit `4bdaa18` used for the pinned runs)
 
 ---
 

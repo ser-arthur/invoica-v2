@@ -15,7 +15,7 @@ The audit adds four requirements that weigh heavily:
 1. **One rule, one place, including in the browser.** The invoice editor shows live totals while the user types. Today that is a second copy of the money rules in JavaScript, and it disagrees with the server (I-H2: £13.13 on screen, £13.12 on the invoice). The new stack has to let the editor and the server run the same core code, or have the server compute every figure the editor shows.
 2. **Tenancy enforced in the database.** Row-level security in Postgres, with the organisation set per transaction (foundation section 4). The database layer must not get in its way.
 3. **Documents of record.** PDFs generated from a stored snapshot and kept (I-M6), so PDF generation should not depend on loading live pages.
-4. **The people building it.** Kobby is self-taught, strongest in Python and data work, and has written the current Alpine.js front end. Claude does the bulk of the building. A mainstream stack with a large ecosystem suits both.
+4. **The people building it.** Kobby is self-taught, strongest in Python and data work, and has written the current Alpine.js front end. An AI coding assistant does the bulk of the building. A mainstream stack with a large ecosystem suits both.
 
 Postgres stays: nothing in the audit argues against it, and it gives transactions, constraints, row-level security and exact `bigint` arithmetic.
 

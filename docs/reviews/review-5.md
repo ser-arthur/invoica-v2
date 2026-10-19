@@ -1,41 +1,41 @@
 # Invoica: independent review of the review 4 fixes (review 5)
 
-Reviewer: Claude, acting as an independent reviewer. I did not write this code and changed no file in the repository.
+Reviewer: a separate agent, acting as an independent reviewer. I did not write this code and changed no file in the repository.
 
 Date: 19 October 2026.
 
 ## Scope and commit
 
-This review covers commit `bc18a6c` ("fix: everything still owed settles every balance, bases are the net taken, numbering cannot repeat (review 4)"). It was checked against `docs/specs/credit-notes.md` (criteria 1 to 15), decision `0009-credit-ledger-by-slot.md`, `docs/specs/plans.md` and the resolution of review 4 (`docs/reviews/review-4.md` at HEAD). In order of priority:
+This review covers commit `6c2bd5f` ("fix: everything still owed settles every balance, bases are the net taken, numbering cannot repeat (review 4)"). It was checked against `docs/specs/credit-notes.md` (criteria 1 to 15), decision `0009-credit-ledger-by-slot.md`, `docs/specs/plans.md` and the resolution of review 4 (`docs/reviews/review-4.md` at HEAD). In order of priority:
 
-1. `packages/core/src/credits.ts` as changed by `bc18a6c` (compared with `1f5fd33`): `slotTaxAt`, `buildNote`, `planBalanceCredit`, `settleLines`, `settleExcludingTax`, `settleIncludingTax`;
+1. `packages/core/src/credits.ts` as changed by `6c2bd5f` (compared with `ef7f173`): `slotTaxAt`, `buildNote`, `planBalanceCredit`, `settleLines`, `settleExcludingTax`, `settleIncludingTax`;
 2. `packages/db/migrations/0008_review_4_guards.sql`;
 3. `packages/db/src/organisations.ts` (`getOrganisationForIssue`, `assertNumbersDoNotRepeat`) and their use in `issueDocument` and `createCreditNote`;
 4. `createCreditNote` amount-line titles and descriptions (`lineRanges`), `clientsForEditor`; by reading only: `apps/web/src/components/invoice-editor.tsx`, `apps/web/src/components/settings-form.tsx`, `apps/web/src/app/(app)/invoices/[id]/page.tsx`.
 
-Every probe ran against an export of `bc18a6c` made with `git archive` at `/home/claude/review/round5/pinned`. As in review 4, its `node_modules` folders hold links that point `@invoica/*` at the pinned packages and everything else at the repository's installed packages.
+Every probe ran against an export of `6c2bd5f` made with `git archive` at `../review/round5/pinned`. As in review 4, its `node_modules` folders hold links that point `@invoica/*` at the pinned packages and everything else at the repository's installed packages.
 
-The repository moved during the review: `d75f4a3` (lists read summary columns; migration `0009_credited_index.sql`) and `30cf180` (docs). `git diff bc18a6c HEAD` shows no change to `credits.ts`, `totals.ts`, `organisations.ts`, migration 0008, `createCreditNote`, `issueDocument` or the web files above. The findings apply to HEAD too, by reading. An untracked `packages/db/perf.tmp.mts`, written at 04:31 by another session, was present early in the review and gone by its end; I did not touch it.
+The repository moved during the review: `daae396` (lists read summary columns; migration `0009_credited_index.sql`) and `d0f15dd` (docs). `git diff 6c2bd5f HEAD` shows no change to `credits.ts`, `totals.ts`, `organisations.ts`, migration 0008, `createCreditNote`, `issueDocument` or the web files above. The findings apply to HEAD too, by reading. An untracked `packages/db/perf.tmp.mts`, written at 04:31 by another session, was present early in the review and gone by its end; I did not touch it.
 
-Line numbers are for `bc18a6c`.
+Line numbers are for `6c2bd5f`.
 
 ## Tests run
 
 | Suite | Where | Result |
 | --- | --- | --- |
-| `pnpm test:core` | repository at `8194ecb` (packages identical to `bc18a6c`) | 179 run, 179 passed, 0 failed, 0 skipped (16 files) |
-| `pnpm test:db` | repository at `8194ecb` | 79 run, 79 passed, 0 failed, 0 skipped (8 files) |
+| `pnpm test:core` | repository at `81f8241` (packages identical to `6c2bd5f`) | 179 run, 179 passed, 0 failed, 0 skipped (16 files) |
+| `pnpm test:db` | repository at `81f8241` | 79 run, 79 passed, 0 failed, 0 skipped (8 files) |
 | Pinned core and database suites | `pinned/packages/core`, `pinned/packages/db` | 179 passed; 79 passed |
 | Core property probe `core/ledger-props.test.ts` | pinned | 7 tests, 8,000 cases each: 37,629 invoices with random sequences (70,436 credit notes), 7,524 invoices credited whole, 7,834 invoices for criteria 5 and 7 |
 | Core targeted probes `core/targeted.test.ts` | pinned | 14 tests (T1 to T12), each asserting what it observed |
-| Sensitivity check `core/sensitivity/` | the same driver against review 4's export of `29703eb` | 4 of 7 fail, as they should: it finds R4-L1 and R4-L2 there |
+| Sensitivity check `core/sensitivity/` | the same driver against review 4's export of `c886cbb` | 4 of 7 fail, as they should: it finds R4-L1 and R4-L2 there |
 | Database probes `db-probe.test.ts` | pinned, fresh databases | 23 run, 23 passed, each asserting what it observed |
 
 How to rerun them:
 
-- Core: `cd /home/claude/review/round5/core && RUNS=8000 node node_modules/vitest/vitest.mjs run --root /home/claude/review/round5/core --testTimeout=7200000 --reporter=verbose ledger-props.test.ts`, then the same command with `targeted` as the filter (about three minutes).
-- Sensitivity: the same command with `RUNS=1500` and the filter `sensitivity/ledger-props-29703eb`. It needs `/home/claude/review/round4/pinned`.
-- Database: `cd /home/claude/review/round5 && TEST_DATABASE_ADMIN_URL=postgres://postgres@127.0.0.1:55432/postgres node node_modules/vitest/vitest.mjs run --root /home/claude/review/round5 --no-file-parallelism --testTimeout=600000 --hookTimeout=300000 --reporter=verbose db-probe`.
+- Core: `cd ../review/round5/core && RUNS=8000 node node_modules/vitest/vitest.mjs run --root ../review/round5/core --testTimeout=7200000 --reporter=verbose ledger-props.test.ts`, then the same command with `targeted` as the filter (about three minutes).
+- Sensitivity: the same command with `RUNS=1500` and the filter `sensitivity/ledger-props-29703eb`. It needs `../review/round4/pinned`.
+- Database: `cd ../review/round5 && TEST_DATABASE_ADMIN_URL=postgres://postgres@127.0.0.1:55432/postgres node node_modules/vitest/vitest.mjs run --root ../review/round5 --no-file-parallelism --testTimeout=600000 --hookTimeout=300000 --reporter=verbose db-probe`.
 
 Each database run creates and drops its own databases through `createTestDatabase`; the seed probe makes a second one. After the last run no `invoica_test_` database was left. The `invoica` and `invoica_demo` databases were not touched. Three probes also connect as the superuser to their own test database: D4d to take a table lock as a timing device, and D7 and the seed probe to read stored figures.
 
@@ -277,22 +277,22 @@ What remains:
 
 - Anything in a browser: the editor, the settings page, the credit dialog and the invoice page.
 - `pnpm check`, `pnpm build`, the end-to-end suite and the PDF templates.
-- The commits after `bc18a6c` (`d75f4a3`, `30cf180`), beyond the `git diff` noted under "Scope and commit". This includes the list queries and migration 0009.
-- Ledgers written by `29703eb` and earlier, read by the new code (development data only, per decision 0009).
+- The commits after `6c2bd5f` (`daae396`, `d0f15dd`), beyond the `git diff` noted under "Scope and commit". This includes the list queries and migration 0009.
+- Ledgers written by `c886cbb` and earlier, read by the new code (development data only, per decision 0009).
 - Concurrency across several organisations, and any connection limit or statement timeout in production.
 - The `invoica` and `invoica_demo` databases, which were not touched.
 - Tax wording beyond the concerns listed; Ghana's statutory content for credit notes.
 
 ## Files produced by this review
 
-All in `/home/claude/review/round5/`:
+All in `../review/round5/`:
 
 - `review-5.md` (this report);
 - `baseline-core.out` and `baseline-db.out` (repository suites), `pinned-core.out` and `pinned-db.out` (pinned suites);
 - `db-probe.test.ts`, with outputs `db-probe.out` and `db-probe.json`;
 - `core/model.ts` (fixtures and an independent driver), `core/ledger-props.test.ts` and `core/targeted.test.ts`, with outputs `core/ledger-props.out`, `core/ledger-props.json`, `core/targeted.out` and `core/targeted.json`;
-- `core/sensitivity/` (the same driver pointed at review 4's export of `29703eb`, with its output);
-- `pinned/` (an export of `bc18a6c` with `node_modules` links to the pinned packages), `node_modules/` and `core/node_modules/` (folders of links).
+- `core/sensitivity/` (the same driver pointed at review 4's export of `c886cbb`, with its output);
+- `pinned/` (an export of `6c2bd5f` with `node_modules` links to the pinned packages), `node_modules/` and `core/node_modules/` (folders of links).
 
 ---
 

@@ -2,7 +2,7 @@
 
 Status: mocks for Kobby's reaction, 18 October 2026. Nothing here is a decided visual direction yet (foundation section 8: mock, get his yes, then record as tokens and components).
 
-The six mocks are on the claude.ai design canvas "Invoica invoice templates, round 1" (private to the owner until shared), as PDFs in `round-1/pdf/`, and as code in `round-1/mock/` (`npm install`, then `node build.js`). Every business, person, address and account number in them is invented.
+The six mocks are on the design canvas "Invoica invoice templates, round 1" (private to the owner until shared), as PDFs in `round-1/pdf/`, and as code in `round-1/mock/` (`npm install`, then `node build.js`). Every business, person, address and account number in them is invented.
 
 ---
 

@@ -1,30 +1,30 @@
 # Invoica: independent review of the review 5 fixes (review 7)
 
-Reviewer: Claude, acting as an independent reviewer. I did not write this code and changed no file in the repository.
+Reviewer: a separate agent, acting as an independent reviewer. I did not write this code and changed no file in the repository.
 
 Date: 19 October 2026.
 
 ## Scope and commit
 
-This review covers commit `5b3ae43` ("docs: review 6 and the sign-in branch in the blueprint and handover") on `main`, and within it the changes made for review 5 at `af2cf2b` and for review 6 at `8ad8ebe`. It was checked against `docs/specs/credit-notes.md` (criteria 1 to 17) and the resolution of review 5 (`docs/reviews/review-5.md`). In order of priority:
+This review covers commit `166ab1e` ("docs: review 6 and the sign-in branch in the blueprint and handover") on `main`, and within it the changes made for review 5 at `58c611c` and for review 6 at `3ec88c7`. It was checked against `docs/specs/credit-notes.md` (criteria 1 to 17) and the resolution of review 5 (`docs/reviews/review-5.md`). In order of priority:
 
 1. `packages/core/src/credits.ts`: `planBalanceCredit` taking part of the tax left on fully credited slots (`takeTaxLeft`), the cut in `settleExcludingTax` of up to what the unit added, and `amountLimit` stepping down with prices including tax; `packages/core/src/totals.ts`: total and balance through `toSafeNumber`;
 2. `packages/db/migrations/0010_review_5_guards.sql`: the credit note tax row checks and the number counter trigger;
 3. `packages/db/src/organisations.ts` (`updateOrganisationProfile`, `assertNumbersDoNotRepeat`) and `packages/db/src/documents.ts` (`listDocuments`, `getDocument`, amount-line titles and tax codes);
 4. by reading only: `apps/web/src/proxy.ts`, `apps/web/src/app/(app)/invoices/page.tsx`, `apps/web/src/lib/secret.ts`.
 
-Every probe ran against an export of `5b3ae43` made with `git archive` at `/home/claude/review/round7/pinned`. As in reviews 5 and 6, its `node_modules` folders hold links that point `@invoica/*` at the pinned packages and everything else at the repository's installed packages. No cache folder is linked into the repository.
+Every probe ran against an export of `166ab1e` made with `git archive` at `../review/round7/pinned`. As in reviews 5 and 6, its `node_modules` folders hold links that point `@invoica/*` at the pinned packages and everything else at the repository's installed packages. No cache folder is linked into the repository.
 
-The repository moved during the review. At the start the working tree had uncommitted changes to `apps/web/src/app/(app)/dashboard/page.tsx`, `docs/domain.md` and `docs/reviews/review-3.md`; later `e0b55d2` committed the first two and the third was gone. `git diff 5b3ae43 HEAD` touches only those two files, so the findings apply to HEAD as well. I did not touch any of them.
+The repository moved during the review. At the start the working tree had uncommitted changes to `apps/web/src/app/(app)/dashboard/page.tsx`, `docs/domain.md` and `docs/reviews/review-3.md`; later `981b147` committed the first two and the third was gone. `git diff 166ab1e HEAD` touches only those two files, so the findings apply to HEAD as well. I did not touch any of them.
 
-Line numbers are for `5b3ae43`.
+Line numbers are for `166ab1e`.
 
 ## Tests run
 
 | Suite | Where | Result |
 | --- | --- | --- |
-| `pnpm test:core` | repository working tree at `5b3ae43` (packages unchanged) | 184 run, 184 passed, 0 failed, 0 skipped (17 files) |
-| `pnpm test:db` | repository working tree at `5b3ae43` | 89 run, 89 passed, 0 failed, 0 skipped (10 files) |
+| `pnpm test:core` | repository working tree at `166ab1e` (packages unchanged) | 184 run, 184 passed, 0 failed, 0 skipped (17 files) |
+| `pnpm test:db` | repository working tree at `166ab1e` | 89 run, 89 passed, 0 failed, 0 skipped (10 files) |
 | Pinned core and database suites | `pinned/packages/core`, `pinned/packages/db` | 184 passed; 89 passed |
 | Core property probe `core/ledger-props.test.ts` | pinned | 6 tests, 6,000 cases each: 25,640 invoices with random sequences (47,678 credit notes, 21,616 notes for everything still owed, 4,312 amount hints, 8,989 final settlements); 5,679 invoices credited whole with 11,386 whole lines |
 | Core targeted probes `core/targeted.test.ts` | pinned | 8 tests (T1 to T6, T5b, T5c), each asserting what it observed |
@@ -33,8 +33,8 @@ Line numbers are for `5b3ae43`.
 
 How to rerun them:
 
-- Core: `cd /home/claude/review/round7/core && RUNS=6000 node node_modules/vitest/vitest.mjs run --root /home/claude/review/round7/core --testTimeout=7200000 --reporter=verbose ledger-props`, then the same command with `targeted`, `hint-example` or `negative-net` as the filter (targeted takes about three minutes).
-- Database: `cd /home/claude/review/round7 && TEST_DATABASE_ADMIN_URL=postgres://postgres@127.0.0.1:55432/postgres node node_modules/vitest/vitest.mjs run --root /home/claude/review/round7 --no-file-parallelism --testTimeout=600000 --hookTimeout=300000 --reporter=verbose db-probe` (about 50 seconds).
+- Core: `cd ../review/round7/core && RUNS=6000 node node_modules/vitest/vitest.mjs run --root ../review/round7/core --testTimeout=7200000 --reporter=verbose ledger-props`, then the same command with `targeted`, `hint-example` or `negative-net` as the filter (targeted takes about three minutes).
+- Database: `cd ../review/round7 && TEST_DATABASE_ADMIN_URL=postgres://postgres@127.0.0.1:55432/postgres node node_modules/vitest/vitest.mjs run --root ../review/round7 --no-file-parallelism --testTimeout=600000 --hookTimeout=300000 --reporter=verbose db-probe` (about 50 seconds).
 
 The property probe seeds fast-check afresh on each run, so counts differ a little between runs; the targeted probes use fixed seeds. Each database run creates and drops its own databases through `createTestDatabase`, and the seed probe makes a second one. After the last run no `invoica_test_` database was left. The `invoica` and `invoica_demo` databases were not touched. Three probes also connect as the superuser to their own test database, with triggers and foreign keys switched off for that transaction, only to build fixtures the app cannot write: E2d moves a counter to 9,998, and E5 writes a payment and a credit note that point across businesses.
 
@@ -187,20 +187,20 @@ What remains:
 
 - Anything in a browser: the credit dialog, the settings page, the invoices page and the policy's effect on pages.
 - `pnpm check`, `pnpm build`, the end-to-end suite and the PDF templates.
-- Commit `e0b55d2` (dashboard layout and `docs/domain.md`), beyond the `git diff` noted under "Scope and commit".
+- Commit `981b147` (dashboard layout and `docs/domain.md`), beyond the `git diff` noted under "Scope and commit".
 - Concurrency across several organisations, and any connection limit or statement timeout in production.
 - The `invoica` and `invoica_demo` databases, which were not touched.
 - Tax wording; Ghana's statutory content for credit notes.
 
 ## Files produced by this review
 
-All in `/home/claude/review/round7/`:
+All in `../review/round7/`:
 
 - `review-7.md` (this report);
 - `baseline-core.out` and `baseline-db.out` (repository suites), `pinned-core.out` and `pinned-db.out` (pinned suites);
 - `db-probe.test.ts`, with outputs `db-probe.out` and `db-probe.json`;
 - `core/model.ts` (fixtures and an independent driver, adapted from review 5's), `core/ledger-props.test.ts`, `core/targeted.test.ts`, `core/hint-example.test.ts` and `core/negative-net.test.ts`, with outputs `core/ledger-props.out`, `core/ledger-props.json`, `core/targeted.out`, `core/targeted.json`, `core/hint-example.out`, `core/hint-example.json`, `core/negative-net.out` and `core/negative-net.json`;
-- `pinned/` (an export of `5b3ae43` with `node_modules` links to the pinned packages), `node_modules/` and `core/node_modules/` (folders of links).
+- `pinned/` (an export of `166ab1e` with `node_modules` links to the pinned packages), `node_modules/` and `core/node_modules/` (folders of links).
 
 ---
 
