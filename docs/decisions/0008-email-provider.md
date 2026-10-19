@@ -10,11 +10,22 @@ A provider processes personal data (client names and email addresses) and sends 
 
 ## Options
 
-- **Postmark:** transactional email only, strong deliverability, simple API; data in the United States.
-- **Resend:** simple API built for developers, EU region available; younger company.
-- **Amazon SES:** cheapest at volume, any AWS region including London; more set-up (sandbox exit, bounce handling).
+Checked on each provider's own pages on 19 October 2026. Prices in US dollars, before tax.
 
-Prices, regions and terms to be checked on each provider's own pages when deciding.
+| | Postmark | Resend | Amazon SES |
+| --- | --- | --- | --- |
+| Price | Basic $15.00 a month for 10,000 emails, then $1.80 per 1,000 (Pro $16.50 with $1.30 overage) | Pro $20 a month for 50,000 emails, then $0.90 per 1,000; free plan 3,000 a month, 100 a day | $0.10 per 1,000 emails sent, plus $0.12 per GB of attachments |
+| Where data is held | United States (Deft, near Chicago, and AWS); "no plans to add servers in the EU" | Sending region per domain (Ireland available), but "all account data, including email metadata, logs, and API records, is stored in the United States" | The AWS region chosen, London (eu-west-2) included |
+| Transfer terms | DPA in the terms of service with Standard Contractual Clauses; no mention of the UK addendum or IDTA | To check in its DPA | Data stays in the chosen region; AWS DPA |
+| Set-up | Simple; known for deliverability of transactional email | Simple; developer-friendly API | More work: leave the sandbox, set up bounce and complaint notifications |
+
+At Invoica's expected volume (hundreds to low thousands of invoices a month, each with a PDF of about 100 KB), SES costs cents a month; Postmark and Resend cost their plan fee.
+
+Sources: [Postmark pricing](https://postmarkapp.com/pricing), [Postmark EU privacy](https://postmarkapp.com/euprivacy), [Resend pricing](https://resend.com/pricing), [Resend regions](https://resend.com/docs/dashboard/domains/regions), [Amazon SES pricing](https://aws.amazon.com/ses/pricing/).
+
+## Recommendation (Claude, for Kobby to decide)
+
+Amazon SES in London, if the app is hosted in the UK or EU. It is the only option that keeps client names, addresses and invoice PDFs in the UK, which is the simplest position under UK GDPR for a product that holds other businesses' client records, and it costs almost nothing at this volume. The extra set-up (sandbox exit, bounce handling) is work Invoica needs anyway, since a bounced invoice email must show on the invoice. If deliverability tooling and speed of set-up matter more than data location, Postmark is the alternative; it would need its transfer terms checked for UK data.
 
 ## Decision
 
