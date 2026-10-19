@@ -2,7 +2,7 @@
 
 Read `docs/BLUEPRINT.md` first, then this file. Update both at the end of every session.
 
-## Current state (19 October 2026, about 07:45)
+## Current state (19 October 2026, about 13:50)
 
 This is the **v2 repository**: a re-architecture from scratch (decision 0001). The old Flask app lives in the old repository (`ser-arthur/invoica`) as a reference and receives no changes.
 
@@ -25,15 +25,17 @@ Run the end-to-end suite against the development server (`pnpm dev`, then `E2E_B
 
 After an intended change to a template, look at the new pages and approve them with `UPDATE_BASELINES=1 pnpm --filter @invoica/pdf test visual`.
 
-**Branch waiting for approval:** `fix/auth-hardening` (one commit on top of `main`) holds the review 6 sign-in fixes. Take it with `git fetch <unzipped folder>/invoica.bundle fix/auth-hardening:fix/auth-hardening`. Before merging, the hosting must set `INVOICA_CLIENT_IP_HEADER` or `INVOICA_TRUSTED_PROXIES`, or the production server refuses sign-in.
+**Sign-in fixes merged** (review 6, R6-M1 and R6-L5). A production server must set `INVOICA_CLIENT_IP_HEADER` or `INVOICA_TRUSTED_PROXIES`, or it refuses sign-in. Behind Cloudflare (decision 0010): `INVOICA_CLIENT_IP_HEADER=cf-connecting-ip`.
 
 **Reviews:** reviews 1 to 7 (review 6 is a security review of the web layer) (`docs/reviews/`), each with a Resolution section mapping findings to fixes and tests.
 
-**Local databases:** `invoica` (manual testing) and `invoica_demo` (seeded; the end-to-end tests also write into it). Both are migrated to 0011. Credit notes in them from before decision 0009 kept no ledger, so their invoices cannot be credited again (open question 13). Migrations that have run are never edited: changes go in a new one.
+**Local databases:** `invoica` (manual testing, empty) and `invoica_demo` (seeded; the end-to-end tests also write into it). Both were dropped and recreated on 19 October at migration 0011, so every record in them is current. Migrations that have run are never edited: changes go in a new one.
 
 ## Delivery method
 
-The v2 repository is delivered as a **git bundle in a numbered zip** (`invoica-repo-NN.zip`), because Claude has no GitHub access yet. Each zip holds `invoica.bundle` (the full history), `VERIFY.md` and `verify.sh`.
+The v2 repository is delivered as a **git bundle in a numbered zip** (`invoica-repo-NN.zip`) until GitHub is linked. Each zip holds `invoica.bundle` (the full history), `VERIFY.md` and `verify.sh`.
+
+**The history was rewritten on 19 October 2026** (author, shorter messages), before any push. A clone made from bundle 08 or earlier cannot pull later bundles: make a new clone.
 
 To set up the first time:
 
@@ -46,22 +48,23 @@ sh ~/Downloads/invoica-repo-08/verify.sh
 
 To take a later bundle into an existing clone: `git pull ~/Downloads/invoica-repo-NN/invoica.bundle main`.
 
-The switch to pull requests (foundation section 7) is still blocked on GitHub access: "link your GitHub account to let Claude access repositories". When it is unblocked, Kobby creates a new empty GitHub repository for v2 and pushes this history to it.
+The switch to pull requests (foundation section 7) waits on GitHub: the owner connects GitHub in Settings, Connectors, and creates an empty private repository. The history is then pushed as a branch `start`, which the owner renames to `main` (the assistant never pushes to `main`). From then on every change arrives as a pull request.
 
 ## What changed last
 
-Session of 18 to 19 October 2026 (Kobby away, full autonomy for the night): phases 1a to 2o built and checked. Most recently: review 7 and its fixes (migration 0011); review 6, a security review of the web layer, with a content security policy on every page and the sign-in fixes on the branch `fix/auth-hardening` for approval; review 5 and its fixes (migration 0010); performance at 2,000 invoices (migration 0009, the invoice list paged); review 4 and its fixes (migration 0008); dialogs that keep focus; not-found and error pages; approved-image tests for every template; the end-to-end suite in CI; VAT in sterling (spec and calculation, printing waits on wording); a reminders proposal. Round 2 templates are on the design canvas, page "Round 2, built".
+Session 2, 19 October 2026: the owner's answers recorded in `docs/BLUEPRINT.md`; history rewritten; sign-in fixes merged; local databases recreated and reseeded; decision 0008 accepted (Resend), 0010 (hosting) proposed.
+
+Session of 18 to 19 October 2026 (full autonomy for the night): phases 1a to 2o built and checked. Most recently: review 7 and its fixes (migration 0011); review 6, a security review of the web layer, with a content security policy on every page and the sign-in fixes on the branch `fix/auth-hardening` for approval; review 5 and its fixes (migration 0010); performance at 2,000 invoices (migration 0009, the invoice list paged); review 4 and its fixes (migration 0008); dialogs that keep focus; not-found and error pages; approved-image tests for every template; the end-to-end suite in CI; VAT in sterling (spec and calculation, printing waits on wording); a reminders proposal. Round 2 templates are on the design canvas, page "Round 2, built".
 
 ## Next steps
 
-1. Kobby's answers to the open questions, then templates round 3 from his comments on the canvas.
-2. With approval: VAT in sterling printed on invoices (question 14), reminders (question 15), password reset (question 16).
-3. When GitHub is linked: push the history, open pull requests from then on, and let CI run.
-4. Database guards, next step (review 7, R7-L1): a deferred check that every step of a number counter has its document (the direct-SQL tests in `review-2.test.ts` to `review-5.test.ts` then step and issue in one transaction), and a way to check that a credit note leaves out no tax the invoice charged.
+1. Phases 2q to 2w in `docs/BLUEPRINT.md`: Resend, password reset and email verification, the worker role, credit note wording and tax defaults, refunds, VAT in sterling, reminders.
+2. Billing (2x) once the provider is chosen; then plan limits in the database and the deferred number counter check (2y).
+3. When GitHub is linked: push the history as `start`, then pull requests with CI.
 
-## Open questions for Kobby
+## Open questions
 
-The list is kept in `docs/BLUEPRINT.md`, "Open questions for Kobby" (20 items). New this session: 11 to 20.
+The list is kept in `docs/BLUEPRINT.md`, "Open questions" (6 items).
 
 ## Decisions
 
@@ -74,5 +77,6 @@ The list is kept in `docs/BLUEPRINT.md`, "Open questions for Kobby" (20 items). 
 | 0005 | Positioning and pricing | Accepted |
 | 0006 | PDF engine | Proposed, built |
 | 0007 | Tax rounding | Proposed, built |
-| 0008 | Email provider | Open |
+| 0008 | Email provider | Accepted: Resend |
 | 0009 | Credit notes worked out slot by slot | Proposed, built |
+| 0010 | Hosting | Proposed |

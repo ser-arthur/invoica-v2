@@ -2,22 +2,22 @@
 
 The plan for building Invoica v2, and where the work stands. Updated at the end of every phase. A new chat starts here.
 
-Last updated: 19 October 2026, about 07:45 (session 1 of the build).
+Last updated: 19 October 2026, about 13:50 (session 2 of the build).
 
 ---
 
 ## How to pick this up in a new chat
 
-1. In the claude.ai project "Invoica", start a new chat.
+1. In the project "Invoica", start a new chat.
 2. Attach the latest repository bundle (`invoica-repo-NN.zip`, from the last session's final message). It holds a git bundle of the whole repository with its history.
-3. Say: "Continue the Invoica build from the blueprint." Claude unpacks the bundle (`git clone invoica.bundle invoica`), reads this file, then `docs/HANDOVER.md`, then `CLAUDE.md`.
+3. Say: "Continue the Invoica build from the blueprint." The session unpacks the bundle (`git clone invoica.bundle invoica`), reads this file, then `docs/HANDOVER.md`, then `CLAUDE.md`.
 4. The project docs (`invoica-foundation.md`, `claude/invoica-product-directions.md`, `claude/invoica-blueprint.md`) carry the standards and the thinking; the repository carries everything the code depends on. If the two disagree, the repository wins.
 
 ## What we are building
 
 Invoica v2: a re-architecture from scratch (decision 0001) that keeps the old app's intent. v1 leads with "look established from day one": correct invoices that look exactly as intended on screen, on paper and as a PDF, however long they are (0003, 0005). Then getting paid on time, then easy tracking of invoices, clients and money.
 
-**Style direction for the app (Kobby, 18 October 2026):** build on the old app's look, sleeker and more modern. **Light mode first, with a dark mode option.** The old app's DNA kept: the "invoiça." wordmark with its cedilla and full stop, the emerald accent (hue about 145), top navigation on desktop, a bottom tab bar with a central "new" button on phones, status pills, figures up front on the dashboard. Visual work goes through the design skills available to Claude (frontend design, design system, design critique, accessibility review) before it is called done.
+**Style direction for the app (Kobby, 18 October 2026):** build on the old app's look, sleeker and more modern. **Light mode first, with a dark mode option.** The old app's DNA kept: the "invoiça." wordmark with its cedilla and full stop, the emerald accent (hue about 145), top navigation on desktop, a bottom tab bar with a central "new" button on phones, status pills, figures up front on the dashboard. Visual work goes through the design skills (frontend design, design system, design critique, accessibility review) before it is called done.
 
 **Invoice templates:** round 1 (six mocks) was judged too old-school. Kobby wants templates that feel bespoke, different and unique. To iterate later (phase 3).
 
@@ -51,8 +51,18 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 2m | Review 5 of the review 4 fixes, and its fixes (migration 0010); performance at 2,000 invoices (migration 0009, paged invoice list) | Done |
 | 2n | Review 6, a security review of the web layer: a content security policy with nonces, archive checks, the drain secret; the sign-in fixes on the branch `fix/auth-hardening`, waiting for approval | Done on `main`; branch waiting |
 | 2o | Review 7 of the latest fixes, and its fixes (migration 0011): taxes above a price refused, the amount hint's search, criteria narrowed to what holds | Done |
+| 2p | Answers of 19 October recorded; commit history cleaned (author, short messages, no assistant lines); sign-in fixes merged; demo data wiped and reseeded | Done |
+| 2q | Sending through Resend (decision 0008), behind the email adapter | Next |
+| 2r | Password reset and email verification; sign-up no longer reveals an existing account | Planned |
+| 2s | The outbox worker's own database role (review 1, L3) | Planned |
+| 2t | Approved credit note wording; tax-only notes allowed; prices exclude tax by default; a button that adds a country's standard tax codes | Planned |
+| 2u | Refunds: crediting a paid invoice records the money returned | Planned |
+| 2v | VAT in sterling printed, HMRC period rate by default | Planned |
+| 2w | Reminders (`docs/specs/reminders.md`), with the narrow database function and the default wording | Planned |
+| 2x | Billing for the plans, then the plans turned on | Waits for the billing provider |
+| 2y | Plan limits enforced by the database; the deferred number counter check (review 7, R7-L1) | After 2x |
 | 3 | Invoice templates round 2: four new templates (Ledger, Poster, Letter, Ticket) beside Signature, Studio and Counsel; template picker with live previews of your own details; landing page built around real invoices | Built; waiting for Kobby's review on the design canvas |
-| 4 | Getting paid: payment links, reminders | After v1 |
+| 4 | Getting paid: payment links | After v1 |
 | 5 | Cash flow and dashboards beyond v1 | After v1 |
 
 ## How to run it locally
@@ -83,6 +93,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **19 Oct, about 06:45 to 07:45.** Review 7 (`docs/reviews/review-7.md`) of everything since review 5: no critical, high or medium findings; 5 low. On UK and Ghana codes no note for everything still owed was refused in any run; the lists match the invoice page in every state, and no figure from another business reached a list. Fixed: taxes rounded above a price including them are refused, so no invoice has a net below zero; the amount hint searches further; credit note tax rows keep the invoice's charged or shown status (migration 0011); criteria 10 and 16 narrowed to the codes they hold for. Two direct-SQL gaps in the database guards are recorded as the next step. The dashboard's net figure is labelled "Net invoiced this month". Repository bundle 08 delivered.
 
+- **19 Oct, about 13:25 to 13:50 (session 2).** The owner answered the open questions (see "Answered on 19 October 2026"). The commit history was rewritten before its first push: the owner as author, short messages, no assistant lines; the review documents point at the new commit ids. The sign-in fixes were merged. The local databases were dropped, recreated at migration 0011 and reseeded. Decision 0008 accepted (Resend); decision 0010 (hosting) proposed.
+
 ## Decisions in force
 
 | Record | Title | Status |
@@ -94,8 +106,9 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 0005 | Positioning and pricing | Accepted |
 | 0006 | PDF engine | Proposed; built (Chromium, CSS margin boxes) |
 | 0007 | Tax rounding | Proposed; built (UK per line, nearest penny; Ghana per document) |
-| 0008 | Email provider | Open |
+| 0008 | Email provider | Accepted: Resend |
 | 0009 | Credit notes worked out slot by slot | Proposed; built |
+| 0010 | Hosting | Proposed: Cloudflare in front, one small server, managed Postgres |
 
 ## Choices made during the build (reversible, flagged for Kobby)
 
@@ -104,42 +117,48 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **Rounding:** decision 0007. UK businesses default to VAT per line, to the nearest penny; Ghana to each tax on the invoice total; others per line. UK businesses that are not retailers may choose "on the total, rounded down".
 - **PDF engine:** decision 0006. The PDF of record is made with the pinned Chromium; footers and page numbers are CSS margin boxes in the document's own font; the first PDF made for an issued document is kept and never replaced.
 - **Templates in the app:** seven on one view model: Signature (Invoica's own), Studio, Counsel, Ledger, Poster, Letter and Ticket. Every one renders the same snapshot, embeds its fonts, repeats its table heading on long invoices and fits an ordinary invoice on one page (tests).
-- **Sending:** "Send" queues the email with the kept PDF through the outbox; it is marked as sent once delivered. In development the email is written to `.data/mail`; production waits on decision 0008.
+- **Sending:** "Send" queues the email with the kept PDF through the outbox; it is marked as sent once delivered. In development the email is written to `.data/mail`; deployed copies send through Resend (decision 0008).
 - **Known gaps:** UK VAT invoices in a foreign currency must show the VAT in sterling; the spec and the calculation are built (`docs/specs/vat-in-sterling.md`), and capturing the rate and printing it wait on the wording (question 14). Fonts embed as Type 3 in PDFs (Chromium's handling of variable fonts); static font files would embed as TrueType.
 - **Discounts** are named, per document, percentage or amount, applied before tax and shared across lines in proportion.
 - **Deposits** taken before an invoice are entered on the draft and become payments when it is issued, so the invoice shows the balance due.
 - **Credit notes** have their own number sequence (CN-0001) and reduce the balance of the invoice they credit. They credit the whole invoice (only while nothing is paid or credited), quantities of its lines, an amount in the invoice's price basis, or everything still owed, to the penny. Price and tax always come from the invoice as issued, slot by slot (decision 0009, `docs/specs/credit-notes.md`): a whole line under VAT per line credits the VAT it was charged, and credits in any order and mix add up to the invoice row by row. Invoices keep their slots at issue and credit notes keep what they took; an invoice whose records came from an earlier version and cannot be read with certainty cannot be credited, and says so. A credit note cannot be voided; an invoice with credit notes cannot be voided. A line credited in parts can show an amount a penny away from its own quantity times price, so the parts add up exactly.
 - **States:** "Paid" means money received. An invoice closed by credit notes alone is "Credited"; by payments and credit notes together, "Settled". A partial credit with nothing paid leaves the invoice "Issued" or "Sent".
-- **Not registered for tax:** such a business cannot issue an invoice whose lines carry a tax rate, zero-rated included (GOV.UK: no VAT on invoices before registration). Flagged in case Kobby wants zero-rated allowed.
+- **Not registered for tax:** such a business cannot issue an invoice whose lines carry a tax rate, zero-rated included (GOV.UK: no VAT on invoices before registration). Confirmed on 19 October.
 - **Repeated requests:** payments, credit notes, sends and the first save of a new invoice carry a key made when the dialog opens; the server stores a fingerprint of the request with it, returns the earlier result for a true repeat and refuses a reused key with a different request.
-- **Commits:** made on a local `main` and delivered as bundles. Once GitHub is linked, work moves to branches and pull requests.
+- **Commits:** made on a local `main` and delivered as bundles. Once GitHub is linked, work moves to branches and pull requests. Messages are short, with no co-author or session lines (`CLAUDE.md`, Workflow).
 - **Numbering:** invoice and credit note prefixes must differ by more than digits, and a change that would repeat a used number is refused.
 - **Outstanding** has one definition (issued or sent, balance above zero), and amounts in different currencies are never added together.
 
-## Open questions for Kobby
+## Answered on 19 October 2026
 
-1. Which invoice templates ship in v1. All seven are on the design canvas, page "Round 2, built".
-2. Approve or change 0003, 0006 and 0007.
-3. Is `invoica.com` Invoica's domain (audit I-M11)?
-4. Commit attribution lines: this build adds Claude's co-author lines; keep or drop.
-5. GitHub access for pull requests: "link your GitHub account to let Claude access repositories".
-6. Email provider (decision 0008: Postmark, Resend or Amazon SES) and hosting region.
-7. Review 1, finding L3: give the outbox worker its own database role so the app role can no longer call the outbox functions. Ready to build; it changes tenancy rules, so it waits for approval.
-8. Should a business that is not registered for tax be allowed to mark lines zero-rated? Currently refused.
-9. Crediting a paid invoice (review 2, R2-L5): a credit note above the balance owed needs a refund or a client credit balance. Which should Invoica offer?
-10. Decision 0008 now recommends Amazon SES in London for email, if the app is hosted in the UK or EU.
-11. Wording on printed credit notes (review 3, R3-L4; tax wording is ask-first). Should every credit note print "Total before VAT" (today, with prices excluding VAT and no discount, the decrease before VAT shows only as "Subtotal")? With prices including VAT, the figures do not add down the column (subtotal and discount are gross, "Total before VAT" is net): should the layout change? Should a reverse-charge credit note say "customer to account for the output tax adjustment of £X to HMRC" (HMRC's example) in place of the invoice sentence? In Ghana, should "Total before VAT" read "Total before taxes", as it is also before NHIL and GETFund? Should "Zero-rated supplies" on a credit note read "Zero-rated reduction"?
-12. When to turn the plans on (`INVOICA_PLANS=enforced`), and whether billing comes before that.
-13. May the development and demo databases be reseeded? Credit notes there from before decision 0009 kept no ledger, so those invoices cannot be credited again.
-14. VAT in sterling (`docs/specs/vat-in-sterling.md`): approve the printed wording, and choose the default rate method (market rate or HMRC period rate). Until then, invoices from UK VAT-registered businesses in another currency do not show the VAT in sterling.
-15. Reminders (`docs/specs/reminders.md`): approve a narrow database function that finds due reminders across organisations (a tenancy rule), and the reminder wording.
-16. Password reset and email verification are not built yet. They change sign-in, so they wait for approval. Until sign-up finishes by email, signing up with an address that already has an account says so (review 6, R6-L2).
-17. Plan limits are kept by the application only (review 4, R4-L6): should the database enforce them too? It changes tenancy rules.
-18. A note for everything still owed can, in rare cases, credit tax alone (a levy on a base of zero) after a payment is removed. Is that acceptable on a printed credit note, alongside question 11?
-19. Ghana's default price basis: onboarding sets prices excluding tax for a Ghana business. Should it include tax, as is common for consumer prices there? Both are handled.
-20. Approve the branch `fix/auth-hardening` (review 6, R6-M1 and R6-L5): sign-in limits read the client address from a header the hosting's proxy overwrites, or through the proxies it names, set with `INVOICA_CLIENT_IP_HEADER` or `INVOICA_TRUSTED_PROXIES`; Secure cookies and same-origin server actions in production. Merging needs the hosting choice (decision 0008) to know which setting to use.
+1. Hosting: Cloudflare, or a better alternative. Proposed in decision 0010; waiting for a yes.
+2. Email: Resend for what the product sends; Zoho Mail keeps the company mailbox (decision 0008).
+3. GitHub: to be linked through the GitHub connector in Settings; the owner creates an empty repository. The first copy of `main` is pushed as a branch and renamed by the owner.
+4. Domain: `invoicer.io` has lapsed; another domain will be bought (the `.com` is taken).
+5. Commits and code comments never mention the AI assistant, and messages stay short. The history was rewritten before any push to match.
+6. Sign-in fixes (`fix/auth-hardening`): merged.
+7. Password reset and email verification: build them.
+8. The outbox worker's own database role: build it.
+9. Plan limits in the database: later, once billing is built.
+10. Reminders: build them with the narrow database function; the default wording is approved.
+11. Free plan: billing is built first.
+12. Crediting a paid invoice: a refund record (no client credit balance).
+13. Zero-rated lines for businesses not registered for tax: stay refused.
+14. Tax defaults: prices exclude tax by default in every country; a country's standard tax codes are added by default and from a button, and stay editable.
+15. Templates: any for now; architecture, everything working and every test passing come first.
+16. Credit note wording approved: "Total before VAT" on every credit note; "Reverse charge: customer to account for the output tax adjustment of £X to HMRC"; "Total before taxes" in Ghana; "Zero-rated reduction". Tax-only credit notes are allowed. VAT in sterling uses the HMRC period rate by default, with the method recorded on each invoice.
+17. Demo data: wiped and reseeded.
+
+## Open questions
+
+1. Hosting: approve decision 0010.
+2. Billing provider (it handles money): Paddle as merchant of record (recommended), or Stripe; Paystack later for mobile money in Ghana.
+3. The domain to buy, then the sending subdomain for Resend.
+4. The GitHub repository's owner and name, and the email address to author commits with (GitHub's private noreply address, if preferred).
+5. Which invoice templates ship in v1. All seven are on the design canvas, page "Round 2, built".
+6. Approve or change 0003, 0006 and 0007.
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-08.zip`, which also carries the branch `fix/auth-hardening`.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-08.zip`. The history was rewritten on 19 October: start from a new clone of the next bundle.
 - Nothing else: everything else is in the repository or the project docs.
