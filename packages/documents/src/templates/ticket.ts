@@ -7,18 +7,18 @@ export const ticket = {
   footer: { font: 'JetBrains Mono', inset: '0' },
   fonts: ['JetBrains Mono', 'Onest'] as const,
   css: (v: DocumentView) => `
-@page{size:A4;margin:16mm 16mm 20mm}
-@media screen{body{padding:16mm 16mm 20mm}}
-body{font-family:'JetBrains Mono',monospace;font-size:8.6pt;line-height:1.55;color:#141414}
-.ticket{width:118mm;margin:0 auto;padding:7mm 8mm 8mm;background:#fff;border:.5pt solid #d0d0d0;border-top:3.4pt solid ${v.brandColour}}
+@page{size:A4;margin:12mm 16mm 20mm}
+@media screen{body{padding:12mm 16mm 20mm}}
+body{font-family:'JetBrains Mono',monospace;font-size:8.4pt;line-height:1.38;color:#141414}
+.ticket{width:124mm;margin:0 auto;padding:6mm 8mm 6mm;background:#fff;border:.5pt solid #d0d0d0;border-top:3.4pt solid ${v.brandColour}}
 .c{text-align:center}
 .name{font-family:'Onest',sans-serif;font-weight:700;font-size:16pt;letter-spacing:-.02em;line-height:1.1}
 .name img{max-height:14mm;max-width:70mm}
 .dim{color:#666}
-.rule{border:none;border-top:1pt dashed #9a9a9a;margin:3.4mm 0}
+.rule{border:none;border-top:1pt dashed #9a9a9a;margin:2.2mm 0}
 .kv{display:flex;justify-content:space-between;gap:4mm}
 .kv span:last-child{text-align:right}
-.it{padding:1.4mm 0;break-inside:avoid}
+.it{padding:1mm 0;break-inside:avoid}
 .it .t{font-weight:600;overflow-wrap:anywhere}
 .it .d{color:#666;overflow-wrap:anywhere}
 .big{font-family:'Onest',sans-serif;font-weight:700;font-size:22pt;letter-spacing:-.03em;text-align:center;margin:2mm 0 0}

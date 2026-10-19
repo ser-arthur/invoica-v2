@@ -18,7 +18,7 @@ body{font-family:'Newsreader',serif;font-size:10.4pt;line-height:1.5;color:#1c21
 .folio{font-family:'JetBrains Mono',monospace;font-size:9pt;color:#4d5650;text-align:right}
 .folio .no{font-size:15pt;color:#1c211e;font-weight:500}
 .sub{display:flex;justify-content:space-between;gap:10mm;font-size:9pt;color:#4d5650;padding:1.6mm 0 0;border-top:.4pt solid #1c211e;margin-top:.8mm}
-.parties{display:grid;grid-template-columns:1fr 1fr 58mm;gap:8mm;margin:8mm 0 7mm}
+.parties{display:grid;grid-template-columns:1fr 1fr 48mm;gap:7mm;margin:8mm 0 7mm}
 .label{font-style:italic;color:#5b645e;font-size:9.2pt}
 .name{font-weight:600}
 .dates{display:grid;grid-template-columns:auto 1fr;gap:.6mm 4mm;font-size:9.2pt;margin:0}

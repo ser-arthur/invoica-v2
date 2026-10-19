@@ -7,18 +7,18 @@ export const letter = {
   footer: { font: 'Newsreader', inset: '0' },
   fonts: ['Newsreader'] as const,
   css: (v: DocumentView) => `
-@page{size:A4;margin:22mm 24mm 22mm}
-@media screen{body{padding:22mm 24mm 22mm}}
-body{font-family:'Newsreader',serif;font-size:11pt;line-height:1.6;color:#22201c}
-.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12mm;margin-bottom:14mm}
+@page{size:A4;margin:18mm 22mm 20mm}
+@media screen{body{padding:18mm 22mm 20mm}}
+body{font-family:'Newsreader',serif;font-size:10.6pt;line-height:1.5;color:#22201c}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12mm;margin-bottom:10mm}
 .from .name{font-size:20pt;font-style:italic;font-weight:500;letter-spacing:-.01em;color:${v.brandColour};line-height:1.1}
 .from img{max-height:16mm;max-width:70mm;display:block}
 .from .addr{font-size:9.4pt;color:#5d5850;margin-top:2mm}
 .meta{text-align:right;font-size:9.6pt;color:#5d5850}
 .meta strong{color:#22201c;font-weight:600}
-.to{margin-bottom:9mm}
+.to{margin-bottom:7mm}
 .dear{margin:0 0 4mm}
-.body p{margin:0 0 3.4mm;max-width:150mm}
+.body p{margin:0 0 3mm;max-width:150mm}
 .items{margin:6mm 0 2mm;max-width:150mm}
 .item{display:flex;align-items:baseline;gap:2mm;padding:1.4mm 0;break-inside:avoid}
 .item .t{flex:0 1 auto}
@@ -28,17 +28,17 @@ body{font-family:'Newsreader',serif;font-size:11pt;line-height:1.6;color:#22201c
 .sum{max-width:150mm;margin-top:2mm}
 .sum .r{display:flex;justify-content:space-between;padding:.8mm 0;color:#5d5850}
 .sum .total{color:#22201c;font-weight:600;font-size:12.5pt;border-top:.6pt solid #22201c;margin-top:1.5mm;padding-top:2mm}
-table.lines{max-width:150mm;margin:6mm 0 2mm;font-size:10pt}
+table.lines{max-width:150mm;margin:5mm 0 2mm;font-size:10pt}
 table.lines th{font-weight:500;font-style:italic;color:#6d675e;text-align:left;border-bottom:.6pt solid #22201c;padding:0 0 1.4mm}
 table.lines th.num{text-align:right}
-table.lines td{padding:1.8mm 0;border-bottom:.35pt dotted #9a9286;vertical-align:top}
+table.lines td{padding:1.4mm 0;border-bottom:.35pt dotted #9a9286;vertical-align:top}
 table.lines td+td,table.lines th+th{padding-left:4mm}
 .l-desc{color:#6d675e;font-style:italic;font-size:9.4pt}
-.pay{margin-top:8mm;padding-top:3mm;border-top:.4pt solid #cfc8bb;font-size:9.8pt;max-width:150mm;break-inside:avoid}
+.pay{margin-top:6mm;padding-top:2.6mm;border-top:.4pt solid #cfc8bb;font-size:9.8pt;max-width:150mm;break-inside:avoid}
 .pay .h{font-style:italic;color:#6d675e}
-.sign{margin-top:9mm;break-inside:avoid}
+.sign{margin-top:6mm;break-inside:avoid}
 .sign .n{font-style:italic;font-size:15pt;color:${v.brandColour}}
-.small{margin-top:10mm;font-size:8.8pt;color:#6d675e;max-width:150mm}
+.small{margin-top:6mm;font-size:8.8pt;color:#6d675e;max-width:150mm}
 `,
   body: (v: DocumentView, logo: string | null) => {
     const first =

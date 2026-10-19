@@ -12,13 +12,13 @@ body{font-family:'Onest',sans-serif;font-size:9pt;line-height:1.45;color:#111;pa
 @media screen{body{padding:14mm 14mm 20mm 26mm;background:linear-gradient(to right,${v.brandColour} 8mm,#fff 8mm)}}
 .grid{display:grid;grid-template-columns:44mm 1fr;column-gap:8mm}
 .lab{font-size:7.6pt;color:#6b6b6b;padding-top:1mm}
-.head{padding-bottom:5mm}
+.head{padding-bottom:4mm}
 .head .who{font-family:'Sora',sans-serif;font-weight:600;font-size:10.5pt;letter-spacing:-.01em}
 .head .who img{max-height:12mm;max-width:50mm;display:block}
 .head .kind{display:flex;justify-content:space-between;font-size:8.6pt;color:#6b6b6b;border-top:1.4pt solid #111;padding-top:1.6mm}
-.amount{font-family:'Sora',sans-serif;font-weight:600;font-size:42pt;letter-spacing:-.045em;line-height:.95;margin:3mm 0 2mm;overflow-wrap:anywhere}
+.amount{font-family:'Sora',sans-serif;font-weight:600;font-size:40pt;letter-spacing:-.045em;line-height:.95;margin:2.6mm 0 1.6mm;overflow-wrap:anywhere}
 .when{font-size:11pt;font-weight:500}
-.row{border-top:.6pt solid #111;padding:2.4mm 0 3.4mm}
+.row{border-top:.6pt solid #111;padding:2mm 0 2.8mm}
 .row .lab{color:#111;font-weight:600}
 .parties{display:grid;grid-template-columns:1fr 1fr;gap:8mm}
 .dates{display:grid;grid-template-columns:repeat(3,auto);justify-content:start;gap:1mm 8mm;margin:0}
@@ -26,7 +26,7 @@ body{font-family:'Onest',sans-serif;font-size:9pt;line-height:1.45;color:#111;pa
 .intro h2{font-family:'Sora',sans-serif;font-size:13pt;font-weight:600;letter-spacing:-.02em;margin:0 0 1mm}
 table.lines th{font-size:7.6pt;font-weight:500;color:#6b6b6b;text-align:left;padding:0 0 1.8mm;border-bottom:.6pt solid #111}
 table.lines th.num{text-align:right}
-table.lines td{padding:2.4mm 0;border-bottom:.4pt solid #d6d6d6;vertical-align:top}
+table.lines td{padding:2mm 0;border-bottom:.4pt solid #d6d6d6;vertical-align:top}
 table.lines td+td,table.lines th+th{padding-left:4mm}
 .l-title{font-weight:600}.l-desc{color:#555;margin-top:.4mm}
 .totals .t-row{display:flex;justify-content:space-between;padding:.9mm 0}

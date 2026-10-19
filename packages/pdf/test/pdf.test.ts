@@ -32,6 +32,19 @@ describe('PDF of record', () => {
   });
 
   it.each(TEMPLATE_LIST.map((t) => t.id))(
+    'fits an ordinary invoice of a few lines, with its payment details, on one page with %s',
+    async (template) => {
+      for (const name of ['ukVat', 'freelancerAmounts', 'ghana'] as const) {
+        const bytes = await renderPdf({ ...FIXTURES[name]!, template }, { executablePath });
+        const path = join(dir, `short-${template}-${name}.pdf`);
+        writeFileSync(path, bytes);
+        const pages = Number(/Pages:\s+(\d+)/.exec(execFileSync('pdfinfo', [path]).toString())![1]);
+        expect(pages, name).toBe(1);
+      }
+    },
+  );
+
+  it.each(TEMPLATE_LIST.map((t) => t.id))(
     'breaks a long invoice across pages with %s: headings repeat, totals stay whole, pages numbered',
     async (template) => {
       const bytes = await renderPdf({ ...FIXTURES.long!, template }, { executablePath });
