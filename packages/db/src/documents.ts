@@ -53,6 +53,12 @@ export interface Applied {
 }
 
 /** Payments and credit notes applied to each document. */
+function safeAmount(value: string): number {
+  const n = Number(value);
+  if (!Number.isSafeInteger(n)) throw new Error('Applied amount out of range.');
+  return n;
+}
+
 export async function appliedAmounts(tx: Tx, ids: string[]): Promise<Map<string, Applied>> {
   const out = new Map<string, Applied>(ids.map((id) => [id, { paid: 0, credited: 0 }]));
   if (ids.length === 0) return out;
@@ -109,11 +115,23 @@ export interface DocumentSummary {
 
 export type DocumentFilter = 'all' | 'draft' | 'open' | 'overdue' | 'paid' | 'void';
 
-function summarise(
-  row: DocumentRow & { clientName: string },
-  applied: Applied,
-  today: BusinessDate,
-): DocumentSummary {
+/** The columns a summary needs: lists read these and never a document's lines or snapshot. */
+type SummaryRow = Pick<
+  DocumentRow,
+  | 'id'
+  | 'kind'
+  | 'number'
+  | 'lifecycle'
+  | 'total'
+  | 'clientId'
+  | 'currency'
+  | 'issueDate'
+  | 'dueDate'
+  | 'title'
+  | 'createdAt'
+> & { clientName: string; credits: string | null };
+
+function summarise(row: SummaryRow, applied: Applied, today: BusinessDate): DocumentSummary {
   const appliedTotal = applied.paid + applied.credited;
   const balance = row.lifecycle === 'void' ? 0 : row.total - appliedTotal;
   return {
@@ -134,10 +152,7 @@ function summarise(
     issueDate: row.issueDate,
     dueDate: row.dueDate,
     title: row.title,
-    credits:
-      row.kind === 'credit_note'
-        ? ((row.snapshot as unknown as DocumentSnapshot | null)?.credits?.number ?? null)
-        : null,
+    credits: row.kind === 'credit_note' ? row.credits : null,
     total: row.total,
     paid: applied.paid,
     credited: applied.credited,
@@ -161,7 +176,23 @@ export async function listDocuments(
   const conditions = [eq(document.kind, options.kind ?? 'invoice')];
   if (options.clientId) conditions.push(eq(document.clientId, options.clientId));
   const rows = await tx
-    .select({ doc: document, clientName: client.name })
+    .select({
+      id: document.id,
+      kind: document.kind,
+      number: document.number,
+      lifecycle: document.lifecycle,
+      total: document.total,
+      clientId: document.clientId,
+      currency: document.currency,
+      issueDate: document.issueDate,
+      dueDate: document.dueDate,
+      title: document.title,
+      createdAt: document.createdAt,
+      clientName: client.name,
+      credits: sql<string | null>`${document.snapshot} #>> '{credits,number}'`,
+      paid: sql<string>`(select coalesce(sum(p.amount), 0) from payment p where p.organisation_id = ${document.organisationId} and p.document_id = ${document.id} and p.removed_at is null)`,
+      credited: sql<string>`(select coalesce(sum(c.total), 0) from document c where c.organisation_id = ${document.organisationId} and c.credited_document_id = ${document.id} and c.kind = 'credit_note' and c.lifecycle in ('issued', 'sent'))`,
+    })
     .from(document)
     .innerJoin(client, eq(client.id, document.clientId))
     .where(and(...conditions))
@@ -169,12 +200,8 @@ export async function listDocuments(
       desc(sql`coalesce(${document.issueDate}, ${document.createdAt}::date)`),
       desc(document.createdAt),
     );
-  const applied = await appliedAmounts(
-    tx,
-    rows.map((r) => r.doc.id),
-  );
   let out = rows.map((r) =>
-    summarise({ ...r.doc, clientName: r.clientName }, applied.get(r.doc.id)!, options.today),
+    summarise(r, { paid: safeAmount(r.paid), credited: safeAmount(r.credited) }, options.today),
   );
   const term = options.search?.trim().toLowerCase();
   if (term) {
@@ -258,7 +285,15 @@ export async function getDocument(tx: Tx, id: string, today: BusinessDate): Prom
     doc.lifecycle === 'draft'
       ? draftTotals(doc, lines)
       : (doc.snapshot as unknown as DocumentSnapshot).totals;
-  const summary = summarise({ ...doc, clientName: owner!.name }, a, today);
+  const summary = summarise(
+    {
+      ...doc,
+      clientName: owner!.name,
+      credits: (doc.snapshot as unknown as DocumentSnapshot | null)?.credits?.number ?? null,
+    },
+    a,
+    today,
+  );
   return {
     document: doc,
     lines,
