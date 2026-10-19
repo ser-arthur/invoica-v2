@@ -21,4 +21,14 @@ export const env = {
   get chromiumPath() {
     return process.env.CHROMIUM_PATH || undefined;
   },
+  /** Cookies carry Secure in production, whatever scheme BETTER_AUTH_URL names. */
+  get secureCookies() {
+    return process.env.NODE_ENV === 'production';
+  },
+  get clientIpHeader() {
+    return process.env.INVOICA_CLIENT_IP_HEADER || undefined;
+  },
+  get trustedProxies() {
+    return process.env.INVOICA_TRUSTED_PROXIES || undefined;
+  },
 };

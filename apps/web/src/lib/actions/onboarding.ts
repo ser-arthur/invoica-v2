@@ -6,6 +6,7 @@ import { onboardingInput } from '@invoica/schemas';
 import { getDb } from '../db';
 import { ORG_COOKIE, requireUser } from '../session';
 import { failure, invalid, type ActionResult } from './result';
+import { env } from '../env';
 
 export async function createOrganisationAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   const user = await requireUser();
@@ -17,7 +18,7 @@ export async function createOrganisationAction(input: unknown): Promise<ActionRe
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
-      secure: process.env.NODE_ENV === 'production',
+      secure: env.secureCookies,
     });
     return { ok: true, data: { id } };
   } catch (error) {

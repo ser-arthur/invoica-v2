@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { ORG_COOKIE, requireUser } from '../session';
 import { myOrganisations } from '@invoica/db';
 import { getDb } from '../db';
+import { env } from '../env';
 
 export async function setThemeAction(theme: 'light' | 'dark' | 'system') {
   if (!['light', 'dark', 'system'].includes(theme)) return;
@@ -12,7 +13,7 @@ export async function setThemeAction(theme: 'light' | 'dark' | 'system') {
     path: '/',
     sameSite: 'lax',
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.secureCookies,
     maxAge: 60 * 60 * 24 * 365,
   });
   revalidatePath('/', 'layout');
@@ -26,7 +27,7 @@ export async function switchOrganisationAction(id: string) {
     httpOnly: true,
     sameSite: 'lax',
     path: '/',
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.secureCookies,
   });
   revalidatePath('/', 'layout');
 }

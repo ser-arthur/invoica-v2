@@ -1,11 +1,18 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { actionOriginAllowed } from './lib/request-guards';
 
 /**
  * Sets a Content-Security-Policy with a fresh nonce on every page. Next.js puts the nonce on its own scripts; the one
  * inline script of the app (the theme switch in the root layout) reads it from the `x-nonce` request header. Scripts
- * from anywhere else, plugins, other sites framing the app and forms posting elsewhere are refused.
+ * from anywhere else, plugins, other sites framing the app and forms posting elsewhere are refused, and so is a server
+ * action that does not come from the app's own origin.
  */
 export function proxy(request: NextRequest) {
+  // A server action is accepted only from the app's own origin, so a request without one is refused too.
+  const app = process.env.BETTER_AUTH_URL;
+  if (app && !actionOriginAllowed(request.method, request.headers, app)) {
+    return new NextResponse('Forbidden', { status: 403 });
+  }
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const dev = process.env.NODE_ENV !== 'production';
   const policy = [
