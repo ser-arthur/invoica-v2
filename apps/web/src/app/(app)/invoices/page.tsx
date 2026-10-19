@@ -5,6 +5,7 @@ import { formatBusinessDate, formatMoney, sumMinor } from '@invoica/core';
 import { listDocuments, type DocumentFilter } from '@invoica/db';
 import { ButtonLink, EmptyState, Input, Money, PageHeader, Panel, StatePill, cx } from '@/components/ui';
 import { inWorkspace } from '@/lib/workspace';
+import { RowActions } from '@/components/row-actions';
 
 export const metadata: Metadata = { title: 'Invoices' };
 
@@ -25,10 +26,10 @@ export default async function InvoicesPage({
   const sp = await searchParams;
   const filter = (FILTERS.find((f) => f.value === sp.filter)?.value ?? 'all') as DocumentFilter;
   const kind = sp.kind === 'credit_note' ? 'credit_note' : 'invoice';
-  const { docs, open } = await inWorkspace(async (tx, ws) => {
+  const { docs, open, today } = await inWorkspace(async (tx, ws) => {
     const docs = await listDocuments(tx, { today: ws.today, filter, search: sp.q, kind });
     const open = kind === 'invoice' ? await listDocuments(tx, { today: ws.today, filter: 'open' }) : [];
-    return { docs, open };
+    return { docs, open, today: ws.today };
   });
   const owed = new Map<string, number>();
   for (const d of open) owed.set(d.currency, sumMinor([owed.get(d.currency) ?? 0, d.balance]));
@@ -147,12 +148,17 @@ export default async function InvoicesPage({
                 <th scope="col" className="px-5 py-3 text-right font-medium">
                   Amount
                 </th>
+                {kind === 'invoice' ? (
+                  <th scope="col" className="w-14 py-3 pr-3">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                ) : null}
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {docs.map((d) => (
                 <tr key={d.id} className="relative hover:bg-sunk">
-                  <td className="px-5 py-3.5">
+                  <td className="w-full max-w-0 px-5 py-3.5">
                     <div className="flex items-baseline justify-between gap-3">
                       <Link
                         href={d.state === 'draft' ? `/invoices/${d.id}/edit` : `/invoices/${d.id}`}
@@ -173,6 +179,11 @@ export default async function InvoicesPage({
                       </p>
                       <StatePill state={d.state} overdue={d.overdue} />
                     </div>
+                    {d.balance > 0 && d.balance !== d.total && d.state !== 'draft' ? (
+                      <p className="mt-1 text-right text-[13px] text-muted tabular md:hidden">
+                        {formatMoney(d.balance, d.currency)} left
+                      </p>
+                    ) : null}
                     {d.title ? (
                       <p className="hidden max-w-[40ch] truncate text-[13px] text-muted md:block">
                         {d.title}
@@ -196,6 +207,18 @@ export default async function InvoicesPage({
                       </p>
                     ) : null}
                   </td>
+                  {kind === 'invoice' ? (
+                    <td className="w-14 py-2 pr-3 align-middle">
+                      <RowActions
+                        id={d.id}
+                        number={d.number}
+                        lifecycle={d.lifecycle}
+                        balance={d.balance}
+                        currency={d.currency}
+                        today={today}
+                      />
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>

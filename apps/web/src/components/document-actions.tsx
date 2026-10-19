@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import {
   DomainError,
   checkCredit,
@@ -32,7 +33,7 @@ import {
 import { requestKey } from '@/lib/request-key';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
 
-function Dialog({
+export function Dialog({
   title,
   children,
   onClose,
@@ -41,7 +42,8 @@ function Dialog({
   children: React.ReactNode;
   onClose: () => void;
 }) {
-  return (
+  // Rendered at the end of the page, so no surrounding layer (a list row, the phone tab bar) can sit above it.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -49,11 +51,12 @@ function Dialog({
       className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center"
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >
-      <div className="w-full max-w-md rounded-[16px] bg-surface p-6 shadow-lift">
+      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[16px] bg-surface p-6 shadow-lift">
         <h2 className="font-display text-xl font-semibold">{title}</h2>
         <div className="mt-4">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -115,36 +118,31 @@ export function MarkSentButton({ id }: { id: string }) {
   );
 }
 
-export function RecordPaymentButton({
+/**
+ * The form for recording a payment. Each time it opens it is a new payment with its own request key; a retry from
+ * the same form reuses the key, so the payment is recorded once.
+ */
+export function PaymentDialog({
   id,
   balance,
   currency,
   today,
+  onClose,
 }: {
   id: string;
   balance: number;
   currency: string;
   today: string;
+  onClose: () => void;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState(toDecimalString(balance, currency));
   const [paidOn, setPaidOn] = useState(today);
   const [method, setMethod] = useState('bank_transfer');
   const [reference, setReference] = useState('');
-  const [key, setKey] = useState('');
+  const [key] = useState(() => requestKey());
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
-
-  function openDialog() {
-    // Each time the dialog opens it is a new payment, with its own key; retrying inside the dialog reuses it.
-    setKey(requestKey());
-    setAmount(toDecimalString(balance, currency));
-    setPaidOn(today);
-    setReference('');
-    setMessage(null);
-    setOpen(true);
-  }
 
   function submit() {
     const minor = parseMoney(amount, currency);
@@ -171,60 +169,65 @@ export function RecordPaymentButton({
         router.refresh();
         return;
       }
-      setOpen(false);
+      onClose();
       router.refresh();
     });
   }
 
   return (
+    <Dialog title="Record a payment" onClose={onClose}>
+      <div className="flex flex-col gap-4">
+        {message ? <FormMessage>{message}</FormMessage> : null}
+        <p className="text-[14px] text-muted">Balance due: {formatMoney(balance, currency)}</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={`Amount (${currency})`} htmlFor="pay-amount">
+            <Input
+              id="pay-amount"
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="text-right tabular"
+              autoFocus
+            />
+          </Field>
+          <Field label="Received on" htmlFor="pay-date">
+            <Input id="pay-date" type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} />
+          </Field>
+        </div>
+        <Field label="How it was paid" htmlFor="pay-method">
+          <Select id="pay-method" value={method} onChange={(e) => setMethod(e.target.value)}>
+            <option value="bank_transfer">Bank transfer</option>
+            <option value="mobile_money">Mobile money</option>
+            <option value="card">Card</option>
+            <option value="cash">Cash</option>
+            <option value="cheque">Cheque</option>
+            <option value="other">Other</option>
+          </Select>
+        </Field>
+        <Field label="Reference" htmlFor="pay-ref" hint="Optional, as it appears on your statement.">
+          <Input id="pay-ref" value={reference} onChange={(e) => setReference(e.target.value)} />
+        </Field>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button disabled={pending} onClick={submit}>
+            {pending ? 'Saving' : 'Record payment'}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
+  );
+}
+
+export function RecordPaymentButton(props: { id: string; balance: number; currency: string; today: string }) {
+  const [open, setOpen] = useState(false);
+  return (
     <>
-      <Button type="button" onClick={openDialog}>
+      <Button type="button" onClick={() => setOpen(true)}>
         Record payment
       </Button>
-      {open ? (
-        <Dialog title="Record a payment" onClose={() => setOpen(false)}>
-          <div className="flex flex-col gap-4">
-            {message ? <FormMessage>{message}</FormMessage> : null}
-            <p className="text-[14px] text-muted">Balance due: {formatMoney(balance, currency)}</p>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={`Amount (${currency})`} htmlFor="pay-amount">
-                <Input
-                  id="pay-amount"
-                  inputMode="decimal"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="text-right tabular"
-                  autoFocus
-                />
-              </Field>
-              <Field label="Received on" htmlFor="pay-date">
-                <Input id="pay-date" type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} />
-              </Field>
-            </div>
-            <Field label="How it was paid" htmlFor="pay-method">
-              <Select id="pay-method" value={method} onChange={(e) => setMethod(e.target.value)}>
-                <option value="bank_transfer">Bank transfer</option>
-                <option value="mobile_money">Mobile money</option>
-                <option value="card">Card</option>
-                <option value="cash">Cash</option>
-                <option value="cheque">Cheque</option>
-                <option value="other">Other</option>
-              </Select>
-            </Field>
-            <Field label="Reference" htmlFor="pay-ref" hint="Optional, as it appears on your statement.">
-              <Input id="pay-ref" value={reference} onChange={(e) => setReference(e.target.value)} />
-            </Field>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button disabled={pending} onClick={submit}>
-                {pending ? 'Saving' : 'Record payment'}
-              </Button>
-            </div>
-          </div>
-        </Dialog>
-      ) : null}
+      {open ? <PaymentDialog {...props} onClose={() => setOpen(false)} /> : null}
     </>
   );
 }
