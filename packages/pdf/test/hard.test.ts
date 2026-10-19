@@ -29,7 +29,7 @@ afterAll(async () => {
   await closePdfRenderer();
 });
 
-const clean = (s: string) => s.replace(/[\s  ]+/g, ' ');
+const clean = (s: string) => s.replace(/[\s\u00a0\u202f]+/g, ' ');
 
 async function pdfPages(snapshot: DocumentSnapshot, name: string): Promise<string[]> {
   const bytes = await renderPdf(snapshot, { executablePath });

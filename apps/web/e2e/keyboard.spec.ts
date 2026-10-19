@@ -21,8 +21,8 @@ test('every control on the main pages can be reached with Tab and shows where fo
         const s = getComputedStyle(el);
         const r = el.getBoundingClientRect();
         return {
-          id: `${el.tagName}:${el.getAttribute('aria-label') ?? el.id ?? ''}:${(el.textContent ?? '').trim().slice(0, 30)}:${Math.round(r.top)}:${Math.round(r.left)}`,
-          outline: s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0,
+          id: `${el.tagName}:${el.getAttribute('aria-label') ?? el.id ?? ''}:${(el.textContent ?? '').trim().slice(0, 30)}:${Math.trunc(r.top)}:${Math.trunc(r.left)}`,
+          outline: s.outlineStyle !== 'none' && s.outlineWidth !== '0px',
           ring: s.boxShadow !== 'none',
           size: r.width > 0 && r.height > 0,
           frame: el.tagName === 'IFRAME',
