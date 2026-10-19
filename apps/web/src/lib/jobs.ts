@@ -37,6 +37,7 @@ const handlers = {
       to: String(job.payload.to),
       subject: String(job.payload.subject),
       text: String(job.payload.message),
+      idempotencyKey: `outbox-${job.id}`,
       attachments: [
         {
           filename: `${pdf.number.replace(/[^A-Za-z0-9._-]/g, '_')}.pdf`,
