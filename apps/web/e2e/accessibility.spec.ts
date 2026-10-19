@@ -91,3 +91,29 @@ test('no page scrolls sideways at phone widths, and nothing is cut off at the ed
   }
   expect(examined).toBe(35);
 });
+
+test('open dialogs have no automated accessibility violations, in light and dark', async ({ page }) => {
+  await signUpAndOnboard(page, 'Dialog Office', { vat: true });
+  await addClient(page, 'Marlow Joinery');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Marlow Joinery' });
+  await page.getByLabel('Line 1 description').fill('Fitting');
+  await page.getByLabel('Line 1 price').fill('250');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\?issued=1/);
+  const invoice = page.url().replace('?issued=1', '');
+  let examined = 0;
+  for (const theme of ['light', 'dark']) {
+    await page.context().addCookies([{ name: 'invoica_theme', value: theme, url: page.url() }]);
+    for (const opener of ['Record payment', 'Credit note']) {
+      await page.goto(invoice);
+      await page.getByRole('button', { name: opener }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      const result = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();
+      examined += 1;
+      expect(result.violations.map((v) => `${theme} ${opener}: ${v.id}`)).toEqual([]);
+    }
+  }
+  expect(examined).toBe(4);
+});
