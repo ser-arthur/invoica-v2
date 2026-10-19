@@ -33,10 +33,10 @@ export async function signIn(page: Page, email: string) {
   await page.waitForURL('**/dashboard');
 }
 
-export async function addClient(page: Page, name: string) {
+export async function addClient(page: Page, name: string, email = 'accounts@client.example') {
   await page.goto('/clients/new');
   await page.fill('#c-name', name);
-  await page.fill('#c-email', 'accounts@client.example');
+  await page.fill('#c-email', email);
   await page.fill('#c-a1', '1 Sample Street');
   await page.fill('#c-city', 'Leeds');
   await page.fill('#c-postcode', 'LS1 1AA');

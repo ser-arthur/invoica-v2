@@ -115,11 +115,14 @@ export default async function ClientsPage({
                 const amounts = [...(owed.get(c.id)?.entries() ?? [])];
                 return (
                   <tr key={c.id} className="relative hover:bg-sunk">
-                    <td className="px-5 py-3.5">
-                      <Link href={`/clients/${c.id}`} className="font-medium after:absolute after:inset-0">
+                    <td className="w-full max-w-0 px-5 py-3.5">
+                      <Link
+                        href={`/clients/${c.id}`}
+                        className="block truncate font-medium after:absolute after:inset-0"
+                      >
                         {c.name}
                       </Link>
-                      <p className="text-[13px] text-muted">
+                      <p className="truncate text-[13px] text-muted">
                         {[c.email, c.city, c.countryCode ? countryName(c.countryCode) : null]
                           .filter(Boolean)
                           .join(', ') || 'No contact details yet'}
@@ -128,7 +131,7 @@ export default async function ClientsPage({
                     <td className="hidden px-5 py-3.5 text-muted tabular sm:table-cell">
                       {counts.get(c.id) ?? 0}
                     </td>
-                    <td className="px-5 py-3.5 text-right font-medium tabular">
+                    <td className="px-5 py-3.5 text-right font-medium whitespace-nowrap tabular">
                       {amounts.length === 0 ? (
                         <span className="text-muted">Nothing</span>
                       ) : (

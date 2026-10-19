@@ -38,8 +38,13 @@ test('app pages have no automated accessibility violations, in light and dark', 
   expect(examined).toBe(paths.length * 2);
 });
 
-test('no page scrolls sideways at phone widths', async ({ page }) => {
+test('no page scrolls sideways at phone widths, and nothing is cut off at the edge', async ({ page }) => {
   await signUpAndOnboard(page, 'A business with a rather long name for testing layouts');
+  await addClient(
+    page,
+    'Aura Coffee Roasters and Bakery Limited',
+    'accounts.payable@auracoffeeroastersandbakery.example',
+  );
   const paths = [
     '/dashboard',
     '/invoices',
@@ -59,6 +64,21 @@ test('no page scrolls sideways at phone widths', async ({ page }) => {
       );
       examined += 1;
       expect(overflow, `${path} at ${width}px`).toBeLessThanOrEqual(0);
+      // Text that reaches past the right edge of the screen is cut off, unless it sits in a strip that scrolls.
+      const cut = await page.evaluate(() => {
+        const scrolls = (el: Element | null): boolean => {
+          for (let e = el; e; e = e.parentElement) {
+            const o = getComputedStyle(e).overflowX;
+            if (o === 'auto' || o === 'scroll') return true;
+          }
+          return false;
+        };
+        return [...document.querySelectorAll('main *')]
+          .filter((el) => el.childElementCount === 0 && (el.textContent ?? '').trim())
+          .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 1 && !scrolls(el))
+          .map((el) => (el.textContent ?? '').trim().slice(0, 40));
+      });
+      expect(cut, `${path} at ${width}px`).toEqual([]);
     }
   }
   expect(examined).toBe(35);
