@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
-import { createPortal } from 'react-dom';
 import {
   DomainError,
   checkCredit,
@@ -22,6 +21,7 @@ import {
   type CreditTaken,
   type DocumentTotals,
 } from '@invoica/core';
+import { Dialog } from './dialog';
 import {
   creditNoteAction,
   deleteDraftAction,
@@ -35,32 +35,7 @@ import {
 import { requestKey } from '@/lib/request-key';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
 
-export function Dialog({
-  title,
-  children,
-  onClose,
-}: {
-  title: string;
-  children: React.ReactNode;
-  onClose: () => void;
-}) {
-  // Rendered at the end of the page, so no surrounding layer (a list row, the phone tab bar) can sit above it.
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center"
-      onKeyDown={(e) => e.key === 'Escape' && onClose()}
-    >
-      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[16px] bg-surface p-6 shadow-lift">
-        <h2 className="font-display text-xl font-semibold">{title}</h2>
-        <div className="mt-4">{children}</div>
-      </div>
-    </div>,
-    document.body,
-  );
-}
+export { Dialog };
 
 export function DeleteDraftButton({ id }: { id: string }) {
   const router = useRouter();

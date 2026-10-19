@@ -29,6 +29,7 @@ import { renderDocumentHtml, TEMPLATE_LIST } from '@invoica/documents';
 import { saveAndIssueAction, saveDraftAction } from '@/lib/actions/documents';
 import { requestKey } from '@/lib/request-key';
 import { ClientForm } from './client-form';
+import { Dialog } from './dialog';
 import { DocumentFrame } from './document-frame';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea, cx } from './ui';
 
@@ -1223,38 +1224,26 @@ export function InvoiceEditor(props: EditorProps) {
       </div>
 
       {confirmIssue ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="issue-title"
-          className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center"
-        >
-          <div className="w-full max-w-md rounded-[16px] bg-surface p-6 shadow-lift">
-            <h2 id="issue-title" className="font-display text-xl font-semibold">
-              Issue {org.nextNumber}?
-            </h2>
-            <p className="mt-2 text-muted">
-              Issuing gives it this number and freezes it, so it can be sent and kept. To correct it
-              afterwards, you issue a credit note.
+        <Dialog title={`Issue ${org.nextNumber}?`} onClose={() => setConfirmIssue(false)}>
+          <p className="text-muted">
+            Issuing gives it this number and freezes it, so it can be sent and kept. To correct it afterwards,
+            you issue a credit note.
+          </p>
+          {totals ? (
+            <p className="mt-4 font-display text-2xl font-semibold tabular">
+              {money(totals.total)}
+              {client ? <span className="block text-sm font-normal text-muted">to {client.name}</span> : null}
             </p>
-            {totals ? (
-              <p className="mt-4 font-display text-2xl font-semibold tabular">
-                {money(totals.total)}
-                {client ? (
-                  <span className="block text-sm font-normal text-muted">to {client.name}</span>
-                ) : null}
-              </p>
-            ) : null}
-            <div className="mt-6 flex justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={() => setConfirmIssue(false)}>
-                Keep editing
-              </Button>
-              <Button type="button" disabled={pending} onClick={() => save(true)} autoFocus>
-                {pending ? 'Issuing' : 'Issue invoice'}
-              </Button>
-            </div>
+          ) : null}
+          <div className="mt-6 flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setConfirmIssue(false)}>
+              Keep editing
+            </Button>
+            <Button type="button" disabled={pending} onClick={() => save(true)} autoFocus>
+              {pending ? 'Issuing' : 'Issue invoice'}
+            </Button>
           </div>
-        </div>
+        </Dialog>
       ) : null}
     </div>
   );

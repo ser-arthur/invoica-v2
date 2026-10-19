@@ -5,7 +5,7 @@ import { addClient, signUpAndOnboard } from './helpers';
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 test('public pages have no automated accessibility violations', async ({ page }) => {
-  for (const path of ['/', '/sign-in', '/sign-up']) {
+  for (const path of ['/', '/sign-in', '/sign-up', '/no-such-page']) {
     await page.goto(path);
     const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();
     expect(result.violations.map((v) => `${path}: ${v.id} (${v.nodes.length})`)).toEqual([]);
@@ -15,7 +15,15 @@ test('public pages have no automated accessibility violations', async ({ page })
 test('app pages have no automated accessibility violations, in light and dark', async ({ page }) => {
   await signUpAndOnboard(page, 'Field Office', { vat: true });
   await addClient(page, 'Mara Linden Ceramics');
-  const paths = ['/dashboard', '/invoices', '/clients', '/items', '/settings', '/invoices/new'];
+  const paths = [
+    '/dashboard',
+    '/invoices',
+    '/clients',
+    '/items',
+    '/settings',
+    '/invoices/new',
+    '/invoices/00000000-0000-4000-8000-000000000000',
+  ];
   let examined = 0;
   for (const theme of ['light', 'dark']) {
     await page.context().addCookies([{ name: 'invoica_theme', value: theme, url: page.url() }]);

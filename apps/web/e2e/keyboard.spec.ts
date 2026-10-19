@@ -39,3 +39,45 @@ test('every control on the main pages can be reached with Tab and shows where fo
   }
   expect(examined).toBeGreaterThan(40);
 });
+
+test('an open dialog keeps focus inside it, and closing it returns focus to what opened it', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Quayside Office', { vat: true });
+  await addClient(page, 'Tidewater Ltd');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Tidewater Ltd' });
+  await page.getByLabel('Line 1 description').fill('Survey');
+  await page.getByLabel('Line 1 price').fill('300');
+
+  const insideDialog = () => page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'));
+  const tabAround = async (times: number) => {
+    for (let i = 0; i < times; i++) {
+      await page.keyboard.press(i % 3 === 2 ? 'Shift+Tab' : 'Tab');
+      expect(await insideDialog(), `after ${i + 1} presses`).toBe(true);
+    }
+  };
+
+  await page.getByRole('button', { name: 'Issue invoice' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  expect(await insideDialog()).toBe(true);
+  await tabAround(8);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Issue invoice' })).toBeFocused();
+
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\?issued=1/);
+
+  const opener = page.getByRole('button', { name: 'Record payment' });
+  await opener.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  expect(await insideDialog()).toBe(true);
+  await tabAround(12);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(opener).toBeFocused();
+});

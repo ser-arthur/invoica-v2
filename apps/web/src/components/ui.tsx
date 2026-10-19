@@ -243,7 +243,7 @@ export function PanelHeading({ children, action }: { children: ReactNode; action
 }
 
 /** A blank sheet of paper with a line of brand colour where the amount goes. Decoration for empty states. */
-function PaperMark() {
+export function PaperMark() {
   return (
     <svg width="56" height="68" viewBox="0 0 56 68" aria-hidden="true" className="mb-1">
       <path
