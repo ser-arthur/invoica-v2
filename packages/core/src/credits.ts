@@ -811,19 +811,48 @@ function settleIncludingTax(source: CreditSource, state: CreditState, balance: n
  * invoice did not show, or more of a tax or its base than the invoice showed once earlier credit notes are counted.
  * The planning functions already keep to these; this is checked again on every credit note before it is issued.
  */
+/** The part of a credit note above the balance owed: money the business pays back (docs/specs/refunds.md). */
+export function refundFor(creditTotal: number, balance: number): number {
+  return creditTotal > balance ? creditTotal - balance : 0;
+}
+
 export function checkCredit(args: {
   invoice: DocumentTotals;
   balance: number;
   earlier: readonly DocumentTotals[];
   credit: DocumentTotals;
+  /** Payments received less refunds already made: the most a refund can return. */
+  received?: number;
+  /** The refund recorded with the credit note. */
+  refund?: number;
 }): void {
   const { invoice, balance, earlier, credit } = args;
+  const refund = args.refund ?? 0;
   if (credit.total <= 0)
     throw new DomainError('credit_not_positive', 'A credit note must be for more than zero.');
-  if (credit.total > balance) {
+  const needed = refundFor(credit.total, balance);
+  if (needed > 0 && refund === 0) {
     throw new DomainError(
       'credit_exceeds_balance',
-      'A credit note cannot be more than the balance still owed.',
+      'A credit note cannot be more than the balance still owed, unless you record the refund of the difference.',
+    );
+  }
+  if (needed === 0 && refund > 0) {
+    throw new DomainError(
+      'refund_not_needed',
+      'This credit note is within the balance owed, so it needs no refund.',
+    );
+  }
+  if (refund !== needed) {
+    throw new DomainError(
+      'refund_wrong_amount',
+      'The refund must be exactly the part of the credit note above the balance owed.',
+    );
+  }
+  if (needed > (args.received ?? 0)) {
+    throw new DomainError(
+      'credit_exceeds_received',
+      'A credit note cannot be more than the balance owed and the payments received.',
     );
   }
   for (const row of credit.taxes) {

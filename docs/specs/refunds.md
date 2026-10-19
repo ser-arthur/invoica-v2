@@ -1,6 +1,6 @@
 # Refunds
 
-Status: approved in principle 19 October 2026 (session 2, answer 12: a refund record, no client credit balance). Closes review 2, R2-L5.
+Status: built 19 October 2026 (session 2, answer 12: a refund record, no client credit balance; migration 0013). Closes review 2, R2-L5.
 
 ## The problem
 

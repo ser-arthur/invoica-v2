@@ -9,7 +9,7 @@ import {
   type ReceivablesSummary,
 } from '@invoica/core';
 import type { Tx } from './client';
-import { payment } from './schema';
+import { payment, refund } from './schema';
 import { listDocuments, type DocumentSummary } from './documents';
 
 export interface CurrencyAmount {
@@ -66,9 +66,20 @@ export async function getDashboard(tx: Tx, today: BusinessDate, baseCurrency: st
     })
     .from(payment)
     .where(and(isNull(payment.removedAt), gte(payment.paidOn, since)));
+  // Money received: payments less refunds, each on its own date (docs/specs/refunds.md).
+  const refunds = await tx
+    .select({
+      amount: refund.amount,
+      currency: refund.currency,
+      paidOn: refund.refundedOn,
+      documentId: refund.documentId,
+    })
+    .from(refund)
+    .where(gte(refund.refundedOn, since));
+  const received = [...payments, ...refunds.map((r) => ({ ...r, amount: -r.amount }))];
   const thirtyDaysAgo = addDays(today, -30);
   const paidLast30Days = byCurrency(
-    payments
+    received
       .filter((p) => p.paidOn > thirtyDaysAgo && p.paidOn <= today)
       .map((p) => ({ currency: p.currency, amount: p.amount })),
   );
@@ -92,7 +103,7 @@ export async function getDashboard(tx: Tx, today: BusinessDate, baseCurrency: st
     ...creditedThisMonth.map((c) => ({ currency: c.currency, amount: -c.amount })),
   ]);
   const monthlyPaid = monthlyTotals(
-    payments.map((p) => ({ currency: p.currency, date: p.paidOn, amount: p.amount })),
+    received.map((p) => ({ currency: p.currency, date: p.paidOn, amount: p.amount })),
     baseCurrency,
     today,
     6,

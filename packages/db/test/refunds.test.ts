@@ -1,0 +1,330 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { eq, sql } from 'drizzle-orm';
+import type { CreditNoteInput } from '@invoica/schemas';
+import { getDashboard } from '../src/dashboard';
+import { createCreditNote, getDocument, listDocuments, recordPayment, removePayment } from '../src/documents';
+import { document, payment, refund } from '../src/schema';
+import { createTestDatabase, type TestDatabase } from './helpers';
+import { NOW, TODAY, business, failure, issued, pay, type Business } from './business';
+
+/** docs/specs/refunds.md, acceptance criteria 1 to 7. */
+
+let t: TestDatabase;
+
+beforeAll(async () => {
+  t = await createTestDatabase();
+});
+
+afterAll(async () => {
+  await t?.close();
+});
+
+const REFUND = {
+  refundedOn: TODAY,
+  method: 'bank_transfer' as const,
+  reference: 'Returned to sort code ending 00',
+};
+
+/** An invoice of £100.00 plus VAT at 20%: £120.00. */
+const invoiceOf120 = (b: Business) => issued(b, [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }]);
+
+type WithoutReason<T> = T extends unknown ? Omit<T, 'reason'> : never;
+
+const credit = (b: Business, input: WithoutReason<CreditNoteInput>) =>
+  b.run((tx) => createCreditNote(tx, b.actor, { reason: 'Work returned', ...input } as CreditNoteInput, NOW));
+
+const detail = (b: Business, id: string) => b.run(async (tx) => (await getDocument(tx, id, TODAY))!);
+
+describe('criterion 1: a paid invoice credited in full', () => {
+  it('is credited with a refund of everything paid, leaving nothing owed', async () => {
+    const b = await business(t, 'Refund Office');
+    const id = await invoiceOf120(b);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 12_000, 'pay-refund-0001')));
+    expect(
+      await failure(credit(b, { mode: 'whole', invoiceId: id, idempotencyKey: 'cn-no-refund-01' })),
+    ).toMatch(/more than the balance still owed/);
+    const cn = await credit(b, {
+      mode: 'whole',
+      invoiceId: id,
+      idempotencyKey: 'cn-refund-0001',
+      refund: REFUND,
+    });
+    const [r] = await b.run((tx) => tx.select().from(refund).where(eq(refund.creditNoteId, cn.id)));
+    expect([r!.amount, r!.documentId, r!.refundedOn, r!.method]).toEqual([
+      12_000,
+      id,
+      TODAY,
+      'bank_transfer',
+    ]);
+    const d = await detail(b, id);
+    expect(d.balance).toBe(0);
+    expect(d.state).toBe('credited');
+    expect(d.refunds.map((x) => x.amount)).toEqual([12_000]);
+  });
+
+  it('a repeated request returns the first credit note and records one refund', async () => {
+    const b = await business(t, 'Repeat Office');
+    const id = await invoiceOf120(b);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 12_000, 'pay-repeat-0001')));
+    const input = { mode: 'whole' as const, invoiceId: id, idempotencyKey: 'cn-repeat-0001', refund: REFUND };
+    const first = await credit(b, input);
+    const again = await credit(b, input);
+    expect([again.id, again.duplicate]).toEqual([first.id, true]);
+    expect(await b.run((tx) => tx.select().from(refund))).toHaveLength(1);
+    expect(
+      await failure(credit(b, { ...input, refund: { ...REFUND, reference: 'Something else' } })),
+    ).toMatch(/already used/);
+  });
+});
+
+describe('criterion 2: part paid', () => {
+  it('the refund is exactly what was paid above the balance', async () => {
+    const b = await business(t, 'Part Office');
+    const id = await invoiceOf120(b);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 10_000, 'pay-part-00001')));
+    const cn = await credit(b, {
+      mode: 'whole',
+      invoiceId: id,
+      idempotencyKey: 'cn-part-000001',
+      refund: REFUND,
+    });
+    const [r] = await b.run((tx) => tx.select().from(refund).where(eq(refund.creditNoteId, cn.id)));
+    expect(r!.amount).toBe(10_000);
+    expect((await detail(b, id)).balance).toBe(0);
+  });
+});
+
+describe('criterion 3: within the balance', () => {
+  it('a credit that fits the balance owed refuses a refund', async () => {
+    const b = await business(t, 'Within Office');
+    const id = await invoiceOf120(b);
+    expect(
+      await failure(
+        credit(b, {
+          mode: 'amount',
+          invoiceId: id,
+          amount: 5000,
+          idempotencyKey: 'cn-within-0001',
+          refund: REFUND,
+        }),
+      ),
+    ).toMatch(/needs no refund/);
+  });
+});
+
+describe('criteria 4 and 5: payments after a refund', () => {
+  it('a payment cannot be removed while the refunds would be more than the payments left', async () => {
+    const b = await business(t, 'Remove Office');
+    const id = await invoiceOf120(b);
+    const paid = await b.run((tx) => recordPayment(tx, b.actor, pay(id, 12_000, 'pay-remove-0001')));
+    await credit(b, {
+      mode: 'amount',
+      invoiceId: id,
+      amount: 5000,
+      idempotencyKey: 'cn-remove-0001',
+      refund: REFUND,
+    });
+    expect(await failure(b.run((tx) => removePayment(tx, b.actor, paid.id, 'Bounced')))).toMatch(
+      /refunds on the invoice would be more than the payments left/,
+    );
+  });
+
+  it('with the refunds still covered, a payment can be removed, and the balance then takes payments again', async () => {
+    const b = await business(t, 'Again Office');
+    const id = await invoiceOf120(b);
+    const first = await b.run((tx) => recordPayment(tx, b.actor, pay(id, 6000, 'pay-again-00001')));
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 6000, 'pay-again-00002')));
+    // £50.00 plus VAT credited after full payment: £60.00 refunded.
+    await credit(b, {
+      mode: 'amount',
+      invoiceId: id,
+      amount: 5000,
+      idempotencyKey: 'cn-again-00001',
+      refund: REFUND,
+    });
+    expect((await detail(b, id)).balance).toBe(0);
+    expect(await failure(b.run((tx) => recordPayment(tx, b.actor, pay(id, 1, 'pay-again-00003'))))).toMatch(
+      /more than the balance/,
+    );
+    await b.run((tx) => removePayment(tx, b.actor, first.id, 'Bounced'));
+    expect((await detail(b, id)).balance).toBe(6000);
+    expect(
+      await failure(b.run((tx) => recordPayment(tx, b.actor, pay(id, 6001, 'pay-again-00004')))),
+    ).toMatch(/more than the balance/);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 6000, 'pay-again-00005')));
+    expect((await detail(b, id)).state).toBe('settled');
+  });
+});
+
+describe('criterion 6: the database guards refunds', () => {
+  async function paidInvoiceWithDraftNote(b: Business, currency = 'GBP') {
+    const id = await invoiceOf120(b);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 12_000, `pay-db-${id.slice(0, 8)}`)));
+    const [note] = await b.run((tx) =>
+      tx
+        .insert(document)
+        .values({
+          organisationId: b.actor.organisationId,
+          kind: 'credit_note',
+          clientId: b.clientId,
+          creditedDocumentId: id,
+          currency,
+          createdBy: b.actor.userId,
+        })
+        .returning({ id: document.id }),
+    );
+    return { id, note: note!.id };
+  }
+
+  const insertRefund = (
+    b: Business,
+    o: { invoice: string; note: string; amount: number; currency?: string },
+  ) =>
+    b.run(async (tx) => {
+      await tx.insert(refund).values({
+        organisationId: b.actor.organisationId,
+        documentId: o.invoice,
+        creditNoteId: o.note,
+        amount: o.amount,
+        currency: o.currency ?? 'GBP',
+        refundedOn: TODAY,
+        method: 'bank_transfer',
+      });
+      // The refund is checked again at commit: its credit note must be issued by then.
+    });
+
+  it('refuses a refund that is never issued with its credit note', async () => {
+    const b = await business(t, 'Deferred Office');
+    const { id, note } = await paidInvoiceWithDraftNote(b);
+    expect(await failure(insertRefund(b, { invoice: id, note, amount: 1000 }))).toMatch(
+      /must be issued with its credit note/,
+    );
+  });
+
+  it('refuses another currency, another invoice’s note, more than was paid, and an issued note', async () => {
+    const b = await business(t, 'Guard Office');
+    const first = await paidInvoiceWithDraftNote(b);
+    const other = await invoiceOf120(b);
+    expect(
+      await failure(insertRefund(b, { invoice: first.id, note: first.note, amount: 100, currency: 'EUR' })),
+    ).toMatch(/invoice currency/);
+    expect(await failure(insertRefund(b, { invoice: other, note: first.note, amount: 100 }))).toMatch(
+      /credit note of the invoice/,
+    );
+    expect(await failure(insertRefund(b, { invoice: first.id, note: first.note, amount: 12_001 }))).toMatch(
+      /more than the payments received/,
+    );
+    const issuedNote = await credit(b, {
+      mode: 'whole',
+      invoiceId: first.id,
+      idempotencyKey: 'cn-guard-00001',
+      refund: REFUND,
+    });
+    expect(await failure(insertRefund(b, { invoice: first.id, note: issuedNote.id, amount: 1 }))).toMatch(
+      /before the note is issued/,
+    );
+  });
+
+  it('a refund cannot be changed or deleted', async () => {
+    const b = await business(t, 'Fixed Office');
+    const id = await invoiceOf120(b);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 12_000, 'pay-fixed-00001')));
+    const cn = await credit(b, {
+      mode: 'whole',
+      invoiceId: id,
+      idempotencyKey: 'cn-fixed-00001',
+      refund: REFUND,
+    });
+    expect(
+      await failure(
+        b.run((tx) => tx.update(refund).set({ amount: 1 }).where(eq(refund.creditNoteId, cn.id))),
+      ),
+    ).toMatch(/permission denied/);
+    expect(await failure(b.run((tx) => tx.delete(refund).where(eq(refund.creditNoteId, cn.id))))).toMatch(
+      /permission denied/,
+    );
+    // Even the owner role, which bypasses the grants, cannot change one.
+    const { Client } = await import('pg');
+    const owner = new Client({ connectionString: t.ownerUrl });
+    await owner.connect();
+    try {
+      await owner.query(
+        `select set_config('app.user_id', $1, false), set_config('app.organisation_id', $2, false)`,
+        [b.actor.userId, b.actor.organisationId],
+      );
+      expect((await owner.query(`select count(*)::int as n from refund`)).rows[0].n).toBe(1);
+      await expect(owner.query(`update refund set amount = 1`)).rejects.toThrow(/append-only/);
+      await expect(owner.query(`delete from refund`)).rejects.toThrow(/append-only/);
+    } finally {
+      await owner.end();
+    }
+  });
+
+  it('on issue, a credit note’s refund must be exactly the part above the balance', async () => {
+    const b = await business(t, 'Exact Office');
+    const { id, note } = await paidInvoiceWithDraftNote(b);
+    const outcome = await failure(
+      b.run(async (tx) => {
+        await tx.insert(refund).values({
+          organisationId: b.actor.organisationId,
+          documentId: id,
+          creditNoteId: note,
+          amount: 9999,
+          currency: 'GBP',
+          refundedOn: TODAY,
+          method: 'bank_transfer',
+        });
+        // Issue the note for £100.00 with a refund £0.01 short of what is above the balance (nothing is owed).
+        const seq = await tx.execute<{ seq: number }>(
+          sql`update number_counter set next_value = next_value + 1 where kind = 'credit_note' returning next_value - 1 as seq`,
+        );
+        const sequence = Number(seq.rows[0]!.seq);
+        await tx
+          .update(document)
+          .set({
+            lifecycle: 'issued',
+            sequence,
+            number: `CN-${String(sequence).padStart(4, '0')}`,
+            total: 10_000,
+            taxTotal: 0,
+            snapshot: { totals: { total: 10_000, taxTotal: 0, taxes: [] } },
+            issueDate: TODAY,
+            issuedAt: NOW,
+          })
+          .where(eq(document.id, note));
+      }),
+    );
+    expect(outcome).toMatch(/refund must be exactly the part above the balance owed/);
+  });
+});
+
+describe('criterion 7: received figures are net of refunds', () => {
+  it('the list, the client’s paid to date and the dashboard count payments less refunds', async () => {
+    const b = await business(t, 'Net Office');
+    const id = await invoiceOf120(b);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 12_000, 'pay-net-000001')));
+    await credit(b, {
+      mode: 'amount',
+      invoiceId: id,
+      amount: 5000,
+      idempotencyKey: 'cn-net-000001',
+      refund: REFUND,
+    });
+    const [row] = await b.run((tx) => listDocuments(tx, { kind: 'invoice', today: TODAY }));
+    expect([row!.paid, row!.credited, row!.balance]).toEqual([6000, 6000, 0]);
+    const dash = await b.run((tx) => getDashboard(tx, TODAY, 'GBP'));
+    expect(dash.paidLast30Days).toEqual([{ currency: 'GBP', amount: 6000 }]);
+    expect(dash.monthlyPaid.at(-1)!.amount).toBe(6000);
+    expect(dash.topClients[0]!.paid).toBe(6000);
+  });
+
+  it('payments recorded are still listed as they were', async () => {
+    const b = await business(t, 'Listed Office');
+    const id = await invoiceOf120(b);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 12_000, 'pay-listed-0001')));
+    await credit(b, { mode: 'whole', invoiceId: id, idempotencyKey: 'cn-listed-0001', refund: REFUND });
+    const d = await detail(b, id);
+    expect(d.payments.filter((p) => !p.removedAt).map((p) => p.amount)).toEqual([12_000]);
+    expect(await b.run((tx) => tx.select().from(payment))).toHaveLength(1);
+  });
+});

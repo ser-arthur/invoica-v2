@@ -197,8 +197,10 @@ test('after a part payment, a credit note for everything still owed settles the 
 
   await page.getByRole('button', { name: 'Credit note' }).click();
   await page.locator('#cn-mode').selectOption('amount');
-  // £49.97 before VAT is the most that keeps the credit note within the £59.97 still owed.
-  await expect(page.getByRole('dialog').getByText(/Up to £49\.97 before tax/)).toBeVisible();
+  // £49.97 before VAT is the most that keeps the credit note within the £59.97 still owed; above it, a refund.
+  await expect(
+    page.getByRole('dialog').getByText(/Above £49\.97, the credit note is more than the £59\.97 still owed/),
+  ).toBeVisible();
   await page.locator('#cn-mode').selectOption('balance');
   await expect(page.getByRole('dialog').getByText('£59.97').last()).toBeVisible();
   await page.fill('#cn-reason', 'The rest is waived.');
@@ -207,5 +209,49 @@ test('after a part payment, a credit note for everything still owed settles the 
 
   await page.goto(invoiceUrl);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Settled');
+  expect(errors).toEqual([]);
+});
+
+test('a paid invoice is credited in full with a refund, shown on the invoice and in the export', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await signUpAndOnboard(page, 'Refund Row Studio', { vat: true });
+  await addClient(page, 'Mallow Prints Ltd');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Mallow Prints Ltd' });
+  await page.getByLabel('Line 1 description').fill('Print run');
+  await page.getByLabel('Line 1 price').fill('100');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\?issued=1/);
+  const invoiceUrl = page.url().replace('?issued=1', '');
+
+  await page.getByRole('button', { name: 'Record payment' }).click();
+  await page.fill('#pay-amount', '120');
+  await page.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Credit note' }).click();
+  await page.locator('#cn-mode').selectOption('whole');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('Refund of £120.00')).toBeVisible();
+  await page.selectOption('#cn-refund-method', 'bank_transfer');
+  await page.fill('#cn-refund-ref', 'RF-0042');
+  await page.fill('#cn-reason', 'The prints were returned.');
+  await dialog.getByRole('button', { name: 'Issue credit note and record refund' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('CN-0001');
+
+  await page.goto(invoiceUrl);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Credited');
+  await expect(page.getByText(/Refund, .*Bank transfer, RF-0042, with/)).toBeVisible();
+  await expect(page.getByText('Refund recorded, £120.00 with CN-0001')).toBeVisible();
+
+  const csv = await (await page.request.get('/settings/export?format=csv&type=payments')).text();
+  expect(csv).toMatch(/^type,invoice,client,date,amount,currency,method,reference,removed,credit_note/);
+  expect(csv).toMatch(/payment,INV-0001,Mallow Prints Ltd,\d{4}-\d{2}-\d{2},120\.00,GBP,bank_transfer/);
+  expect(csv).toMatch(
+    /refund,INV-0001,Mallow Prints Ltd,\d{4}-\d{2}-\d{2},-120\.00,GBP,bank_transfer,RF-0042,no,CN-0001/,
+  );
   expect(errors).toEqual([]);
 });

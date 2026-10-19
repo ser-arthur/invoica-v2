@@ -282,10 +282,19 @@ export const paymentInput = z.object({
 });
 export type PaymentInput = z.infer<typeof paymentInput>;
 
+/** The refund made with a credit note above the balance owed (docs/specs/refunds.md). Its amount is worked out. */
+export const refundInput = z.object({
+  refundedOn: businessDate,
+  method: z.enum(paymentMethods),
+  reference: optionalText(100),
+});
+export type RefundInput = z.infer<typeof refundInput>;
+
 const creditNoteBase = {
   invoiceId: z.uuid(),
   reason: requiredText(500, 'Say why the credit note is issued.'),
   idempotencyKey: z.string().min(8).max(100),
+  refund: refundInput.optional(),
 };
 
 /**

@@ -188,7 +188,7 @@ describe('H3: an amount is credited across the tax rates the invoice charged', (
     expect(snap.lines.map((l) => l.tax?.label)).toEqual(['Standard rate', 'Zero-rated']);
   });
 
-  it('refuses a whole credit once something is paid', async () => {
+  it('refuses a whole credit once something is paid, unless the payment is refunded (docs/specs/refunds.md)', async () => {
     const id = await issued(a, [{ quantity: 1000, unitPrice: 10_000, code: a.codes.vat20 }]);
     await a.run((tx) => recordPayment(tx, a.actor, pay(id, 100, 'h3-paid-0001')));
     expect(
@@ -202,7 +202,7 @@ describe('H3: an amount is credited across the tax rates the invoice charged', (
           ),
         ),
       ),
-    ).toMatch(/payments or credits/);
+    ).toMatch(/more than the balance still owed/);
   });
 });
 

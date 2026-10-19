@@ -24,11 +24,12 @@ export async function GET(request: Request) {
   const docs = new Map(data.documents.map((d) => [d.id, d]));
   let csv: string;
   if (type === 'payments') {
-    csv = toCsv(
-      ['invoice', 'client', 'paid_on', 'amount', 'currency', 'method', 'reference', 'removed'],
-      data.payments.map((p) => {
+    // Payments received and refunds made, a refund as a negative amount on the date it was made.
+    const rows = [
+      ...data.payments.map((p) => {
         const d = docs.get(p.documentId);
         return [
+          'payment',
           d?.number,
           d ? clients.get(d.clientId) : '',
           p.paidOn,
@@ -37,8 +38,39 @@ export async function GET(request: Request) {
           p.method,
           p.reference,
           p.removedAt ? 'yes' : 'no',
+          '',
         ];
       }),
+      ...data.refunds.map((r) => {
+        const d = docs.get(r.documentId);
+        return [
+          'refund',
+          d?.number,
+          d ? clients.get(d.clientId) : '',
+          r.refundedOn,
+          toDecimalString(-r.amount, r.currency),
+          r.currency,
+          r.method,
+          r.reference,
+          'no',
+          docs.get(r.creditNoteId)?.number,
+        ];
+      }),
+    ].sort((a, b) => String(a[3]).localeCompare(String(b[3])));
+    csv = toCsv(
+      [
+        'type',
+        'invoice',
+        'client',
+        'date',
+        'amount',
+        'currency',
+        'method',
+        'reference',
+        'removed',
+        'credit_note',
+      ],
+      rows,
     );
   } else if (type === 'clients') {
     csv = toCsv(

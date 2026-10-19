@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Download } from 'lucide-react';
-import { formatBusinessDate, formatMoney, formatRate, type DocumentSnapshot } from '@invoica/core';
+import { formatBusinessDate, formatMoney, formatRate, sumMinor, type DocumentSnapshot } from '@invoica/core';
 import { creditPosition, creditableLines, documentActivity, getDocument } from '@invoica/db';
 import { renderDocumentHtml } from '@invoica/documents';
 import { FormMessage, PageHeader, Panel, PanelHeading, StatePill, buttonClass } from '@/components/ui';
@@ -31,9 +31,12 @@ const ACTIVITY: Record<string, string> = {
   'payment.recorded': 'Payment recorded',
   'payment.removed': 'Payment removed',
   'credit_note.issued': 'Credit note issued',
+  'refund.recorded': 'Refund recorded',
   'document.duplicated': 'Copied from another invoice',
   'document.emailed': 'Emailed',
 };
+
+const MINUS = String.fromCharCode(0x2212);
 
 const METHOD: Record<string, string> = {
   bank_transfer: 'Bank transfer',
@@ -77,6 +80,9 @@ export default async function InvoicePage({
   });
   const open = !isCredit && (doc.lifecycle === 'issued' || doc.lifecycle === 'sent') && detail.balance > 0;
   const credit = position?.ok ? position : null;
+  const creditValueLeft = credit ? sumMinor(Object.values(credit.state.slots).map((g) => g.left)) : 0;
+  const refunded = sumMinor(detail.refunds.map((r) => r.amount));
+  const creditNumber = new Map(detail.creditNotes.map((c) => [c.id, c.number ?? '']));
   const taxLabel = (tax: (typeof creditable)[number]['tax']) =>
     tax && tax.components.length
       ? tax.components.map((c) => `${c.name} ${formatRate(c.ratePpm)}`).join(' + ')
@@ -158,8 +164,14 @@ export default async function InvoicePage({
                 <>
                   <div className="flex items-baseline justify-between px-5 py-3">
                     <dt className="text-muted">Paid</dt>
-                    <dd className="tabular">{money(detail.applied.paid)}</dd>
+                    <dd className="tabular">{money(detail.applied.paid + refunded)}</dd>
                   </div>
+                  {refunded ? (
+                    <div className="flex items-baseline justify-between px-5 py-3">
+                      <dt className="text-muted">Refunded</dt>
+                      <dd className="tabular">{money(refunded)}</dd>
+                    </div>
+                  ) : null}
                   {detail.applied.credited ? (
                     <div className="flex items-baseline justify-between px-5 py-3">
                       <dt className="text-muted">Credited</dt>
@@ -218,6 +230,21 @@ export default async function InvoicePage({
                 <p className="px-5 py-4 text-[14px] text-muted">No payments recorded yet.</p>
               ) : (
                 <ul className="divide-y divide-line">
+                  {detail.refunds.map((r) => (
+                    <li key={r.id} className="px-5 py-3">
+                      <p className="font-medium tabular">
+                        {MINUS}
+                        {money(r.amount)}
+                      </p>
+                      <p className="text-[13px] text-muted">
+                        Refund, {formatBusinessDate(r.refundedOn)}, {METHOD[r.method] ?? r.method}
+                        {r.reference ? `, ${r.reference}` : ''}, with{' '}
+                        <Link href={`/invoices/${r.creditNoteId}`} className="text-brand hover:underline">
+                          {creditNumber.get(r.creditNoteId) ?? 'its credit note'}
+                        </Link>
+                      </p>
+                    </li>
+                  ))}
                   {detail.payments.map((p) => (
                     <li key={p.id} className="flex items-center justify-between gap-3 px-5 py-3">
                       <div className={p.removedAt ? 'text-muted line-through' : ''}>
@@ -265,13 +292,15 @@ export default async function InvoicePage({
                 <p className="mt-3 text-[14px] text-muted">{position.reason}</p>
               ) : null}
               <div className="mt-4 flex flex-wrap gap-2">
-                {detail.balance > 0 && credit ? (
+                {credit && creditValueLeft > 0 && (detail.balance > 0 || detail.applied.paid > 0) ? (
                   <CreditNoteButton
                     id={id}
                     number={doc.number ?? ''}
                     balance={detail.balance}
+                    received={detail.applied.paid}
+                    today={today}
                     currency={doc.currency}
-                    canCreditWhole={detail.applied.paid + detail.applied.credited === 0}
+                    canCreditWhole={detail.applied.credited === 0}
                     lines={creditable
                       .map((l, index) => ({
                         id: l.id,
@@ -308,6 +337,9 @@ export default async function InvoicePage({
                         {ACTIVITY[a.action]}
                         {a.action === 'payment.recorded' && typeof a.data.amount === 'number'
                           ? `, ${money(a.data.amount)}`
+                          : ''}
+                        {a.action === 'refund.recorded' && typeof a.data.amount === 'number'
+                          ? `, ${money(a.data.amount)} with ${String(a.data.creditNote ?? 'a credit note')}`
                           : ''}
                       </span>
                       <time className="shrink-0 text-muted" dateTime={a.at.toISOString()}>

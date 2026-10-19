@@ -32,6 +32,12 @@ export async function createTestDatabase(): Promise<TestDatabase> {
   await migrate(urls.ownerUrl);
   const handle = createDatabase(urls.appUrl, { max: 5 });
   const worker = createDatabase(urls.workerUrl, { max: 2 });
+  // Dropping the database at the end ends any connection still open with 57P01; that is expected, nothing else is.
+  for (const pool of [handle.pool, worker.pool]) {
+    pool.on('error', (error) => {
+      if ((error as { code?: string }).code !== '57P01') throw error;
+    });
+  }
   return {
     ...handle,
     name,

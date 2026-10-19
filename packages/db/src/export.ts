@@ -9,6 +9,7 @@ import {
   item,
   organisation,
   payment,
+  refund,
   taxCode,
 } from './schema';
 
@@ -27,6 +28,7 @@ export async function exportOrganisation(tx: Tx) {
       .from(documentLine)
       .orderBy(asc(documentLine.documentId), asc(documentLine.position)),
     payments: await tx.select().from(payment).orderBy(asc(payment.paidOn)),
+    refunds: await tx.select().from(refund).orderBy(asc(refund.refundedOn)),
     auditLog: await tx.select().from(auditLog).orderBy(asc(auditLog.id)),
   };
 }

@@ -14,6 +14,7 @@ import {
   planBalanceCredit,
   planLineCredit,
   quantityToString,
+  refundFor,
   toDecimalString,
   creditState,
   type CreditPlan,
@@ -36,6 +37,19 @@ import { requestKey } from '@/lib/request-key';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
 
 export { Dialog };
+
+function MethodOptions() {
+  return (
+    <>
+      <option value="bank_transfer">Bank transfer</option>
+      <option value="mobile_money">Mobile money</option>
+      <option value="card">Card</option>
+      <option value="cash">Cash</option>
+      <option value="cheque">Cheque</option>
+      <option value="other">Other</option>
+    </>
+  );
+}
 
 export function DeleteDraftButton({ id }: { id: string }) {
   const router = useRouter();
@@ -173,12 +187,7 @@ export function PaymentDialog({
         </div>
         <Field label="How it was paid" htmlFor="pay-method">
           <Select id="pay-method" value={method} onChange={(e) => setMethod(e.target.value)}>
-            <option value="bank_transfer">Bank transfer</option>
-            <option value="mobile_money">Mobile money</option>
-            <option value="card">Card</option>
-            <option value="cash">Cash</option>
-            <option value="cheque">Cheque</option>
-            <option value="other">Other</option>
+            <MethodOptions />
           </Select>
         </Field>
         <Field label="Reference" htmlFor="pay-ref" hint="Optional, as it appears on your statement.">
@@ -321,6 +330,8 @@ export function CreditNoteButton({
   id,
   number,
   balance,
+  received,
+  today,
   currency,
   canCreditWhole,
   lines,
@@ -332,6 +343,9 @@ export function CreditNoteButton({
   id: string;
   number: string;
   balance: number;
+  /** Payments received less refunds already made: what a refund can return. */
+  received: number;
+  today: string;
   currency: string;
   canCreditWhole: boolean;
   lines: CreditableLine[];
@@ -349,6 +363,9 @@ export function CreditNoteButton({
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
+  const [refundedOn, setRefundedOn] = useState(today);
+  const [refundMethod, setRefundMethod] = useState('bank_transfer');
+  const [refundReference, setRefundReference] = useState('');
   const [key, setKey] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -364,6 +381,9 @@ export function CreditNoteButton({
     setQuantities({});
     setAmount('');
     setReason('');
+    setRefundedOn(today);
+    setRefundMethod('bank_transfer');
+    setRefundReference('');
     setMessage(null);
     setOpen(true);
   }
@@ -401,7 +421,14 @@ export function CreditNoteButton({
         if (minor === null || minor <= 0) return { plan: null, error: 'Enter the amount to credit.' };
         plan = planAmountCredit(source, state, minor);
       }
-      checkCredit({ invoice: invoiceTotals, balance, earlier, credit: plan.totals });
+      checkCredit({
+        invoice: invoiceTotals,
+        balance,
+        earlier,
+        credit: plan.totals,
+        received,
+        refund: refundFor(plan.totals.total, balance),
+      });
       return { plan, error: null };
     } catch (error) {
       return {
@@ -409,11 +436,20 @@ export function CreditNoteButton({
         error: error instanceof DomainError ? error.message : 'This credit cannot be worked out.',
       };
     }
-  }, [mode, lineRequest, amount, source, state, invoiceTotals, earlier, balance, currency]);
+  }, [mode, lineRequest, amount, source, state, invoiceTotals, earlier, balance, received, currency]);
+  // The part above the balance owed is paid back to the client, and recorded with the note.
+  const refund = preview.plan ? refundFor(preview.plan.totals.total, balance) : 0;
 
   function submit() {
     if (!preview.plan) return setMessage(preview.error ?? 'Choose what to credit.');
-    const base = { invoiceId: id, reason, idempotencyKey: key };
+    const base = {
+      invoiceId: id,
+      reason,
+      idempotencyKey: key,
+      ...(refund > 0
+        ? { refund: { refundedOn, method: refundMethod, reference: refundReference.trim() || null } }
+        : {}),
+    };
     const input =
       mode === 'whole' || mode === 'balance'
         ? { ...base, mode }
@@ -453,9 +489,9 @@ export function CreditNoteButton({
                 {canCreditWhole ? <option value="whole">The whole invoice</option> : null}
                 {lines.length ? <option value="lines">Some of the lines</option> : null}
                 <option value="amount">An amount, {basis}</option>
-                {canCreditWhole ? null : (
+                {balance > 0 && (!canCreditWhole || received > 0) ? (
                   <option value="balance">Everything still owed, {money(balance)}</option>
-                )}
+                ) : null}
               </Select>
             </Field>
             {mode === 'lines' ? (
@@ -487,9 +523,11 @@ export function CreditNoteButton({
                 label={`Amount (${currency})`}
                 htmlFor="cn-amount"
                 hint={`${
-                  limit < valueLeft
-                    ? `Up to ${money(limit)} ${basis}, which keeps the credit note within the ${money(balance)} still owed.`
-                    : `Up to ${money(valueLeft)} ${basis}.`
+                  limit >= valueLeft
+                    ? `Up to ${money(valueLeft)} ${basis}.`
+                    : received > 0
+                      ? `Up to ${money(valueLeft)} ${basis}. Above ${money(limit)}, the credit note is more than the ${money(balance)} still owed, and you record the refund of the difference.`
+                      : `Up to ${money(limit)} ${basis}, which keeps the credit note within the ${money(balance)} still owed.`
                 } Shared across the invoice's tax rates in proportion to what is left at each.`}
               >
                 <Input
@@ -533,6 +571,45 @@ export function CreditNoteButton({
                 {preview.error}
               </p>
             ) : null}
+            {refund > 0 ? (
+              <fieldset className="flex flex-col gap-3 rounded-[12px] border border-line px-4 py-3">
+                <legend className="px-1 text-[14px] font-medium">Refund of {money(refund)}</legend>
+                <p className="text-[14px] text-muted">
+                  This credit note is {money(refund)} more than is still owed, so that much goes back to the
+                  client. Record the refund you have made.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Refunded on" htmlFor="cn-refund-date">
+                    <Input
+                      id="cn-refund-date"
+                      type="date"
+                      value={refundedOn}
+                      onChange={(e) => setRefundedOn(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="How it was refunded" htmlFor="cn-refund-method">
+                    <Select
+                      id="cn-refund-method"
+                      value={refundMethod}
+                      onChange={(e) => setRefundMethod(e.target.value)}
+                    >
+                      <MethodOptions />
+                    </Select>
+                  </Field>
+                </div>
+                <Field
+                  label="Reference"
+                  htmlFor="cn-refund-ref"
+                  hint="Optional, as it appears on your statement."
+                >
+                  <Input
+                    id="cn-refund-ref"
+                    value={refundReference}
+                    onChange={(e) => setRefundReference(e.target.value)}
+                  />
+                </Field>
+              </fieldset>
+            ) : null}
             <Field label="Reason" htmlFor="cn-reason" hint="Printed on the credit note.">
               <Textarea
                 id="cn-reason"
@@ -546,7 +623,11 @@ export function CreditNoteButton({
                 Cancel
               </Button>
               <Button disabled={pending || !preview.plan} onClick={submit}>
-                {pending ? 'Issuing' : 'Issue credit note'}
+                {pending
+                  ? 'Issuing'
+                  : refund > 0
+                    ? 'Issue credit note and record refund'
+                    : 'Issue credit note'}
               </Button>
             </div>
           </div>

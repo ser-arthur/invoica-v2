@@ -304,6 +304,22 @@ export const payment = pgTable('payment', {
   removedReason: text('removed_reason'),
 });
 
+/** Money paid back to a client with a credit note above the balance owed (docs/specs/refunds.md). Never changes. */
+export const refund = pgTable('refund', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organisationId: uuid('organisation_id').notNull(),
+  /** The invoice refunded. */
+  documentId: uuid('document_id').notNull(),
+  creditNoteId: uuid('credit_note_id').notNull(),
+  amount: money('amount').notNull(),
+  currency: char('currency', { length: 3 }).notNull(),
+  refundedOn: day('refunded_on').notNull(),
+  method: text('method').$type<PaymentMethod>().notNull(),
+  reference: text('reference'),
+  createdBy: text('created_by'),
+  createdAt: ts('created_at').notNull().defaultNow(),
+});
+
 export const numberCounter = pgTable('number_counter', {
   organisationId: uuid('organisation_id').notNull(),
   kind: text('kind').$type<DocumentKind>().notNull(),

@@ -15,6 +15,7 @@ import {
   planAmountCredit,
   planBalanceCredit,
   planLineCredit,
+  refundFor,
   sumMinor,
   todayIn,
   transition,
@@ -31,7 +32,16 @@ import {
 } from '@invoica/core';
 import type { CreditNoteInput, DraftInput, PaymentInput } from '@invoica/schemas';
 import type { Tx } from './client';
-import { client, clientField, document, documentLine, payment, numberCounter, taxCode } from './schema';
+import {
+  client,
+  clientField,
+  document,
+  documentLine,
+  payment,
+  numberCounter,
+  refund,
+  taxCode,
+} from './schema';
 import type { DocumentKind, PaymentMethod } from './schema';
 import { audit } from './audit';
 import { enqueue } from './outbox';
@@ -44,9 +54,10 @@ import { organisationEntitlements } from './plans';
 export type DocumentRow = typeof document.$inferSelect;
 export type LineRow = typeof documentLine.$inferSelect;
 export type PaymentRow = typeof payment.$inferSelect;
+export type RefundRow = typeof refund.$inferSelect;
 
 export interface Applied {
-  /** Payments recorded, not removed. */
+  /** Payments recorded and not removed, less refunds made with credit notes. */
   paid: number;
   /** Credit notes issued against the document, not void. */
   credited: number;
@@ -68,6 +79,12 @@ export async function appliedAmounts(tx: Tx, ids: string[]): Promise<Map<string,
     .where(and(inArray(payment.documentId, ids), isNull(payment.removedAt)))
     .groupBy(payment.documentId);
   for (const r of paid) out.get(r.id)!.paid = Number(r.amount);
+  const refunded = await tx
+    .select({ id: refund.documentId, amount: sql<string>`sum(${refund.amount})` })
+    .from(refund)
+    .where(inArray(refund.documentId, ids))
+    .groupBy(refund.documentId);
+  for (const r of refunded) out.get(r.id)!.paid -= Number(r.amount);
   const credited = await tx
     .select({ id: document.creditedDocumentId, amount: sql<string>`sum(${document.total})` })
     .from(document)
@@ -190,7 +207,7 @@ export async function listDocuments(
       createdAt: document.createdAt,
       clientName: client.name,
       credits: sql<string | null>`${document.snapshot} #>> '{credits,number}'`,
-      paid: sql<string>`(select coalesce(sum(p.amount), 0) from payment p where p.organisation_id = ${document.organisationId} and p.document_id = ${document.id} and p.removed_at is null)`,
+      paid: sql<string>`(select coalesce(sum(p.amount), 0) from payment p where p.organisation_id = ${document.organisationId} and p.document_id = ${document.id} and p.removed_at is null) - (select coalesce(sum(r.amount), 0) from refund r where r.organisation_id = ${document.organisationId} and r.document_id = ${document.id})`,
       credited: sql<string>`(select coalesce(sum(c.total), 0) from document c where c.organisation_id = ${document.organisationId} and c.credited_document_id = ${document.id} and c.kind = 'credit_note' and c.lifecycle in ('issued', 'sent'))`,
     })
     .from(document)
@@ -239,6 +256,8 @@ export interface DocumentDetail {
   lines: LineRow[];
   client: typeof client.$inferSelect;
   payments: PaymentRow[];
+  /** Refunds made with credit notes on this invoice. */
+  refunds: RefundRow[];
   creditNotes: DocumentRow[];
   applied: Applied;
   totals: DocumentTotals;
@@ -274,6 +293,11 @@ export async function getDocument(tx: Tx, id: string, today: BusinessDate): Prom
     .from(payment)
     .where(eq(payment.documentId, id))
     .orderBy(asc(payment.paidOn), asc(payment.createdAt));
+  const refunds = await tx
+    .select()
+    .from(refund)
+    .where(eq(refund.documentId, id))
+    .orderBy(asc(refund.refundedOn), asc(refund.createdAt));
   const creditNotes = await tx
     .select()
     .from(document)
@@ -299,6 +323,7 @@ export async function getDocument(tx: Tx, id: string, today: BusinessDate): Prom
     lines,
     client: owner!,
     payments,
+    refunds,
     creditNotes,
     applied: a,
     totals,
@@ -845,6 +870,7 @@ export async function createCreditNote(
     mode: input.mode,
     lines: input.mode === 'lines' ? input.lines : null,
     amount: input.mode === 'amount' ? input.amount : null,
+    refund: input.refund ?? null,
   });
   const [existing] = await tx
     .select({ id: document.id, number: document.number, requestFingerprint: document.requestFingerprint })
@@ -877,10 +903,10 @@ export async function createCreditNote(
   const { source, state, ledger } = position;
   let plan: CreditPlan;
   if (input.mode === 'whole') {
-    if (applied.paid + applied.credited > 0) {
+    if (applied.credited > 0) {
       throw new DomainError(
-        'credit_full_after_payment',
-        'This invoice has payments or credits, so credit lines or an amount instead.',
+        'credit_full_after_credit',
+        'This invoice already has a credit note, so credit lines or an amount instead.',
       );
     }
     plan = planLineCredit(
@@ -906,7 +932,22 @@ export async function createCreditNote(
   } else {
     plan = planBalanceCredit(source, state, balance);
   }
-  checkCredit({ invoice: snapshot.totals, balance, earlier: ledger.totals, credit: plan.totals });
+  // The part above the balance owed is money paid back, recorded with the note (docs/specs/refunds.md).
+  const refundAmount = input.refund ? refundFor(plan.totals.total, balance) : 0;
+  if (input.refund && refundAmount === 0) {
+    throw new DomainError(
+      'refund_not_needed',
+      'This credit note is within the balance owed, so it needs no refund.',
+    );
+  }
+  checkCredit({
+    invoice: snapshot.totals,
+    balance,
+    earlier: ledger.totals,
+    credit: plan.totals,
+    received: applied.paid,
+    refund: refundAmount,
+  });
 
   const org = await getOrganisationForIssue(tx, actor);
   const today = todayIn(org.timeZone, now);
@@ -986,6 +1027,19 @@ export async function createCreditNote(
     };
   });
   await tx.insert(documentLine).values(lineRows);
+  if (input.refund && refundAmount > 0) {
+    await tx.insert(refund).values({
+      organisationId: actor.organisationId,
+      documentId: invoice.id,
+      creditNoteId: creditNote.id,
+      amount: refundAmount,
+      currency: invoice.currency,
+      refundedOn: input.refund.refundedOn,
+      method: input.refund.method,
+      reference: input.refund.reference,
+      createdBy: actor.userId,
+    });
+  }
   const sequence = await nextSequence(tx, 'credit_note');
   const number = formatDocumentNumber({ prefix: org.creditNotePrefix, padding: org.numberPadding }, sequence);
   const { client: buyer, fields } = await loadClientWithFields(tx, invoice.clientId);
@@ -1025,6 +1079,14 @@ export async function createCreditNote(
     total: totals.total,
     reason: input.reason,
   });
+  if (refundAmount > 0) {
+    await audit(tx, actor, 'refund.recorded', 'document', invoice.id, {
+      creditNote: number,
+      amount: refundAmount,
+      refundedOn: input.refund!.refundedOn,
+      method: input.refund!.method,
+    });
+  }
   await enqueue(tx, actor, 'document.render_pdf', { documentId: creditNote.id }, `pdf:${creditNote.id}`);
   return { id: creditNote.id, number, duplicate: false };
 }
