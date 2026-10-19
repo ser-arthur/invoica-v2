@@ -1,5 +1,5 @@
 import { and, asc, eq, isNull, ne } from 'drizzle-orm';
-import { assertTaxCode, presetFor, type TaxCode } from '@invoica/core';
+import { DomainError, assertTaxCode, presetFor, type TaxCode } from '@invoica/core';
 import type { TaxCodeInput } from '@invoica/schemas';
 import type { Tx } from './client';
 import { taxCode } from './schema';
@@ -77,7 +77,14 @@ export async function updateTaxCode(tx: Tx, actor: Actor, id: string, input: Tax
 }
 
 export async function archiveTaxCode(tx: Tx, actor: Actor, id: string): Promise<void> {
-  await tx.update(taxCode).set({ archivedAt: new Date(), isDefault: false }).where(eq(taxCode.id, id));
+  const archived = await tx
+    .update(taxCode)
+    .set({ archivedAt: new Date(), isDefault: false })
+    .where(and(eq(taxCode.id, id), isNull(taxCode.archivedAt)))
+    .returning({ id: taxCode.id });
+  if (archived.length === 0) {
+    throw new DomainError('tax_code_not_found', 'This tax code does not exist, or is already archived.');
+  }
   await audit(tx, actor, 'tax_code.archived', 'tax_code', id);
 }
 

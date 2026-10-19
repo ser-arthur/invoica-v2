@@ -1,4 +1,5 @@
 import { and, asc, eq, ilike, isNull } from 'drizzle-orm';
+import { DomainError } from '@invoica/core';
 import type { ItemInput } from '@invoica/schemas';
 import type { Tx } from './client';
 import { item } from './schema';
@@ -34,6 +35,13 @@ export async function updateItem(tx: Tx, actor: Actor, id: string, input: ItemIn
 }
 
 export async function archiveItem(tx: Tx, actor: Actor, id: string): Promise<void> {
-  await tx.update(item).set({ archivedAt: new Date() }).where(eq(item.id, id));
+  const archived = await tx
+    .update(item)
+    .set({ archivedAt: new Date() })
+    .where(and(eq(item.id, id), isNull(item.archivedAt)))
+    .returning({ id: item.id });
+  if (archived.length === 0) {
+    throw new DomainError('item_not_found', 'This item does not exist, or is already archived.');
+  }
   await audit(tx, actor, 'item.archived', 'item', id);
 }

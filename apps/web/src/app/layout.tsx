@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -17,11 +17,13 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const preference = (await cookies()).get('invoica_theme')?.value ?? 'light';
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
     <html lang="en-GB" data-theme={preference === 'dark' ? 'dark' : 'light'} suppressHydrationWarning>
       <head>
         {preference === 'system' ? (
           <script
+            nonce={nonce}
             dangerouslySetInnerHTML={{
               __html:
                 "if(matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.dataset.theme='dark'",

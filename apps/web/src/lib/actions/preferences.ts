@@ -8,7 +8,13 @@ import { getDb } from '../db';
 
 export async function setThemeAction(theme: 'light' | 'dark' | 'system') {
   if (!['light', 'dark', 'system'].includes(theme)) return;
-  (await cookies()).set('invoica_theme', theme, { path: '/', sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 });
+  (await cookies()).set('invoica_theme', theme, {
+    path: '/',
+    sameSite: 'lax',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 60 * 60 * 24 * 365,
+  });
   revalidatePath('/', 'layout');
 }
 
