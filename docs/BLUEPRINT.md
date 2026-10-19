@@ -2,7 +2,7 @@
 
 The plan for building Invoica v2, and where the work stands. Updated at the end of every phase. A new chat starts here.
 
-Last updated: 19 October 2026, about 05:45 (session 1 of the build).
+Last updated: 19 October 2026, about 06:40 (session 1 of the build).
 
 ---
 
@@ -49,6 +49,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 2k | Robustness and checks: dialogs keep focus, not-found and error pages, the credit notes list shows what each credits, approved-image tests for every template, the end-to-end suite in CI, axe with dialogs open; VAT in sterling (spec and calculation; printing waits on wording); reminders proposal (`docs/specs/reminders.md`) | Done |
 | 2l | Review 4 of the slot ledger and the plans, and its fixes: "everything still owed" settles every balance, bases are the net taken, numbering cannot repeat, archived clients can be invoiced, migration 0008 | Done |
 | 2m | Review 5 of the review 4 fixes, and its fixes (migration 0010); performance at 2,000 invoices (migration 0009, paged invoice list) | Done |
+| 2n | Review 6, a security review of the web layer: a content security policy with nonces, archive checks, the drain secret; the sign-in fixes on the branch `fix/auth-hardening`, waiting for approval | Done on `main`; branch waiting |
 | 3 | Invoice templates round 2: four new templates (Ledger, Poster, Letter, Ticket) beside Signature, Studio and Counsel; template picker with live previews of your own details; landing page built around real invoices | Built; waiting for Kobby's review on the design canvas |
 | 4 | Getting paid: payment links, reminders | After v1 |
 | 5 | Cash flow and dashboards beyond v1 | After v1 |
@@ -76,6 +77,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **19 Oct, 04:30 onwards.** Review 5 of the review 4 fixes started. Performance measured on a business with 2,000 invoices of six lines each, half part paid and a tenth with a credit note: the invoice list's query took 260 ms and the dashboard's 285 ms; lists now read only summary columns and work out payments and credits in the same query (65 ms and 100 ms), credit notes are indexed by the invoice they credit (migration 0009), and the invoice list shows fifty at a time. A full export of that business is 22 MB and takes half a second.
 
 - **19 Oct, about 05:00 to 05:45.** Review 5 (`docs/reviews/review-5.md`): no critical, high or medium findings; 6 low. A pesewa of levy could stick after a settling note, a reversed payment and a part payment again; migration 0008 could still be passed by direct SQL; the numbering check read before it locked; the two series could share a prefix; totals past the safe range were stored a penny out. All fixed with tests first (migration 0010). Checks: core 184, database 86, documents 11, PDF 64, schemas 4, web unit 8, end to end 29 passed with 3 skipped by design. Repository bundle 06 delivered.
+
+- **19 Oct, about 05:45 to 06:40.** Review 6 (`docs/reviews/review-6.md`), a security review of the web layer run over HTTP against a production build: tenancy sound (no record of one business reachable by another or by anyone signed out), output escaping sound; 1 medium and 5 low findings. The sign-in limit could be reset with a forged `X-Forwarded-For`; there was no content security policy; archiving another business's item reported success; the drain route could answer 500. Fixed on `main` except the sign-in findings, which change auth and wait for approval on `fix/auth-hardening`. Checks: core 184, database 89, documents 11, PDF 64, schemas 4, web unit 10, end to end 31 passed with 3 skipped by design. Repository bundle 07 delivered, with the branch.
 
 ## Decisions in force
 
@@ -127,12 +130,13 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 13. May the development and demo databases be reseeded? Credit notes there from before decision 0009 kept no ledger, so those invoices cannot be credited again.
 14. VAT in sterling (`docs/specs/vat-in-sterling.md`): approve the printed wording, and choose the default rate method (market rate or HMRC period rate). Until then, invoices from UK VAT-registered businesses in another currency do not show the VAT in sterling.
 15. Reminders (`docs/specs/reminders.md`): approve a narrow database function that finds due reminders across organisations (a tenancy rule), and the reminder wording.
-16. Password reset and email verification are not built yet. They change sign-in, so they wait for approval.
+16. Password reset and email verification are not built yet. They change sign-in, so they wait for approval. Until sign-up finishes by email, signing up with an address that already has an account says so (review 6, R6-L2).
 17. Plan limits are kept by the application only (review 4, R4-L6): should the database enforce them too? It changes tenancy rules.
 18. A note for everything still owed can, in rare cases, credit tax alone (a levy on a base of zero) after a payment is removed. Is that acceptable on a printed credit note, alongside question 11?
 19. Ghana's default price basis: onboarding sets prices excluding tax for a Ghana business. Should it include tax, as is common for consumer prices there? Both are handled.
+20. Approve the branch `fix/auth-hardening` (review 6, R6-M1 and R6-L5): sign-in limits read the client address from a header the hosting's proxy overwrites, or through the proxies it names, set with `INVOICA_CLIENT_IP_HEADER` or `INVOICA_TRUSTED_PROXIES`; Secure cookies and same-origin server actions in production. Merging needs the hosting choice (decision 0008) to know which setting to use.
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-06.zip`.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-07.zip`, which also carries the branch `fix/auth-hardening`.
 - Nothing else: everything else is in the repository or the project docs.
