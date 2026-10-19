@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Plus } from 'lucide-react';
-import { formatBusinessDate, formatMoney, summariseReceivables } from '@invoica/core';
+import { formatBusinessDate, formatMoney, sumMinor, summariseReceivables } from '@invoica/core';
 import { getClient, listDocuments } from '@invoica/db';
 import { ButtonLink, Money, PageHeader, Panel, PanelHeading, StatePill } from '@/components/ui';
 import { ArchiveClientButton } from '@/components/archive-client-button';
@@ -36,7 +36,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   const paidToDate = new Map<string, number>();
   for (const d of invoices)
     if (d.lifecycle !== 'void' && d.lifecycle !== 'draft')
-      paidToDate.set(d.currency, (paidToDate.get(d.currency) ?? 0) + d.applied);
+      paidToDate.set(d.currency, sumMinor([paidToDate.get(d.currency) ?? 0, d.paid]));
   const address = [
     client.addressLine1,
     client.addressLine2,

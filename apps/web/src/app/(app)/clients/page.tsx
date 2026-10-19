@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Plus, Search } from 'lucide-react';
-import { formatMoney } from '@invoica/core';
+import { formatMoney, sumMinor } from '@invoica/core';
 import { listClients, listDocuments } from '@invoica/db';
 import { ButtonLink, EmptyState, Input, PageHeader, Panel } from '@/components/ui';
 import { inWorkspace } from '@/lib/workspace';
@@ -24,7 +24,7 @@ export default async function ClientsPage({
       counts.set(d.clientId, (counts.get(d.clientId) ?? 0) + (d.state === 'draft' ? 0 : 1));
       if (d.balance > 0 && (d.lifecycle === 'issued' || d.lifecycle === 'sent')) {
         const m = owed.get(d.clientId) ?? new Map<string, number>();
-        m.set(d.currency, (m.get(d.currency) ?? 0) + d.balance);
+        m.set(d.currency, sumMinor([m.get(d.currency) ?? 0, d.balance]));
         owed.set(d.clientId, m);
       }
     }
