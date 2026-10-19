@@ -488,6 +488,7 @@ describe('L4: rounding choices follow the country', () => {
       taxLevel: 'line' as const,
       rounding: 'down' as const,
       defaultPaymentTermsDays: org.defaultPaymentTermsDays,
+      sterlingRateMethod: org.sterlingRateMethod,
       invoicePrefix: org.invoicePrefix,
       creditNotePrefix: org.creditNotePrefix,
       numberPadding: org.numberPadding,

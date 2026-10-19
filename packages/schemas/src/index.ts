@@ -9,6 +9,7 @@ import {
   RATE_SCALE,
   MAX_QUANTITY,
   MAX_UNIT_PRICE,
+  parseExchangeRate,
 } from '@invoica/core';
 
 /** Trims text; empty becomes null. */
@@ -128,6 +129,7 @@ export const organisationProfileInput = z.object({
     .enum(ROUNDING_MODES as [string, ...string[]])
     .transform((v) => v as (typeof ROUNDING_MODES)[number]),
   defaultPaymentTermsDays: z.number().int().min(0).max(365),
+  sterlingRateMethod: z.enum(['hmrc_period', 'market']).default('hmrc_period'),
   invoicePrefix: prefix,
   creditNotePrefix: prefix,
   numberPadding: z.number().int().min(1).max(8),
@@ -237,6 +239,23 @@ export const documentOptionsInput = z.object({
   showTerms: z.boolean().optional(),
 });
 
+/** A rate as typed, units of the currency to £1 with up to six decimal places; blank is none. */
+const exchangeRate = z
+  .union([z.string().max(20), z.null()])
+  .optional()
+  .transform((value, ctx) => {
+    if (value === undefined || value === null || value.trim() === '') return null;
+    const rate = parseExchangeRate(value);
+    if (rate === null) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Enter the rate as a number with up to six decimal places, for example 1.1500.',
+      });
+      return z.NEVER;
+    }
+    return rate;
+  });
+
 export const draftInput = z
   .object({
     clientId: z.uuid('Choose a client.'),
@@ -257,6 +276,8 @@ export const draftInput = z
     terms: optionalText(2000),
     template: z.string().min(1).max(40),
     options: documentOptionsInput.default({}),
+    /** Units of the invoice's currency to £1, for VAT in sterling (docs/specs/vat-in-sterling.md). */
+    sterlingRate: exchangeRate,
     lines: z.array(lineInput).max(200, 'An invoice can have at most 200 lines.'),
     /** Sent with the first save of a new invoice, so a repeated save finds the same draft. */
     idempotencyKey: z.string().min(8).max(100).optional(),
@@ -270,6 +291,8 @@ export const draftInput = z
     path: ['servicePeriodEnd'],
   });
 export type DraftInput = z.infer<typeof draftInput>;
+/** A draft as a form sends it, before parsing: the exchange rate is still text. */
+export type DraftFormInput = z.input<typeof draftInput>;
 
 export const paymentInput = z.object({
   documentId: z.uuid(),

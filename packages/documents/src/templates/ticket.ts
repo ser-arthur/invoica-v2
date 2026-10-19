@@ -79,8 +79,14 @@ body{font-family:'JetBrains Mono',monospace;font-size:8.4pt;line-height:1.38;col
   ${pay ? `<hr class="rule"><div class="keep">${pay}</div>` : ''}
   ${v.paymentLink ? `<hr class="rule"><div class="c">Pay online<br>${esc(v.paymentLink)}</div>` : ''}
   ${
-    [v.creditNote, v.reverseChargeNote, v.notes, v.terms].filter(Boolean).length
-      ? `<hr class="rule"><div class="small">${[v.creditNote, v.reverseChargeNote, v.notes, v.terms]
+    [v.creditNote, v.reverseChargeNote, v.sterlingRateNote, v.notes, v.terms].filter(Boolean).length
+      ? `<hr class="rule"><div class="small">${[
+          v.creditNote,
+          v.reverseChargeNote,
+          v.sterlingRateNote,
+          v.notes,
+          v.terms,
+        ]
           .filter(Boolean)
           .map((t) => `<p>${para(t)}</p>`)
           .join('')}</div>`

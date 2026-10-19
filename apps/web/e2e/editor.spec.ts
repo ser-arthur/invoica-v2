@@ -39,3 +39,39 @@ test('on a wide screen, every line stays open', async ({ page }, info) => {
   await expect(page.getByLabel('Line 1 description')).toBeVisible();
   await expect(page.getByRole('button', { name: /Edit line 1/ })).toBeHidden();
 });
+
+test('a UK VAT invoice in euros asks for the rate to pounds and prints the VAT in sterling', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Euro Studio', { vat: true });
+  await page.goto('/clients/new');
+  await page.fill('#c-name', 'Lyon Ateliers SARL');
+  await page.fill('#c-email', 'compta@lyon.example');
+  await page.selectOption('#c-currency', 'EUR');
+  await page.getByRole('button', { name: 'Save client' }).click();
+  await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
+
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Lyon Ateliers SARL' });
+  await page.getByLabel('Line 1 description').fill('Brand workshop');
+  await page.getByLabel('Line 1 price').fill('100');
+  await expect(page.getByLabel('Exchange rate: EUR to £1')).toBeVisible();
+  await expect(page.getByRole('link', { name: /\w+ \d{4}/ })).toHaveAttribute(
+    'href',
+    /trade-tariff\.service\.gov\.uk\/exchange_rates\/view\/\d{4}-\d{1,2}$/,
+  );
+
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await expect(page.getByText('Enter the rate before issuing.')).toBeVisible();
+
+  await page.fill('#e-sterling-rate', '1.15');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\?issued=1/);
+  // €20.00 of VAT at €1.15 to £1 is £17.39.
+  const frame = page.frameLocator('iframe').first();
+  await expect(frame.getByText('VAT in sterling').first()).toBeVisible();
+  await expect(frame.getByText('£17.39')).toBeVisible();
+  await expect(frame.getByText(/£1 = 1\.1500 EUR, HMRC period rate for/)).toBeVisible();
+});

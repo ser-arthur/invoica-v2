@@ -16,6 +16,8 @@ import {
   planBalanceCredit,
   planLineCredit,
   refundFor,
+  sterlingRateDate,
+  sterlingVatFor,
   sumMinor,
   todayIn,
   transition,
@@ -391,6 +393,7 @@ function draftColumns(input: DraftInput, org: Organisation, totals: DocumentTota
     terms: input.terms,
     template: input.template,
     options: input.options,
+    sterlingRate: input.sterlingRate,
     subtotal: totals.subtotal,
     discountTotal: totals.discountTotal,
     taxTotal: totals.taxTotal,
@@ -562,6 +565,19 @@ export async function issueDocument(
   const totals = draftTotals(doc, lines);
   if (totals.total <= 0)
     throw new DomainError('total_not_positive', 'An invoice must be for more than zero.');
+  const taxPoint = supplyDate ?? doc.servicePeriodEnd ?? issueDate;
+  const sterlingVat = sterlingVatFor({
+    seller: { taxRegistered: org.taxRegistered, countryCode: org.countryCode },
+    currency: doc.currency,
+    taxes: totals.taxes,
+    rate: doc.sterlingRate
+      ? {
+          rate: doc.sterlingRate,
+          method: org.sterlingRateMethod,
+          rateDate: sterlingRateDate(org.sterlingRateMethod, taxPoint),
+        }
+      : null,
+  });
 
   const sequence = await nextSequence(tx, doc.kind);
   const number = formatDocumentNumber(
@@ -591,6 +607,7 @@ export async function issueDocument(
             totals,
           )
         : undefined,
+    sterlingVat,
   });
   await tx
     .update(document)
@@ -1055,6 +1072,18 @@ export async function createCreditNote(
     credits: { number: invoice.number ?? '', issueDate: invoice.issueDate ?? today, reason: input.reason },
     entitlements: organisationEntitlements(org, now),
     ledger: plan.taken,
+    // A credit note converts the VAT it credits at the invoice's rate.
+    sterlingVat: snapshot.sterlingVat
+      ? sterlingVatFor({
+          seller: {
+            taxRegistered: snapshot.seller.taxRegistered,
+            countryCode: snapshot.seller.address.countryCode,
+          },
+          currency: invoice.currency,
+          taxes: totals.taxes,
+          rate: snapshot.sterlingVat,
+        })
+      : null,
   });
   await tx
     .update(document)

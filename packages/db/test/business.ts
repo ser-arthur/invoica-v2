@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { draftInput, type DraftInput } from '@invoica/schemas';
+import { draftInput, type DraftFormInput } from '@invoica/schemas';
 import { createClient } from '../src/clients';
 import { createDraft, issueDocument } from '../src/documents';
 import { createTaxCode } from '../src/taxes';
@@ -79,7 +79,7 @@ export async function business(t: TestDatabase, name: string, registered = true)
 export function draftFor(
   b: Business,
   lines: { quantity: number; unitPrice: number; code: string | null }[],
-  over: Partial<DraftInput> = {},
+  over: Partial<DraftFormInput> = {},
 ) {
   return draftInput.parse({
     clientId: b.clientId,
@@ -100,7 +100,7 @@ export function draftFor(
 export async function issued(
   b: Business,
   lines: { quantity: number; unitPrice: number; code: string | null }[],
-  over: Partial<DraftInput> = {},
+  over: Partial<DraftFormInput> = {},
 ) {
   const id = await b.run((tx) => createDraft(tx, b.actor, draftFor(b, lines, over)));
   await b.run((tx) => issueDocument(tx, b.actor, id, NOW));

@@ -1,5 +1,6 @@
 import {
   formatBusinessDate,
+  formatExchangeRate,
   formatMoney,
   formatQuantity,
   formatRate,
@@ -59,6 +60,8 @@ export interface DocumentView {
   payment: { title: string; rows: { label: string; value: string }[] }[];
   paymentLink: string | null;
   reverseChargeNote: string | null;
+  /** The rate VAT was converted to sterling at, on a UK VAT document in another currency. */
+  sterlingRateNote: string | null;
   creditNote: string | null;
   legalLine: string;
   brandColour: string;
@@ -221,6 +224,31 @@ export function buildView(s: DocumentSnapshot, options: { draft?: boolean } = {}
     });
   }
 
+  // VAT in sterling (docs/specs/vat-in-sterling.md): each figure converted once, with the rate it was converted at.
+  const sterling = s.sterlingVat ?? null;
+  if (sterling) {
+    const pounds = (n: number) => formatMoney(n, 'GBP', { locale: s.locale });
+    if (sterling.charged > 0)
+      totals.push({
+        label: isCredit ? 'VAT credited in sterling' : 'VAT in sterling',
+        value: pounds(sterling.charged),
+        kind: 'note',
+      });
+    if (sterling.reverseCharge > 0)
+      totals.push({
+        label: isCredit ? 'Reverse-charge VAT credited in sterling' : 'Reverse-charge VAT in sterling',
+        value: pounds(sterling.reverseCharge),
+        kind: 'note',
+      });
+  }
+  const sterlingRateNote = sterling
+    ? `VAT in sterling at £1 = ${formatExchangeRate(sterling.rate)} ${s.currency}, ${
+        sterling.method === 'hmrc_period'
+          ? `HMRC period rate for ${new Intl.DateTimeFormat(s.locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${sterling.rateDate}T00:00:00Z`))}`
+          : `UK market selling rate on ${formatBusinessDate(sterling.rateDate, 'long', s.locale)}`
+      }.`
+    : null;
+
   const dates: DocumentView['dates'] = [];
   dates.push({
     label: isCredit ? 'Date' : 'Issued',
@@ -316,6 +344,7 @@ export function buildView(s: DocumentSnapshot, options: { draft?: boolean } = {}
     payment: isCredit ? [] : payment,
     paymentLink: isCredit ? null : s.payment.paymentLink,
     reverseChargeNote,
+    sterlingRateNote,
     creditNote: s.credits
       ? `Credits invoice ${s.credits.number} of ${date(s.credits.issueDate)}. Reason: ${s.credits.reason}`
       : null,

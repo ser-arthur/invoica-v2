@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { needsSterlingVat, parseExchangeRate, sterlingVat } from '../src/sterling';
+import { formatExchangeRate, needsSterlingVat, parseExchangeRate, sterlingVat } from '../src/sterling';
 import type { TaxSummaryRow } from '../src/totals';
 
 /** Acceptance criteria 1 to 4: docs/specs/vat-in-sterling.md. */
@@ -31,26 +31,41 @@ describe('criterion 1: reading a rate', () => {
 });
 
 describe('criteria 2 and 3: converting the VAT', () => {
+  // Rates are units of the document's currency to £1, as HMRC publishes them.
   it('converts the total once and rounds half up to the penny', () => {
-    expect(sterlingVat({ currency: 'EUR', taxes: [row(20_000)] }, 865_000)).toEqual({
-      charged: 17_300,
+    // €200.00 at €1.15 to £1 is £173.913..., so £173.91.
+    expect(sterlingVat({ currency: 'EUR', taxes: [row(20_000)] }, 1_150_000)).toEqual({
+      charged: 17_391,
       reverseCharge: 0,
     });
-    expect(sterlingVat({ currency: 'XOF', taxes: [row(2000)] }, 1312)).toEqual({
+    // 2,000 CFA francs (no minor unit) at 762.195122 to £1 is £2.624..., so £2.62.
+    expect(sterlingVat({ currency: 'XOF', taxes: [row(2000)] }, 762_195_122)).toEqual({
       charged: 262,
       reverseCharge: 0,
     });
-    // €0.10 at 0.865 is 8.65p, which rounds up to 9p.
-    expect(sterlingVat({ currency: 'EUR', taxes: [row(10)] }, 865_000).charged).toBe(9);
+    // €0.03 at €2 to £1 is 1.5p, which rounds up to 2p.
+    expect(sterlingVat({ currency: 'EUR', taxes: [row(3)] }, 2_000_000).charged).toBe(2);
+    // 1.000 Kuwaiti dinar (three decimal places) at 0.38 to £1 is £2.6315..., so £2.63.
+    expect(sterlingVat({ currency: 'KWD', taxes: [row(1000)] }, 380_000).charged).toBe(263);
   });
 
   it('adds rows before converting, and keeps reverse-charge VAT apart', () => {
-    // 3p + 3p at 0.5 is 3p; converting each row first would give 2p + 2p.
-    expect(sterlingVat({ currency: 'EUR', taxes: [row(3), row(3, true, 50_000)] }, 500_000).charged).toBe(3);
+    // 3c + 3c at €2 to £1 is 3p; converting each row first would give 2p + 2p.
+    expect(sterlingVat({ currency: 'EUR', taxes: [row(3), row(3, true, 50_000)] }, 2_000_000).charged).toBe(
+      3,
+    );
     expect(sterlingVat({ currency: 'EUR', taxes: [row(1000), row(4000, false)] }, 1_000_000)).toEqual({
       charged: 1000,
       reverseCharge: 4000,
     });
+  });
+});
+
+describe('the rate as printed', () => {
+  it('shows at least four decimal places and no more than were entered', () => {
+    expect(formatExchangeRate(1_150_000)).toBe('1.1500');
+    expect(formatExchangeRate(762_195_122)).toBe('762.195122');
+    expect(formatExchangeRate(1_156_070)).toBe('1.15607');
   });
 });
 

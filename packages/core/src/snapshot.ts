@@ -5,6 +5,7 @@ import type { TaxCode } from './tax';
 import type { DocumentKind } from './numbering';
 import { UNLIMITED, applyEntitlements, type Entitlements } from './plans';
 import type { CreditSlot, CreditTaken } from './credits';
+import type { SterlingVat } from './sterling';
 
 export type LineStyle = 'amount' | 'quantity' | 'hours' | 'dated';
 
@@ -111,6 +112,8 @@ export interface DocumentSnapshot {
   slots?: CreditSlot[];
   /** For a credit note: what it took from the invoice, for the credit ledger. */
   ledger?: CreditTaken;
+  /** VAT in sterling, on a UK VAT document in another currency (docs/specs/vat-in-sterling.md). */
+  sterlingVat?: SterlingVat;
 }
 
 export function lineHasQuantity(style: LineStyle): boolean {
@@ -193,6 +196,7 @@ export interface SnapshotInput {
   slots?: CreditSlot[];
   /** Kept on an issued credit note. */
   ledger?: CreditTaken;
+  sterlingVat?: SterlingVat | null;
 }
 
 const blankToNull = (v: string | null | undefined) => (v && v.trim() ? v : null);
@@ -281,6 +285,7 @@ export function assembleSnapshot(s: SnapshotInput): DocumentSnapshot {
     credits: s.credits,
     ...(s.slots ? { slots: s.slots } : {}),
     ...(s.ledger ? { ledger: s.ledger } : {}),
+    ...(s.sterlingVat ? { sterlingVat: s.sterlingVat } : {}),
   };
   return applyEntitlements(snapshot, s.entitlements ?? UNLIMITED);
 }

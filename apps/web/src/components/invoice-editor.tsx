@@ -10,13 +10,18 @@ import {
   DomainError,
   formatMoney,
   isBusinessDate,
+  needsSterlingVat,
+  parseExchangeRate,
   parseMoney,
   parseQuantity,
   parseRate,
   QUANTITY_SCALE,
+  sterlingRateDate,
+  sterlingVatFor,
   sumMinor,
   toDecimalString,
   type DocumentSnapshot,
+  type SterlingRateMethod,
   type Entitlements,
   type DocumentTotals,
   type LineStyle,
@@ -102,6 +107,8 @@ export interface EditorState {
   summary: string;
   lineStyle: LineStyle;
   pricesIncludeTax: boolean;
+  /** Units of the invoice's currency to £1, as typed, for VAT in sterling. */
+  sterlingRate: string;
   lines: EditorLine[];
   discounts: EditorDiscount[];
   deposits: EditorDeposit[];
@@ -132,6 +139,7 @@ export interface EditorProps {
     defaultPaymentTermsDays: number;
     paymentDetails: RawPaymentDetails;
     nextNumber: string;
+    sterlingRateMethod: SterlingRateMethod;
   };
   logoUrl: string | null;
   /** What the organisation's plan allows, so the preview looks as the issued invoice will. */
@@ -280,6 +288,7 @@ function parse(state: EditorState, taxCodes: EditorTaxCode[], org: EditorProps['
     terms: state.terms,
     template: state.template,
     options: state.options,
+    sterlingRate: state.sterlingRate.trim() || null,
     lines: inputLines,
   };
   return { input, lineErrors, totals, totalsError, lines };
@@ -341,6 +350,26 @@ export function InvoiceEditor(props: EditorProps) {
 
   const parsed = useMemo(() => parse(state, taxCodes, org), [state, taxCodes, org]);
   const deferred = useDeferredValue(parsed);
+  const sellerCountry = org.seller.address.countryCode;
+  const sellerVat = useMemo(
+    () => ({ taxRegistered: registered, countryCode: sellerCountry }),
+    [registered, sellerCountry],
+  );
+  // A UK VAT invoice in another currency shows its VAT in sterling (docs/specs/vat-in-sterling.md).
+  const needsSterling =
+    !!parsed.totals && needsSterlingVat(sellerVat, { currency: state.currency, taxes: parsed.totals.taxes });
+  const sterlingRate = parseExchangeRate(state.sterlingRate);
+  const taxPoint =
+    state.supplyMode === 'period'
+      ? isBusinessDate(state.periodEnd)
+        ? state.periodEnd
+        : today
+      : isBusinessDate(state.supplyDate)
+        ? state.supplyDate
+        : isBusinessDate(state.issueDate)
+          ? state.issueDate
+          : today;
+  const rateDate = sterlingRateDate(org.sterlingRateMethod, taxPoint);
 
   const previewHtml = useMemo(() => {
     const totals =
@@ -399,13 +428,33 @@ export function InvoiceEditor(props: EditorProps) {
       paymentDetails: org.paymentDetails,
       credits: null,
       entitlements: props.entitlements,
+      sterlingVat:
+        deferred.totals && sterlingRate
+          ? sterlingVatFor({
+              seller: sellerVat,
+              currency: state.currency,
+              taxes: totals.taxes,
+              rate: { rate: sterlingRate, method: org.sterlingRateMethod, rateDate },
+            })
+          : null,
     });
     return renderDocumentHtml(snap, {
       fontUrl: (f) => `/doc-fonts/${f}`,
       logoUrl: props.entitlements.ownBrand ? props.logoUrl : null,
       draft: true,
     });
-  }, [deferred, state, org, client, today, props.logoUrl, props.entitlements]);
+  }, [
+    deferred,
+    state,
+    org,
+    client,
+    today,
+    props.logoUrl,
+    props.entitlements,
+    sterlingRate,
+    rateDate,
+    sellerVat,
+  ]);
 
   function addLine(from?: EditorItem) {
     const key = newKey();
@@ -453,6 +502,22 @@ export function InvoiceEditor(props: EditorProps) {
     }
     if (parsed.totalsError) {
       setMessage({ tone: 'danger', text: parsed.totalsError });
+      return;
+    }
+    if (state.sterlingRate.trim() && !sterlingRate) {
+      setErrors({
+        sterlingRate: 'Enter the rate as a number with up to six decimal places, for example 1.1500.',
+      });
+      setMessage({ tone: 'danger', text: 'Check the exchange rate to pounds.' });
+      return;
+    }
+    if (issue && needsSterling && !sterlingRate) {
+      setConfirmIssue(false);
+      setErrors({ sterlingRate: 'Enter the rate before issuing.' });
+      setMessage({
+        tone: 'danger',
+        text: 'Enter the exchange rate to pounds: a UK VAT invoice in another currency shows its VAT in sterling.',
+      });
       return;
     }
     start(async () => {
@@ -607,6 +672,45 @@ export function InvoiceEditor(props: EditorProps) {
                 <Field label="Currency" htmlFor="e-currency">
                   <Input id="e-currency" value={state.currency} readOnly aria-readonly className="bg-sunk" />
                 </Field>
+                {needsSterling || state.sterlingRate ? (
+                  <Field
+                    label={`Exchange rate: ${state.currency} to £1`}
+                    htmlFor="e-sterling-rate"
+                    error={errors.sterlingRate}
+                    hint={
+                      org.sterlingRateMethod === 'hmrc_period' ? (
+                        <>
+                          HMRC&apos;s period rate for{' '}
+                          <a
+                            href={`https://www.trade-tariff.service.gov.uk/exchange_rates/view/${Number(rateDate.slice(0, 4))}-${Number(rateDate.slice(5, 7))}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-medium text-brand underline-offset-4 hover:underline"
+                          >
+                            {new Intl.DateTimeFormat('en-GB', {
+                              month: 'long',
+                              year: 'numeric',
+                              timeZone: 'UTC',
+                            }).format(new Date(`${rateDate}T00:00:00Z`))}
+                          </a>
+                          , used to show the VAT in sterling.
+                        </>
+                      ) : (
+                        'The UK market selling rate on the date of supply, used to show the VAT in sterling.'
+                      )
+                    }
+                  >
+                    <Input
+                      id="e-sterling-rate"
+                      inputMode="decimal"
+                      placeholder="1.1500"
+                      value={state.sterlingRate}
+                      onChange={(e) => update({ sterlingRate: e.target.value })}
+                      aria-invalid={!!errors.sterlingRate}
+                      className="tabular"
+                    />
+                  </Field>
+                ) : null}
               </div>
             )}
           </Panel>

@@ -30,6 +30,7 @@ export interface ProfileValues {
   pricesIncludeTax: boolean;
   taxLevel: 'document' | 'line';
   rounding: 'half-up' | 'half-even' | 'down';
+  sterlingRateMethod: 'hmrc_period' | 'market';
   defaultPaymentTermsDays: number;
   invoicePrefix: string;
   creditNotePrefix: string;
@@ -342,6 +343,24 @@ export function SettingsForm({
               onChange={(e) => set('pricesIncludeTax', e.target.checked)}
             />
           </div>
+        ) : null}
+        {v.taxRegistered && v.countryCode === 'GB' ? (
+          <Field
+            label="VAT on invoices in other currencies"
+            htmlFor="s-sterling"
+            hint="The VAT is also shown in pounds, converted at this rate. Use the same one for every invoice."
+          >
+            <Select
+              id="s-sterling"
+              value={v.sterlingRateMethod}
+              onChange={(e) =>
+                set('sterlingRateMethod', e.target.value as ProfileValues['sterlingRateMethod'])
+              }
+            >
+              <option value="hmrc_period">HMRC period rate for the month</option>
+              <option value="market">UK market selling rate on the day</option>
+            </Select>
+          </Field>
         ) : null}
       </Section>
 

@@ -15,7 +15,15 @@ import {
   uuid,
   bigserial,
 } from 'drizzle-orm/pg-core';
-import type { DiscountInput, TaxCode, TaxComponent, RoundingMode, TaxLevel, Lifecycle } from '@invoica/core';
+import type {
+  DiscountInput,
+  TaxCode,
+  TaxComponent,
+  RoundingMode,
+  TaxLevel,
+  Lifecycle,
+  SterlingRateMethod,
+} from '@invoica/core';
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 const money = (name: string) => bigint(name, { mode: 'number' });
@@ -118,6 +126,11 @@ export const organisation = pgTable('organisation', {
   defaultTerms: text('default_terms'),
   plan: text('plan').$type<Plan>().notNull().default('trial'),
   trialEndsAt: ts('trial_ends_at'),
+  /** How VAT is converted to sterling on documents in another currency. */
+  sterlingRateMethod: text('sterling_rate_method')
+    .$type<SterlingRateMethod>()
+    .notNull()
+    .default('hmrc_period'),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });
@@ -263,6 +276,8 @@ export const document = pgTable('document', {
   idempotencyKey: text('idempotency_key'),
   /** What the request that created this document asked for, so a reused key with a different request is refused. */
   requestFingerprint: text('request_fingerprint'),
+  /** For a draft in another currency: units of that currency to £1, in millionths. */
+  sterlingRate: bigint('sterling_rate', { mode: 'number' }),
 });
 
 export const documentLine = pgTable('document_line', {

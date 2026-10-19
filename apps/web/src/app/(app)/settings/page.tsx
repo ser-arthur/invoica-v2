@@ -64,6 +64,7 @@ export default async function SettingsPage() {
     taxNumber: org.taxNumber,
     pricesIncludeTax: org.pricesIncludeTax,
     taxLevel: org.taxLevel,
+    sterlingRateMethod: org.sterlingRateMethod,
     rounding: org.rounding,
     defaultPaymentTermsDays: org.defaultPaymentTermsDays,
     invoicePrefix: org.invoicePrefix,

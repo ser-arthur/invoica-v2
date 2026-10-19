@@ -1,5 +1,5 @@
 import 'server-only';
-import { toDecimalString, quantityToString, type TaxCode } from '@invoica/core';
+import { formatExchangeRate, toDecimalString, quantityToString, type TaxCode } from '@invoica/core';
 import {
   buyerFrom,
   clientsForEditor,
@@ -55,6 +55,7 @@ export async function loadEditorData(tx: Tx, ws: Workspace): Promise<Omit<Editor
       defaultPaymentTermsDays: org.defaultPaymentTermsDays,
       paymentDetails: org.paymentDetails,
       nextNumber,
+      sterlingRateMethod: org.sterlingRateMethod,
     },
     logoUrl: org.logoFileId ? `/files/${org.logoFileId}` : null,
     entitlements: organisationEntitlements(org, new Date()),
@@ -84,6 +85,7 @@ export function newDraftState(
     summary: '',
     lineStyle: org.taxRegistered ? 'quantity' : 'amount',
     pricesIncludeTax: org.pricesIncludeTax,
+    sterlingRate: '',
     lines: [
       {
         key: key(),
@@ -131,6 +133,7 @@ export function draftState(detail: DocumentDetail): EditorState {
     summary: d.summary ?? '',
     lineStyle: d.lineStyle,
     pricesIncludeTax: d.pricesIncludeTax,
+    sterlingRate: d.sterlingRate ? formatExchangeRate(d.sterlingRate) : '',
     lines: detail.lines.map((l) => ({
       key: key(),
       title: l.title,

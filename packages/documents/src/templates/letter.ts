@@ -87,7 +87,7 @@ ${
     ? `<section class="pay"><div class="h">How to pay</div>${v.payment.map((p) => `<div><strong>${esc(p.title)}:</strong> ${p.rows.map((r) => `${esc(r.label)} ${esc(r.value)}`).join(', ')}</div>`).join('')}${v.paymentLink ? `<div><strong>Online:</strong> ${esc(v.paymentLink)}</div>` : ''}</section>`
     : ''
 }
-<section class="small">${[v.reverseChargeNote, v.terms, v.legalLine]
+<section class="small">${[v.reverseChargeNote, v.sterlingRateNote, v.terms, v.legalLine]
       .filter(Boolean)
       .map((t) => `<p>${para(t)}</p>`)
       .join('')}</section>

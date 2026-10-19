@@ -83,6 +83,7 @@ export function notesBlock(v: DocumentView, cls = 'notes'): string {
   const parts = [
     v.creditNote ? `<p class="n-credit">${esc(v.creditNote)}</p>` : '',
     v.reverseChargeNote ? `<p class="n-rc">${esc(v.reverseChargeNote)}</p>` : '',
+    v.sterlingRateNote ? `<p class="n-rc">${esc(v.sterlingRateNote)}</p>` : '',
     v.notes ? `<div><div class="n-title">Notes</div><p>${para(v.notes)}</p></div>` : '',
     v.terms ? `<div><div class="n-title">Terms</div><p>${para(v.terms)}</p></div>` : '',
   ].filter(Boolean);

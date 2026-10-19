@@ -6,6 +6,7 @@ import {
   type DocumentSnapshot,
   type DocumentTotals,
   type SnapshotLineSource,
+  type SterlingVat,
 } from '@invoica/core';
 import type { Organisation } from './organisations';
 import type { client, document } from './schema';
@@ -30,6 +31,7 @@ export interface SnapshotSource {
   slots?: CreditSlot[];
   /** What a credit note took from its invoice. */
   ledger?: CreditTaken;
+  sterlingVat?: SterlingVat | null;
 }
 
 export function sellerFrom(org: Organisation): DocumentSnapshot['seller'] {
@@ -111,5 +113,6 @@ export function buildSnapshot(s: SnapshotSource): DocumentSnapshot {
     entitlements: s.entitlements,
     slots: s.slots,
     ledger: s.ledger,
+    sterlingVat: s.sterlingVat,
   });
 }
