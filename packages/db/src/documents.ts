@@ -959,10 +959,14 @@ export async function createCreditNote(
     const on = `Reduction on ${invoice.number ?? 'the invoice'}`;
     // A long list goes in the description, by position and, when it fits, by title, so every line reduced is named.
     const long = titles.length > 160;
-    const positions = `Invoice lines ${lineRanges(reduced)}`;
+    const positions = `Invoice ${reduced.length === 1 ? 'line' : 'lines'} ${lineRanges(reduced)}`;
     return {
       ...base,
-      title: long ? `${on}: ${reduced.length} lines` : titles ? `${on}: ${titles}` : on,
+      title: long
+        ? `${on}: ${reduced.length === 1 ? `line ${reduced[0]! + 1}` : `${reduced.length} lines`}`
+        : titles
+          ? `${on}: ${titles}`
+          : on,
       description: long
         ? `${positions}: ${titles}`.length <= 4000
           ? `${positions}: ${titles}`
@@ -972,7 +976,10 @@ export async function createCreditNote(
       unit: null,
       unitPrice: p.unitPrice,
       serviceDate: null,
-      taxCodeId: reduced.length ? invoiceLines[reduced[0]!]!.taxCodeId : null,
+      // The tax code of the lines the note reduces, or of its slots' lines when it takes only tax left on them.
+      taxCodeId:
+        invoiceLines[reduced[0] ?? source.slots.find((x) => x.key === p.from[0]?.slot)?.lines[0] ?? -1]
+          ?.taxCodeId ?? null,
       tax: p.tax,
       itemId: null,
       creditedLineId: null,

@@ -97,7 +97,9 @@ export function rowSums(notes: DocumentTotals[]) {
 
 export function expectExact(totals: DocumentTotals, notes: DocumentTotals[]) {
   const sums = rowSums(notes);
-  for (const r of totals.taxes) expect(sums.get(r.key), r.key).toEqual({ base: r.base, amount: r.amount });
+  // A row of nothing on the invoice (a slot discounted to zero) has no counterpart: credit notes never show one.
+  for (const r of totals.taxes)
+    expect(sums.get(r.key) ?? { base: 0, amount: 0 }, r.key).toEqual({ base: r.base, amount: r.amount });
   expect([...sums.keys()].every((k) => totals.taxes.some((r) => r.key === k))).toBe(true);
   expect(notes.reduce((a, n) => a + n.total, 0)).toBe(totals.total);
   expect(notes.reduce((a, n) => a + n.taxTotal, 0)).toBe(totals.taxTotal);

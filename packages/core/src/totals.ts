@@ -367,7 +367,7 @@ export function computeDocumentDetail(input: DocumentInput): {
   const taxes = [...summary.values()];
   const taxTotal = sumMinor(taxes.filter((t) => t.charged).map((t) => t.amount));
   const netTotal = sumMinor(lineNet);
-  const total = netTotal + taxTotal;
+  const total = toSafeNumber(BigInt(netTotal) + BigInt(taxTotal), 'The total');
   const paid = assertMinor(input.paid ?? 0, 'paid');
 
   const totals: DocumentTotals = {
@@ -387,7 +387,7 @@ export function computeDocumentDetail(input: DocumentInput): {
     taxTotal,
     total,
     paid,
-    balance: total - paid,
+    balance: toSafeNumber(BigInt(total) - BigInt(paid), 'The balance'),
   };
   return { totals, slots: [...details.values()] };
 }

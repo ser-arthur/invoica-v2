@@ -620,8 +620,17 @@ function largestWithin(source: CreditSource, state: CreditState, limit: number):
 export function amountLimit(source: CreditSource, state: CreditState, balance: number): number {
   const left = sumMinor(openSlots(source, state).map((s) => state.slots[s.key]!.left));
   if (balance <= 0) return 0;
-  if (source.pricesIncludeTax) return Math.min(balance, left);
-  return largestWithin(source, state, balance);
+  if (!source.pricesIncludeTax) return largestWithin(source, state, balance);
+  // With prices including tax the amount is the note's total; step down past any amount too small to split.
+  for (let v = Math.min(balance, left), tries = 0; v > 0 && tries < 64; v--, tries++) {
+    try {
+      planAmountCredit(source, state, v);
+      return v;
+    } catch (error) {
+      if (!(error instanceof DomainError)) throw error;
+    }
+  }
+  return 0;
 }
 
 /**
@@ -642,14 +651,39 @@ export function planBalanceCredit(source: CreditSource, state: CreditState, bala
   const taxLeft = (s: CreditSlot) =>
     sumMinor(s.taxes.map((t, k) => t.amount - state.slots[s.key]!.taxes[k]!.amount));
   const residues = source.slots.filter((s) => s.charged && state.slots[s.key]!.left === 0 && taxLeft(s) > 0);
-  if (residues.length > 0 && sumMinor(residues.map(taxLeft)) <= balance) {
+  const residueTax = sumMinor(residues.map(taxLeft));
+  if (residues.length > 0 && residueTax >= balance) return takeTaxLeft(source, state, balance, residues);
+  if (residues.length > 0) {
     try {
-      return settleExcludingTax(source, state, balance, residues, sumMinor(residues.map(taxLeft)));
+      return settleExcludingTax(source, state, balance, residues, residueTax);
     } catch (error) {
       if (!(error instanceof DomainError)) throw error;
     }
   }
   return settleExcludingTax(source, state, balance, [], 0);
+}
+
+/** A note that settles the balance from the tax left on fully credited slots alone, taking only as much as is owed. */
+function takeTaxLeft(
+  source: CreditSource,
+  state: CreditState,
+  balance: number,
+  residues: readonly CreditSlot[],
+): CreditPlan {
+  let excess =
+    sumMinor(
+      residues.flatMap((s) => s.taxes.map((t, k) => t.amount - state.slots[s.key]!.taxes[k]!.amount)),
+    ) - balance;
+  const cut = new Map<string, number[]>();
+  for (const s of [...residues].reverse()) {
+    const less = s.taxes.map((t, k) => {
+      const take = Math.min(excess, t.amount - state.slots[s.key]!.taxes[k]!.amount);
+      excess -= take;
+      return take;
+    });
+    cut.set(s.key, less);
+  }
+  return finish(source, state, settleLines([], [], residues), [], cut, true);
 }
 
 /** Amount lines for value taken from slots, with the tax left on fully credited slots taken as well. */
@@ -714,7 +748,7 @@ function settleExcludingTax(
       const then = bigger.takes.find((t) => t.slot === slot.key)!.taxes;
       let rest = over;
       const cut = then.map((t, k) => {
-        const take = Math.max(Math.min(rest, 1, t.amount - was[k]!.amount), 0);
+        const take = Math.max(Math.min(rest, t.amount - was[k]!.amount), 0);
         rest -= take;
         return take;
       });

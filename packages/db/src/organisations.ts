@@ -105,6 +105,14 @@ export async function getOrganisationForIssue(tx: Tx, actor: Actor): Promise<Org
  * prefix that ends in a digit can do that (Q1 then Q: sequence 11 would print Q11 again).
  */
 async function assertNumbersDoNotRepeat(tx: Tx, input: OrganisationProfileInput): Promise<void> {
+  // Two prefixes give the same numbers when they are equal, or when one is the other followed by digits.
+  const [shorter, longer] = [input.invoicePrefix, input.creditNotePrefix].sort((a, b) => a.length - b.length);
+  if (longer!.startsWith(shorter!) && /^\d*$/.test(longer!.slice(shorter!.length))) {
+    throw new DomainError(
+      'numbering_overlaps',
+      'Invoice and credit note numbers could be the same with these prefixes. Choose prefixes that differ by more than digits.',
+    );
+  }
   for (const [kind, prefix] of [
     ['invoice', input.invoicePrefix],
     ['credit_note', input.creditNotePrefix],
@@ -114,10 +122,11 @@ async function assertNumbersDoNotRepeat(tx: Tx, input: OrganisationProfileInput)
       .from(numberCounter)
       .where(eq(numberCounter.kind, kind));
     const next = counter?.next ?? 1;
+    // Numbers used by either series, so an invoice never prints a credit note's number or the other way round.
     const used = await tx
       .select({ number: document.number })
       .from(document)
-      .where(and(eq(document.kind, kind), sql`starts_with(${document.number}, ${prefix})`));
+      .where(sql`starts_with(${document.number}, ${prefix})`);
     for (const { number } of used) {
       const digits = number!.slice(prefix.length);
       if (!/^\d+$/.test(digits) || Number(digits) < next) continue;
@@ -143,6 +152,12 @@ export async function updateOrganisationProfile(
       'Choose one of the rounding options offered for your country.',
     );
   }
+  // Held first, so no issue can number a document between the checks below and the save.
+  await tx
+    .select({ id: organisation.id })
+    .from(organisation)
+    .where(eq(organisation.id, actor.organisationId))
+    .for('update');
   await assertNumbersDoNotRepeat(tx, input);
   await tx
     .update(organisation)

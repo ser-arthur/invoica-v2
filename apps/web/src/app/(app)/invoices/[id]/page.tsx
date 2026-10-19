@@ -82,11 +82,14 @@ export default async function InvoicePage({
       ? tax.components.map((c) => `${c.name} ${formatRate(c.ratePpm)}`).join(' + ')
       : null;
   // The amount is what is owed now, after any payments and credit notes since the invoice was issued.
-  const emailText = `Hello,\n\nPlease find attached invoice ${doc.number}${
-    detail.balance === snapshot.balanceDue
-      ? ` for ${money(detail.balance)}`
-      : `. The amount still owed is ${money(detail.balance)}`
-  }${snapshot.dueDate ? `, due ${formatBusinessDate(snapshot.dueDate, 'long')}` : ''}.\n\nThank you,\n${snapshot.seller.name}`;
+  const due = snapshot.dueDate ? `, due ${formatBusinessDate(snapshot.dueDate, 'long')}` : '';
+  const owing =
+    detail.balance === 0
+      ? '. Nothing is owed on it now; it is for your records'
+      : detail.balance === snapshot.balanceDue
+        ? ` for ${money(detail.balance)}${due}`
+        : `. The amount still owed is ${money(detail.balance)}${due}`;
+  const emailText = `Hello,\n\nPlease find attached invoice ${doc.number}${owing}.\n\nThank you,\n${snapshot.seller.name}`;
 
   return (
     <div>

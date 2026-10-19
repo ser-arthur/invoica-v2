@@ -48,20 +48,20 @@ Two refusals arise only on lines of a few pence: a quantity whose value after it
 
 The amount is shared across the slots in proportion to the value each has left, by largest remainder, so it never exceeds what a slot has left. The credit note has one line for each tax code, titled with the invoice number and the lines it reduces: those of the slots it takes value from, leaving out lines already credited in full. When the list is long, the title gives their number and the description names every one by position on the invoice ("Invoice lines 1 to 140") and, when they fit, by title.
 
-Once part of the invoice is paid, the dialog's hint gives the largest amount whose credit note stays within the balance.
+Once part of the invoice is paid, the dialog's hint gives the largest amount whose credit note stays within the balance and can be split into its tax and the rest.
 
 ## Everything still owed
 
 The credit note's total is exactly the balance. It is offered once the whole invoice can no longer be credited.
 
 - When prices include tax it is an amount credit of the balance. A slot's tax is moved by at most one unit for each component so that neither the note nor what is left of the slot is below zero before tax. If a slot still cannot hold it, a unit or two of value moves between it and another slot.
-- When prices exclude tax, the note first takes any tax still to credit on slots whose value is all credited. Then the value credited is the largest whose total does not pass the balance. When that total falls short, one more unit of value is credited and the note's tax is lowered by the difference, at most one unit for each component, so the total is the balance. The unit goes to a slot that keeps value after the note where it can.
+- When prices exclude tax, the note first takes any tax still to credit on slots whose value is all credited: all of it, or as much as the balance when the balance is smaller. Then the value credited is the largest whose total does not pass the balance. When that total falls short, one more unit of value is credited and the note's tax is lowered by the difference, never below the tax due before that unit (so at most one unit for each component on any code whose rates are below 100%), and the total is the balance. The unit goes to a slot that keeps value after the note where it can.
 
 The ledger keeps the tax actually credited, so a later note takes up any difference: after a payment is removed, say, "everything still owed" credits the rest exactly and leaves every tax row exact.
 
 ## Acceptance criteria
 
-Each is a test in `packages/core/test/credits.test.ts`, `credits-review-3.test.ts` or `credits-review-4.test.ts`, or in `packages/db/test/review-2.test.ts`, `review-3.test.ts` or `review-4.test.ts`.
+Each is a test in `packages/core/test/credits.test.ts` or `credits-review-3.test.ts` to `credits-review-5.test.ts`, or in `packages/db/test/review-2.test.ts` to `review-5.test.ts`.
 
 1. Crediting the whole invoice reproduces its totals and every tax row exactly.
 2. Any mix of line and amount credits that leaves nothing in any slot credits every tax row's amount and base exactly.
@@ -72,12 +72,14 @@ Each is a test in `packages/core/test/credits.test.ts`, `credits-review-3.test.t
 7. An amount credit on an invoice priced excluding tax is priced excluding tax, so the credit note shows the decrease before tax.
 8. The database refuses issuing a credit note whose lines credit more of an invoice line than was invoiced, or credit a line of another invoice.
 9. Under VAT per line, a whole line credited credits exactly the VAT that line was charged (review 3, R3-L1).
-10. For every slot a note credits, each tax is within two units of its rate times its base, and each base not charged on another tax is the net the note takes from the slot (review 3, R3-L1).
+10. For every slot a note credits, each base not charged on another tax is the net the note takes from the slot, and, on codes whose rates add up to 30% or less (every UK and Ghana rate), each tax is within two units of its rate times its base (review 3, R3-L1). On codes with higher rates a note that settles the balance can be a few units further (review 5, R5-L6).
 11. After any part payment, "everything still owed" credits exactly the balance in one note (review 3, R3-M1).
 12. An invoice with credit notes that carry no ledger (from before this version) cannot be credited again, and says so; its page still works.
-13. Under Ghana's defaults (tax on the total, prices including tax), a balance of one to three units settles after any earlier amount credit (review 4, R4-M1).
+13. Under Ghana's default (tax on the total), with prices including or excluding tax, a balance of one to three units settles after any earlier amount credit (review 4, R4-M1; review 5, R5-L6).
 14. After a note for everything still owed, removing its payment leaves a balance that a second such note credits exactly, with every base its net, and the invoice ends with every tax row exact (review 4, R4-L1 and R4-L2).
-15. The database refuses issuing a credit note whose lines credit invoice lines at another price or tax, whose total or tax total is not its snapshot's, or whose tax rows with earlier notes credit more tax or base than the invoice charged (review 4, R4-L5).
+15. The database refuses issuing a credit note whose lines credit invoice lines at another price or tax, whose total or tax total is not its snapshot's, whose tax total is not its charged rows, whose tax rows are not whole numbers of zero or more, or whose rows, added up by tax with earlier notes, credit more tax or base than the invoice charged (review 4, R4-L5; review 5, R5-L2).
+16. After a note for everything still owed, with the payment reversed and part of it paid again, a further such note credits exactly the balance, on codes with several taxes, taxes on taxes and rates up to 100% (review 5, R5-L1).
+17. A document whose total or balance would pass the largest safe whole number is refused as too large (review 5, R5-L5).
 
 ## Not covered
 
