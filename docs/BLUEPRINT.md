@@ -72,6 +72,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **19 Oct, about 03:45 to 04:30.** Review 4 (`docs/reviews/review-4.md`): no critical or high findings; 1 medium and 7 low. Under Ghana's defaults a last pesewa could not be credited; after a settling note, removing its payment could leave a penny; long amount-credit descriptions were cut; a prefix change could repeat a number; the database did not check a credit note's figures; archived clients could not be invoiced from the editor on the free plan. All fixed with tests first except plan limits in the database (a tenancy question for Kobby). Checks: core 179, database 79, documents 11, PDF 64, schemas 4, web unit 5, end to end 29 passed with 3 skipped by design. Repository bundle 05 delivered.
 
+- **19 Oct, 04:30 onwards.** Review 5 of the review 4 fixes started. Performance measured on a business with 2,000 invoices of six lines each, half part paid and a tenth with a credit note: the invoice list's query took 260 ms and the dashboard's 285 ms; lists now read only summary columns and work out payments and credits in the same query (65 ms and 100 ms), credit notes are indexed by the invoice they credit (migration 0009), and the invoice list shows fifty at a time. A full export of that business is 22 MB and takes half a second.
+
 ## Decisions in force
 
 | Record | Title | Status |
