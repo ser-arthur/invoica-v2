@@ -2,7 +2,7 @@
 
 The plan for building Invoica v2, and where the work stands. Updated at the end of every phase. A new chat starts here.
 
-Last updated: 19 October 2026, about 06:40 (session 1 of the build).
+Last updated: 19 October 2026, about 07:45 (session 1 of the build).
 
 ---
 
@@ -50,6 +50,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 2l | Review 4 of the slot ledger and the plans, and its fixes: "everything still owed" settles every balance, bases are the net taken, numbering cannot repeat, archived clients can be invoiced, migration 0008 | Done |
 | 2m | Review 5 of the review 4 fixes, and its fixes (migration 0010); performance at 2,000 invoices (migration 0009, paged invoice list) | Done |
 | 2n | Review 6, a security review of the web layer: a content security policy with nonces, archive checks, the drain secret; the sign-in fixes on the branch `fix/auth-hardening`, waiting for approval | Done on `main`; branch waiting |
+| 2o | Review 7 of the latest fixes, and its fixes (migration 0011): taxes above a price refused, the amount hint's search, criteria narrowed to what holds | Done |
 | 3 | Invoice templates round 2: four new templates (Ledger, Poster, Letter, Ticket) beside Signature, Studio and Counsel; template picker with live previews of your own details; landing page built around real invoices | Built; waiting for Kobby's review on the design canvas |
 | 4 | Getting paid: payment links, reminders | After v1 |
 | 5 | Cash flow and dashboards beyond v1 | After v1 |
@@ -79,6 +80,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **19 Oct, about 05:00 to 05:45.** Review 5 (`docs/reviews/review-5.md`): no critical, high or medium findings; 6 low. A pesewa of levy could stick after a settling note, a reversed payment and a part payment again; migration 0008 could still be passed by direct SQL; the numbering check read before it locked; the two series could share a prefix; totals past the safe range were stored a penny out. All fixed with tests first (migration 0010). Checks: core 184, database 86, documents 11, PDF 64, schemas 4, web unit 8, end to end 29 passed with 3 skipped by design. Repository bundle 06 delivered.
 
 - **19 Oct, about 05:45 to 06:40.** Review 6 (`docs/reviews/review-6.md`), a security review of the web layer run over HTTP against a production build: tenancy sound (no record of one business reachable by another or by anyone signed out), output escaping sound; 1 medium and 5 low findings. The sign-in limit could be reset with a forged `X-Forwarded-For`; there was no content security policy; archiving another business's item reported success; the drain route could answer 500. Fixed on `main` except the sign-in findings, which change auth and wait for approval on `fix/auth-hardening`. Checks: core 184, database 89, documents 11, PDF 64, schemas 4, web unit 10, end to end 31 passed with 3 skipped by design. Repository bundle 07 delivered, with the branch.
+
+- **19 Oct, about 06:45 to 07:45.** Review 7 (`docs/reviews/review-7.md`) of everything since review 5: no critical, high or medium findings; 5 low. On UK and Ghana codes no note for everything still owed was refused in any run; the lists match the invoice page in every state, and no figure from another business reached a list. Fixed: taxes rounded above a price including them are refused, so no invoice has a net below zero; the amount hint searches further; credit note tax rows keep the invoice's charged or shown status (migration 0011); criteria 10 and 16 narrowed to the codes they hold for. Two direct-SQL gaps in the database guards are recorded as the next step. The dashboard's net figure is labelled "Net invoiced this month". Repository bundle 08 delivered.
 
 ## Decisions in force
 
@@ -138,5 +141,5 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-07.zip`, which also carries the branch `fix/auth-hardening`.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-08.zip`, which also carries the branch `fix/auth-hardening`.
 - Nothing else: everything else is in the repository or the project docs.
