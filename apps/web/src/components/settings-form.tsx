@@ -124,11 +124,14 @@ export function SettingsForm({
   initial,
   logoUrl,
   brandNote = null,
+  next = { invoice: 1, creditNote: 1 },
 }: {
   initial: ProfileValues;
   logoUrl: string | null;
   /** Shown beside the template and colour when the plan keeps documents in Invoica's own look. */
   brandNote?: string | null;
+  /** The sequences the next invoice and credit note will get. */
+  next?: { invoice: number; creditNote: number };
 }) {
   const router = useRouter();
   const [v, setV] = useState(initial);
@@ -351,11 +354,16 @@ export function SettingsForm({
           label="Invoice number prefix"
           htmlFor="s-ip"
           error={errors.invoicePrefix}
-          hint={`Next invoices look like ${v.invoicePrefix}${'1'.padStart(v.numberPadding, '0')}.`}
+          hint={`The next invoice will be ${v.invoicePrefix}${String(next.invoice).padStart(v.numberPadding, '0')}.`}
         >
           <Input id="s-ip" {...text('invoicePrefix')} />
         </Field>
-        <Field label="Credit note prefix" htmlFor="s-cp" error={errors.creditNotePrefix}>
+        <Field
+          label="Credit note prefix"
+          htmlFor="s-cp"
+          error={errors.creditNotePrefix}
+          hint={`The next credit note will be ${v.creditNotePrefix}${String(next.creditNote).padStart(v.numberPadding, '0')}.`}
+        >
           <Input id="s-cp" {...text('creditNotePrefix')} />
         </Field>
         <Field label="Digits in the number" htmlFor="s-pad">

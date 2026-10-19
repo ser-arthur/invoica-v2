@@ -1,8 +1,15 @@
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
-import { DomainError, NO_TAX, allowedRounding, presetFor, roundingDefaultFor } from '@invoica/core';
+import {
+  DomainError,
+  NO_TAX,
+  allowedRounding,
+  formatDocumentNumber,
+  presetFor,
+  roundingDefaultFor,
+} from '@invoica/core';
 import type { OnboardingInput, OrganisationProfileInput } from '@invoica/schemas';
 import type { Database, Tx } from './client';
-import { organisation, taxCode } from './schema';
+import { document, numberCounter, organisation, taxCode } from './schema';
 import { audit } from './audit';
 import { withUser, type Actor } from './tenancy';
 
@@ -79,6 +86,51 @@ export async function getOrganisation(tx: Tx, actor: Actor): Promise<Organisatio
   return row;
 }
 
+/**
+ * The organisation, held for the rest of the transaction so its settings cannot change underneath it. Issuing uses
+ * this, so a settings save in progress finishes first and the number is formatted with the settings that are saved.
+ */
+export async function getOrganisationForIssue(tx: Tx, actor: Actor): Promise<Organisation> {
+  const [row] = await tx
+    .select()
+    .from(organisation)
+    .where(eq(organisation.id, actor.organisationId))
+    .for('share');
+  if (!row) throw new Error('Organisation not found.');
+  return row;
+}
+
+/**
+ * Refuses numbering settings whose next numbers, in either series, would repeat a number already used: shortening a
+ * prefix that ends in a digit can do that (Q1 then Q: sequence 11 would print Q11 again).
+ */
+async function assertNumbersDoNotRepeat(tx: Tx, input: OrganisationProfileInput): Promise<void> {
+  for (const [kind, prefix] of [
+    ['invoice', input.invoicePrefix],
+    ['credit_note', input.creditNotePrefix],
+  ] as const) {
+    const [counter] = await tx
+      .select({ next: numberCounter.nextValue })
+      .from(numberCounter)
+      .where(eq(numberCounter.kind, kind));
+    const next = counter?.next ?? 1;
+    const used = await tx
+      .select({ number: document.number })
+      .from(document)
+      .where(and(eq(document.kind, kind), sql`starts_with(${document.number}, ${prefix})`));
+    for (const { number } of used) {
+      const digits = number!.slice(prefix.length);
+      if (!/^\d+$/.test(digits) || Number(digits) < next) continue;
+      if (formatDocumentNumber({ prefix, padding: input.numberPadding }, Number(digits)) === number) {
+        throw new DomainError(
+          'numbering_repeats',
+          `${number} is already used, and this prefix would number a later ${kind === 'invoice' ? 'invoice' : 'credit note'} the same. Choose another prefix.`,
+        );
+      }
+    }
+  }
+}
+
 export async function updateOrganisationProfile(
   tx: Tx,
   actor: Actor,
@@ -91,6 +143,7 @@ export async function updateOrganisationProfile(
       'Choose one of the rounding options offered for your country.',
     );
   }
+  await assertNumbersDoNotRepeat(tx, input);
   await tx
     .update(organisation)
     .set({

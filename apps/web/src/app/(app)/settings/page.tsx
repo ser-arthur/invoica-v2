@@ -1,6 +1,12 @@
 import type { Metadata } from 'next';
 import { presetFor } from '@invoica/core';
-import { listTaxCodes, organisationEntitlements, organisationPlan, plansEnforced } from '@invoica/db';
+import {
+  listTaxCodes,
+  peekNextSequence,
+  organisationEntitlements,
+  organisationPlan,
+  plansEnforced,
+} from '@invoica/db';
 import { SettingsForm, type ProfileValues } from '@/components/settings-form';
 import { TaxCodes } from '@/components/tax-codes';
 import { LogoUpload } from '@/components/logo-upload';
@@ -10,9 +16,13 @@ import { inWorkspace } from '@/lib/workspace';
 export const metadata: Metadata = { title: 'Settings' };
 
 export default async function SettingsPage() {
-  const { org, codes } = await inWorkspace(async (tx, ws) => ({
+  const { org, codes, next } = await inWorkspace(async (tx, ws) => ({
     org: ws.organisation,
     codes: await listTaxCodes(tx),
+    next: {
+      invoice: await peekNextSequence(tx, 'invoice'),
+      creditNote: await peekNextSequence(tx, 'credit_note'),
+    },
   }));
   const now = new Date();
   const enforced = plansEnforced();
@@ -98,6 +108,7 @@ export default async function SettingsPage() {
           initial={initial}
           logoUrl={org.logoFileId ? `/files/${org.logoFileId}` : null}
           brandNote={brandNote}
+          next={next}
         />
         <TaxCodes
           country={org.countryCode}

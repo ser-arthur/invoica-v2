@@ -36,6 +36,8 @@ import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea, c
 export interface EditorClient {
   id: string;
   name: string;
+  /** Archived clients can still be invoiced; the picker lists them apart. */
+  archived: boolean;
   currency: string | null;
   paymentTermsDays: number | null;
   buyer: DocumentSnapshot['buyer'];
@@ -537,6 +539,7 @@ export function InvoiceEditor(props: EditorProps) {
                     const added: EditorClient = {
                       id,
                       name,
+                      archived: false,
                       currency: null,
                       paymentTermsDays: null,
                       buyer: {
@@ -580,11 +583,24 @@ export function InvoiceEditor(props: EditorProps) {
                     aria-invalid={!!errors.clientId}
                   >
                     <option value="">Choose a client</option>
-                    {clients.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
+                    {clients
+                      .filter((c) => !c.archived)
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    {clients.some((c) => c.archived) ? (
+                      <optgroup label="Archived clients">
+                        {clients
+                          .filter((c) => c.archived)
+                          .map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                    ) : null}
                     <option value="__new">Add a new client</option>
                   </Select>
                 </Field>

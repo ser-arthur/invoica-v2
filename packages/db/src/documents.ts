@@ -35,7 +35,7 @@ import { client, clientField, document, documentLine, payment, numberCounter, ta
 import type { DocumentKind, PaymentMethod } from './schema';
 import { audit } from './audit';
 import { enqueue } from './outbox';
-import { getOrganisation, type Organisation } from './organisations';
+import { getOrganisation, getOrganisationForIssue, type Organisation } from './organisations';
 import { toTaxCode } from './taxes';
 import type { Actor } from './tenancy';
 import { buildSnapshot } from './snapshot';
@@ -479,7 +479,7 @@ export async function issueDocument(
     .where(eq(documentLine.documentId, id))
     .orderBy(asc(documentLine.position));
   if (lines.length === 0) throw new DomainError('no_lines', 'Add at least one line before issuing.');
-  const org = await getOrganisation(tx, actor);
+  const org = await getOrganisationForIssue(tx, actor);
   if (org.taxRegistered && !org.taxNumber) {
     throw new DomainError(
       'tax_number_missing',
@@ -779,6 +779,18 @@ export async function creditPosition(tx: Tx, invoice: DocumentRow): Promise<Cred
   }
 }
 
+/** Invoice line positions, counted from one, as ranges: "1 to 3, 5 and 7 to 9". */
+function lineRanges(indexes: readonly number[]): string {
+  const ranges: string[] = [];
+  for (let i = 0; i < indexes.length; i++) {
+    let j = i;
+    while (j + 1 < indexes.length && indexes[j + 1] === indexes[j]! + 1) j++;
+    ranges.push(j > i ? `${indexes[i]! + 1} to ${indexes[j]! + 1}` : `${indexes[i]! + 1}`);
+    i = j;
+  }
+  return ranges.length > 1 ? `${ranges.slice(0, -1).join(', ')} and ${ranges.at(-1)}` : (ranges[0] ?? '');
+}
+
 /**
  * Issues a credit note against an invoice: for the whole invoice (only while nothing is paid or credited), for
  * quantities of its lines, for an amount in the invoice's price basis, or for exactly the balance still owed. The
@@ -861,7 +873,7 @@ export async function createCreditNote(
   }
   checkCredit({ invoice: snapshot.totals, balance, earlier: ledger.totals, credit: plan.totals });
 
-  const org = await getOrganisation(tx, actor);
+  const org = await getOrganisationForIssue(tx, actor);
   const today = todayIn(org.timeZone, now);
   const [created] = await tx
     .insert(document)
@@ -902,23 +914,30 @@ export async function createCreditNote(
         creditedLineId: l.id,
       };
     }
+    // The lines the note reduces: those of the slots it takes value from that are not already credited in full.
     const reduced = p.from
+      .filter((f) => f.value > 0)
       .flatMap((f) => source.slots.find((x) => x.key === f.slot)!.lines)
-      .sort((x, y) => x - y)
-      .map((i) => invoiceLines[i]!);
-    const titles = reduced.map((l) => l.title).join(', ');
+      .filter((i) => state.quantities[i]! < source.lines[i]!.quantity)
+      .sort((x, y) => x - y);
+    const titles = reduced.map((i) => invoiceLines[i]!.title).join(', ');
     const on = `Reduction on ${invoice.number ?? 'the invoice'}`;
-    // A long list of lines goes in the description in full, so every line reduced is named.
+    // A long list goes in the description, by position and, when it fits, by title, so every line reduced is named.
     const long = titles.length > 160;
+    const positions = `Invoice lines ${lineRanges(reduced)}`;
     return {
       ...base,
-      title: long ? `${on}: ${reduced.length} lines` : `${on}: ${titles}`,
-      description: long ? `Lines reduced: ${titles}`.slice(0, 4000) : null,
+      title: long ? `${on}: ${reduced.length} lines` : titles ? `${on}: ${titles}` : on,
+      description: long
+        ? `${positions}: ${titles}`.length <= 4000
+          ? `${positions}: ${titles}`
+          : `${positions}.`
+        : null,
       quantity: p.quantity,
       unit: null,
       unitPrice: p.unitPrice,
       serviceDate: null,
-      taxCodeId: reduced[0]?.taxCodeId ?? null,
+      taxCodeId: reduced.length ? invoiceLines[reduced[0]!]!.taxCodeId : null,
       tax: p.tax,
       itemId: null,
       creditedLineId: null,
@@ -973,6 +992,15 @@ export async function lockRequestKey(tx: Tx, key: string): Promise<void> {
   await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${key}))`);
 }
 
+/** The sequence the next document of a kind will get when issued. Only a preview: numbers are assigned at issue. */
+export async function peekNextSequence(tx: Tx, kind: DocumentKind): Promise<number> {
+  const [row] = await tx
+    .select({ next: numberCounter.nextValue })
+    .from(numberCounter)
+    .where(eq(numberCounter.kind, kind));
+  return row?.next ?? 1;
+}
+
 /** The number the next document of a kind will get when issued. Only a preview: numbers are assigned at issue. */
 export async function peekNextNumber(tx: Tx, kind: DocumentKind, org: Organisation): Promise<string> {
   const [row] = await tx
@@ -985,9 +1013,15 @@ export async function peekNextNumber(tx: Tx, kind: DocumentKind, org: Organisati
   );
 }
 
-/** Clients with the details an invoice shows, for the editor. */
+/**
+ * Clients with the details an invoice shows, for the editor: active clients, then archived ones, which can still be
+ * invoiced without being restored (docs/specs/plans.md: invoicing a client already in the account is never limited).
+ */
 export async function clientsForEditor(tx: Tx) {
-  const rows = await tx.select().from(client).where(isNull(client.archivedAt)).orderBy(asc(client.name));
+  const rows = await tx
+    .select()
+    .from(client)
+    .orderBy(sql`${client.archivedAt} is not null`, asc(client.name));
   const fields = await tx
     .select()
     .from(clientField)
@@ -995,6 +1029,7 @@ export async function clientsForEditor(tx: Tx) {
     .orderBy(asc(clientField.sort));
   return rows.map((c) => ({
     row: c,
+    archived: c.archivedAt !== null,
     fields: fields.filter((f) => f.clientId === c.id).map((f) => ({ label: f.label, value: f.value })),
   }));
 }

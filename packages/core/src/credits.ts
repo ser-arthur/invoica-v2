@@ -287,28 +287,30 @@ const scaled = (whole: number, part: number, of: number) =>
   of === 0 ? 0 : toSafeNumber(divRound(BigInt(whole) * BigInt(part), BigInt(of), 'half-up'), 'credit');
 
 /**
- * A slot's tax and base for each component once `credited` of its value has been credited: the tax on that value
- * alone with the invoice's rounding, never more than the slot showed, and exactly what it showed once all of it is.
+ * A slot's tax for each component once `credited` of its value has been credited: the tax on that value alone with
+ * the invoice's rounding, never more than the slot showed, and exactly what it showed once all of it is.
  */
-function slotTaxAt(source: CreditSource, s: CreditSlot, credited: number) {
-  if (credited === s.value) return s.taxes.map((t) => ({ base: t.base, amount: t.amount }));
+function slotTaxAt(source: CreditSource, s: CreditSlot, credited: number): number[] {
+  if (credited === s.value) return s.taxes.map((t) => t.amount);
   const components = s.taxes.map((t) => t.component);
   const worked =
     source.pricesIncludeTax && s.charged
       ? splitGross(credited, components, source.rounding).taxes
       : taxesOnNet(credited, components, source.rounding);
-  return worked.map((w, k) => ({
-    base: Math.min(w.base, s.taxes[k]!.base),
-    amount: Math.min(w.amount, s.taxes[k]!.amount),
-  }));
+  return worked.map((w, k) => Math.min(w.amount, s.taxes[k]!.amount));
 }
 
 const amountAt = (l: CreditSourceLine, quantity: number) =>
   quantity === 0 ? 0 : quantity === l.quantity ? l.amount : lineAmount(quantity, l.unitPrice, 'half-up');
 const discountAt = (l: CreditSourceLine, quantity: number) => scaled(l.discount, quantity, l.quantity);
 
-const tooSmall = () =>
-  new DomainError('credit_too_small', 'This credit is too small to split into its tax and the rest.');
+/** A credit too small to split into its tax and the rest, naming the slot where it could not be split. */
+class TooSmall extends DomainError {
+  constructor(readonly slot: string | null = null) {
+    super('credit_too_small', 'This credit is too small to split into its tax and the rest.');
+  }
+}
+const tooSmall = (slot: string | null = null) => new TooSmall(slot);
 
 /**
  * Builds a credit note's figures from its lines, slot by slot. `cut` takes units of tax off a slot's components,
@@ -347,31 +349,44 @@ function buildNote(
     }
     const due = slotTaxAt(source, s, after);
     const less = cut.get(s.key);
-    const taxes = s.taxes.map((t, k) => ({
-      component: t.component,
-      base: due[k]!.base - was.taxes[k]!.base,
-      amount: due[k]!.amount - was.taxes[k]!.amount - (less?.[k] ?? 0),
-    }));
-    if (taxes.some((t) => t.base < 0 || t.amount < 0)) throw tooSmall();
+    const amounts = s.taxes.map((_, k) => due[k]! - was.taxes[k]!.amount - (less?.[k] ?? 0));
+    const rest = s.taxes.map((t, k) => t.amount - was.taxes[k]!.amount);
     const inclusive = source.pricesIncludeTax && s.charged;
-    if (settles && inclusive) {
-      // A note that settles the balance with prices including tax: when its tax would be more than its value, the
-      // tax is lowered, at most one unit for each component, so the note is never below zero before tax.
-      let over = sumMinor(taxes.map((t) => t.amount)) - delta;
-      for (const t of taxes) {
-        if (over <= 0) break;
-        if (t.amount > 0) {
-          t.amount -= 1;
-          over -= 1;
+    if (inclusive) {
+      // The note's value must hold its tax (its net is never below zero), and what is left of the slot must still
+      // hold the tax left to credit, so a later note is never below zero either.
+      const most = delta;
+      const least = sumMinor(rest) - (s.value - after);
+      if (settles) {
+        // A note that settles the balance moves its tax by at most one unit for each component to keep to both.
+        let over = sumMinor(amounts) - most;
+        for (let k = amounts.length - 1; k >= 0 && over > 0; k--) {
+          if (amounts[k]! > 0) {
+            amounts[k]! -= 1;
+            over -= 1;
+          }
+        }
+        let under = least - sumMinor(amounts);
+        for (let k = 0; k < amounts.length && under > 0; k++) {
+          if (amounts[k]! < rest[k]!) {
+            amounts[k]! += 1;
+            under -= 1;
+          }
         }
       }
+      const total = sumMinor(amounts);
+      if (total > most || total < least) throw tooSmall(s.key);
     }
-    const charged = s.charged ? sumMinor(taxes.map((t) => t.amount)) : 0;
-    if (inclusive && after !== s.value && !settles) {
-      // What is left of the slot must still split into its tax and the rest, so the last credit is never negative.
-      const restTax = sumMinor(s.taxes.map((t, k) => t.amount - was.taxes[k]!.amount - taxes[k]!.amount));
-      if (delta - charged < 0 || s.value - after - restTax < 0) throw tooSmall();
-    }
+    if (amounts.some((a, k) => a < 0 || a > rest[k]!)) throw tooSmall(s.key);
+    const charged = s.charged ? sumMinor(amounts) : 0;
+    // Each tax is charged on the net the note takes from the slot, and a tax on tax on that net and the taxes before it.
+    const net = inclusive ? delta - charged : delta;
+    let before = 0;
+    const taxes = s.taxes.map((t, k) => {
+      const base = t.component.compound ? net + before : net;
+      before += amounts[k]!;
+      return { component: t.component, base, amount: amounts[k]! };
+    });
     taxTotal += charged;
     // The slot's tax is shared across the note's lines in it by the value each takes, so the line shares add up.
     const shares = allocate(
@@ -610,10 +625,11 @@ export function amountLimit(source: CreditSource, state: CreditState, balance: n
 }
 
 /**
- * A credit note for exactly the balance still owed. With prices including tax it is an amount credit of the balance.
- * With prices excluding tax it credits the largest value whose credit note is not more than the balance; when that
- * falls short, one more unit of value is credited and the note's tax is lowered by the difference, at most one unit
- * for each tax component, so the total is the balance.
+ * A credit note for exactly the balance still owed. With prices including tax it is an amount credit of the balance,
+ * its tax moved by at most one unit for each component where needed. With prices excluding tax it first takes any tax
+ * still to credit on slots whose value is all credited, then the largest value whose credit note is not more than the
+ * balance; when that falls short, one more unit of value is credited and the note's tax is lowered by the difference,
+ * at most one unit for each component, so the total is the balance.
  */
 export function planBalanceCredit(source: CreditSource, state: CreditState, balance: number): CreditPlan {
   if (!Number.isSafeInteger(balance) || balance <= 0) {
@@ -622,20 +638,70 @@ export function planBalanceCredit(source: CreditSource, state: CreditState, bala
   if (balance > totalLeft(source, state)) {
     throw new DomainError('credit_exceeds_invoice', 'This is more than is left to credit on this invoice.');
   }
+  if (source.pricesIncludeTax) return settleIncludingTax(source, state, balance);
+  const taxLeft = (s: CreditSlot) =>
+    sumMinor(s.taxes.map((t, k) => t.amount - state.slots[s.key]!.taxes[k]!.amount));
+  const residues = source.slots.filter((s) => s.charged && state.slots[s.key]!.left === 0 && taxLeft(s) > 0);
+  if (residues.length > 0 && sumMinor(residues.map(taxLeft)) <= balance) {
+    try {
+      return settleExcludingTax(source, state, balance, residues, sumMinor(residues.map(taxLeft)));
+    } catch (error) {
+      if (!(error instanceof DomainError)) throw error;
+    }
+  }
+  return settleExcludingTax(source, state, balance, [], 0);
+}
+
+/** Amount lines for value taken from slots, with the tax left on fully credited slots taken as well. */
+function settleLines(
+  open: readonly CreditSlot[],
+  shares: readonly number[],
+  residues: readonly CreditSlot[],
+): PlannedCreditLine[] {
+  const lines = amountLines(open, shares);
+  for (const s of residues) {
+    const code = taxCodeKey(s.tax);
+    const line = lines.find((l) => taxCodeKey(l.tax) === code);
+    if (line) line.from.push({ slot: s.key, value: 0 });
+    else
+      lines.push({
+        index: null,
+        quantity: 1000,
+        unitPrice: 0,
+        tax: s.tax,
+        amount: 0,
+        discount: 0,
+        value: 0,
+        from: [{ slot: s.key, value: 0 }],
+      });
+  }
+  return lines;
+}
+
+function settleExcludingTax(
+  source: CreditSource,
+  state: CreditState,
+  balance: number,
+  residues: readonly CreditSlot[],
+  residueTax: number,
+): CreditPlan {
   const open = openSlots(source, state);
   const lefts = open.map((s) => state.slots[s.key]!.left);
-  if (source.pricesIncludeTax) {
-    return finish(source, state, amountLines(open, allocate(balance, lefts)), [], undefined, true);
-  }
-  let shares = allocate(largestWithin(source, state, balance), lefts);
-  const noteFor = (s: readonly number[]) => buildNote(source, state, amountLines(open, s));
+  const linesFor = (shares: readonly number[]) => settleLines(open, shares, residues);
+  const noteFor = (shares: readonly number[]) => buildNote(source, state, linesFor(shares));
+  let shares = allocate(largestWithin(source, state, balance - residueTax), lefts);
+  // A unit added where the slot keeps value is tried first, so tax lowered on it can be taken up by a later note.
+  const order = (current: readonly number[]) =>
+    open
+      .map((_, i) => i)
+      .filter((i) => current[i]! < lefts[i]!)
+      .sort((a, b) => Number(current[a]! + 1 === lefts[a]!) - Number(current[b]! + 1 === lefts[b]!));
   for (;;) {
     const now = noteFor(shares);
-    if (now.totals.total === balance)
-      return finish(source, state, amountLines(open, shares), [], undefined, true);
+    if (now.totals.total === balance) return finish(source, state, linesFor(shares), [], undefined, true);
     let next: number[] | null = null;
-    for (const [i, slot] of open.entries()) {
-      if (shares[i]! >= lefts[i]!) continue;
+    for (const i of order(shares)) {
+      const slot = open[i]!;
       const more = shares.map((v, j) => (j === i ? v + 1 : v));
       const bigger = noteFor(more);
       const over = bigger.totals.total - balance;
@@ -648,12 +714,12 @@ export function planBalanceCredit(source: CreditSource, state: CreditState, bala
       const then = bigger.takes.find((t) => t.slot === slot.key)!.taxes;
       let rest = over;
       const cut = then.map((t, k) => {
-        const take = Math.min(rest, Math.min(1, t.amount - was[k]!.amount));
-        rest -= Math.max(take, 0);
-        return Math.max(take, 0);
+        const take = Math.max(Math.min(rest, 1, t.amount - was[k]!.amount), 0);
+        rest -= take;
+        return take;
       });
       if (rest === 0 && slot.charged) {
-        const plan = finish(source, state, amountLines(open, more), [], new Map([[slot.key, cut]]), true);
+        const plan = finish(source, state, linesFor(more), [], new Map([[slot.key, cut]]), true);
         if (plan.totals.total === balance) return plan;
       }
     }
@@ -664,6 +730,34 @@ export function planBalanceCredit(source: CreditSource, state: CreditState, bala
       );
     }
     shares = next;
+  }
+}
+
+function settleIncludingTax(source: CreditSource, state: CreditState, balance: number): CreditPlan {
+  const open = openSlots(source, state);
+  const lefts = open.map((s) => state.slots[s.key]!.left);
+  const attempt = (shares: readonly number[]) =>
+    finish(source, state, amountLines(open, shares), [], undefined, true);
+  const shares = allocate(balance, lefts);
+  try {
+    return attempt(shares);
+  } catch (error) {
+    if (!(error instanceof TooSmall) || error.slot === null) throw error;
+    // The slot that could not hold its tax takes a unit or two more or less, from or to another slot.
+    const i = open.findIndex((s) => s.key === error.slot);
+    for (const d of [1, -1, 2, -2, 3, -3]) {
+      for (let j = 0; j < open.length; j++) {
+        if (j === i) continue;
+        const moved = shares.map((v, k) => (k === i ? v + d : k === j ? v - d : v));
+        if (moved.some((v, k) => v < 0 || v > lefts[k]!)) continue;
+        try {
+          return attempt(moved);
+        } catch (again) {
+          if (!(again instanceof DomainError)) throw again;
+        }
+      }
+    }
+    throw error;
   }
 }
 

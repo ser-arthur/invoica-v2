@@ -25,9 +25,10 @@ export async function loadEditorData(tx: Tx, ws: Workspace): Promise<Omit<Editor
   const nextNumber = await peekNextNumber(tx, 'invoice', org);
   return {
     today: ws.today,
-    clients: clients.map(({ row, fields }) => ({
+    clients: clients.map(({ row, fields, archived }) => ({
       id: row.id,
       name: row.name,
+      archived,
       currency: row.currency,
       paymentTermsDays: row.paymentTermsDays,
       buyer: buyerFrom(row, fields),
