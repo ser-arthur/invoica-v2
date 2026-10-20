@@ -235,7 +235,9 @@ describe('issuing', () => {
     expect(
       await failure(run((tx) => tx.update(document).set({ lifecycle: 'draft' }).where(eq(document.id, id)))),
     ).toMatch(/Cannot move/);
-    expect(await failure(run((tx) => updateDraft(tx, actor, id, draft())))).toMatch(/Only drafts/);
+    expect(await failure(run((tx) => updateDraft(tx, actor, id, draft())))).toMatch(
+      /has already been issued as INV-\d+, so it can no longer be changed/,
+    );
   });
 
   it('refuses to issue without a tax number when the business is registered', async () => {
