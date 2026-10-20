@@ -492,7 +492,7 @@ export function CreditNoteButton({
       if (!r.ok) {
         setMessage(r.fieldErrors?.reason ?? r.message);
         // The balance may have changed since the page loaded: show the dialog's figures from the current one.
-        if (!r.unreachable) router.refresh();
+        if (!r.unreachable && !r.signedOut) router.refresh();
         return;
       }
       setOpen(false);

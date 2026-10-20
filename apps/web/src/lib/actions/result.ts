@@ -3,10 +3,19 @@ import { NotAMemberError } from '@invoica/db';
 import { fieldErrors } from '@invoica/schemas';
 import type { z } from 'zod';
 
-/** `unreachable` is set in the browser when the call never got an answer (`src/lib/reach.ts`). */
+/**
+ * `unreachable` is set in the browser when the call never got an answer (`src/lib/reach.ts`), and `signedOut` when the
+ * session had ended, so the page keeps what was typed and does not reload itself (which would leave for sign-in).
+ */
 export type ActionResult<T = undefined> =
   | { ok: true; data: T }
-  | { ok: false; message: string; fieldErrors?: Record<string, string>; unreachable?: true };
+  | {
+      ok: false;
+      message: string;
+      fieldErrors?: Record<string, string>;
+      unreachable?: true;
+      signedOut?: true;
+    };
 
 export function invalid(error: z.ZodError): ActionResult<never> {
   return { ok: false, message: 'Check the highlighted fields.', fieldErrors: fieldErrors(error) };
@@ -20,6 +29,7 @@ export function failure(error: unknown): ActionResult<never> {
   if (typeof digest === 'string' && digest.startsWith('NEXT_REDIRECT;') && digest.includes(';/sign-in;')) {
     return {
       ok: false,
+      signedOut: true,
       message:
         'You have been signed out, so this was not saved. Sign in again in another tab, then come back here and try again.',
     };

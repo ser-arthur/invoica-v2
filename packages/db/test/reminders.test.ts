@@ -320,6 +320,43 @@ describe('R9-L1: the scan and the invoice page work the business date out the sa
   });
 });
 
+describe('the app chooses the reminder with its own date, whatever the scan offers', () => {
+  it('an offer a day out queues nothing, and an offer of the wrong offset queues the one due', async () => {
+    const b = await remindingBusiness('Choosing Office');
+    await b.run((tx) =>
+      tx
+        .update(organisation)
+        .set({ reminderOffsets: [-3, 0, 7] })
+        .where(eq(organisation.id, b.actor.organisationId)),
+    );
+    const id = await issued(
+      b,
+      [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }],
+      { issueDate: '2026-10-20', dueDate: '2026-11-02' },
+      at('2026-10-20'),
+    );
+    // A scan that offers this invoice with offset 7, as a database reading the date its own way might.
+    const offering = {
+      execute: async () => ({
+        rows: [
+          {
+            organisation_id: b.actor.organisationId,
+            document_id: id,
+            offset_days: 7,
+            owner_user_id: b.actor.userId,
+          },
+        ],
+      }),
+    } as unknown as typeof t.worker.db;
+    // 29 October: "three days before" is the 30th, so nothing is due yet.
+    expect(await queueDueReminders(t.db, offering, new Date('2026-10-29T12:00:00Z'))).toBe(0);
+    expect(await queued(b, id)).toEqual([]);
+    // 31 October: the reminder due is "three days before", whatever was offered.
+    expect(await queueDueReminders(t.db, offering, new Date('2026-10-31T12:00:00Z'))).toBe(1);
+    expect(await queued(b, id)).toEqual([-3]);
+  });
+});
+
 describe('the scan offers an invoice only near the day a reminder falls due', () => {
   it('mid-afternoon the day before, nothing; just before midnight, offered and not yet queued; just after, queued', async () => {
     const b = await remindingBusiness('Window Office');

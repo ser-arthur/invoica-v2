@@ -298,7 +298,8 @@ function parse(state: EditorState, taxCodes: EditorTaxCode[], org: EditorProps['
     clientId: state.clientId,
     currency: state.currency,
     issueDate: state.issueDate || null,
-    dueDate: state.dueDate || null,
+    // A due date that follows the terms is left to the server, which works it out from the issue date at issue.
+    dueDate: state.dueTouched ? state.dueDate || null : null,
     supplyDate: state.supplyMode === 'date' ? state.supplyDate || null : null,
     servicePeriodStart: state.supplyMode === 'period' ? state.periodStart || null : null,
     servicePeriodEnd: state.supplyMode === 'period' ? state.periodEnd || null : null,
@@ -609,7 +610,7 @@ export function InvoiceEditor(props: EditorProps) {
         setMessage({ tone: 'danger', text: result.message });
         // Today, the tax codes, the settings and the next number as the server has them now, so what the page
         // works out (the total, what a rate is for) matches what the server checks.
-        if (!result.unreachable) router.refresh();
+        if (!result.unreachable && !result.signedOut) router.refresh();
         return;
       }
       setDirty(false);
