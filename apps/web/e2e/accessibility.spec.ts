@@ -178,3 +178,37 @@ test('the leave dialog and the notice at the foot of the screen have no automate
     expect(notice.violations.map((v) => `${theme} notice: ${v.id}`)).toEqual([]);
   }
 });
+
+test('the notices for an email that could not be sent have no automated accessibility violations', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Undelivered Office', { vat: true });
+  await addClient(page, 'Nowhere Ltd', 'accounts@nowhere.invalid');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Nowhere Ltd' });
+  await page.getByLabel('Line 1 description').fill('Survey');
+  await page.getByLabel('Line 1 price').fill('300');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\?issued=1/);
+  const invoice = page.url().replace('?issued=1', '');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Send invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Done' }).click();
+  await expect(async () => {
+    await page.goto(invoice);
+    await expect(page.getByText(/could not be sent/)).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 30_000 });
+  let examined = 0;
+  for (const theme of ['light', 'dark']) {
+    await page.context().addCookies([{ name: 'invoica_theme', value: theme, url: page.url() }]);
+    for (const path of [invoice, '/dashboard']) {
+      await page.goto(path);
+      await expect(page.getByText(/could not be sent/).first()).toBeVisible();
+      const result = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();
+      examined += 1;
+      expect(result.violations.map((v) => `${theme} ${path}: ${v.id}`)).toEqual([]);
+    }
+  }
+  expect(examined).toBe(4);
+});
