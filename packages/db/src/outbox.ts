@@ -90,8 +90,10 @@ export async function drainOutbox(
         await finishJob(worker, job.id, true);
         done += 1;
       } catch (error) {
-        const retry = (error as { retry?: unknown }).retry !== false;
-        await finishJob(worker, job.id, false, (error as Error).message, retry);
+        // A handler may reject with anything, null included.
+        const retry = (error as { retry?: unknown } | null)?.retry !== false;
+        const message = (error as Error | null)?.message || 'The job failed without saying why.';
+        await finishJob(worker, job.id, false, message, retry);
         failed += 1;
       }
     }

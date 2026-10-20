@@ -420,6 +420,31 @@ describe('outbox', () => {
     );
     expect([job!.status, job!.attempts, job!.lastError]).toEqual(['pending', 1, 'renderer down']);
   });
+
+  it('a handler that fails with nothing at all is recorded as failed and retried, and the rest still run', async () => {
+    const first = await run((tx) => createDraft(tx, actor, draft()));
+    await run((tx) => issueDocument(tx, actor, first, NOW));
+    const second = await run((tx) => createDraft(tx, actor, draft()));
+    await run((tx) => issueDocument(tx, actor, second, NOW));
+    let calls = 0;
+    const outcome = await drainOutbox(t.worker.db, {
+      'document.render_pdf': async () => {
+        calls += 1;
+        if (calls === 1) throw null;
+      },
+    });
+    expect(outcome.failed).toBe(1);
+    expect(outcome.done).toBeGreaterThanOrEqual(1);
+    const jobs = await run((tx) => tx.select().from(outbox).where(eq(outbox.topic, 'document.render_pdf')));
+    const mine = jobs
+      .filter((j) => [first, second].includes(String(j.payload.documentId)))
+      .map((j) => [j.status, j.lastError])
+      .sort();
+    expect(mine).toEqual([
+      ['done', null],
+      ['pending', 'The job failed without saying why.'],
+    ]);
+  });
 });
 
 describe('lists and dashboard', () => {
