@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { addClient, signUpAndOnboard, watchErrors } from './helpers';
 import { waitForEmail } from './mailbox';
 
@@ -58,7 +58,7 @@ test('a reminder goes with the PDF and what is owed now, and appears in the acti
 });
 
 /** The due date as the invoice page prints it, for example "18 November 2026". */
-async function dueDate(page: import('@playwright/test').Page) {
+async function dueDate(page: Page) {
   const row = page.locator('dt', { hasText: /^Due$/ }).locator('xpath=following-sibling::dd[1]');
   return (await row.textContent())!.trim();
 }
