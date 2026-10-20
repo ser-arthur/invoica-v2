@@ -5,6 +5,7 @@ import {
   fieldErrors,
   onboardingInput,
   organisationProfileInput,
+  reminderSettingsInput,
 } from '../src/index';
 
 describe('schemas', () => {
@@ -88,5 +89,21 @@ describe('schemas', () => {
     const r = organisationProfileInput.safeParse({ invoicePrefix: 'INV <x>' });
     expect(r.success).toBe(false);
     if (!r.success) expect(fieldErrors(r.error).invoicePrefix).toMatch(/letters, digits/);
+  });
+
+  it('refuses reminder wording with a placeholder Invoica cannot fill in, naming it and the ones it can', () => {
+    const r = reminderSettingsInput.safeParse({
+      remindersEnabled: true,
+      reminderOffsets: [7],
+      reminderWording: {
+        late: { subject: 'Invoice {number} is late', body: 'Hello {client}, {amout} is owed.' },
+      },
+    });
+    expect(r.success).toBe(false);
+    if (!r.success)
+      expect(fieldErrors(r.error)).toEqual({
+        'reminderWording.late.body':
+          'Invoica cannot fill in {amout}. Use {client}, {number}, {amount}, {due_date}, {days_late} or {business}.',
+      });
   });
 });

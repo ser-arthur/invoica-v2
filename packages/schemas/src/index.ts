@@ -10,6 +10,8 @@ import {
   MAX_QUANTITY,
   MAX_UNIT_PRICE,
   parseExchangeRate,
+  REMINDER_PLACEHOLDERS,
+  unknownPlaceholders,
 } from '@invoica/core';
 
 /** Trims text; empty becomes null. */
@@ -192,9 +194,21 @@ export const clientInput = z.object({
 });
 export type ClientInput = z.infer<typeof clientInput>;
 
+/** Wording whose placeholders are all ones Invoica fills in, so a typo never reaches a client. */
+const reminderText = (max: number, message: string) =>
+  requiredText(max, message).superRefine((text, ctx) => {
+    const unknown = unknownPlaceholders(text);
+    if (unknown.length === 0) return;
+    const use = REMINDER_PLACEHOLDERS.map((p) => `{${p}}`);
+    ctx.addIssue({
+      code: 'custom',
+      message: `Invoica cannot fill in ${unknown.join(', ')}. Use ${use.slice(0, -1).join(', ')} or ${use.at(-1)}.`,
+    });
+  });
+
 const reminderWordingInput = z.object({
-  subject: requiredText(200, 'Write a subject.'),
-  body: requiredText(4000, 'Write the email.'),
+  subject: reminderText(200, 'Write a subject.'),
+  body: reminderText(4000, 'Write the email.'),
 });
 
 /** Reminder settings (docs/specs/reminders.md). A kind of reminder left out uses the default wording. */

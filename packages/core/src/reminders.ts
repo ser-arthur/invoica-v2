@@ -57,6 +57,23 @@ export interface ReminderWording {
   body: string;
 }
 
+/** What Invoica fills in, in the owner's wording as in the default (docs/specs/reminders.md, rule 13). */
+export const REMINDER_PLACEHOLDERS = [
+  'client',
+  'number',
+  'amount',
+  'due_date',
+  'days_late',
+  'business',
+] as const;
+
+/** Each placeholder in `text`, written once, that Invoica cannot fill in: anything in braces that is not one of them. */
+export function unknownPlaceholders(text: string): string[] {
+  const known = new Set<string>(REMINDER_PLACEHOLDERS);
+  const found = [...text.matchAll(/\{([^{}]*)\}/g)].filter((m) => !known.has(m[1]!)).map((m) => m[0]);
+  return [...new Set(found)];
+}
+
 /** The default wording of each kind. The owner can replace it; the same placeholders are filled in. */
 export const DEFAULT_REMINDER_WORDING: Record<ReminderKind, ReminderWording> = {
   before: {

@@ -110,3 +110,29 @@ test('the scheduled drain sends the reminder due today, once', async ({ page, re
   await page.reload();
   await expect(page.getByText(/Next reminder on \d+ \w+ \d{4}\./)).toBeVisible();
 });
+
+test('reminder wording with a placeholder Invoica cannot fill in is refused, and says which', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Placeholder Studio', { vat: true });
+  await page.goto('/settings#reminders');
+  await page.getByLabel('Remind clients about unpaid invoices').check();
+  await page.getByText('After the due date', { exact: true }).click();
+  const body = page.locator('#r-late-body');
+  await body.fill('Hello {client}, {amout} is still owed on invoice {number}.');
+  await page.getByRole('button', { name: 'Save reminder settings' }).click();
+  await expect(
+    page.getByText(
+      'Invoica cannot fill in {amout}. Use {client}, {number}, {amount}, {due_date}, {days_late} or {business}.',
+    ),
+  ).toBeVisible();
+  // Nothing was saved: the page asks before reloading over the change, and then shows reminders still off.
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.reload();
+  await expect(page.getByLabel('Remind clients about unpaid invoices')).not.toBeChecked();
+  await page.getByLabel('Remind clients about unpaid invoices').check();
+  await page.getByText('After the due date', { exact: true }).click();
+  await page.locator('#r-late-body').fill('Hello {client}, {amount} is still owed on invoice {number}.');
+  await page.getByRole('button', { name: 'Save reminder settings' }).click();
+  await expect(page.getByText('Reminder settings saved.')).toBeVisible();
+});

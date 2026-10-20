@@ -49,6 +49,7 @@ export function ReminderSettings({
   });
   const [message, setMessage] = useState<{ tone: 'danger' | 'info'; text: string } | null>(null);
   const [pending, start] = useTransition();
+  const [errors, setErrors] = useState<Record<string, string>>({});
   // What was last saved, or loaded; anything else is a change not saved, and leaving the page asks first.
   const [saved, setSaved] = useState(() => JSON.stringify({ enabled, offsets, wording }));
   const guard = useLeaveGuard(JSON.stringify({ enabled, offsets, wording }) !== saved);
@@ -70,7 +71,11 @@ export function ReminderSettings({
           reminderWording: own,
         }),
       );
-      if (!r.ok) return setMessage({ tone: 'danger', text: r.message });
+      if (!r.ok) {
+        setErrors(r.fieldErrors ?? {});
+        return setMessage({ tone: 'danger', text: r.message });
+      }
+      setErrors({});
       setSaved(JSON.stringify({ enabled, offsets, wording }));
       setMessage({ tone: 'info', text: 'Reminder settings saved.' });
       router.refresh();
@@ -123,10 +128,23 @@ export function ReminderSettings({
                 {'{due_date}'}, {'{days_late}'} and {'{business}'}.
               </p>
               {KINDS.map(({ kind, label }) => (
-                <details key={kind} className="rounded-[12px] border border-line px-4 py-3">
+                <details
+                  key={kind}
+                  className="rounded-[12px] border border-line px-4 py-3"
+                  // Opened when its wording was refused, so the reason is in view.
+                  open={
+                    errors[`reminderWording.${kind}.subject`] || errors[`reminderWording.${kind}.body`]
+                      ? true
+                      : undefined
+                  }
+                >
                   <summary className="cursor-pointer text-[14px] font-medium">{label}</summary>
                   <div className="mt-3 flex flex-col gap-3">
-                    <Field label="Subject" htmlFor={`r-${kind}-subject`}>
+                    <Field
+                      label="Subject"
+                      htmlFor={`r-${kind}-subject`}
+                      error={errors[`reminderWording.${kind}.subject`]}
+                    >
                       <Input
                         id={`r-${kind}-subject`}
                         value={wording[kind].subject}
@@ -135,7 +153,11 @@ export function ReminderSettings({
                         }
                       />
                     </Field>
-                    <Field label="Email" htmlFor={`r-${kind}-body`}>
+                    <Field
+                      label="Email"
+                      htmlFor={`r-${kind}-body`}
+                      error={errors[`reminderWording.${kind}.body`]}
+                    >
                       <Textarea
                         id={`r-${kind}-body`}
                         value={wording[kind].body}

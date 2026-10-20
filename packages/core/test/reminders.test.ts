@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_REMINDER_OFFSETS,
+  DEFAULT_REMINDER_WORDING,
   dueReminder,
   nextReminder,
   reminderEmail,
   reminderKind,
+  unknownPlaceholders,
 } from '../src/reminders';
 import { entitlementsFor } from '../src/plans';
 
@@ -134,5 +136,22 @@ describe('plans', () => {
     expect(entitlementsFor('free').reminders).toBe(false);
     expect(entitlementsFor('trial').reminders).toBe(true);
     expect(entitlementsFor('pro').reminders).toBe(true);
+  });
+});
+
+describe('rule 13: placeholders in the owner’s wording', () => {
+  it('names each one Invoica cannot fill in, so a typo never reaches a client', () => {
+    expect(unknownPlaceholders('Hello {client}, {amount} is owed on {number}.')).toEqual([]);
+    expect(unknownPlaceholders('Invoice {number}: {amout} owed by {Client}, { amount }, {}')).toEqual([
+      '{amout}',
+      '{Client}',
+      '{ amount }',
+      '{}',
+    ]);
+    expect(unknownPlaceholders('{amout} and {amout} again')).toEqual(['{amout}']);
+    for (const kind of ['before', 'due', 'late'] as const) {
+      expect(unknownPlaceholders(DEFAULT_REMINDER_WORDING[kind].subject)).toEqual([]);
+      expect(unknownPlaceholders(DEFAULT_REMINDER_WORDING[kind].body)).toEqual([]);
+    }
   });
 });

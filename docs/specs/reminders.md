@@ -27,6 +27,7 @@ An email from the business (the same sender as invoices), with the invoice's kep
 10. A business's time zone is a place in one of the time zone database's regions, or UTC ("Europe/London", "Etc/GMT-14"), that the database knows; bare offsets such as "+05:30" are refused, because PostgreSQL reads them the other way round, and so are names outside a region ("CET", "Factory", "localtime"), which the app reads differently or not at all. The scan works one business at a time: a business whose date cannot be worked out is left out with a warning, a reminder that fails to queue waits for the next scan, and the jobs run even when the scan fails (the drain then answers 500).
 11. The invoice page names the reminder the scan sends today when one is due and not yet sent ("Next reminder today"), and otherwise the next one to come.
 12. The business date that decides which reminder is due is worked out in the app, for the scan as for the invoice page (`todayIn` and `dueReminder` in `@invoica/core`). The database's time zone data and the app's are updated separately and can read an hour apart (one business in Casablanca or Vancouver), so the database only offers the invoices that may have a reminder due by its own reading of the date three hours either side of now (`app.reminder_candidates`, migrations 0024 and 0026), and the app chooses.
+13. The owner's wording may use only the placeholders Invoica fills in. Anything else in braces ("{amout}", "{Client}", "{ amount }") is refused when the settings are saved: "Invoica cannot fill in {amout}. Use {client}, {number}, {amount}, {due_date}, {days_late} or {business}.", shown under the field, so a typo never reaches a client.
 
 ## How it runs
 
@@ -43,6 +44,7 @@ An email from the business (the same sender as invoices), with the invoice's kep
 5. The email shows the balance at sending, the invoice number and the due date, and attaches the kept PDF (`apps/web/e2e/reminders.spec.ts`).
 6. Each reminder appears in the invoice's activity (same file).
 7. Rules 7 to 12: `packages/core/test/reminders.test.ts`, `packages/core/test/dates.test.ts`, `packages/db/test/reminders.test.ts` and `apps/web/src/app/api/jobs/drain/route.test.ts`. For rule 12, three businesses in zones whose data differ are scanned every hour for five days, and the scan queues exactly what the app's own date says is due.
+8. Rule 13: `packages/core/test/reminders.test.ts`, `packages/schemas/test/schemas.test.ts` and `apps/web/e2e/reminders.spec.ts` ("reminder wording with a placeholder Invoica cannot fill in").
 
 ## Default wording
 
