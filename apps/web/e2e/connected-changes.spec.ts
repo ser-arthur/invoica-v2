@@ -576,11 +576,15 @@ test('a client changed in another tab: the older tab’s save is refused, the ch
   await signUpAndOnboard(page, 'Two Tab Client Studio', { vat: true });
   await addClient(page, 'Wren Valley Ltd', 'accounts@wren.example');
   const clientUrl = page.url();
-  await page.goto(`${clientUrl}/edit`);
+  // Opened from the client's page, as people do, so the form starts in the browser.
+  await page.getByRole('link', { name: 'Edit' }).click();
+  await page.waitForURL(`${clientUrl}/edit`);
   await page.waitForLoadState('networkidle');
   const phone = await context.newPage();
   await phone.goto(`${clientUrl}/edit`);
   await phone.fill('#c-email', 'payables@wren.example');
+  await phone.selectOption('#c-currency', 'EUR');
+  await phone.fill('#c-notes', 'Pays by the end of the month.');
   await phone.getByRole('button', { name: 'Save changes' }).click();
   await phone.waitForURL(clientUrl);
 
@@ -596,10 +600,52 @@ test('a client changed in another tab: the older tab’s save is refused, the ch
   // What was typed stays; a field not typed in now shows the change made elsewhere.
   await expect(page.locator('#c-contact')).toHaveValue('Ada Wren');
   await expect(page.locator('#c-email')).toHaveValue('payables@wren.example');
+  await expect(page.locator('#c-currency')).toHaveValue('EUR');
+  await expect(page.locator('#c-notes')).toHaveValue('Pays by the end of the month.');
   await page.getByRole('button', { name: 'Save mine anyway' }).click();
   await page.waitForURL(clientUrl);
   await expect(page.getByText('Ada Wren')).toBeVisible();
   await expect(page.getByText('payables@wren.example')).toBeVisible();
+  await page.goto(`${clientUrl}/edit`);
+  await expect(page.locator('#c-currency')).toHaveValue('EUR');
+  await expect(page.locator('#c-notes')).toHaveValue('Pays by the end of the month.');
+});
+
+test('a saved item changed in another tab: the editor opened before shows the new price after the refusal, and keeps it', async ({
+  page,
+  context,
+}) => {
+  await signUpAndOnboard(page, 'Two Tab Item Studio', { vat: true });
+  await page.goto('/items');
+  await page.fill('#i-name', 'Site visit');
+  await page.fill('#i-price', '450');
+  await page.getByRole('button', { name: 'Add item' }).click();
+  const row = page.getByRole('button', { name: /Site visit/ });
+  await expect(row).toContainText('£450.00');
+  await row.click();
+  await expect(page.locator('#i-price')).toHaveValue('450.00');
+
+  const phone = await context.newPage();
+  await phone.goto('/items');
+  await phone.getByRole('button', { name: /Site visit/ }).click();
+  await phone.fill('#i-price', '500');
+  await phone.getByRole('button', { name: 'Save item' }).click();
+  await expect(phone.getByRole('button', { name: /Site visit/ })).toContainText('£500.00');
+
+  await page.fill('#i-desc', 'Half a day on site, with notes.');
+  await page.getByRole('button', { name: 'Save item' }).click();
+  await expect(
+    page.getByText(
+      'This item was changed in another tab or on another device after this page opened. The form now shows those changes, except in the fields you changed here. Check them, then save yours anyway.',
+    ),
+  ).toBeVisible();
+  await expect(page.locator('#i-price')).toHaveValue('500.00');
+  await expect(page.locator('#i-desc')).toHaveValue('Half a day on site, with notes.');
+  await page.getByRole('button', { name: 'Save mine anyway' }).click();
+  await expect(page.getByRole('button', { name: /Site visit/ })).toContainText('£500.00');
+  await expect(page.getByRole('button', { name: /Site visit/ })).toContainText(
+    'Half a day on site, with notes.',
+  );
 });
 
 test('leaving the settings or a client with changes not saved asks first; saved, it leaves without asking', async ({

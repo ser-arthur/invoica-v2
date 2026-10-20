@@ -103,7 +103,7 @@ export const CHANGED_ELSEWHERE = {
 /**
  * Runs a save from a form that showed version `base`, and answers with the version after it. The save is refused
  * (and, with the transaction, undone) when the record changed since the form's version and the save changes it
- * again; a save that changes nothing stored is accepted. Without `base` (an older page) it is applied as before.
+ * again; a save that changes nothing stored is accepted. Without `base` (a page that sends none) it is applied.
  */
 export async function saveAgainst(
   base: string | null | undefined,

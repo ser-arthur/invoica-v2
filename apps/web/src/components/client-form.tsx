@@ -7,6 +7,7 @@ import { SUPPORTED_CURRENCIES } from '@invoica/core';
 import { saveClientAction } from '@/lib/actions/clients';
 import { COUNTRIES } from '@/lib/countries';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
+import { followUntouched } from '@/lib/follow-untouched';
 import { reach } from '@/lib/reach';
 import { LeaveDialog, useLeaveGuard } from './leave-guard';
 import { useHydrated } from '@/lib/use-hydrated';
@@ -31,6 +32,50 @@ export interface ClientFormValues {
   fields: { label: string; value: string; showOnDocuments: boolean }[];
 }
 
+/** What the form edits, as it holds it: text as typed, an empty field as ''. */
+interface FormValues {
+  name: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  region: string;
+  postcode: string;
+  countryCode: string;
+  taxNumber: string;
+  currency: string;
+  paymentTermsDays: string;
+  notes: string;
+  remindersEnabled: boolean;
+  fields: ClientFormValues['fields'];
+}
+
+type TextKey = Exclude<keyof FormValues, 'remindersEnabled' | 'fields'>;
+
+function valuesOf(initial: Partial<ClientFormValues> | undefined, defaultCountry: string): FormValues {
+  const t = (k: keyof ClientFormValues) => (initial?.[k] as string | null | undefined) ?? '';
+  return {
+    name: t('name'),
+    contactName: t('contactName'),
+    email: t('email'),
+    phone: t('phone'),
+    addressLine1: t('addressLine1'),
+    addressLine2: t('addressLine2'),
+    city: t('city'),
+    region: t('region'),
+    postcode: t('postcode'),
+    countryCode: t('countryCode') || defaultCountry,
+    taxNumber: t('taxNumber'),
+    currency: t('currency'),
+    paymentTermsDays: initial?.paymentTermsDays?.toString() ?? '',
+    notes: t('notes'),
+    remindersEnabled: initial?.remindersEnabled ?? true,
+    fields: initial?.fields ?? [],
+  };
+}
+
 export function ClientForm({
   id,
   version: shown,
@@ -50,7 +95,15 @@ export function ClientForm({
 }) {
   const router = useRouter();
   const ready = useHydrated();
-  const [fields, setFieldsState] = useState(initial?.fields ?? []);
+  // What the form shows, held here so a change made elsewhere can be shown in the fields not typed in.
+  const [v, setV] = useState(() => valuesOf(initial, defaultCountry));
+  // The client as the page last had it from the server. When it changes (fetched again after a refusal), each
+  // field not changed here takes the new value, and what was typed stays (docs/specs/changes-elsewhere.md, rule 8).
+  const [loaded, setLoaded] = useState(initial);
+  if (initial !== loaded) {
+    setLoaded(initial);
+    setV(followUntouched(valuesOf(loaded, defaultCountry), v, valuesOf(initial, defaultCountry)));
+  }
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -61,10 +114,17 @@ export function ClientForm({
   const replacing = useRef(false);
   // Typed in since the page opened: leaving it asks first.
   const [dirty, setDirty] = useState(false);
-  const setFields = (next: typeof fields) => {
+  const change = <K extends keyof FormValues>(k: K, value: FormValues[K]) => {
     setDirty(true);
-    setFieldsState(next);
+    setV((prev) => ({ ...prev, [k]: value }));
   };
+  const fields = v.fields;
+  const setFields = (next: FormValues['fields']) => change('fields', next);
+  const text = (k: TextKey) => ({
+    value: v[k],
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+      change(k, e.target.value),
+  });
   const guard = useLeaveGuard(dirty && !compact);
   // The version this form opened with; a successful save leaves the page.
   const [initialVersion] = useState(shown);
@@ -72,26 +132,24 @@ export function ClientForm({
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     event.stopPropagation();
-    const f = new FormData(event.currentTarget);
-    const text = (k: string) => String(f.get(k) ?? '');
-    const terms = text('paymentTermsDays').trim();
+    const terms = v.paymentTermsDays.trim();
     const input = {
       ...(id ? {} : { idempotencyKey: key }),
-      name: text('name'),
-      contactName: text('contactName'),
-      email: text('email'),
-      phone: text('phone'),
-      addressLine1: text('addressLine1'),
-      addressLine2: text('addressLine2'),
-      city: text('city'),
-      region: text('region'),
-      postcode: text('postcode'),
-      countryCode: text('countryCode'),
-      taxNumber: text('taxNumber'),
-      currency: text('currency'),
+      name: v.name,
+      contactName: v.contactName,
+      email: v.email,
+      phone: v.phone,
+      addressLine1: v.addressLine1,
+      addressLine2: v.addressLine2,
+      city: v.city,
+      region: v.region,
+      postcode: v.postcode,
+      countryCode: v.countryCode,
+      taxNumber: v.taxNumber,
+      currency: v.currency,
       paymentTermsDays: terms === '' ? null : Number(terms),
-      notes: text('notes'),
-      remindersEnabled: compact ? (initial?.remindersEnabled ?? true) : f.get('remindersEnabled') === 'on',
+      notes: v.notes,
+      remindersEnabled: v.remindersEnabled,
       fields,
     };
     const replace = replacing.current;
@@ -117,10 +175,8 @@ export function ClientForm({
     });
   }
 
-  const v = (k: keyof ClientFormValues) => (initial?.[k] as string | null | undefined) ?? '';
-
   return (
-    <form onSubmit={onSubmit} onChange={() => setDirty(true)} className="flex flex-col gap-6" noValidate>
+    <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
       <LeaveDialog guard={guard} />
       {message ? <FormMessage>{message}</FormMessage> : null}
       <div className="grid gap-5 sm:grid-cols-2">
@@ -128,44 +184,38 @@ export function ClientForm({
           <Input
             id="c-name"
             name="name"
-            defaultValue={v('name')}
+            {...text('name')}
             required
             aria-invalid={!!errors.name}
             autoFocus={compact}
           />
         </Field>
         <Field label="Contact person" htmlFor="c-contact" hint="Optional">
-          <Input id="c-contact" name="contactName" defaultValue={v('contactName')} />
+          <Input id="c-contact" name="contactName" {...text('contactName')} />
         </Field>
         <Field label="Email for invoices" htmlFor="c-email" error={errors.email}>
-          <Input
-            id="c-email"
-            name="email"
-            type="email"
-            defaultValue={v('email')}
-            aria-invalid={!!errors.email}
-          />
+          <Input id="c-email" name="email" type="email" {...text('email')} aria-invalid={!!errors.email} />
         </Field>
       </div>
       <fieldset className="grid gap-5 sm:grid-cols-2">
         <legend className="mb-3 text-[15px] font-semibold">Address</legend>
         <Field label="Address line 1" htmlFor="c-a1" className="sm:col-span-2">
-          <Input id="c-a1" name="addressLine1" defaultValue={v('addressLine1')} autoComplete="off" />
+          <Input id="c-a1" name="addressLine1" {...text('addressLine1')} autoComplete="off" />
         </Field>
         <Field label="Address line 2" htmlFor="c-a2" className="sm:col-span-2">
-          <Input id="c-a2" name="addressLine2" defaultValue={v('addressLine2')} autoComplete="off" />
+          <Input id="c-a2" name="addressLine2" {...text('addressLine2')} autoComplete="off" />
         </Field>
         <Field label="Town or city" htmlFor="c-city">
-          <Input id="c-city" name="city" defaultValue={v('city')} />
+          <Input id="c-city" name="city" {...text('city')} />
         </Field>
         <Field label="County, state or region" htmlFor="c-region">
-          <Input id="c-region" name="region" defaultValue={v('region')} />
+          <Input id="c-region" name="region" {...text('region')} />
         </Field>
         <Field label="Postcode" htmlFor="c-postcode">
-          <Input id="c-postcode" name="postcode" defaultValue={v('postcode')} />
+          <Input id="c-postcode" name="postcode" {...text('postcode')} />
         </Field>
         <Field label="Country" htmlFor="c-country">
-          <Select id="c-country" name="countryCode" defaultValue={v('countryCode') || defaultCountry}>
+          <Select id="c-country" name="countryCode" {...text('countryCode')}>
             <option value="">Not set</option>
             {COUNTRIES.map((c) => (
               <option key={c.code} value={c.code}>
@@ -183,7 +233,7 @@ export function ClientForm({
             htmlFor="c-currency"
             hint="Leave as your main currency unless they pay in another."
           >
-            <Select id="c-currency" name="currency" defaultValue={v('currency')}>
+            <Select id="c-currency" name="currency" {...text('currency')}>
               <option value="">Your main currency</option>
               {SUPPORTED_CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>
@@ -198,22 +248,18 @@ export function ClientForm({
             error={errors.paymentTermsDays}
             hint="Blank uses your usual terms."
           >
-            <Input
-              id="c-terms"
-              name="paymentTermsDays"
-              inputMode="numeric"
-              defaultValue={initial?.paymentTermsDays ?? ''}
-            />
+            <Input id="c-terms" name="paymentTermsDays" inputMode="numeric" {...text('paymentTermsDays')} />
           </Field>
           <Field label="Their tax number" htmlFor="c-tax" hint="Optional">
-            <Input id="c-tax" name="taxNumber" defaultValue={v('taxNumber')} />
+            <Input id="c-tax" name="taxNumber" {...text('taxNumber')} />
           </Field>
           <div className="sm:col-span-2">
             <Checkbox
               name="remindersEnabled"
               label="Send reminders to this client"
               hint="When reminders are on in Settings. Untick for clients who prefer a phone call."
-              defaultChecked={initial?.remindersEnabled ?? true}
+              checked={v.remindersEnabled}
+              onChange={(e) => change('remindersEnabled', e.target.checked)}
             />
           </div>
         </fieldset>
@@ -269,7 +315,7 @@ export function ClientForm({
       )}
       {compact ? null : (
         <Field label="Private notes" htmlFor="c-notes" hint="Only you see these.">
-          <Textarea id="c-notes" name="notes" defaultValue={v('notes')} />
+          <Textarea id="c-notes" name="notes" {...text('notes')} />
         </Field>
       )}
       <div className="flex gap-3">

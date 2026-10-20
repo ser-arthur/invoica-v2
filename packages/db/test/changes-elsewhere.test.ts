@@ -6,7 +6,7 @@ import { createItem, listItems, updateItem } from '../src/items';
 import { getOrganisation, setLogo, updateOrganisationProfile } from '../src/organisations';
 import { updateReminderSettings } from '../src/reminders';
 import { item, taxCode } from '../src/schema';
-import { listTaxCodes, updateTaxCode } from '../src/taxes';
+import { archiveTaxCode, listTaxCodes, updateTaxCode } from '../src/taxes';
 import {
   clientVersion,
   clientVersionOf,
@@ -223,6 +223,32 @@ describe('a tax code', () => {
       'tax_code_changed',
     );
     expect((await code(b, b.codes.zero)).isDefault).toBe(true);
+  });
+});
+
+describe('a tax code archived elsewhere', () => {
+  it('cannot be changed or made the default from a page opened before', async () => {
+    const b = await business(t, 'Tax Archived Office');
+    const row = (await b.run((tx) => tx.select().from(taxCode).where(eq(taxCode.id, b.codes.zero))))[0]!;
+    const opened = (await b.run((tx) => taxCodeVersion(tx, b.codes.zero)))!;
+    const { idempotencyKey: _key, ...stored } = row;
+    await b.run((tx) => archiveTaxCode(tx, b.actor, b.codes.zero));
+    expect(
+      await outcome(
+        b.run((tx) =>
+          updateTaxCode(
+            tx,
+            b.actor,
+            b.codes.zero,
+            taxCodeInput.parse({ ...stored, isDefault: true }),
+            opened,
+          ),
+        ),
+      ),
+    ).toBe('tax_code_archived');
+    const codes = await b.run((tx) => tx.select().from(taxCode));
+    expect(codes.find((c) => c.id === b.codes.vat20)!.isDefault).toBe(true);
+    expect(codes.find((c) => c.id === b.codes.zero)!.isDefault).toBe(false);
   });
 });
 

@@ -147,16 +147,28 @@ export default async function SettingsPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2 self-start">
-              <a className={buttonClass('secondary')} href="/settings/export?format=json">
+              <a className={buttonClass('secondary')} download href="/settings/export?format=json">
                 Everything (JSON)
               </a>
-              <a className={buttonClass('secondary')} href="/settings/export?format=csv&type=invoices">
+              <a
+                className={buttonClass('secondary')}
+                download
+                href="/settings/export?format=csv&type=invoices"
+              >
                 Invoices (CSV)
               </a>
-              <a className={buttonClass('secondary')} href="/settings/export?format=csv&type=payments">
+              <a
+                className={buttonClass('secondary')}
+                download
+                href="/settings/export?format=csv&type=payments"
+              >
                 Payments (CSV)
               </a>
-              <a className={buttonClass('secondary')} href="/settings/export?format=csv&type=clients">
+              <a
+                className={buttonClass('secondary')}
+                download
+                href="/settings/export?format=csv&type=clients"
+              >
                 Clients (CSV)
               </a>
             </div>

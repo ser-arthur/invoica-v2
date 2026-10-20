@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useRef, useState, useTransition } from 'react';
 import { SUPPORTED_CURRENCIES, allowedRounding, type RoundingChoice } from '@invoica/core';
 import { saveProfileAction } from '@/lib/actions/settings';
 import { COUNTRIES, TIME_ZONES } from '@/lib/countries';
@@ -162,7 +162,10 @@ export function SettingsForm({
   // Changed here since the last save: leaving the page asks first.
   const [dirty, setDirty] = useState(false);
   const guard = useLeaveGuard(dirty);
+  // Counts changes, so a save answered after more typing leaves that typing marked as not saved.
+  const changes = useRef(0);
   const change = (update: (prev: ProfileValues) => ProfileValues) => {
+    changes.current += 1;
     setDirty(true);
     setV(update);
   };
@@ -214,6 +217,7 @@ export function SettingsForm({
 
   function save(replace: boolean) {
     setMessage(null);
+    const changesAtSave = changes.current;
     start(async () => {
       // A choice not offered for the country (after the country changed) becomes the country's usual one.
       const r = await reach(
@@ -234,7 +238,7 @@ export function SettingsForm({
       }
       setErrors({});
       setConflict(false);
-      setDirty(false);
+      if (changes.current === changesAtSave) setDirty(false);
       setVersion(r.data.version);
       setMessage({
         tone: 'info',

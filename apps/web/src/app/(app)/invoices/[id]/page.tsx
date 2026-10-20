@@ -194,7 +194,8 @@ export default async function InvoicePage({
           </>
         }
       />
-      {issued ? (
+      {/* Straight after issuing, until it is sent or paid: a reload of the same address later says nothing. */}
+      {issued && detail.state === 'issued' ? (
         <div className="mb-6">
           <FormMessage tone="info">
             {doc.number} is issued and kept. Download the PDF or email it to {detail.client.name}, then mark

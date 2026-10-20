@@ -77,6 +77,7 @@ function Editor({ code, onDone }: { code: TaxCodeValue | null; onDone: () => voi
       );
       if (!result.ok) {
         setMessage(result.message);
+        if (result.code === 'tax_code_archived') router.refresh();
         if (result.code === 'tax_code_changed') {
           setConflict(true);
           // The code's version is fetched again, for "Save mine anyway"; what was typed stays.

@@ -5,6 +5,7 @@ import { useRef, useState, useTransition } from 'react';
 import { formatMoney, parseMoney, toDecimalString } from '@invoica/core';
 import { archiveItemAction, saveItemAction } from '@/lib/actions/items';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
+import { followUntouched } from '@/lib/follow-untouched';
 import { reach } from '@/lib/reach';
 import { LeaveDialog, useLeaveGuard } from './leave-guard';
 import { useHydrated } from '@/lib/use-hydrated';
@@ -28,6 +29,23 @@ export interface TaxCodeOption {
   archived: boolean;
 }
 
+/** What the form edits, as it holds it. */
+interface ItemFormValues {
+  name: string;
+  description: string;
+  unitPrice: string;
+  unit: string;
+  taxCodeId: string;
+}
+
+const valuesOf = (item: ItemValue | null, currency: string): ItemFormValues => ({
+  name: item?.name ?? '',
+  description: item?.description ?? '',
+  unitPrice: item ? toDecimalString(item.unitPrice, currency) : '',
+  unit: item?.unit ?? '',
+  taxCodeId: item?.taxCodeId ?? '',
+});
+
 const optionLabel = (t: TaxCodeOption) => (t.archived ? `${t.label} (archived)` : t.label);
 
 export function ItemEditor({
@@ -43,6 +61,15 @@ export function ItemEditor({
 }) {
   const router = useRouter();
   const ready = useHydrated();
+  // What the form shows, held here so a change made elsewhere can be shown in the fields not typed in.
+  const [v, setV] = useState(() => valuesOf(item, currency));
+  // The item as the page last had it. When it changes (fetched again after a refusal), each field not changed here
+  // takes the new value, and what was typed stays (docs/specs/changes-elsewhere.md, rule 8).
+  const [loaded, setLoaded] = useState(item);
+  if (item !== loaded) {
+    setLoaded(item);
+    setV(followUntouched(valuesOf(loaded, currency), v, valuesOf(item, currency)));
+  }
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -56,22 +83,28 @@ export function ItemEditor({
   // Typed in since the editor opened: leaving the page asks first.
   const [dirty, setDirty] = useState(false);
   const guard = useLeaveGuard(dirty);
+  const text = (k: keyof ItemFormValues) => ({
+    value: v[k],
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      setDirty(true);
+      setV((prev) => ({ ...prev, [k]: e.target.value }));
+    },
+  });
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const price = parseMoney(String(f.get('unitPrice') ?? ''), currency);
+    const price = parseMoney(v.unitPrice, currency);
     if (price === null || price < 0) {
       setErrors({ unitPrice: 'Enter a price, for example 450 or 450.00.' });
       return;
     }
     const input = {
       ...(item ? {} : { idempotencyKey: key }),
-      name: String(f.get('name') ?? ''),
-      description: String(f.get('description') ?? ''),
+      name: v.name,
+      description: v.description,
       unitPrice: price,
-      unit: String(f.get('unit') ?? ''),
-      taxCodeId: String(f.get('taxCodeId') ?? '') || null,
+      unit: v.unit,
+      taxCodeId: v.taxCodeId || null,
     };
     const replace = replacing.current;
     replacing.current = false;
@@ -93,7 +126,7 @@ export function ItemEditor({
   }
 
   return (
-    <form onSubmit={submit} onChange={() => setDirty(true)} className="grid gap-4 sm:grid-cols-2" noValidate>
+    <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2" noValidate>
       <LeaveDialog guard={guard} />
       {message ? (
         <div className="sm:col-span-2">
@@ -101,7 +134,7 @@ export function ItemEditor({
         </div>
       ) : null}
       <Field label="Name" htmlFor="i-name" error={errors.name} className="sm:col-span-2">
-        <Input id="i-name" name="name" defaultValue={item?.name ?? ''} autoFocus />
+        <Input id="i-name" name="name" {...text('name')} autoFocus />
       </Field>
       <Field
         label="Description"
@@ -109,26 +142,16 @@ export function ItemEditor({
         hint="Shown under the name on invoices."
         className="sm:col-span-2"
       >
-        <Textarea
-          id="i-desc"
-          name="description"
-          defaultValue={item?.description ?? ''}
-          className="min-h-16"
-        />
+        <Textarea id="i-desc" name="description" {...text('description')} className="min-h-16" />
       </Field>
       <Field label={`Price (${currency})`} htmlFor="i-price" error={errors.unitPrice}>
-        <Input
-          id="i-price"
-          name="unitPrice"
-          inputMode="decimal"
-          defaultValue={item ? toDecimalString(item.unitPrice, currency) : ''}
-        />
+        <Input id="i-price" name="unitPrice" inputMode="decimal" {...text('unitPrice')} />
       </Field>
       <Field label="Unit" htmlFor="i-unit" hint="For example hour, day or item.">
-        <Input id="i-unit" name="unit" defaultValue={item?.unit ?? ''} />
+        <Input id="i-unit" name="unit" {...text('unit')} />
       </Field>
       <Field label="Tax" htmlFor="i-tax" className="sm:col-span-2">
-        <Select id="i-tax" name="taxCodeId" defaultValue={item?.taxCodeId ?? ''}>
+        <Select id="i-tax" name="taxCodeId" {...text('taxCodeId')}>
           <option value="">Use the default</option>
           {taxCodes
             .filter((t) => !t.archived || t.id === item?.taxCodeId)

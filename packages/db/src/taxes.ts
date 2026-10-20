@@ -103,6 +103,17 @@ export async function updateTaxCode(
     base,
     () => taxCodeVersion(tx, id),
     async () => {
+      // Archived elsewhere since the page opened: it is no longer offered, so it is not changed or made the default.
+      const [current] = await tx
+        .select({ archivedAt: taxCode.archivedAt })
+        .from(taxCode)
+        .where(eq(taxCode.id, id));
+      if (current?.archivedAt) {
+        throw new DomainError(
+          'tax_code_archived',
+          'This tax code was archived in another tab or on another device, so it can no longer be changed.',
+        );
+      }
       if (input.isDefault) await clearDefault(tx, id);
       const updated = await tx
         .update(taxCode)

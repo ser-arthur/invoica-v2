@@ -12,8 +12,9 @@ Leaving a page with changes that are not saved asks first. The invoice editor di
 1. A form counts as changed from the first change typed or chosen in it until it is saved (`useLeaveGuard` in `apps/web/src/components/leave-guard.tsx`). The reminder settings count as changed while they differ from what was last saved.
 2. "Keep editing" leaves everything as it was; "Leave without saving" goes where the link pointed and saves nothing.
 3. A link to the same page, a link that opens a new tab, a download and a link held with a modifier key never ask.
-4. Once saved, the page is left without asking.
+4. Once saved, the page is left without asking. Typing while a save is on its way stays marked as not saved.
 5. The client form inside the invoice editor (adding a client while writing an invoice) leaves the asking to the editor.
+6. The export links on the settings page download a file and leave the page where it is, so they never ask.
 
 ## Acceptance criteria
 

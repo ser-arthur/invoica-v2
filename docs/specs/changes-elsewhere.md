@@ -22,12 +22,13 @@ Straight after the refusal, the page fetches the record again. On the settings, 
 5. Each save answers with the new version, which the form keeps, so saving twice from one page is never refused.
 6. After a refusal the page fetches the record's version again, and "Save mine anyway" saves against that version, so a change made after the refusal is caught too.
 7. Making another tax code the default changes this one (it is no longer the default), so a page that still shows this one as the default is refused.
-8. After a refusal, the settings, a client's form and a saved item's form show the record as it is now in each field not changed on the page (`followUntouched`, and the forms' fields that follow their stored value until typed in).
+8. After a refusal, the settings, a client's form and a saved item's form show the record as it is now in each field not changed on the page (`followUntouched`, `apps/web/src/lib/follow-untouched.ts`), selects, notes, checkboxes and extra details included, however the form was opened. An empty field and one stored as nothing count as the same, and details missing when the page opened (a business with no bank details yet) are followed field by field.
+9. A tax code archived in another tab or on another device cannot be changed or made the default from a page opened before: "This tax code was archived in another tab or on another device, so it can no longer be changed."
 
 ## Acceptance criteria
 
-1. Rules 1 to 5 and 7 for each of the four: `packages/db/test/changes-elsewhere.test.ts`.
+1. Rules 1 to 5, 7 and 9 for each of the four: `packages/db/test/changes-elsewhere.test.ts`.
 2. Settings changed in another tab: the save from the earlier tab is refused with the message, the other tab's change is kept, and "Save mine anyway" then saves (`apps/web/e2e/connected-changes.spec.ts`, "settings changed in another tab").
-3. A client changed in another tab: the same (`apps/web/e2e/connected-changes.spec.ts`, "a client changed in another tab").
+3. A client changed in another tab, its form opened from the client's page: the same, with the currency and the notes followed (`apps/web/e2e/connected-changes.spec.ts`, "a client changed in another tab"); a saved item whose price changed in another tab: the editor opened before shows the new price after the refusal and keeps it ("a saved item changed in another tab").
 4. Saving settings twice from one page, with reminder settings saved in between, is never refused (`apps/web/e2e/connected-changes.spec.ts`, "settings changed in another tab").
 5. Rule 8: `apps/web/src/lib/follow-untouched.test.ts`; in both end-to-end tests above, the field changed elsewhere and not typed in shows the new value after the refusal, and both changes are kept after "Save mine anyway".

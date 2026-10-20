@@ -41,7 +41,7 @@ import { requestKey } from '@/lib/request-key';
 import { ClientForm } from './client-form';
 import { Dialog } from './dialog';
 import { LeaveDialog, useLeaveGuard } from './leave-guard';
-import { keptAt, keptKey, readKept, removeKept, writeKept, type Kept } from '@/lib/kept-typing';
+import { keptAt, keptKey, pruneKept, readKept, removeKept, writeKept, type Kept } from '@/lib/kept-typing';
 import { useHydrated } from '@/lib/use-hydrated';
 import { DocumentFrame } from './document-frame';
 import {
@@ -348,7 +348,7 @@ export function InvoiceEditor(props: EditorProps) {
   const [clients, setClients] = useState(props.clients);
   const [docId, setDocId] = useState(props.id);
   // Sent with the first save of a new invoice, so a repeat of that save finds the same draft.
-  const [createKey] = useState(() => requestKey());
+  const [createKey, setCreateKey] = useState(() => requestKey());
   // The draft was deleted in another tab or on another device: "Save as a new draft" keeps what was typed.
   const [deleted, setDeleted] = useState(false);
   const newDraftKey = useRef<string | null>(null);
@@ -373,8 +373,11 @@ export function InvoiceEditor(props: EditorProps) {
 
   // The line open for editing on phones.
   const [openLine, setOpenLine] = useState<string | null>(null);
+  // Counts changes, so a save that was answered after more typing leaves that typing marked as not saved.
+  const changes = useRef(0);
   const update = (patch: Partial<EditorState>) => {
     setState((s) => ({ ...s, ...patch }));
+    changes.current += 1;
     setDirty(true);
   };
   const updateLine = (key: string, patch: Partial<EditorLine>) => {
@@ -408,6 +411,7 @@ export function InvoiceEditor(props: EditorProps) {
   // A copy kept here from before, offered back once the page has started; one that matches the page is not offered.
   const [offer, setOffer] = useState<Kept<EditorState> | null>(() => {
     if (typeof window === 'undefined') return null;
+    pruneKept();
     const kept = readKept<EditorState>(keptHere);
     return kept && withoutKeys(kept.state) !== withoutKeys(props.initial) ? kept : null;
   });
@@ -455,11 +459,12 @@ export function InvoiceEditor(props: EditorProps) {
     setErrors((e) => ({ ...e, sterlingRate: staleRateMessage(rateEnteredFor, rateFor) }));
   }, [rateFor, rateEnteredFor, state.sterlingRate]);
 
-  // Kept a moment after each change while it is not saved; not while an earlier copy is being offered.
+  // Kept a moment after each change while it is not saved, also while an earlier copy is being offered (bringing
+  // that one back takes it from the offer).
   useEffect(() => {
-    if (!dirty || offer) return;
-    writeKept(keptHere, { at: Date.now(), version: version ?? null, state, rateEnteredFor });
-  }, [dirty, offer, keptHere, version, state, rateEnteredFor]);
+    if (!dirty) return;
+    writeKept(keptHere, { at: Date.now(), version: version ?? null, state, rateEnteredFor, createKey });
+  }, [dirty, keptHere, version, state, rateEnteredFor, createKey]);
 
   const previewHtml = useMemo(() => {
     const totals =
@@ -635,6 +640,7 @@ export function InvoiceEditor(props: EditorProps) {
       });
       return;
     }
+    const changesAtSave = changes.current;
     start(async () => {
       // What the rate was worked out for goes with it, so the same figure typed for a new month is accepted.
       // With the version opened, so a change made in another tab since is not replaced without asking.
@@ -661,8 +667,11 @@ export function InvoiceEditor(props: EditorProps) {
         if (result.code && REFRESH_AFTER.has(result.code)) router.refresh();
         return;
       }
-      setDirty(false);
-      removeKept(keptHere);
+      // Typing while the save was on its way stays marked as not saved, and kept, on a draft that stays open.
+      if (issue || !id || changes.current === changesAtSave) {
+        setDirty(false);
+        removeKept(keptHere);
+      }
       setErrors({});
       if (issue) {
         router.push(`/invoices/${result.data.id}?issued=1`);
@@ -729,6 +738,10 @@ export function InvoiceEditor(props: EditorProps) {
                 setRateEnteredFor(offer.rateEnteredFor);
                 // Saved against the version it was typed against, so a change made elsewhere since is caught.
                 if (props.id) setVersion(offer.version);
+                // A new invoice's first save keeps its request key, so one saved or issued before the page closed
+                // is found again, not made twice.
+                if (!props.id && offer.createKey) setCreateKey(offer.createKey);
+                changes.current += 1;
                 setDirty(true);
                 setOffer(null);
               }}
@@ -739,7 +752,8 @@ export function InvoiceEditor(props: EditorProps) {
               type="button"
               variant="ghost"
               onClick={() => {
-                removeKept(keptHere);
+                // What has been typed here since is kept in its place.
+                if (!dirty) removeKept(keptHere);
                 setOffer(null);
               }}
             >

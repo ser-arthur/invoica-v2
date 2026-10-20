@@ -133,6 +133,8 @@ test('a business’s first weeks: drafts, invoices, emails, payments, a credit n
   expect(invoiceEmail.raw).toMatch(/^Reply-To: hello@lindenrowe\.example$/m);
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Sent');
+  // The note about emailing it goes once it has been sent.
+  await expect(page.getByText(/is issued and kept/)).toHaveCount(0);
 
   // 5. Paid in two parts: part paid, then paid.
   await page.getByRole('button', { name: 'Record payment' }).click();
