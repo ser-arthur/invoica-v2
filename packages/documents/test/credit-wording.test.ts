@@ -4,7 +4,7 @@ import { buildView } from '../src/index';
 import { FIXTURES, snapshot } from './fixtures';
 
 /**
- * Wording approved on 19 October 2026 (session 2, answer 16): every credit note from a VAT-registered seller prints
+ * The credit note wording in docs/specs/credit-notes.md: every credit note from a VAT-registered seller prints
  * the decrease before VAT; a UK reverse-charge credit note asks the customer to account for the output tax
  * adjustment; in Ghana the figure is "Total before taxes"; zero-rated amounts on a credit note are a reduction.
  */

@@ -1,6 +1,8 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { addClient, signUpAndOnboard, watchErrors } from './helpers';
-import { waitForEmail } from './mailbox';
+import { emailsTo, waitForEmail } from './mailbox';
 
 /** docs/specs/reminders.md, acceptance criteria 5 and 6. */
 
@@ -62,3 +64,49 @@ async function dueDate(page: Page) {
   const row = page.locator('dt', { hasText: /^Due$/ }).locator('xpath=following-sibling::dd[1]');
   return (await row.textContent())!.trim();
 }
+
+/** The development server's CRON_SECRET, from `.env.local`, which the host's scheduler would send. */
+function cronSecret() {
+  try {
+    return /^CRON_SECRET=(.+)$/m.exec(readFileSync(join(process.cwd(), '.env.local'), 'utf8'))?.[1]?.trim();
+  } catch {
+    return undefined;
+  }
+}
+
+test('the scheduled drain sends the reminder due today, once', async ({ page, request }) => {
+  const secret = cronSecret();
+  test.skip(!secret, 'Needs CRON_SECRET in .env.local.');
+  await signUpAndOnboard(page, 'Scheduled Reminder Works', { vat: true });
+  const client = `scheduled${Date.now()}@client.example`;
+  await addClient(page, 'Heron Wharf Ltd', client);
+  await page.goto('/settings#reminders');
+  await page.getByLabel('Remind clients about unpaid invoices').check();
+  await page.getByRole('button', { name: 'Save reminder settings' }).click();
+  await expect(page.getByText('Reminder settings saved.')).toBeVisible();
+
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Heron Wharf Ltd' });
+  // Today in the business's time zone, as the editor and the scan count it.
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+  await page.fill('#e-due', today);
+  await page.getByLabel('Line 1 description').fill('Mooring survey');
+  await page.getByLabel('Line 1 price').fill('250');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\?issued=1/);
+  const number = (await page.getByRole('heading', { level: 1 }).textContent())!.match(/INV-\d+/)![0];
+  await expect(page.getByText('Next reminder today.')).toBeVisible();
+
+  const started = Date.now();
+  const drain = () => request.post('/api/jobs/drain', { headers: { authorization: `Bearer ${secret}` } });
+  const first = await drain();
+  expect(first.status()).toBe(200);
+  const email = await waitForEmail(client, `Invoice ${number} is due today`, started);
+  expect(email.text).toContain('£300.00');
+  expect((await drain()).status()).toBe(200);
+  await page.waitForTimeout(1000);
+  expect(emailsTo(client, started)).toHaveLength(1);
+  await page.reload();
+  await expect(page.getByText(/Next reminder on \d+ \w+ \d{4}\./)).toBeVisible();
+});

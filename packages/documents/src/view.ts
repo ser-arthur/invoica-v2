@@ -165,7 +165,7 @@ export function buildView(s: DocumentSnapshot, options: { draft?: boolean } = {}
   // In Ghana the figure comes before NHIL and GETFund Levy as well as VAT.
   const beforeTax =
     sellerCountry === 'GH' ? 'Total before taxes' : `Total before ${taxWord === 'VAT' ? 'VAT' : 'tax'}`;
-  // Every credit note from a registered seller prints the decrease before tax (approved 19 October 2026).
+  // Every credit note from a registered seller prints the decrease before tax (docs/specs/credit-notes.md).
   const creditBeforeTax = isCredit && vatInvoice;
   const subtotalIsNet = t.discounts.length === 0 && !s.pricesIncludeTax;
   const hasAdjustments = t.discounts.length > 0 || t.taxes.some((r) => r.charged && r.amount > 0);
