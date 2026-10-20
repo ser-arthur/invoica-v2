@@ -11,9 +11,13 @@ const BANNED = [new RegExp(String.fromCharCode(0x2014)), /\brather than\b/i, /\b
 describe('sign-in emails', () => {
   const emails = [
     verificationEmail({ url: 'https://app.example/api/auth/verify-email?token=abc' }),
-    resetPasswordEmail({ name: 'Ama Owusu', url: 'https://app.example/api/auth/reset-password/xyz' }),
-    existingAccountEmail({ name: 'Ama Owusu', appUrl: 'https://app.example' }),
-    passwordChangedEmail({ name: 'Ama Owusu', appUrl: 'https://app.example' }),
+    resetPasswordEmail({
+      name: 'Ama Owusu',
+      confirmed: true,
+      url: 'https://app.example/api/auth/reset-password/xyz',
+    }),
+    existingAccountEmail({ name: 'Ama Owusu', confirmed: true, appUrl: 'https://app.example' }),
+    passwordChangedEmail({ name: 'Ama Owusu', confirmed: true, appUrl: 'https://app.example' }),
   ];
 
   it('greet the person by name and follow the copy rules', () => {
@@ -57,6 +61,20 @@ describe('sign-in emails', () => {
   });
 
   it('a name that is only an email address is not repeated as a greeting', () => {
-    expect(resetPasswordEmail({ name: 'ama@example.com', url: 'https://x' }).text).toMatch(/^Hello,/);
+    expect(resetPasswordEmail({ name: 'ama@example.com', confirmed: true, url: 'https://x' }).text).toMatch(
+      /^Hello,/,
+    );
+  });
+
+  it('an account whose address is not confirmed is greeted by no name: whoever signed up chose it', () => {
+    const name = 'there. Your Invoica trial has ended: settle it at pay-invoica.example today';
+    for (const email of [
+      resetPasswordEmail({ name, confirmed: false, url: 'https://x' }),
+      existingAccountEmail({ name, confirmed: false, appUrl: 'https://x' }),
+      passwordChangedEmail({ name, confirmed: false, appUrl: 'https://x' }),
+    ]) {
+      expect(email.text).toMatch(/^Hello,\n/);
+      expect(email.text).not.toContain('trial');
+    }
   });
 });

@@ -5,8 +5,12 @@ export interface AuthEmail {
   text: string;
 }
 
-/** "Hello Ama Owusu," or "Hello," when the name given at sign-up was only an email address. */
-const greeting = (name: string) => (name && !name.includes('@') ? `Hello ${name},` : 'Hello,');
+/**
+ * "Hello Ama Owusu,", or "Hello," when the address is not confirmed (whoever signed up chose the name) or the name
+ * given at sign-up was only an email address.
+ */
+const greeting = (name: string, confirmed: boolean) =>
+  confirmed && name && !name.includes('@') ? `Hello ${name},` : 'Hello,';
 
 /** No name: whoever signed up chose it, and the address is not confirmed yet. */
 export function verificationEmail(input: { url: string }): AuthEmail {
@@ -26,11 +30,11 @@ export function verificationEmail(input: { url: string }): AuthEmail {
   };
 }
 
-export function resetPasswordEmail(input: { name: string; url: string }): AuthEmail {
+export function resetPasswordEmail(input: { name: string; confirmed: boolean; url: string }): AuthEmail {
   return {
     subject: 'Reset your Invoica password',
     text: [
-      greeting(input.name),
+      greeting(input.name, input.confirmed),
       '',
       'To choose a new password for your Invoica account, open this link:',
       '',
@@ -43,11 +47,11 @@ export function resetPasswordEmail(input: { name: string; url: string }): AuthEm
   };
 }
 
-export function existingAccountEmail(input: { name: string; appUrl: string }): AuthEmail {
+export function existingAccountEmail(input: { name: string; confirmed: boolean; appUrl: string }): AuthEmail {
   return {
     subject: 'You already have an Invoica account',
     text: [
-      greeting(input.name),
+      greeting(input.name, input.confirmed),
       '',
       'Someone tried to create an Invoica account with this email address, which already has one.',
       '',
@@ -61,11 +65,11 @@ export function existingAccountEmail(input: { name: string; appUrl: string }): A
   };
 }
 
-export function passwordChangedEmail(input: { name: string; appUrl: string }): AuthEmail {
+export function passwordChangedEmail(input: { name: string; confirmed: boolean; appUrl: string }): AuthEmail {
   return {
     subject: 'Your Invoica password was changed',
     text: [
-      greeting(input.name),
+      greeting(input.name, input.confirmed),
       '',
       'The password for your Invoica account has just been changed, and every device was signed out.',
       '',

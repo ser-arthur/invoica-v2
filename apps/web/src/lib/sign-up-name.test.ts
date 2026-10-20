@@ -11,6 +11,9 @@ describe('the name given at sign-up', () => {
       'Zoë Ó Briain',
       'Kwame Nkrumah-Asante',
       '王小明',
+      // The zero-width non-joiner and joiner, which Persian and Sinhala use inside words.
+      'علی\u200cاکبر',
+      'ශ්\u200dරී',
       'a'.repeat(SIGN_UP_NAME_MAX),
     ]) {
       expect(signUpNameProblem(name), name).toBeNull();

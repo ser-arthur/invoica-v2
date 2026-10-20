@@ -40,12 +40,21 @@ function createAuth() {
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) =>
-        sendAuthEmail(user.email, resetPasswordEmail({ name: user.name, url })),
+        sendAuthEmail(
+          user.email,
+          resetPasswordEmail({ name: user.name, confirmed: user.emailVerified, url }),
+        ),
       onExistingUserSignUp: async ({ user }) =>
-        sendAuthEmail(user.email, existingAccountEmail({ name: user.name, appUrl: env.authUrl })),
+        sendAuthEmail(
+          user.email,
+          existingAccountEmail({ name: user.name, confirmed: user.emailVerified, appUrl: env.authUrl }),
+        ),
       onPasswordReset: async ({ user }) =>
         inBackground(
-          sendAuthEmail(user.email, passwordChangedEmail({ name: user.name, appUrl: env.authUrl })),
+          sendAuthEmail(
+            user.email,
+            passwordChangedEmail({ name: user.name, confirmed: user.emailVerified, appUrl: env.authUrl }),
+          ),
         ),
     },
     emailVerification: {
