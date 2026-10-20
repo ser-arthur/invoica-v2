@@ -2,7 +2,7 @@
 
 The plan for building Invoica v2, and where the work stands. Updated at the end of every phase. A new chat starts here.
 
-Last updated: 19 October 2026, about 13:50 (session 2 of the build).
+Last updated: 20 October 2026, about 05:00 (session 2 of the build, through the night).
 
 ---
 
@@ -52,14 +52,15 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 2n | Review 6, a security review of the web layer: a content security policy with nonces, archive checks, the drain secret; the sign-in fixes on the branch `fix/auth-hardening`, waiting for approval | Done on `main`; branch waiting |
 | 2o | Review 7 of the latest fixes, and its fixes (migration 0011): taxes above a price refused, the amount hint's search, criteria narrowed to what holds | Done |
 | 2p | Answers of 19 October recorded; commit history cleaned (author, short messages, no assistant lines); sign-in fixes merged; demo data wiped and reseeded | Done |
-| 2q | Sending through Resend (decision 0008), behind the email adapter | Next |
-| 2r | Password reset and email verification; sign-up no longer reveals an existing account | Planned |
-| 2s | The outbox worker's own database role (review 1, L3) | Planned |
-| 2t | Approved credit note wording; tax-only notes allowed; prices exclude tax by default; a button that adds a country's standard tax codes | Planned |
-| 2u | Refunds: crediting a paid invoice records the money returned | Planned |
-| 2v | VAT in sterling printed, HMRC period rate by default | Planned |
-| 2w | Reminders (`docs/specs/reminders.md`), with the narrow database function and the default wording | Planned |
-| 2x | Billing for the plans, then the plans turned on | Waits for the billing provider |
+| 2q | Sending through Resend (decision 0008), behind the email adapter | Done |
+| 2r | Password reset and email verification; sign-up no longer reveals an existing account | Done; confirming without signing in waits on the branch `fix/confirm-then-sign-in` |
+| 2s | The outbox worker's own database role (migration 0012) | Done |
+| 2t | Approved credit note wording; tax-only notes allowed; prices exclude tax by default; a button that adds a country's standard tax codes | Done |
+| 2u | Refunds: crediting a paid invoice records the money returned (migration 0013) | Done |
+| 2v | VAT in sterling printed, HMRC period rate by default (migration 0014) | Done |
+| 2w | Reminders (`docs/specs/reminders.md`), with the narrow database function and the default wording (migration 0015) | Done |
+| 2z | Testing as the business will use it: journeys against a reference model, operations at the same moment, edge cases (currencies, time zones, clock changes, month ends, large figures), a dropped connection, two tabs, stale dialogs; production readiness (health check, start-up settings check, container image, deploy runbook); review 8 and its fixes (migrations 0016 to 0019) | Done |
+| 2x | Billing for the plans, then the plans turned on | Waits for the billing provider; the free version comes first (owner, 20 October) |
 | 2y | Plan limits enforced by the database; the deferred number counter check (review 7, R7-L1) | After 2x |
 | 3 | Invoice templates round 2: four new templates (Ledger, Poster, Letter, Ticket) beside Signature, Studio and Counsel; template picker with live previews of your own details; landing page built around real invoices | Built; waiting for Kobby's review on the design canvas |
 | 4 | Getting paid: payment links | After v1 |
@@ -95,6 +96,10 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **19 Oct, about 13:25 to 13:50 (session 2).** The owner answered the open questions (see "Answered on 19 October 2026"). The commit history was rewritten before its first push: the owner as author, short messages, no assistant lines; the review documents point at the new commit ids. The sign-in fixes were merged. The local databases were dropped, recreated at migration 0011 and reseeded. Decision 0008 accepted (Resend); decision 0010 (hosting) proposed.
 
+- **19 Oct, about 13:50 to 15:10 (session 2).** Phases 2q to 2w built with tests first: Resend behind the email adapter; email verification and password reset, with sign-up answering alike for new and existing addresses; the worker's own database role; the approved credit note wording; refunds; VAT in sterling printed with HMRC's period rate by default; reminders with the narrow scan function and the approved wording.
+
+- **20 Oct, about 01:50 to 05:00.** The owner asked for testing as the business will really use it. Added: journeys against a reference model (1,500 random runs of issuing, paying, removing, crediting with refunds, voiding, sending, pausing, scanning and settings changes, every figure checked after every step and every refused step leaving nothing changed), operations at the same moment (refunds against removals, two credits, repeats, two scans), edge cases (yen and dinars, very large figures, drafts changed after a rate, Auckland, London and Los Angeles clock changes, month ends, leap days, missed days, unicode names), property tests of refunds, sterling and reminders, and end-to-end journeys (a draft kept across a reload and a new sign-in, two tabs issuing one draft, a stale tab overpaying, double clicks, the back button, a reset on another device, a dropped connection and a lost answer). These found and fixed: payments, deposits and refunds dated after today; a dropped connection replacing the page and losing what was typed; links told apart by colour alone; "Draft saved." often not showing; prices with extra zeros unreadable in yen. Production readiness: `/api/health`, a start-up settings check, a container image, `deploy/compose.yaml` and `docs/deploy.md`; the standalone build was run from a copy elsewhere with production settings and passed the whole end-to-end suite. Review 8 (`docs/reviews/review-8.md`): 3 medium and 5 low findings, all fixed with tests first (migrations 0016 to 0019), except confirming an email without signing in, which changes an auth rule and waits on `fix/confirm-then-sign-in`. The owner chose a free version before billing.
+
 ## Decisions in force
 
 | Record | Title | Status |
@@ -118,7 +123,9 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **PDF engine:** decision 0006. The PDF of record is made with the pinned Chromium; footers and page numbers are CSS margin boxes in the document's own font; the first PDF made for an issued document is kept and never replaced.
 - **Templates in the app:** seven on one view model: Signature (Invoica's own), Studio, Counsel, Ledger, Poster, Letter and Ticket. Every one renders the same snapshot, embeds its fonts, repeats its table heading on long invoices and fits an ordinary invoice on one page (tests).
 - **Sending:** "Send" queues the email with the kept PDF through the outbox; it is marked as sent once delivered. In development the email is written to `.data/mail`; deployed copies send through Resend (decision 0008).
-- **Known gaps:** UK VAT invoices in a foreign currency must show the VAT in sterling; the spec and the calculation are built (`docs/specs/vat-in-sterling.md`), and capturing the rate and printing it wait on the wording (question 14). Fonts embed as Type 3 in PDFs (Chromium's handling of variable fonts); static font files would embed as TrueType.
+- **Known gaps:** fonts embed as Type 3 in PDFs (Chromium's handling of variable fonts); static font files would embed as TrueType. Large objects can still be created by any database role (the functions belong to the database's superuser).
+- **VAT in sterling wording:** "VAT in sterling £X" with "£1 = 1.1500 EUR, HMRC period rate for October 2026" was chosen under the owner's "pick the best way"; it is statutory wording, so it is listed below for a final look.
+- **A dropped connection:** every call from the browser to the server answers a message when it fails on the way, and the page keeps what was typed. Payments, credit notes, emails, reminders and new drafts carry a request key, so trying again records them once.
 - **Discounts** are named, per document, percentage or amount, applied before tax and shared across lines in proportion.
 - **Deposits** taken before an invoice are entered on the draft and become payments when it is issued, so the invoice shows the balance due.
 - **Credit notes** have their own number sequence (CN-0001) and reduce the balance of the invoice they credit. They credit the whole invoice (only while nothing is paid or credited), quantities of its lines, an amount in the invoice's price basis, or everything still owed, to the penny. Price and tax always come from the invoice as issued, slot by slot (decision 0009, `docs/specs/credit-notes.md`): a whole line under VAT per line credits the VAT it was charged, and credits in any order and mix add up to the invoice row by row. Invoices keep their slots at issue and credit notes keep what they took; an invoice whose records came from an earlier version and cannot be read with certainty cannot be credited, and says so. A credit note cannot be voided; an invoice with credit notes cannot be voided. A line credited in parts can show an amount a penny away from its own quantity times price, so the parts add up exactly.
@@ -141,7 +148,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 8. The outbox worker's own database role: build it.
 9. Plan limits in the database: later, once billing is built.
 10. Reminders: build them with the narrow database function; the default wording is approved.
-11. Free plan: billing is built first.
+11. Free plan: billing is built first. Changed on 20 October: a free version comes first, with every feature on for everyone, and billing once a provider is chosen.
 12. Crediting a paid invoice: a refund record (no client credit balance).
 13. Zero-rated lines for businesses not registered for tax: stay refused.
 14. Tax defaults: prices exclude tax by default in every country; a country's standard tax codes are added by default and from a button, and stay editable.
@@ -151,14 +158,16 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 ## Open questions
 
-1. Hosting: approve decision 0010.
-2. Billing provider (it handles money): Paddle as merchant of record (recommended), or Stripe; Paystack later for mobile money in Ghana.
-3. The domain to buy, then the sending subdomain for Resend.
-4. The GitHub repository's owner and name, and the email address to author commits with (GitHub's private noreply address, if preferred).
-5. Which invoice templates ship in v1. All seven are on the design canvas, page "Round 2, built".
-6. Approve or change 0003, 0006 and 0007.
+1. Hosting: approve decision 0010 (`docs/deploy.md` is the runbook for it).
+2. Merge `fix/confirm-then-sign-in`? Opening a confirmation link would confirm the address and sign nobody in; sign-in then asks for the password. It changes an auth rule (review 8, R8-M2), so it waits for a yes.
+3. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
+4. The domain to buy, then the sending subdomain for Resend.
+5. The GitHub repository's owner and name, and the email address to author commits with (GitHub's private noreply address, if preferred).
+6. Which invoice templates ship in v1. All seven are on the design canvas, page "Round 2, built".
+7. Approve or change 0003, 0006 and 0007.
+8. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-08.zip`. The history was rewritten on 19 October: start from a new clone of the next bundle.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-09.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.
