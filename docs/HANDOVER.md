@@ -2,18 +2,18 @@
 
 Read `docs/BLUEPRINT.md` first, then this file. Update both at the end of every session.
 
-## Current state (20 October 2026, about 10:10)
+## Current state (20 October 2026, about 11:00)
 
 This is the **v2 repository**: a re-architecture from scratch (decision 0001). The old Flask app lives in the old repository (`ser-arthur/invoica`) as a reference and receives no changes.
 
 **Working end to end, locally:** sign up with email confirmation, password reset, onboarding, settings (business, logo, tax, rounding choices allowed for the country, numbering, brand colour, template with live previews, bank and mobile money, tax codes with the country's standard codes on a button, reminders, the rate method for VAT in sterling), clients, saved items, the invoice editor with live totals and preview, issuing with a gapless number and a frozen snapshot, the kept PDF in seven templates, sending by email through the outbox (Resend in production, a development mailbox locally), payments, credit notes of every kind with refunds when they go above the balance, VAT in sterling on UK VAT invoices in other currencies, reminders on a schedule and on demand, voiding, duplicating, quick actions, client pages, a dashboard that names who to chase first, data export, the trial and free plan behind `INVOICA_PLANS=enforced` (off: everyone has everything, which is the free version), a health check and a container image.
 
-**Checks (last full run, 20 October 2026, about 10:00, on `053f9a3`):**
+**Checks (last full run, 20 October 2026, about 11:00, on `c4656b1` and the journeys test after it):**
 
 | Suite | Count | Result |
 | --- | --- | --- |
-| Core (money, tax, totals, the credit ledger, refunds, VAT in sterling with its credit note ledger and tax point, reminders, dates and time zones, plans, property tests) | 243 | pass |
-| Database (tenancy with exact policy and grant snapshots, immutability, numbering, payments, refunds, credit notes, review guards, reminders with an hourly scan across time zones and a stubbed scan, emails not sent, request keys and corrected repeats, draft versions, the business's currency and saved items, the worker role, journeys against a reference model, operations at the same moment, edge cases) | 217 | pass |
+| Core (money, tax, totals, the credit ledger, refunds, VAT in sterling with its credit note ledger and tax point, reminders, dates and time zones, plans, property tests) | 248 | pass |
+| Database (tenancy with exact policy and grant snapshots, immutability, numbering, payments, refunds, credit notes, review guards, reminders with an hourly scan across time zones and a stubbed scan, emails not sent, request keys and corrected repeats, draft versions, the business's currency and saved items, the worker role, journeys against a reference model, operations at the same moment, edge cases) | 220 | pass |
 | Schemas | 5 | pass |
 | Document view and rendering | 28 | pass |
 | PDF | 64 | pass |
@@ -21,7 +21,7 @@ This is the **v2 repository**: a re-architecture from scratch (decision 0001). T
 | End to end, desktop and phone, against the production build run from a copy elsewhere with production settings | 130 | 90 passed, 40 skipped by design (one width only), 0 failed |
 | Format, copy rules, lint, typecheck, production build | | pass |
 
-628 unit and database tests run, 628 passed, 0 failed, 0 skipped. The journeys suite runs 40 random journeys by default; `JOURNEY_RUNS=1000` ran clean this round (17 minutes).
+636 unit and database tests run, 636 passed, 0 failed, 0 skipped. The journeys suite runs 40 random journeys by default; `JOURNEY_RUNS=1000` and `JOURNEY_RUNS=600` ran clean this morning.
 
 **Running the end-to-end suite.** Against the development server: `pnpm dev`, then `E2E_BASE_URL=http://localhost:3000 pnpm test:e2e`. Against a production build: `pnpm build`, start `apps/web/.next/standalone/apps/web/server.js` with `NODE_ENV=production`, `BETTER_AUTH_URL=http://localhost:3100`, `EMAIL_PROVIDER=file`, `MAILBOX_DIR`, `FILE_STORAGE_DIR`, `CRON_SECRET` and `INVOICA_CLIENT_IP_HEADER=x-forwarded-for` (the suite gives each sign-up its own address in that header, so the sign-up limit holds), then run the suite with `E2E_BASE_URL=http://localhost:3100` and the same `MAILBOX_DIR`. If the development server reloads a page over and over after a change to `next.config.ts`, stop it, delete `apps/web/.next/dev` and start it again. Editing files while the suite runs against the development server makes tests fail at random; run it against a production build to keep working meanwhile.
 
@@ -33,7 +33,7 @@ This is the **v2 repository**: a re-architecture from scratch (decision 0001). T
 - Review 10, R10-L6, not built: an app image from before migration 0022 sends some reminders early against the newer scan. The guide now says to stop the scheduler while migrating and while an older image runs. The fuller fix (decision 0011) keeps the old scan function as it was and adds the new one as a function of its own for the worker role, which changes the worker's grants (a tenancy rule), so it waits for a yes.
 - A further step review 9 suggests, not built: someone who signs up with another person's address can still have the account confirmed by that person's click, and then use it. Asking for the account's password on the confirmation page (so a click by someone who does not know it confirms nothing), or letting the person who confirms choose the password there, would close that. Either changes sign-in, so it needs the owner's choice.
 
-**Reviews:** reviews 1 to 10 (`docs/reviews/`), each with a Resolution section mapping findings to fixes and tests.
+**Reviews:** reviews 1 to 11 (`docs/reviews/`), each with a Resolution section mapping findings to fixes and tests.
 
 **Local databases:** `invoica` (manual testing), `invoica_demo` (seeded; the end-to-end tests against the development server also write into it) and `invoica_prodcheck` (for the production build's runs), all at migration 0025. Migrations that have run are never edited: changes go in a new one.
 
@@ -46,10 +46,10 @@ The v2 repository is delivered as a **git bundle in a numbered zip** (`invoica-r
 To set up the first time:
 
 ```
-unzip invoica-repo-12.zip -d ~/Downloads/invoica-repo-12
-git clone ~/Downloads/invoica-repo-12/invoica.bundle invoica
+unzip invoica-repo-13.zip -d ~/Downloads/invoica-repo-13
+git clone ~/Downloads/invoica-repo-13/invoica.bundle invoica
 cd invoica
-sh ~/Downloads/invoica-repo-12/verify.sh
+sh ~/Downloads/invoica-repo-13/verify.sh
 ```
 
 To take a later bundle into an existing clone: `git pull ~/Downloads/invoica-repo-NN/invoica.bundle main`.
@@ -57,6 +57,8 @@ To take a later bundle into an existing clone: `git pull ~/Downloads/invoica-rep
 The switch to pull requests (foundation section 7) waits on GitHub: the owner connects GitHub in Settings, Connectors, and creates an empty private repository. The history is then pushed as a branch `start`, which the owner renames to `main` (the assistant never pushes to `main`). From then on every change arrives as a pull request.
 
 ## What changed last
+
+Review 11 (`docs/reviews/review-11.md`), late morning of 20 October 2026: 7 low findings on the draft versions, the editor's refreshes, late repeats and archived items, all fixed with tests. "Save mine anyway" saves against the version fetched after the refusal; "Issue mine anyway" asks for confirmation again; the editor reloads its data only after the refusals that need it; an older repeat never replaces a later change; an archived item never blocks a change of currency.
 
 Last, by 10:10 on 20 October 2026: a draft changed in another tab or on another device is not replaced without asking ("Save mine anyway", `docs/specs/issuing.md` rule 7); saved items keep their figures when the business's currency changes, and the change is refused while a price cannot be written in the new currency; a payment above the balance names what is still owed ("The payment is more than the £60.00 still owed."); the email-not-sent notices pass the accessibility checks in light and dark; 1,000 random journeys ran clean against the reference model.
 
