@@ -22,7 +22,14 @@ import {
   voidDocument,
   type Tx,
 } from '@invoica/db';
-import { creditNoteInput, draftInput, paymentInput, sendDocumentInput, voidInput } from '@invoica/schemas';
+import {
+  creditNoteInput,
+  draftInput,
+  issueConfirmation,
+  paymentInput,
+  sendDocumentInput,
+  voidInput,
+} from '@invoica/schemas';
 import { inWorkspace } from '../workspace';
 import { runJobs } from '../jobs';
 import { failure, invalid, type ActionResult } from './result';
@@ -74,13 +81,19 @@ export async function saveDraftAction(
   }
 }
 
-/** Saves the draft as it stands and issues it, in one transaction. */
+/**
+ * Saves the draft as it stands and issues it, in one transaction. `confirmed` is the total the person confirmed;
+ * when the total worked out on the server is another, nothing is saved or issued and the new figure is given.
+ */
 export async function saveAndIssueAction(
   id: string | null,
   input: unknown,
+  confirmed?: unknown,
 ): Promise<ActionResult<{ id: string; number: string }>> {
   const parsed = draftInput.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
+  const shown = confirmed === undefined ? undefined : issueConfirmation.safeParse(confirmed);
+  if (shown && !shown.success) return invalid(shown.error);
   try {
     const result = await inWorkspace(async (tx, ws) => {
       const earlier = id ? null : await earlierForKey(tx, parsed.data.idempotencyKey);
@@ -89,7 +102,7 @@ export async function saveAndIssueAction(
       let draftId = id ?? earlier?.id ?? null;
       if (draftId) await updateDraft(tx, ws.actor, draftId, parsed.data);
       else draftId = await createDraft(tx, ws.actor, parsed.data);
-      const { number } = await issueDocument(tx, ws.actor, draftId, new Date());
+      const { number } = await issueDocument(tx, ws.actor, draftId, new Date(), shown?.data);
       return { id: draftId, number };
     });
     refresh(result.id);

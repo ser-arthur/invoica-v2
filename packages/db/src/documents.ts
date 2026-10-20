@@ -599,11 +599,16 @@ async function loadClientWithFields(tx: Tx, clientId: string) {
  * Issues a draft: assigns the next number without gaps, freezes a snapshot of everything the document shows,
  * records any deposits as payments, and queues its PDF. Everything happens in the caller's transaction.
  */
+/**
+ * Issues a draft. `confirmed` is the total the person was shown when they confirmed; a total worked out otherwise
+ * now (a tax rate or a setting changed elsewhere meanwhile) is refused with the new figure.
+ */
 export async function issueDocument(
   tx: Tx,
   actor: Actor,
   id: string,
   now: Date,
+  confirmed?: { total: number },
 ): Promise<{ number: string }> {
   const doc = await lockDocument(tx, id);
   transition(doc.lifecycle, 'issue', { paid: 0 });
@@ -646,6 +651,12 @@ export async function issueDocument(
   const totals = draftTotals(doc, lines);
   if (totals.total <= 0)
     throw new DomainError('total_not_positive', 'An invoice must be for more than zero.');
+  if (confirmed && confirmed.total !== totals.total) {
+    throw new DomainError(
+      'total_changed',
+      `The total changed while this was open: it is now ${formatMoney(totals.total, doc.currency)}, with the tax rates and settings as they are now. Check it and issue again.`,
+    );
+  }
   const taxPoint = taxPointOf(dates);
   if (
     doc.sterlingRate &&

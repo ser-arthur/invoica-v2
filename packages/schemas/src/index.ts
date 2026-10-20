@@ -338,6 +338,11 @@ export type DraftInput = z.infer<typeof draftInput>;
 /** A draft as a form sends it, before parsing: the exchange rate is still text. */
 export type DraftFormInput = z.input<typeof draftInput>;
 
+/** What the person saw when they confirmed issuing: the total, in the invoice's minor units. */
+export const issueConfirmation = z.object({
+  total: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER),
+});
+
 export const paymentInput = z.object({
   documentId: z.uuid(),
   amount: minorAmount.min(1, 'Enter the amount received.'),

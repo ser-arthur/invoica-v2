@@ -1,5 +1,8 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { PASSWORD, addClient, signUpAndOnboard } from './helpers';
+import { emailsTo } from './mailbox';
 
 /**
  * Things that change around the work in hand: being signed out while typing, and records edited after an invoice
@@ -199,4 +202,104 @@ test('settings saved stay saved, and the next invoice follows them', async ({ pa
   await expect(doc.getByText('Northern Bank').first()).toBeVisible();
   await expect(doc.getByText('12-34-56').first()).toBeVisible();
   await expect(doc.getByText('Thank you for your business.').first()).toBeVisible();
+});
+
+/** The server's CRON_SECRET: from the environment for a production run, else the development server's `.env.local`. */
+function cronSecret() {
+  if (process.env.CRON_SECRET) return process.env.CRON_SECRET;
+  try {
+    return /^CRON_SECRET=(.+)$/m.exec(readFileSync(join(process.cwd(), '.env.local'), 'utf8'))?.[1]?.trim();
+  } catch {
+    return undefined;
+  }
+}
+
+test('a voided invoice leaves what is owed, gets no reminder, and can take no payment', async ({
+  page,
+  request,
+}) => {
+  const secret = cronSecret();
+  test.skip(!secret, 'Needs CRON_SECRET.');
+  await signUpAndOnboard(page, 'Void Studio', { vat: true });
+  const client = `void${Date.now()}@client.example`;
+  await addClient(page, 'Osprey Quay Ltd', client);
+  await page.goto('/settings#reminders');
+  await page.getByLabel('Remind clients about unpaid invoices').check();
+  await page.getByRole('button', { name: 'Save reminder settings' }).click();
+  await expect(page.getByText('Reminder settings saved.')).toBeVisible();
+
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Osprey Quay Ltd' });
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+  await page.fill('#e-due', today);
+  await page.getByLabel('Line 1 description').fill('Raised in error');
+  await page.getByLabel('Line 1 price').fill('250');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\?issued=1/);
+  const url = page.url().replace('?issued=1', '');
+  const number = (await page.getByRole('heading', { level: 1 }).textContent())!.match(/INV-\d+/)![0];
+  await expect(page.getByText('Next reminder today.')).toBeVisible();
+  await page.goto('/dashboard');
+  await expect(page.getByText('1 open invoice')).toBeVisible();
+
+  await page.goto(url);
+  await page.getByRole('button', { name: 'Void', exact: true }).click();
+  await page.fill('#void-reason', 'Raised for the wrong client.');
+  await page.getByRole('dialog').getByRole('button', { name: 'Void invoice' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Void');
+  await expect(page.getByRole('button', { name: 'Record payment' })).toHaveCount(0);
+  await expect(page.getByText(/Next reminder/)).toHaveCount(0);
+
+  // The scheduled scan finds nothing to send for it.
+  const started = Date.now();
+  const drain = await request.post('/api/jobs/drain', { headers: { authorization: `Bearer ${secret}` } });
+  expect(drain.status()).toBe(200);
+  await page.waitForTimeout(1500);
+  expect(emailsTo(client, started)).toHaveLength(0);
+
+  await page.goto('/dashboard');
+  await expect(page.getByText('Nothing outstanding')).toBeVisible();
+  await page.goto('/invoices');
+  await expect(page.getByRole('row', { name: new RegExp(number) })).toContainText('Void');
+  await page.reload();
+  await expect(page.getByRole('row', { name: new RegExp(number) })).toContainText('Void');
+});
+
+test('a tax rate changed in another tab while issuing: the new total is shown to confirm before it is issued', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Rate Change Studio', { vat: true });
+  await addClient(page, 'Tern Row Press Ltd');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Tern Row Press Ltd' });
+  await page.getByLabel('Line 1 description').fill('Printed guides');
+  await page.getByLabel('Line 1 price').fill('100');
+  await page.getByLabel('Line 1 tax').selectOption({ label: 'Reduced rate' });
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\/edit\?saved=1/);
+
+  const settings = await page.context().newPage();
+  await settings.goto('/settings');
+  await settings.locator('li', { hasText: 'Reduced rate' }).getByRole('button', { name: 'Edit' }).click();
+  await settings.fill('#t-r-0', '10');
+  await settings.getByRole('button', { name: 'Save tax code' }).click();
+  await expect(settings.locator('li', { hasText: 'Reduced rate' })).toContainText('10%');
+  await settings.close();
+
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await expect(page.getByRole('dialog')).toContainText('£105.00');
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await expect(
+    page.getByText(
+      'The total changed while this was open: it is now £110.00, with the tax rates and settings as they are now. Check it and issue again.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByLabel('Line 1 description')).toHaveValue('Printed guides');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await expect(page.getByRole('dialog')).toContainText('£110.00');
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\?issued=1/);
+  await expect(page.getByText('£110.00').first()).toBeVisible();
 });

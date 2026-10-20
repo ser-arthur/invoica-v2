@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
 import type { DraftInput } from '@invoica/schemas';
 import { draftInput } from '@invoica/schemas';
-import type { DocumentSnapshot } from '@invoica/core';
+import { formatMoney, type DocumentSnapshot } from '@invoica/core';
 import { createClient, updateClient } from '../src/clients';
 import {
   createCreditNote,
@@ -504,5 +504,19 @@ describe('duplicating', () => {
     expect(copies).toHaveLength(1);
     const other = await run((tx) => duplicateDocument(tx, actor, id, 'dup-key-000002'));
     expect(other).not.toBe(first);
+  });
+});
+
+describe('issuing checks the total the person confirmed', () => {
+  it('a total that changed since the editor showed it is refused with the new figure, and nothing is issued', async () => {
+    const id = await run((tx) => createDraft(tx, actor, draft()));
+    const detail = await run((tx) => getDocument(tx, id, '2026-10-18'));
+    const total = detail!.document.total;
+    expect(await failure(run((tx) => issueDocument(tx, actor, id, NOW, { total: total - 1 })))).toBe(
+      `The total changed while this was open: it is now ${formatMoney(total, 'GBP')}, with the tax rates and settings as they are now. Check it and issue again.`,
+    );
+    expect((await run((tx) => getDocument(tx, id, '2026-10-18')))!.document.lifecycle).toBe('draft');
+    await run((tx) => issueDocument(tx, actor, id, NOW, { total }));
+    expect((await run((tx) => getDocument(tx, id, '2026-10-18')))!.document.lifecycle).toBe('issued');
   });
 });

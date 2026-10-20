@@ -592,12 +592,14 @@ export function InvoiceEditor(props: EditorProps) {
       const sent = { ...parsed.input, sterlingRateFor: rateEnteredFor };
       const input = docId ? sent : { ...sent, idempotencyKey: createKey };
       const result = issue
-        ? await reach(saveAndIssueAction(docId, input))
+        ? await reach(saveAndIssueAction(docId, input, totals ? { total: totals.total } : undefined))
         : await reach(saveDraftAction(docId, input));
       setConfirmIssue(false);
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: result.message });
+        // The tax codes, settings and next number as they are now, so the figures shown match the server's.
+        if (issue && !result.unreachable) router.refresh();
         return;
       }
       setDirty(false);
