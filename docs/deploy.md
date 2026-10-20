@@ -41,12 +41,13 @@ A small virtual server in the UK or EU (for example Hetzner CX23), with Docker i
 
 ## 5. Settings
 
-On the server, next to `deploy/compose.yaml`, create `invoica.env` (never committed; readable by root only). Every name is in `.env.example`:
+On the server, next to `deploy/compose.yaml`, create four files (never committed; readable by root only). Each container gets only its own, so the app never holds the owner role's password. Every name is in `.env.example`.
+
+`invoica.env`, for the app:
 
 ```
 DATABASE_URL=postgres://invoica_app:...@<host>:5432/invoica?sslmode=require
 DATABASE_WORKER_URL=postgres://invoica_worker:...@<host>:5432/invoica?sslmode=require
-DATABASE_OWNER_URL=postgres://invoica_owner:...@<host>:5432/invoica?sslmode=require
 BETTER_AUTH_SECRET=<48 random characters>
 BETTER_AUTH_URL=https://app.<domain>
 CRON_SECRET=<40 random letters and digits>
@@ -54,17 +55,20 @@ EMAIL_PROVIDER=resend
 RESEND_API_KEY=<the key>
 EMAIL_FROM=Invoica <invoices@send.<domain>>
 INVOICA_CLIENT_IP_HEADER=cf-connecting-ip
-CLOUDFLARE_TUNNEL_TOKEN=<the tunnel token>
 ```
 
-A production server checks these when it starts (`apps/web/src/lib/config-check.ts`) and stops with a list of anything missing or wrong.
+`migrate.env`, for the migration image only: `DATABASE_OWNER_URL=postgres://invoica_owner:...@<host>:5432/invoica?sslmode=require`.
+
+`scheduler.env`, with the same `CRON_SECRET` and nothing else, and `tunnel.env`, with `TUNNEL_TOKEN=<the tunnel token>` and nothing else.
+
+A production server checks its settings when it starts (`apps/web/src/lib/config-check.ts`) and stops with a list of anything missing or wrong, without repeating any value.
 
 ## 6. First start
 
 ```
 docker build --target migrate -t invoica-migrate .
 docker build --target runner -t invoica-app .
-docker run --rm --env-file deploy/invoica.env invoica-migrate
+docker run --rm --env-file deploy/migrate.env invoica-migrate
 docker compose -f deploy/compose.yaml up -d
 curl -fsS https://app.<domain>/api/health
 ```

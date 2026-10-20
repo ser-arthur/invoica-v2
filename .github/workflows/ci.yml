@@ -41,6 +41,14 @@ jobs:
           BETTER_AUTH_URL: http://localhost:3000
           DATABASE_URL: postgres://invoica_app:invoica_app@localhost:5432/invoica
 
+  image:
+    # The container images build from every commit (Dockerfile; docs/deploy.md).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target migrate -t invoica-migrate .
+      - run: docker build --target runner -t invoica-app .
+
   e2e:
     # End-to-end tests at desktop and phone widths against the development server, on a fresh migrated database.
     # The production server's sign-up rate limit refuses the many accounts the suite creates, so it is not used here.
