@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import * as schema from './schema';
@@ -13,4 +14,14 @@ export interface DatabaseHandle {
 export function createDatabase(url: string, options: { max?: number } = {}): DatabaseHandle {
   const pool = new pg.Pool({ connectionString: url, max: options.max ?? 10 });
   return { db: drizzle(pool, { schema }), pool };
+}
+
+/** Whether the database answers, for health checks. */
+export async function databaseAnswers(db: Database): Promise<boolean> {
+  try {
+    await db.execute(sql`select 1`);
+    return true;
+  } catch {
+    return false;
+  }
 }

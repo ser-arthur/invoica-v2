@@ -1,4 +1,13 @@
+import { join } from 'node:path';
 import type { NextConfig } from 'next';
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
+
+/** For `next build`: a self-contained server for the container image (Dockerfile), with the fonts PDFs embed. */
+const standalone: NextConfig = {
+  output: 'standalone',
+  outputFileTracingRoot: join(import.meta.dirname, '../..'),
+  outputFileTracingIncludes: { '/**': ['../../packages/documents/fonts/**'] },
+};
 
 const config: NextConfig = {
   transpilePackages: ['@invoica/core', '@invoica/schemas', '@invoica/db', '@invoica/documents'],
@@ -26,4 +35,6 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+// The development server leaves these out: with them it reloads the page in a loop.
+export default (phase: string): NextConfig =>
+  phase === PHASE_DEVELOPMENT_SERVER ? config : { ...config, ...standalone };

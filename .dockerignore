@@ -1,0 +1,12 @@
+**/node_modules
+**/.next
+**/.data
+**/test-results
+**/playwright-report
+**/coverage
+**/*.tsbuildinfo
+.git
+.env
+.env.*
+!.env.example
+docs/design/round-1/mock/node_modules

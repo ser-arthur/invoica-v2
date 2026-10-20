@@ -1,0 +1,42 @@
+# Invoica on one server behind Cloudflare (decision 0010; steps in docs/deploy.md). The database is managed
+# elsewhere; settings live in invoica.env next to this file, which is never committed.
+services:
+  app:
+    image: invoica-app:${INVOICA_VERSION:-latest}
+    env_file: invoica.env
+    environment:
+      FILE_STORAGE_DIR: /var/lib/invoica/files
+    volumes:
+      - files:/var/lib/invoica/files
+    restart: unless-stopped
+    # Reached only through the Cloudflare tunnel below: no port is open to the internet.
+    expose:
+      - '3000'
+
+  # Asks the app every five minutes to queue due reminders and run background jobs (emails, PDFs, retries).
+  scheduler:
+    image: curlimages/curl:8.22.0
+    env_file: invoica.env
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        while true; do
+          curl -fsS -X POST -H "Authorization: Bearer $$CRON_SECRET" http://app:3000/api/jobs/drain || true
+          sleep 300
+        done
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  # Cloudflare Tunnel: carries traffic from Cloudflare to the app, which sets cf-connecting-ip on every request.
+  tunnel:
+    image: cloudflare/cloudflared:2026.9.3
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  files:
