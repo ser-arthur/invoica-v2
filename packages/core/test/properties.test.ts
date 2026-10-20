@@ -5,7 +5,7 @@ import { addDays } from '../src/dates';
 import { DomainError } from '../src/errors';
 import { dueReminder, nextReminder } from '../src/reminders';
 import { formatExchangeRate, parseExchangeRate, toPence } from '../src/sterling';
-import type { DocumentTotals } from '../src/totals';
+import type { DocumentTotals, TaxSummaryRow } from '../src/totals';
 
 /** Properties of the rules added on 19 October 2026, each against a version written here on its own. */
 
@@ -55,6 +55,55 @@ describe('refunds', () => {
           const above = Math.max(0, credit - balance);
           expect(accepted).toBe(refund === above && above <= received);
           expect(refundFor(credit, balance)).toBe(above);
+        },
+      ),
+      { numRuns: 3000 },
+    );
+  });
+});
+
+describe('refunds and the tax already credited', () => {
+  const vat = (amount: number, base: number): TaxSummaryRow => ({
+    key: 'VAT 200000',
+    name: 'VAT',
+    ratePpm: 200_000,
+    compound: false,
+    treatment: 'standard',
+    base,
+    amount,
+    charged: true,
+  });
+  const withTax = (total: number, amount: number, base: number): DocumentTotals =>
+    ({ ...totals(total), taxes: [vat(amount, base)], taxTotal: amount }) as DocumentTotals;
+
+  it('on an invoice with earlier notes, a credit is accepted exactly when its refund fits and its tax is left', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 1_000_000 }),
+        fc.array(fc.integer({ min: 1, max: 400_000 }), { maxLength: 4 }),
+        fc.integer({ min: 1, max: 600_000 }),
+        fc.integer({ min: 0, max: 1_000_000 }),
+        fc.integer({ min: 0, max: 1_000_000 }),
+        fc.boolean(),
+        (invoiceTax, earlierTax, creditTax, balance, received, refundAsked) => {
+          // Each document's VAT is a fifth of its base, and its total the base plus the VAT.
+          const doc = (tax: number) => withTax(tax * 6, tax, tax * 5);
+          const credit = doc(creditTax);
+          const above = Math.max(0, credit.total - balance);
+          const refund = refundAsked ? above : 0;
+          const accepted =
+            code(() =>
+              checkCredit({
+                invoice: doc(invoiceTax),
+                balance,
+                earlier: earlierTax.map(doc),
+                credit,
+                received,
+                refund,
+              }),
+            ) === null;
+          const taxLeft = earlierTax.reduce((a, b) => a + b, 0) + creditTax <= invoiceTax;
+          expect(accepted).toBe(refund === above && above <= received && taxLeft);
         },
       ),
       { numRuns: 3000 },
@@ -146,6 +195,29 @@ describe('reminders', () => {
         expect(dueReminder(due, chosen, today)).toBe(inWeek.length ? Math.max(...inWeek) : null);
         if (expected !== null) expect(inWeek).toContain(expected);
       }),
+      { numRuns: 5000 },
+    );
+  });
+
+  it('a reminder is never due for a day before the invoice was issued, and otherwise as without the issue date', () => {
+    fc.assert(
+      fc.property(
+        day,
+        offsets,
+        fc.integer({ min: -10, max: 60 }),
+        fc.integer({ min: -40, max: 10 }),
+        (due, chosen, after, issuedBefore) => {
+          const today = addDays(due, after);
+          const issuedOn = addDays(due, issuedBefore);
+          const inWeek = chosen.filter((o) => {
+            const date = addDays(due, o);
+            return date <= today && date > addDays(today, -7) && date >= issuedOn;
+          });
+          const got = dueReminder(due, chosen, today, issuedOn);
+          expect(got).toBe(inWeek.length ? Math.max(...inWeek) : null);
+          if (got !== null) expect(addDays(due, got) >= issuedOn).toBe(true);
+        },
+      ),
       { numRuns: 5000 },
     );
   });

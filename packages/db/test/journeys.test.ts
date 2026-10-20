@@ -1,8 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { and, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import {
   addDays,
+  dueReminder,
   planAmountCredit,
   planBalanceCredit,
   planLineCredit,
@@ -39,7 +40,7 @@ import {
   setRemindersPaused,
   updateReminderSettings,
 } from '../src/reminders';
-import { client, document, documentLine, outbox, payment, refund } from '../src/schema';
+import { client, document, documentLine, outbox, refund } from '../src/schema';
 import { createTaxCode } from '../src/taxes';
 import { createTestDatabase, type TestDatabase } from './helpers';
 import { NOW, TODAY, business, type Business } from './business';
@@ -905,7 +906,7 @@ describe('journeys', () => {
     expect(tally.get('reminders queued') ?? 0).toBeGreaterThan(0);
   });
 
-  it('the scan never queues a reminder twice for one offset, whatever the order of days', async () => {
+  it('the scan queues each reminder once, on the day it falls due, whatever the order of days', async () => {
     const { b } = await setUp('Scan Twice Office');
     const id = await b.run(async (tx) => {
       const draft = await createDraft(
@@ -923,18 +924,29 @@ describe('journeys', () => {
       await issueDocument(tx, b.actor, draft, NOW);
       return draft;
     });
-    for (const days of [20, 20, 3, 40, 14, 14, 0, 60, 21]) {
-      await queueDueReminders(t.db, t.worker.db, new Date(NOW.getTime() + days * 86_400_000));
+    const [doc] = await b.run((tx) => tx.select().from(document).where(eq(document.id, id)));
+    const queuedOffsets = async () =>
+      (
+        await b.run((tx) =>
+          tx.select({ payload: outbox.payload }).from(outbox).where(eq(outbox.topic, 'document.reminder')),
+        )
+      )
+        .filter((j) => j.payload.documentId === id)
+        .map((j) => j.payload.offset as number);
+    // The reference: on each scan, the reminder due that day by the business's date, if not queued before.
+    const expected: number[] = [];
+    for (const days of [20, 20, 3, 40, 14, 14, 0, 60, 21, 33, 30, 30]) {
+      const now = new Date(NOW.getTime() + days * 86_400_000);
+      await queueDueReminders(t.db, t.worker.db, now);
+      const due = dueReminder(doc!.dueDate!, OFFSETS, todayIn('Europe/London', now), TODAY);
+      if (due !== null && !expected.includes(due)) expected.push(due);
+      const queued = await queuedOffsets();
+      expect(queued.length, `day ${days}`).toBe(new Set(queued).size);
+      expect(
+        [...queued].sort((x, y) => x - y),
+        `day ${days}`,
+      ).toEqual([...expected].sort((x, y) => x - y));
     }
-    const keys = await b.run((tx) =>
-      tx
-        .select({ key: outbox.idempotencyKey })
-        .from(outbox)
-        .where(and(eq(outbox.topic, 'document.reminder'))),
-    );
-    const mine = keys.map((k) => k.key).filter((k) => k.includes(id));
-    expect(new Set(mine).size).toBe(mine.length);
-    const [p] = await b.run((tx) => tx.select().from(payment).where(eq(payment.documentId, id)));
-    expect(p).toBeUndefined();
+    expect(expected.length).toBeGreaterThanOrEqual(3);
   });
 });

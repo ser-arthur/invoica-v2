@@ -96,11 +96,11 @@ test('a tab showing an old balance cannot record too much, and a double click re
   await other.reload();
   await expect(other.getByRole('heading', { level: 1 })).toContainText('Paid');
   // One payment of £120.00, not two.
-  await expect(other.getByText('£120.00, ')).toHaveCount(0);
   const payments = other
     .locator('section', { has: other.getByRole('heading', { name: 'Payments' }) })
     .locator('li');
   await expect(payments).toHaveCount(1);
+  await expect(payments.first()).toContainText('£120.00');
   expect(errors).toEqual([]);
 });
 
@@ -175,7 +175,11 @@ test('a refund confirmed in one tab is refused when another tab records a paymen
   await expect(page.getByRole('heading', { level: 1 })).toContainText('CN-0001');
   await other.reload();
   await expect(other.getByRole('heading', { level: 1 })).toContainText('Credited');
-  await expect(other.getByText('£120.00').first()).toBeVisible();
+  // The refund recorded is the £120.00 paid, once.
+  await expect(
+    other.locator('dt', { hasText: /^Refunded$/ }).locator('xpath=following-sibling::dd'),
+  ).toHaveText('£120.00');
+  await expect(other.getByText(/^Refund, .*CN-0001$/)).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 
