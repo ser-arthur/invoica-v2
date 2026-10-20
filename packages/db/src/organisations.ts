@@ -38,46 +38,68 @@ export async function createOrganisation(
   userId: string,
   input: OnboardingInput,
 ): Promise<string> {
-  return withUser(db, userId, async (tx) => {
-    const r = await tx.execute<{ id: string }>(
-      sql`select app.create_organisation(${input.name}, ${input.countryCode}, ${input.baseCurrency}, ${input.timeZone}, ${TRIAL_DAYS}) as id`,
-    );
-    const id = r.rows[0]!.id;
-    const actor: Actor = { userId, organisationId: id };
-    await tx
-      .update(organisation)
-      .set({
-        businessType: input.businessType,
-        taxRegistered: input.taxRegistered,
-        taxNumber: input.taxRegistered ? input.taxNumber : null,
-        locale: input.countryCode === 'US' ? 'en-US' : 'en-GB',
-        ...roundingDefaultFor(input.countryCode),
-      })
-      .where(eq(organisation.id, id));
+  return withUser(db, userId, (tx) => createOrganisationIn(tx, userId, input));
+}
 
-    const preset = presetFor(input.countryCode);
-    const codes = [NO_TAX, ...(preset?.codes ?? [])];
-    const defaultKey =
-      input.taxRegistered && preset
-        ? (preset.codes.find((c) => c.treatment === 'standard')?.key ?? NO_TAX.key)
-        : NO_TAX.key;
-    await tx.insert(taxCode).values(
-      codes.map((c, i) => ({
-        organisationId: id,
-        presetKey: c.key,
-        label: c.label,
-        treatment: c.treatment,
-        components: c.components,
-        isDefault: c.key === defaultKey,
-        sort: i,
-      })),
+/**
+ * Onboarding: the user's first organisation, made once. Sent again after a lost answer, or twice at once, it
+ * returns the organisation already made; the user's requests wait for each other on a lock held to the end of the
+ * transaction.
+ */
+export async function createFirstOrganisation(
+  db: Database,
+  userId: string,
+  input: OnboardingInput,
+): Promise<string> {
+  return withUser(db, userId, async (tx) => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`first-organisation:${userId}`}, 0))`,
     );
-    await audit(tx, actor, 'organisation.onboarded', 'organisation', id, {
-      countryCode: input.countryCode,
-      preset: preset?.country ?? null,
-    });
-    return id;
+    const mine = await tx.execute<{ id: string }>(sql`select id from app.my_organisations() limit 1`);
+    if (mine.rows[0]) return mine.rows[0].id;
+    return createOrganisationIn(tx, userId, input);
   });
+}
+
+async function createOrganisationIn(tx: Tx, userId: string, input: OnboardingInput): Promise<string> {
+  const r = await tx.execute<{ id: string }>(
+    sql`select app.create_organisation(${input.name}, ${input.countryCode}, ${input.baseCurrency}, ${input.timeZone}, ${TRIAL_DAYS}) as id`,
+  );
+  const id = r.rows[0]!.id;
+  const actor: Actor = { userId, organisationId: id };
+  await tx
+    .update(organisation)
+    .set({
+      businessType: input.businessType,
+      taxRegistered: input.taxRegistered,
+      taxNumber: input.taxRegistered ? input.taxNumber : null,
+      locale: input.countryCode === 'US' ? 'en-US' : 'en-GB',
+      ...roundingDefaultFor(input.countryCode),
+    })
+    .where(eq(organisation.id, id));
+
+  const preset = presetFor(input.countryCode);
+  const codes = [NO_TAX, ...(preset?.codes ?? [])];
+  const defaultKey =
+    input.taxRegistered && preset
+      ? (preset.codes.find((c) => c.treatment === 'standard')?.key ?? NO_TAX.key)
+      : NO_TAX.key;
+  await tx.insert(taxCode).values(
+    codes.map((c, i) => ({
+      organisationId: id,
+      presetKey: c.key,
+      label: c.label,
+      treatment: c.treatment,
+      components: c.components,
+      isDefault: c.key === defaultKey,
+      sort: i,
+    })),
+  );
+  await audit(tx, actor, 'organisation.onboarded', 'organisation', id, {
+    countryCode: input.countryCode,
+    preset: preset?.country ?? null,
+  });
+  return id;
 }
 
 export async function getOrganisation(tx: Tx, actor: Actor): Promise<Organisation> {
