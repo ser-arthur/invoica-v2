@@ -58,6 +58,7 @@ export async function loadEditorData(tx: Tx, ws: Workspace): Promise<Omit<Editor
       paymentDetails: org.paymentDetails,
       nextNumber,
       sterlingRateMethod: org.sterlingRateMethod,
+      baseCurrency: org.baseCurrency,
     },
     logoUrl: org.logoFileId ? `/files/${org.logoFileId}` : null,
     entitlements: organisationEntitlements(org, new Date()),

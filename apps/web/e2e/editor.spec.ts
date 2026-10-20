@@ -178,3 +178,23 @@ test('when the month changes, the same figure typed again for the new month is s
   await page.reload();
   await expect(page.locator('#e-sterling-rate')).toHaveValue('1.1400');
 });
+
+test('a saved item keeps its figure on an invoice in another currency', async ({ page }) => {
+  await signUpAndOnboard(page, 'Item Currency Studio');
+  await page.goto('/items');
+  await page.fill('#i-name', 'Location day');
+  await page.fill('#i-price', '500');
+  await page.getByRole('button', { name: 'Add item' }).click();
+  await expect(page.getByText('£500.00')).toBeVisible();
+  await page.goto('/clients/new');
+  await page.fill('#c-name', 'Kyoto Prints KK');
+  await page.fill('#c-email', 'accounts@kyoto.example');
+  await page.selectOption('#c-currency', 'JPY');
+  await page.getByRole('button', { name: 'Save client' }).click();
+  await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
+
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Kyoto Prints KK' });
+  await page.getByLabel('Add a saved item').selectOption({ label: 'Location day' });
+  await expect(page.getByLabel('Line 2 price')).toHaveValue('500');
+});

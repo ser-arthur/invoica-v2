@@ -163,6 +163,8 @@ export interface EditorProps {
     paymentDetails: RawPaymentDetails;
     nextNumber: string;
     sterlingRateMethod: SterlingRateMethod;
+    /** The currency saved items are priced in. */
+    baseCurrency: string;
   };
   logoUrl: string | null;
   /** What the organisation's plan allows, so the preview looks as the issued invoice will. */
@@ -527,7 +529,14 @@ export function InvoiceEditor(props: EditorProps) {
           showDescription: !!from?.description,
           quantity: '1',
           unit: from?.unit ?? '',
-          unitPrice: from ? toDecimalString(from.unitPrice, state.currency) : '',
+          // A saved item's price is in the business's currency: the same figure, written for the invoice's.
+          unitPrice: from
+            ? retypeForCurrency(
+                toDecimalString(from.unitPrice, org.baseCurrency),
+                org.baseCurrency,
+                state.currency,
+              )
+            : '',
           serviceDate: state.lineStyle === 'dated' ? today : '',
           taxCodeId: registered ? (from?.taxCodeId ?? defaultTax) : null,
           itemId: from?.id ?? null,
