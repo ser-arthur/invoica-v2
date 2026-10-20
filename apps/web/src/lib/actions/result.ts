@@ -15,6 +15,8 @@ export type ActionResult<T = undefined> =
       fieldErrors?: Record<string, string>;
       unreachable?: true;
       signedOut?: true;
+      /** The rule that refused it, for a refusal the page handles in its own way. */
+      code?: string;
     };
 
 export function invalid(error: z.ZodError): ActionResult<never> {
@@ -23,7 +25,7 @@ export function invalid(error: z.ZodError): ActionResult<never> {
 
 /** Turns an error into a message people can act on. Unknown errors are logged without their data. */
 export function failure(error: unknown): ActionResult<never> {
-  if (error instanceof DomainError) return { ok: false, message: error.message };
+  if (error instanceof DomainError) return { ok: false, message: error.message, code: error.code };
   // The session ended (signed out here or on another device): the page and what was typed stay as they are.
   const digest = (error as { digest?: unknown } | null)?.digest;
   if (typeof digest === 'string' && digest.startsWith('NEXT_REDIRECT;') && digest.includes(';/sign-in;')) {

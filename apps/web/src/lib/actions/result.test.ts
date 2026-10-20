@@ -15,10 +15,13 @@ const thrown = (fn: () => void) => {
 };
 
 describe('failure', () => {
-  it('passes a rule’s own message through', () => {
-    expect(failure(new DomainError('x', 'The payment is more than the balance due.'))).toEqual({
+  it('passes a rule’s own message through, with its code for the page', () => {
+    expect(
+      failure(new DomainError('payment_exceeds_balance', 'The payment is more than the balance due.')),
+    ).toEqual({
       ok: false,
       message: 'The payment is more than the balance due.',
+      code: 'payment_exceeds_balance',
     });
   });
 

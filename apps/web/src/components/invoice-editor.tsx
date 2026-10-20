@@ -609,8 +609,10 @@ export function InvoiceEditor(props: EditorProps) {
         setErrors(result.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: result.message });
         // Today, the tax codes, the settings and the next number as the server has them now, so what the page
-        // works out (the total, what a rate is for) matches what the server checks.
-        if (!result.unreachable && !result.signedOut) router.refresh();
+        // works out (the total, what a rate is for) matches what the server checks. A draft issued meanwhile stays
+        // on screen with the message, as reloading would open the invoice in its place.
+        if (!result.unreachable && !result.signedOut && result.code !== 'document_not_draft')
+          router.refresh();
         return;
       }
       setDirty(false);
