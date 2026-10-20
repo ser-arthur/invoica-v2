@@ -379,14 +379,42 @@ async function prepareLines(tx: Tx, actor: Actor, documentId: string, input: Dra
   }));
 }
 
-/** What the draft's rate is for now, worked out from the draft as saved on `today`. */
-function rateForDraft(input: DraftInput, org: Organisation, today: BusinessDate): string | null {
+/**
+ * What a draft's rate is kept as being for. A rate entered for another currency or tax point than the draft has now
+ * is refused while the draft needs VAT in sterling, and is otherwise kept with what it was entered for, so a later
+ * save that needs it asks for it again. What it was entered for is what the editor sends; without that, a rate
+ * carried over from the stored draft keeps the stored record (null when there is none), and a new figure is taken
+ * as entered for the draft as saved.
+ */
+function keptRateFor(
+  input: DraftInput,
+  org: Organisation,
+  totals: DocumentTotals,
+  today: BusinessDate,
+  stored: { sterlingRate: number | null; sterlingRateFor: string | null } | null,
+): string | null {
   if (input.sterlingRate === null || input.sterlingRate === undefined) return null;
-  return sterlingRateFor(
+  const now = sterlingRateFor(
     org.sterlingRateMethod,
     input.currency,
     taxPointOf({ ...input, issueDate: input.issueDate ?? today }),
   );
+  const entered =
+    input.sterlingRateFor !== undefined
+      ? input.sterlingRateFor
+      : stored && stored.sterlingRate === input.sterlingRate
+        ? stored.sterlingRateFor
+        : now;
+  if (entered === now) return now;
+  if (
+    needsSterlingVat(
+      { taxRegistered: org.taxRegistered, countryCode: org.countryCode },
+      { currency: input.currency, taxes: totals.taxes },
+    )
+  ) {
+    throw new DomainError('sterling_rate_stale', staleRateMessage(entered, now));
+  }
+  return entered;
 }
 
 function draftColumns(input: DraftInput, org: Organisation, totals: DocumentTotals, rateFor: string | null) {
@@ -467,7 +495,7 @@ export async function createDraft(
   const totals = totalsFor(input, org, lines);
   await tx
     .update(document)
-    .set(draftColumns(input, org, totals, rateForDraft(input, org, todayIn(org.timeZone, now))))
+    .set(draftColumns(input, org, totals, keptRateFor(input, org, totals, todayIn(org.timeZone, now), null)))
     .where(eq(document.id, id));
   if (lines.length) await tx.insert(documentLine).values(lines);
   await audit(tx, actor, 'document.draft_created', 'document', id);
@@ -517,20 +545,7 @@ export async function updateDraft(
   const org = await getOrganisation(tx, actor);
   const lines = await prepareLines(tx, actor, id, input.lines);
   const totals = totalsFor(input, org, lines);
-  const rateFor = rateForDraft(input, org, todayIn(org.timeZone, now));
-  // The same rate kept while the currency or the tax point changed was entered for something else.
-  if (
-    rateFor &&
-    doc.sterlingRateFor &&
-    input.sterlingRate === doc.sterlingRate &&
-    rateFor !== doc.sterlingRateFor &&
-    needsSterlingVat(
-      { taxRegistered: org.taxRegistered, countryCode: org.countryCode },
-      { currency: input.currency, taxes: totals.taxes },
-    )
-  ) {
-    throw new DomainError('sterling_rate_stale', staleRateMessage(doc.sterlingRateFor, rateFor));
-  }
+  const rateFor = keptRateFor(input, org, totals, todayIn(org.timeZone, now), doc);
   await tx.delete(documentLine).where(eq(documentLine.documentId, id));
   if (lines.length) await tx.insert(documentLine).values(lines);
   await tx
@@ -625,7 +640,6 @@ export async function issueDocument(
   const taxPoint = taxPointOf(dates);
   if (
     doc.sterlingRate &&
-    doc.sterlingRateFor &&
     needsSterlingVat(
       { taxRegistered: org.taxRegistered, countryCode: org.countryCode },
       { currency: doc.currency, taxes: totals.taxes },

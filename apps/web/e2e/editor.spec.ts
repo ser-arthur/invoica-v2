@@ -149,3 +149,32 @@ test('a period asks for the rate of the month it ends, needs both its dates, and
   const frame = page.frameLocator('iframe').first();
   await expect(frame.getByText(/£1 = 1\.1400 EUR, HMRC period rate for September 2026/)).toBeVisible();
 });
+
+test('when the month changes, the same figure typed again for the new month is saved', async ({ page }) => {
+  await signUpAndOnboard(page, 'Same Rate Studio', { vat: true });
+  await page.goto('/clients/new');
+  await page.fill('#c-name', 'Lyon Ateliers SARL');
+  await page.fill('#c-email', 'compta@lyon.example');
+  await page.selectOption('#c-currency', 'EUR');
+  await page.getByRole('button', { name: 'Save client' }).click();
+  await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
+
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Lyon Ateliers SARL' });
+  await page.getByLabel('Line 1 description').fill('Workshop');
+  await page.getByLabel('Line 1 price').fill('100');
+  await page.fill('#e-supply', '2026-09-15');
+  await page.fill('#e-sterling-rate', '1.1400');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\/edit\?saved=1/);
+
+  await page.fill('#e-supply', '2026-10-15');
+  await expect(
+    page.getByText('The exchange rate was entered for September 2026. Enter HMRC’s rate for October 2026.'),
+  ).toBeVisible();
+  await page.fill('#e-sterling-rate', '1.1400');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await expect(page.getByText('Draft saved.')).toBeVisible();
+  await page.reload();
+  await expect(page.locator('#e-sterling-rate')).toHaveValue('1.1400');
+});

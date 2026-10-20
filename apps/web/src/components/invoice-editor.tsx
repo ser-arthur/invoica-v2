@@ -128,7 +128,7 @@ export interface EditorState {
   pricesIncludeTax: boolean;
   /** Units of the invoice's currency to £1, as typed, for VAT in sterling. */
   sterlingRate: string;
-  /** What the saved rate was entered for (`sterlingRateFor`), or null for a new draft. Not sent back. */
+  /** What the saved rate was entered for (`sterlingRateFor`), or null for a new draft or a rate with no record. */
   sterlingRateFor: string | null;
   lines: EditorLine[];
   discounts: EditorDiscount[];
@@ -424,7 +424,10 @@ export function InvoiceEditor(props: EditorProps) {
   // A rate belongs to the currency and the month (or day) it was entered for: when either changes, it is cleared
   // and asked for again, as the server would refuse it.
   const rateFor = sterlingRateFor(org.sterlingRateMethod, state.currency, taxPoint);
-  const [rateEnteredFor, setRateEnteredFor] = useState(props.initial.sterlingRateFor ?? rateFor);
+  // Null for a rate kept with no record of what it is for, which is asked for again.
+  const [rateEnteredFor, setRateEnteredFor] = useState<string | null>(
+    props.initial.sterlingRateFor ?? (props.initial.sterlingRate ? null : rateFor),
+  );
   useEffect(() => {
     if (rateEnteredFor === rateFor) return;
     setRateEnteredFor(rateFor);
@@ -585,7 +588,9 @@ export function InvoiceEditor(props: EditorProps) {
       return;
     }
     start(async () => {
-      const input = docId ? parsed.input : { ...parsed.input, idempotencyKey: createKey };
+      // What the rate was worked out for goes with it, so the same figure typed for a new month is accepted.
+      const sent = { ...parsed.input, sterlingRateFor: rateEnteredFor };
+      const input = docId ? sent : { ...sent, idempotencyKey: createKey };
       const result = issue
         ? await reach(saveAndIssueAction(docId, input))
         : await reach(saveDraftAction(docId, input));

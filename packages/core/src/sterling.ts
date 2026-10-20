@@ -182,10 +182,19 @@ export function sterlingRateFor(
   return `${currency}|${method}|${method === 'hmrc_period' ? taxPoint.slice(0, 7) : taxPoint}`;
 }
 
-/** Why a rate entered for `entered` does not fit a document that now needs one for `needed`. */
-export function staleRateMessage(entered: string, needed: string): string {
-  const [fromCurrency, fromMethod, fromWhen] = entered.split('|');
+/**
+ * Why a rate entered for `entered` does not fit a document that now needs one for `needed`; `entered` is null for a
+ * rate kept with no record of what it is for.
+ */
+export function staleRateMessage(entered: string | null, needed: string): string {
   const [toCurrency, toMethod, toWhen] = needed.split('|');
+  const month = (m: string) => formatBusinessDate(`${m}-01`, 'long').replace(/^1 /, '');
+  if (entered === null) {
+    return toMethod === 'hmrc_period'
+      ? `Enter the exchange rate again: HMRC’s rate for ${month(toWhen!)}.`
+      : `Enter the exchange rate again: the market rate for ${formatBusinessDate(toWhen!, 'long')}.`;
+  }
+  const [fromCurrency, fromMethod, fromWhen] = entered.split('|');
   if (fromCurrency !== toCurrency) {
     return `The exchange rate was entered for ${fromCurrency}. Enter the rate for ${toCurrency}.`;
   }
@@ -193,7 +202,6 @@ export function staleRateMessage(entered: string, needed: string): string {
     return 'The exchange rate was entered before the way rates are chosen changed. Enter it again.';
   }
   if (toMethod === 'hmrc_period') {
-    const month = (m: string) => formatBusinessDate(`${m}-01`, 'long').replace(/^1 /, '');
     return `The exchange rate was entered for ${month(fromWhen!)}. Enter HMRC’s rate for ${month(toWhen!)}.`;
   }
   return `The exchange rate was entered for ${formatBusinessDate(fromWhen!, 'long')}. Enter the market rate for ${formatBusinessDate(toWhen!, 'long')}.`;

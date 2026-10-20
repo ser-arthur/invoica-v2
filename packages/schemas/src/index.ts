@@ -308,6 +308,11 @@ export const draftInput = z
     options: documentOptionsInput.default({}),
     /** Units of the invoice's currency to £1, for VAT in sterling (docs/specs/vat-in-sterling.md). */
     sterlingRate: exchangeRate,
+    /**
+     * What the editor worked the rate out for when it was typed (`sterlingRateFor` in `@invoica/core`), so the same
+     * figure typed again for a new month or day is told apart from one carried over.
+     */
+    sterlingRateFor: z.string().max(60).nullable().optional(),
     lines: z.array(lineInput).max(200, 'An invoice can have at most 200 lines.'),
     /** Sent with the first save of a new invoice, so a repeated save finds the same draft. */
     idempotencyKey: z.string().min(8).max(100).optional(),

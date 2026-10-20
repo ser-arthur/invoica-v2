@@ -296,3 +296,83 @@ describe('R9-M2: the tax point of a service period', () => {
     }
   });
 });
+
+describe('R9-L2: what a rate was entered for', () => {
+  const vat = (b: Business) => [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }];
+  const zero = (b: Business) => [{ quantity: 1000, unitPrice: 10_000, code: b.codes.zero }];
+  const oct19 = new Date('2026-10-19T12:00:00Z');
+  const oct20 = new Date('2026-10-20T12:00:00Z');
+
+  const marketDraft = async (b: Business) => {
+    await b.run((tx) =>
+      tx
+        .update(organisation)
+        .set({ sterlingRateMethod: 'market' })
+        .where(eq(organisation.id, b.actor.organisationId)),
+    );
+    return b.run((tx) =>
+      createDraft(tx, b.actor, draftFor(b, vat(b), { currency: 'EUR', sterlingRate: '1.1500' }), oct19),
+    );
+  };
+
+  it('(a) the same figure typed for the new day is accepted, and one carried over is refused', async () => {
+    const b = await business(t, 'Same Figure Office');
+    const id = await marketDraft(b);
+    const carried = draftFor(b, vat(b), { currency: 'EUR', sterlingRate: '1.1500' });
+    expect(await failure(b.run((tx) => updateDraft(tx, b.actor, id, carried, oct20)))).toBe(
+      'The exchange rate was entered for 19 October 2026. Enter the market rate for 20 October 2026.',
+    );
+    const typed = draftFor(b, vat(b), {
+      currency: 'EUR',
+      sterlingRate: '1.1500',
+      sterlingRateFor: 'EUR|market|2026-10-20',
+    });
+    await b.run((tx) => updateDraft(tx, b.actor, id, typed, oct20));
+    await b.run((tx) => issueDocument(tx, b.actor, id, oct20));
+    const kept = (await snapshotOf(b, id)).sterlingVat!;
+    expect([kept.rate, kept.rateDate]).toEqual([1_150_000, '2026-10-20']);
+  });
+
+  it('(a) a page that worked the rate out for another day is refused', async () => {
+    const b = await business(t, 'Old Page Office');
+    const id = await marketDraft(b);
+    const stale = draftFor(b, vat(b), {
+      currency: 'EUR',
+      sterlingRate: '1.1600',
+      sterlingRateFor: 'EUR|market|2026-10-19',
+    });
+    expect(await failure(b.run((tx) => updateDraft(tx, b.actor, id, stale, oct20)))).toBe(
+      'The exchange rate was entered for 19 October 2026. Enter the market rate for 20 October 2026.',
+    );
+  });
+
+  it('(b) a rate kept with no record of what it is for is asked for again, on saving and on issue', async () => {
+    const b = await business(t, 'No Record Office');
+    const id = await euroDraft(b, '1.1500');
+    await b.run((tx) => tx.update(document).set({ sterlingRateFor: null }).where(eq(document.id, id)));
+    expect(await failure(b.run((tx) => issueDocument(tx, b.actor, id, NOW)))).toBe(
+      'Enter the exchange rate again: HMRC’s rate for October 2026.',
+    );
+    const yen = draftFor(b, vat(b), { currency: 'JPY', supplyDate: '2026-10-16', sterlingRate: '1.1500' });
+    expect(await failure(b.run((tx) => updateDraft(tx, b.actor, id, yen)))).toBe(
+      'Enter the exchange rate again: HMRC’s rate for October 2026.',
+    );
+  });
+
+  it('(c) a save that needs no VAT in sterling keeps what the rate was entered for', async () => {
+    const b = await business(t, 'Zero Rated Office');
+    const id = await euroDraft(b, '1.1500');
+    const zeroYen = draftFor(b, zero(b), {
+      currency: 'JPY',
+      supplyDate: '2026-10-16',
+      sterlingRate: '1.1500',
+    });
+    await b.run((tx) => updateDraft(tx, b.actor, id, zeroYen));
+    const saved = await b.run((tx) => getDocument(tx, id, TODAY));
+    expect(saved!.document.sterlingRateFor).toBe('EUR|hmrc_period|2026-10');
+    const vatYen = draftFor(b, vat(b), { currency: 'JPY', supplyDate: '2026-10-16', sterlingRate: '1.1500' });
+    expect(await failure(b.run((tx) => updateDraft(tx, b.actor, id, vatYen)))).toBe(
+      'The exchange rate was entered for EUR. Enter the rate for JPY.',
+    );
+  });
+});

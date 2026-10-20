@@ -209,6 +209,12 @@ describe('what a rate was entered for', () => {
     expect(staleRateMessage('EUR|market|2026-10-16', 'EUR|hmrc_period|2026-10')).toBe(
       'The exchange rate was entered before the way rates are chosen changed. Enter it again.',
     );
+    expect(staleRateMessage(null, 'EUR|hmrc_period|2026-11')).toBe(
+      'Enter the exchange rate again: HMRC’s rate for November 2026.',
+    );
+    expect(staleRateMessage(null, 'EUR|market|2026-10-17')).toBe(
+      'Enter the exchange rate again: the market rate for 17 October 2026.',
+    );
   });
 });
 
