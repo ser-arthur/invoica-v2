@@ -188,7 +188,8 @@ const opArb: fc.Arbitrary<Op> = fc.oneof(
       method: fc.constantFrom<'hmrc_period' | 'market'>('hmrc_period', 'market'),
     }),
   },
-  { weight: 1, arbitrary: fc.record({ kind: fc.constant('repeatPay' as const), changed: fc.boolean() }) },
+  // Often enough that a run of 40 journeys repeats a payment both unchanged and changed.
+  { weight: 3, arbitrary: fc.record({ kind: fc.constant('repeatPay' as const), changed: fc.boolean() }) },
   { weight: 1, arbitrary: fc.record({ kind: fc.constant('draft' as const) }) },
 );
 
