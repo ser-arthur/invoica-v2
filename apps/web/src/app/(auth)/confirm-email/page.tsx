@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getAuth } from '@/lib/auth';
-import { confirmationAddress } from '@/lib/auth-confirm';
+import { confirmationAddress } from '@/lib/confirmation-link';
 import { env } from '@/lib/env';
 import { getUser } from '@/lib/session';
 import { ConfirmEmailForm, LinkExpired } from '../email-forms';
 
-export const metadata: Metadata = { title: 'Confirm your email' };
+// The address carries the link's token, so no request from this page names it to another server or in a log.
+export const metadata: Metadata = { title: 'Confirm your email', referrer: 'no-referrer' };
 
 /**
  * Where a confirmation link lands. It asks for the account's password, which confirms the address and signs in

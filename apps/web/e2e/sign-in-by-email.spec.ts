@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { PASSWORD, confirmAndSignIn, signUp, uniqueEmail } from './helpers';
 import { emailsTo, linkIn, waitForEmail } from './mailbox';
 
-/** docs/specs/sign-in-by-email.md, acceptance criteria 1 to 9. */
+/** docs/specs/sign-in-by-email.md, acceptance criteria 1 to 14. */
 
 test.skip(({ isMobile }) => isMobile, 'The flows are the same at every width; the desktop run covers them.');
 
@@ -60,6 +60,7 @@ test('3: signing in before confirming asks for the email link and sends a new on
 
 test('4: a broken confirmation link says so and can send a new one; a used one opens sign-in', async ({
   page,
+  request,
 }) => {
   const started = Date.now();
   const email = uniqueEmail('broken');
@@ -69,12 +70,20 @@ test('4: a broken confirmation link says so and can send a new one; a used one o
   await page.goto(broken);
   await expect(page.getByRole('heading', { name: 'This link has expired or has been used' })).toBeVisible();
   await expect(page.locator('#password')).toHaveCount(0);
-  const again = Date.now();
+  const resent = Date.now();
   await page.fill('#email', email);
   await page.getByRole('button', { name: 'Send a new link' }).click();
   await expect(page.getByText(`If ${email} needs confirming, a new link is on its way.`)).toBeVisible();
-  const link = linkIn(await waitForEmail(email, 'Confirm your email for Invoica', again));
+  const link = linkIn(await waitForEmail(email, 'Confirm your email for Invoica', resent));
   await confirmAndSignIn(page, email, link);
+  // The link and the password no longer sign in once the address is confirmed: sign-in does that.
+  const token = new URL(link).searchParams.get('token')!;
+  const again = await request.post('/api/auth/confirm-email', {
+    headers: { origin: new URL(page.url()).origin, 'x-forwarded-for': '10.8.1.4' },
+    data: { token, password: PASSWORD },
+  });
+  expect([again.status(), (await again.json()).code]).toEqual([400, 'ALREADY_CONFIRMED']);
+  expect(again.headers()['set-cookie'] ?? '').not.toContain('session_token');
   // Opened again once the address is confirmed: signed in, it goes on to the app; signed out, to sign-in.
   await page.goto(link);
   await page.waitForURL('**/onboarding');
@@ -270,4 +279,85 @@ test('11: before the page’s script runs, sign-in cannot be sent, so a password
   await page.waitForTimeout(1000);
   expect(page.url()).not.toContain('password');
   await context.close();
+});
+
+test('12: the owner of an address someone else signed up with takes the account over', async ({
+  page,
+  browser,
+}) => {
+  const started = Date.now();
+  const email = uniqueEmail('takeover');
+  // Someone else signs up with the owner's address and a password of their own.
+  await signUp(page, email);
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  const theirLink = linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started));
+
+  // The owner signs up too, and is told the address already has an account.
+  const owner = await (
+    await browser.newContext({ extraHTTPHeaders: { 'x-forwarded-for': `10.12.${Date.now() % 250}.9` } })
+  ).newPage();
+  const asked = Date.now();
+  await owner.goto('/sign-up');
+  await owner.fill('#name', 'Address Owner');
+  await owner.fill('#email', email);
+  await owner.fill('#password', NEW_PASSWORD);
+  await owner.getByRole('button', { name: 'Create account' }).click();
+  await expect(owner.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  await waitForEmail(email, 'You already have an Invoica account', asked);
+
+  // A reset proves the mailbox and sets the owner's own password.
+  await owner.goto('/forgot-password');
+  await owner.fill('#email', email);
+  await owner.getByRole('button', { name: 'Send a reset link' }).click();
+  await owner.goto(linkIn(await waitForEmail(email, 'Reset your Invoica password', asked)));
+  await owner.fill('#password', NEW_PASSWORD);
+  await owner.getByRole('button', { name: 'Change password' }).click();
+  await owner.waitForURL('**/sign-in?reset=done');
+
+  // Signing in sends a new confirmation link, which the owner's password confirms.
+  const confirming = Date.now();
+  await owner.fill('#email', email);
+  await owner.fill('#password', NEW_PASSWORD);
+  await owner.getByRole('button', { name: 'Sign in' }).click();
+  await expect(
+    owner.getByText('Confirm your email address first. We have sent you a new link.'),
+  ).toBeVisible();
+  await owner.goto(linkIn(await waitForEmail(email, 'Confirm your email for Invoica', confirming)));
+  await owner.fill('#password', NEW_PASSWORD);
+  await owner.getByRole('button', { name: 'Confirm and sign in' }).click();
+  await owner.waitForURL('**/onboarding');
+
+  // The other person's password and link no longer get them in.
+  await page.goto(theirLink);
+  await page.waitForURL('**/sign-in?confirmed=1');
+  await page.fill('#email', email);
+  await page.fill('#password', PASSWORD);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page.getByText('That email and password do not match an account.')).toBeVisible();
+});
+
+test('13: the page sends no referrer, so the link’s token stays out of other sites’ and servers’ logs', async ({
+  page,
+}) => {
+  const started = Date.now();
+  const email = uniqueEmail('referrer');
+  await signUp(page, email);
+  await page.goto(linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started)));
+  await expect(page.locator('meta[name="referrer"]')).toHaveAttribute('content', 'no-referrer');
+  expect(await page.evaluate(() => document.referrer)).toBe('');
+});
+
+test('14: confirmed in another tab meanwhile, the page goes on to sign-in', async ({ page, browser }) => {
+  const started = Date.now();
+  const email = uniqueEmail('twotabs');
+  await signUp(page, email);
+  const link = linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started));
+  await page.goto(link);
+  await expect(page.locator('#password')).toBeVisible();
+  const other = await (await browser.newContext()).newPage();
+  await confirmAndSignIn(other, email, link);
+  await page.fill('#password', PASSWORD);
+  await page.getByRole('button', { name: 'Confirm and sign in' }).click();
+  await page.waitForURL('**/sign-in?confirmed=1');
+  await expect(page.getByText('Your email address is confirmed. Sign in to continue.')).toBeVisible();
 });

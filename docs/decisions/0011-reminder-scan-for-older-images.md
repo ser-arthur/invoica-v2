@@ -16,6 +16,6 @@ An app image from before 0022 still queues what it is offered. Against a databas
 
 ## Consequences
 
-- Any image, older or newer, can run the scheduler against any database from then on, and the scheduler needs no stopping during an upgrade.
+- Any image, older or newer, can run the scheduler against any database from then on, and the scheduler needs no stopping during an upgrade. An image from 0022 to 0025 calls `app.due_reminders` and checks what it is offered against its own date, so it never sends early; near midnight, where the two time zone readings disagree, a reminder can go a few hours late.
 - The worker role can call one more function. It sees nothing it does not see today: the same ids and offsets, across businesses, inside a function it cannot change.
 - `packages/db/test/reminders.test.ts` checks that `app.due_reminders` offers the reminder due by the database's own date, on the day, as an older image expects, and that only the worker role can call either function; the tenancy test's grant snapshot lists both.

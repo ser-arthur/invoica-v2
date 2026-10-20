@@ -182,7 +182,8 @@ export function ConfirmEmailForm({ token, email }: { token: string; email: strin
     if (result.error) {
       setPending(false);
       const code = 'code' in result.error ? result.error.code : undefined;
-      if (code === 'INVALID_TOKEN') setExpired(true);
+      if (code === 'ALREADY_CONFIRMED') router.push('/sign-in?confirmed=1');
+      else if (code === 'INVALID_TOKEN') setExpired(true);
       else if (code === 'INVALID_PASSWORD') setError('That is not the password for this account.');
       else setError(tooMany(result.error));
       return;
