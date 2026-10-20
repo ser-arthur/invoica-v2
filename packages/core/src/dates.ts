@@ -40,7 +40,12 @@ export function todayIn(timeZone: string, now: Date = new Date()): BusinessDate 
   return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
+/**
+ * A region name from the time zone database ("Europe/London", "UTC"). Bare offsets such as "+05:30" are refused:
+ * PostgreSQL reads them the other way round (POSIX), so the app and the database would disagree on the date.
+ */
 export function isValidTimeZone(timeZone: string): boolean {
+  if (!/^[A-Za-z][A-Za-z_]*(\/[A-Za-z0-9_+-]+)*$/.test(timeZone)) return false;
   try {
     new Intl.DateTimeFormat('en-GB', { timeZone });
     return true;

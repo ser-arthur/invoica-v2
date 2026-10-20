@@ -1,6 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import {
   DomainError,
+  dueReminder,
   nextReminder,
   reminderKind,
   todayIn,
@@ -25,7 +26,7 @@ const scheduledKey = (documentId: string, offset: number) => `reminder:${documen
  * Queues every scheduled reminder due at `now`. The scan reads across organisations only through
  * `app.due_reminders`, as the worker role, which returns ids; each reminder is then queued inside its organisation
  * as its owner, where the plan is checked. A reminder's key is its invoice and offset, so a second scan queues
- * nothing more. Returns how many were queued.
+ * nothing more. Returns how many this scan added. A reminder that fails to queue is left for the next scan.
  */
 export async function queueDueReminders(db: Database, worker: Database, now: Date): Promise<number> {
   const due = await worker.execute<{
@@ -37,18 +38,23 @@ export async function queueDueReminders(db: Database, worker: Database, now: Dat
   let queued = 0;
   for (const row of due.rows) {
     const actor: Actor = { userId: row.owner_user_id, organisationId: row.organisation_id };
-    await withOrganisation(db, actor, async (tx) => {
-      const [org] = await tx.select().from(organisation).where(eq(organisation.id, actor.organisationId));
-      if (!org || !organisationEntitlements(org, now).reminders) return;
-      await enqueue(
-        tx,
-        actor,
-        'document.reminder',
-        { documentId: row.document_id, offset: row.offset_days },
-        scheduledKey(row.document_id, row.offset_days),
-      );
-      queued += 1;
-    });
+    try {
+      await withOrganisation(db, actor, async (tx) => {
+        const [org] = await tx.select().from(organisation).where(eq(organisation.id, actor.organisationId));
+        if (!org || !organisationEntitlements(org, now).reminders) return;
+        const added = await enqueue(
+          tx,
+          actor,
+          'document.reminder',
+          { documentId: row.document_id, offset: row.offset_days },
+          scheduledKey(row.document_id, row.offset_days),
+        );
+        if (added) queued += 1;
+      });
+    } catch (error) {
+      // One reminder that cannot be queued waits for the next scan; the others still go.
+      console.error('reminder not queued', row.document_id, (error as Error).message?.slice(0, 200));
+    }
   }
   return queued;
 }
@@ -116,14 +122,8 @@ export async function reminderContext(
     if (!organisationEntitlements(org, now).reminders) return null;
   }
   const today = todayIn(org.timeZone, now);
-  const kind =
-    offset !== null
-      ? reminderKind(offset)
-      : today < doc.dueDate
-        ? 'before'
-        : today === doc.dueDate
-          ? 'due'
-          : 'late';
+  // Worded for the day it goes, so a reminder caught up after its day reads as late.
+  const kind = reminderKind(doc.dueDate, today);
   return {
     to: owner.email,
     kind,
@@ -198,12 +198,22 @@ export async function reminderStatus(
     .filter((o): o is string => o !== undefined)
     .map(Number);
   const on = !!org?.remindersEnabled;
+  let next: { offset: number; date: BusinessDate } | null = null;
+  if (on && doc.dueDate) {
+    // The scan sends today the reminder that is due and not yet sent, before any later one.
+    const issuedOn = doc.issuedAt ? todayIn(org!.timeZone, doc.issuedAt) : today;
+    const dueToday = dueReminder(doc.dueDate, org!.reminderOffsets, today, issuedOn);
+    next =
+      dueToday !== null && !sent.includes(dueToday)
+        ? { offset: dueToday, date: today }
+        : nextReminder(doc.dueDate, org!.reminderOffsets, today, sent);
+  }
   return {
     on,
     clientOn: !!owner?.remindersEnabled,
     hasEmail: !!owner?.email,
     paused: !!paused,
-    next: on && doc.dueDate ? nextReminder(doc.dueDate, org!.reminderOffsets, today, sent) : null,
+    next,
   };
 }
 
@@ -212,7 +222,14 @@ export async function updateReminderSettings(
   tx: Tx,
   actor: Actor,
   input: ReminderSettingsInput,
+  now: Date = new Date(),
 ): Promise<void> {
+  if (input.remindersEnabled) {
+    const [org] = await tx.select().from(organisation).where(eq(organisation.id, actor.organisationId));
+    if (!org || !organisationEntitlements(org, now).reminders) {
+      throw new DomainError('reminders_not_in_plan', 'Reminders are part of the Pro and Studio plans.');
+    }
+  }
   await tx
     .update(organisation)
     .set({

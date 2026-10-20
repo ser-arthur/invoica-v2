@@ -60,5 +60,10 @@ describe('business dates', () => {
   it('checks time zone names', () => {
     expect(isValidTimeZone('Europe/London')).toBe(true);
     expect(isValidTimeZone('Mars/Base')).toBe(false);
+    // A bare offset reads the other way in the database (POSIX), so only region names are accepted.
+    for (const offset of ['+05:30', '-03', 'GMT+5', 'UTC+1'])
+      expect(isValidTimeZone(offset), offset).toBe(false);
+    expect(isValidTimeZone('Etc/GMT-14')).toBe(true);
+    expect(isValidTimeZone('UTC')).toBe(true);
   });
 });

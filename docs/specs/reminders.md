@@ -21,6 +21,11 @@ An email from the business (the same sender as invoices), with the invoice's kep
 4. If the scan missed a day (the server was down), it sends the latest missed reminder once, never a backlog. A reminder is still sent up to six days after its date; older ones are skipped, so turning reminders on does not send a batch for old invoices.
 5. "Send a reminder now" sends one at once, whatever the schedule, and does not change the schedule.
 6. The amount in the email is the balance when the email is sent.
+7. The wording follows the day the email is sent, not the offset that queued it: a due-date reminder caught up two days later uses the late wording, "2 days overdue".
+8. No reminder goes for a day before the invoice was issued, in the organisation's time zone. An invoice issued with two days to pay gets no "three days before" reminder, and one issued after its due date waits for the next reminder after it was issued.
+9. Reminders can be turned on only on a plan that includes them; they can be turned off on any plan.
+10. A business's time zone is a region name the database knows ("Europe/London"); bare offsets such as "+05:30" are refused, because PostgreSQL reads them the other way round. The scan works one business at a time: a business whose date cannot be worked out is left out with a warning, a reminder that fails to queue waits for the next scan, and the jobs run even when the scan fails (the drain then answers 500).
+11. The invoice page names the reminder the scan sends today when one is due and not yet sent ("Next reminder today"), and otherwise the next one to come.
 
 ## How it runs
 
@@ -36,6 +41,7 @@ An email from the business (the same sender as invoices), with the invoice's kep
 4. A scan after missed days sends only the latest reminder that was due (both files).
 5. The email shows the balance at sending, the invoice number and the due date, and attaches the kept PDF (`apps/web/e2e/reminders.spec.ts`).
 6. Each reminder appears in the invoice's activity (same file).
+7. Rules 7 to 11: `packages/core/test/reminders.test.ts`, `packages/db/test/reminders.test.ts` and `apps/web/src/app/api/jobs/drain/route.test.ts`.
 
 ## Default wording
 

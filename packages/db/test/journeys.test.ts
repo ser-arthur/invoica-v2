@@ -249,11 +249,12 @@ function expectedState(i: ModelInvoice): DocumentState {
 const OFFSETS = [-3, 0, 7, 14, 30];
 
 /** The reminder due on `today`, worked out here on its own: the latest offset in the week up to today. */
+/** Every invoice of a journey is issued on TODAY, and no reminder goes for a day before that. */
 function expectedOffset(dueDate: string, today: string, offsets: readonly number[]): number | null {
   for (const o of [...offsets].sort((a, b) => b - a)) {
     const date = addDays(dueDate, o);
     const age = (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${date}T00:00:00Z`)) / 86_400_000;
-    if (age >= 0 && age < 7) return o;
+    if (age >= 0 && age < 7 && date >= TODAY) return o;
   }
   return null;
 }

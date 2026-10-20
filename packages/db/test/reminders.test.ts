@@ -8,6 +8,7 @@ import {
   reminderStatus,
   sendReminderNow,
   setRemindersPaused,
+  updateReminderSettings,
 } from '../src/reminders';
 import { withOrganisation } from '../src/tenancy';
 import { createTestDatabase, type TestDatabase } from './helpers';
@@ -56,10 +57,12 @@ async function remindingBusiness(name: string) {
 
 /** £100.00 plus VAT, issued on 10 September and due on 10 October. */
 const dueOn10October = (b: Business) =>
-  issued(b, [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }], {
-    issueDate: '2026-09-10',
-    dueDate: '2026-10-10',
-  });
+  issued(
+    b,
+    [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }],
+    { issueDate: '2026-09-10', dueDate: '2026-10-10' },
+    at('2026-09-10'),
+  );
 
 const queued = (b: Business, documentId: string) =>
   b.run(async (tx) =>
@@ -224,5 +227,214 @@ describe('the scan’s view across organisations', () => {
       return (await tx.execute(sql`select count(*)::int as n from document`)).rows[0] as { n: number };
     });
     expect(seen.n).toBe(0);
+  });
+});
+
+describe('one business’s time zone never stops the scan for the others', () => {
+  it('a time zone the database does not know, or a bare offset, cannot be saved', async () => {
+    const b = await business(t, 'Zone Office');
+    const setZone = (timeZone: string) =>
+      b.run((tx) =>
+        tx.update(organisation).set({ timeZone }).where(eq(organisation.id, b.actor.organisationId)),
+      );
+    for (const zone of ['Asia/Calcutta', '+05:30', '-03', 'Mars/Base']) {
+      expect(await failure(setZone(zone)), zone).toMatch(/Choose a time zone from the list/);
+    }
+    await setZone('Asia/Kolkata');
+    const [org] = await b.run((tx) => tx.select().from(organisation));
+    expect(org!.timeZone).toBe('Asia/Kolkata');
+  });
+
+  it('a business whose time zone the database stops knowing is left out, and the others are reminded', async () => {
+    const broken = await remindingBusiness('Broken Zone Office');
+    const brokenInvoice = await dueOn10October(broken);
+    const { Client } = await import('pg');
+    const admin = new Client({ connectionString: t.ownerUrl });
+    await admin.connect();
+    try {
+      // As after an upgrade of the time zone data: the name was saved when the database knew it.
+      await admin.query('alter table organisation disable trigger guard_time_zone');
+      await admin.query('update organisation set time_zone = $1 where id = $2', [
+        'Mars/Base',
+        broken.actor.organisationId,
+      ]);
+      await admin.query('alter table organisation enable trigger guard_time_zone');
+    } finally {
+      await admin.end();
+    }
+    const fine = await remindingBusiness('Fine Zone Office');
+    const fineInvoice = await dueOn10October(fine);
+    await queueDueReminders(t.db, t.worker.db, at('2026-10-17'));
+    expect(await queued(fine, fineInvoice)).toEqual([7]);
+    expect(await queued(broken, brokenInvoice)).toEqual([]);
+  });
+});
+
+describe('a reminder never goes for a day before the invoice was issued', () => {
+  it('an invoice with two days to pay gets no "three days before" reminder', async () => {
+    const b = await remindingBusiness('Short Terms Office');
+    const id = await issued(
+      b,
+      [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }],
+      { issueDate: '2026-10-18', dueDate: '2026-10-20' },
+      at('2026-10-18'),
+    );
+    await queueDueReminders(t.db, t.worker.db, at('2026-10-18'));
+    expect(await queued(b, id)).toEqual([]);
+    await queueDueReminders(t.db, t.worker.db, at('2026-10-20'));
+    expect(await queued(b, id)).toEqual([0]);
+  });
+
+  it('an invoice dated earlier and issued after its due date waits for the next reminder after issue', async () => {
+    const b = await remindingBusiness('Backdated Office');
+    const id = await issued(
+      b,
+      [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }],
+      { issueDate: '2026-10-01', dueDate: '2026-10-15' },
+      at('2026-10-18'),
+    );
+    await queueDueReminders(t.db, t.worker.db, at('2026-10-18'));
+    await queueDueReminders(t.db, t.worker.db, at('2026-10-21'));
+    expect(await queued(b, id)).toEqual([]);
+    await queueDueReminders(t.db, t.worker.db, at('2026-10-22'));
+    expect(await queued(b, id)).toEqual([7]);
+  });
+});
+
+/** Reminder jobs of every business, read as the database's administrator. */
+async function allReminderJobs() {
+  const { Client } = await import('pg');
+  const url = new URL(process.env.TEST_DATABASE_ADMIN_URL!);
+  url.pathname = `/${t.name}`;
+  const admin = new Client({ connectionString: url.toString() });
+  await admin.connect();
+  try {
+    const r = await admin.query(`select count(*)::int as n from outbox where topic = 'document.reminder'`);
+    return r.rows[0].n as number;
+  } finally {
+    await admin.end();
+  }
+}
+
+describe('the scan’s count and its failures', () => {
+  it('two scans at once count, between them, exactly the reminders they queued', async () => {
+    const b = await remindingBusiness('Count Office');
+    await dueOn10October(b);
+    const before = await allReminderJobs();
+    const counts = await Promise.all([
+      queueDueReminders(t.db, t.worker.db, at('2026-10-17')),
+      queueDueReminders(t.db, t.worker.db, at('2026-10-17')),
+    ]);
+    const added = (await allReminderJobs()) - before;
+    expect(added).toBeGreaterThanOrEqual(1);
+    expect(counts[0]! + counts[1]!).toBe(added);
+    expect(await queueDueReminders(t.db, t.worker.db, at('2026-10-17'))).toBe(0);
+  });
+
+  it('a reminder that cannot be queued is left for the next scan, and the rest are queued', async () => {
+    const first = await remindingBusiness('First Failing Office');
+    const a = await dueOn10October(first);
+    const second = await remindingBusiness('Second Fine Office');
+    const c = await dueOn10October(second);
+    let calls = 0;
+    const flaky = new Proxy(t.db, {
+      get(target, prop, receiver) {
+        if (prop !== 'transaction') return Reflect.get(target, prop, receiver);
+        return (...args: Parameters<typeof target.transaction>) => {
+          calls += 1;
+          if (calls === 1) return Promise.reject(new Error('connection lost'));
+          return target.transaction(...args);
+        };
+      },
+    });
+    const before = await allReminderJobs();
+    // The first reminder of the scan fails to queue; the scan carries on with the rest.
+    const counted = await queueDueReminders(flaky, t.worker.db, at('2026-10-24'));
+    expect(calls).toBeGreaterThanOrEqual(2);
+    expect(counted).toBe((await allReminderJobs()) - before);
+    expect(await queueDueReminders(t.db, t.worker.db, at('2026-10-24'))).toBe(1);
+    expect([await queued(first, a), await queued(second, c)]).toEqual([[14], [14]]);
+  });
+});
+
+describe('the plan', () => {
+  it('reminders can be turned on only on a plan that has them, and off on any', async () => {
+    process.env.INVOICA_PLANS = 'enforced';
+    const b = await business(t, 'Plan Switch Office');
+    await b.run((tx) =>
+      tx
+        .update(organisation)
+        .set({ trialEndsAt: new Date('2026-09-01T00:00:00Z') })
+        .where(eq(organisation.id, b.actor.organisationId)),
+    );
+    const settings = { reminderOffsets: [-3, 0, 7] as const, reminderWording: {} };
+    expect(
+      await failure(
+        b.run((tx) =>
+          updateReminderSettings(
+            tx,
+            b.actor,
+            { ...settings, reminderOffsets: [-3, 0, 7], remindersEnabled: true },
+            at('2026-10-17'),
+          ),
+        ),
+      ),
+    ).toMatch(/Reminders are part of the Pro and Studio plans/);
+    await b.run((tx) =>
+      updateReminderSettings(
+        tx,
+        b.actor,
+        { ...settings, reminderOffsets: [-3, 0, 7], remindersEnabled: false },
+        at('2026-10-17'),
+      ),
+    );
+    const [org] = await b.run((tx) => tx.select().from(organisation));
+    expect([org!.remindersEnabled, org!.reminderOffsets]).toEqual([false, [-3, 0, 7]]);
+  });
+});
+
+describe('what a reminder says, and what the invoice page says comes next', () => {
+  it('a due-date reminder caught up three days late reads as late', async () => {
+    const b = await remindingBusiness('Late Wording Office');
+    const id = await dueOn10October(b);
+    expect(await b.run((tx) => reminderContext(tx, id, 0, at('2026-10-13')))).toMatchObject({
+      kind: 'late',
+      today: '2026-10-13',
+    });
+    expect((await b.run((tx) => reminderContext(tx, id, -3, at('2026-10-10'))))?.kind).toBe('due');
+  });
+
+  it('the page names the reminder the scan sends today, before the ones to come', async () => {
+    const b = await remindingBusiness('Next Today Office');
+    const id = await issued(
+      b,
+      [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }],
+      { issueDate: '2026-09-16', dueDate: '2026-10-16' },
+      at('2026-09-16'),
+    );
+    expect((await b.run((tx) => reminderStatus(tx, id, '2026-10-18'))).next).toEqual({
+      offset: 0,
+      date: '2026-10-18',
+    });
+    await queueDueReminders(t.db, t.worker.db, at('2026-10-18'));
+    expect(await queued(b, id)).toEqual([0]);
+    expect((await b.run((tx) => reminderStatus(tx, id, '2026-10-18'))).next).toEqual({
+      offset: 7,
+      date: '2026-10-23',
+    });
+  });
+
+  it('the page never names a reminder for a day before the invoice was issued', async () => {
+    const b = await remindingBusiness('Next Issued Office');
+    const id = await issued(
+      b,
+      [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }],
+      { issueDate: '2026-10-18', dueDate: '2026-10-20' },
+      at('2026-10-18'),
+    );
+    expect((await b.run((tx) => reminderStatus(tx, id, '2026-10-18'))).next).toEqual({
+      offset: 0,
+      date: '2026-10-20',
+    });
   });
 });

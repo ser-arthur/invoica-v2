@@ -10,8 +10,8 @@ export async function enqueue(
   topic: string,
   payload: Record<string, unknown>,
   idempotencyKey: string,
-): Promise<void> {
-  await tx
+): Promise<boolean> {
+  const added = await tx
     .insert(outbox)
     .values({
       organisationId: actor.organisationId,
@@ -20,7 +20,9 @@ export async function enqueue(
       idempotencyKey,
       requestedBy: actor.userId,
     })
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning({ id: outbox.id });
+  return added.length > 0;
 }
 
 export interface ClaimedJob {

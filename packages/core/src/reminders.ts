@@ -14,23 +14,26 @@ export const REMINDER_CATCH_UP_DAYS = 7;
 
 export type ReminderKind = 'before' | 'due' | 'late';
 
-export function reminderKind(offset: number): ReminderKind {
-  return offset < 0 ? 'before' : offset === 0 ? 'due' : 'late';
+/** Which wording a reminder sent on `today` uses: by the day it is sent, so one caught up late reads as late. */
+export function reminderKind(dueDate: BusinessDate, today: BusinessDate): ReminderKind {
+  return today < dueDate ? 'before' : today === dueDate ? 'due' : 'late';
 }
 
 /**
- * The scheduled reminder due on `today`: the latest chosen offset whose date is today or in the week before. A
- * reminder is sent once per offset, so repeating the question on a later day finds the one already sent.
+ * The scheduled reminder due on `today`: the latest chosen offset whose date is today or in the week before, and
+ * not before the day the invoice was issued. A reminder is sent once per offset, so repeating the question on a
+ * later day finds the one already sent.
  */
 export function dueReminder(
   dueDate: BusinessDate,
   offsets: readonly number[],
   today: BusinessDate,
+  issuedOn: BusinessDate = '0000-01-01',
 ): number | null {
   const due = offsets
     .filter((o) => {
       const date = addDays(dueDate, o);
-      return date <= today && daysBetween(date, today) < REMINDER_CATCH_UP_DAYS;
+      return date <= today && date >= issuedOn && daysBetween(date, today) < REMINDER_CATCH_UP_DAYS;
     })
     .sort((a, b) => b - a);
   return due[0] ?? null;

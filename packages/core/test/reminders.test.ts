@@ -58,8 +58,23 @@ describe('the schedule', () => {
     expect(nextReminder(DUE, DEFAULT_REMINDER_OFFSETS, '2026-11-10', [-3, 0, 7, 14, 30])).toBeNull();
   });
 
-  it('names each kind', () => {
-    expect([reminderKind(-3), reminderKind(0), reminderKind(7)]).toEqual(['before', 'due', 'late']);
+  it('the wording follows the day it is sent: a reminder caught up after its day reads as late', () => {
+    expect(['2026-10-07', '2026-10-10', '2026-10-13'].map((d) => reminderKind(DUE, d))).toEqual([
+      'before',
+      'due',
+      'late',
+    ]);
+  });
+
+  it('a reminder whose day came before the invoice was issued is never due', () => {
+    // Two days to pay: the "three days before" day had passed when it was issued.
+    expect(dueReminder('2026-10-20', [-3, 0], '2026-10-18', '2026-10-18')).toBeNull();
+    expect(dueReminder('2026-10-20', [-3, 0], '2026-10-20', '2026-10-18')).toBe(0);
+    // Issued three days after its due date: the due-date reminder never goes, the 7-day one does.
+    expect(dueReminder('2026-10-15', [0, 7], '2026-10-18', '2026-10-18')).toBeNull();
+    expect(dueReminder('2026-10-15', [0, 7], '2026-10-22', '2026-10-18')).toBe(7);
+    // On the day it is issued, a reminder for that same day still goes.
+    expect(dueReminder('2026-10-18', [0], '2026-10-18', '2026-10-18')).toBe(0);
   });
 });
 
