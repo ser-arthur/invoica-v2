@@ -7,6 +7,7 @@ import { createClient, updateClient } from '../src/clients';
 import {
   createCreditNote,
   createDraft,
+  assertDraftUnchangedSinceCreated,
   deleteDraft,
   draftVersion,
   duplicateDocument,
@@ -536,7 +537,7 @@ describe('a draft changed in another tab or on another device', () => {
         run((tx) => updateDraft(tx, actor, id, { ...draft({ title: 'Mine' }), version: opened! })),
       ),
     ).toBe(
-      'This draft was changed in another tab or on another device since you opened it. Save yours anyway to replace those changes, or reload the page to see them.',
+      'This draft has changed since this page last saved it: in another tab, on another device, or by a save from here whose answer did not arrive. Save yours anyway to replace it, or reload the page to see it.',
     );
     expect((await run((tx) => getDocument(tx, id, '2026-10-18')))!.document.title).toBe('From the other tab');
     await run((tx) =>
@@ -545,5 +546,17 @@ describe('a draft changed in another tab or on another device', () => {
     expect((await run((tx) => getDocument(tx, id, '2026-10-18')))!.document.title).toBe('Mine');
     // A save without a version (an older page) is taken as before.
     await run((tx) => updateDraft(tx, actor, id, draft({ title: 'No version' })));
+  });
+});
+
+describe('the repeat of a new invoice’s first save, its answer lost', () => {
+  it('is refused once the draft has been changed since it was made, unless the person says to replace it', async () => {
+    const id = await run((tx) => createDraft(tx, actor, draft({ title: 'Made here' })));
+    await run((tx) => assertDraftUnchangedSinceCreated(tx, id, false));
+    await run((tx) => updateDraft(tx, actor, id, draft({ title: 'Changed in another tab' })));
+    expect(await failure(run((tx) => assertDraftUnchangedSinceCreated(tx, id, false)))).toMatch(
+      /^This draft has changed since this page last saved it/,
+    );
+    await run((tx) => assertDraftUnchangedSinceCreated(tx, id, true));
   });
 });

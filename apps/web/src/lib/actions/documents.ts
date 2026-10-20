@@ -7,6 +7,7 @@ import {
   createCreditNote,
   createDraft,
   deleteDraft,
+  assertDraftUnchangedSinceCreated,
   documentForKey,
   draftVersion,
   lockRequestKey,
@@ -71,6 +72,9 @@ export async function saveDraftAction(
       const existing = id ?? earlier?.id ?? null;
       let savedId: string;
       if (existing) {
+        if (earlier && earlier.lifecycle === 'draft') {
+          await assertDraftUnchangedSinceCreated(tx, earlier.id, parsed.data.overwrite === true);
+        }
         if (!earlier || earlier.lifecycle === 'draft') await updateDraft(tx, ws.actor, existing, parsed.data);
         savedId = existing;
       } else {
@@ -105,6 +109,7 @@ export async function saveAndIssueAction(
       // The same request already issued this invoice: return it.
       if (earlier && earlier.lifecycle !== 'draft') return { id: earlier.id, number: earlier.number ?? '' };
       let draftId = id ?? earlier?.id ?? null;
+      if (earlier) await assertDraftUnchangedSinceCreated(tx, earlier.id, parsed.data.overwrite === true);
       if (draftId) await updateDraft(tx, ws.actor, draftId, parsed.data);
       else draftId = await createDraft(tx, ws.actor, parsed.data);
       const { number } = await issueDocument(tx, ws.actor, draftId, new Date(), shown?.data);

@@ -39,11 +39,17 @@ export async function createTaxCode(tx: Tx, actor: Actor, input: TaxCodeInput): 
   const repeat = async () => {
     if (!key) return undefined;
     const [row] = await tx
-      .select({ id: taxCode.id, requestFingerprint: taxCode.requestFingerprint })
+      .select({
+        id: taxCode.id,
+        requestFingerprint: taxCode.requestFingerprint,
+        changed: sql<boolean>`${taxCode.updatedAt} <> ${taxCode.createdAt}`,
+      })
       .from(taxCode)
       .where(eq(taxCode.idempotencyKey, key));
     if (!row) return undefined;
-    if (row.requestFingerprint !== digest) {
+    // A correction is applied only to the record as its first request made it: an edit made since, or a correction
+    // already applied, is never replaced by an older request arriving late.
+    if (row.requestFingerprint !== digest && !row.changed) {
       await updateTaxCode(tx, actor, row.id, input);
       await tx.update(taxCode).set({ requestFingerprint: digest }).where(eq(taxCode.id, row.id));
     }

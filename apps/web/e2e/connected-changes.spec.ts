@@ -436,8 +436,17 @@ test('a draft changed in another tab is not replaced without asking', async ({ p
 
   await page.fill('#e-title', 'Spring survey, north site');
   await page.getByRole('button', { name: 'Save draft' }).click();
-  await expect(page.getByText(/This draft was changed in another tab or on another device/)).toBeVisible();
+  const changed = page.getByText(/This draft has changed since this page last saved it/);
+  await expect(changed).toBeVisible();
   await expect(page.locator('#e-title')).toHaveValue('Spring survey, north site');
+  await page.waitForLoadState('networkidle');
+  // The other tab saves again after the refusal: replacing still asks, as that change is newer still.
+  await other.fill('#e-title', 'Spring survey, south site');
+  await other.getByRole('button', { name: 'Save draft' }).click();
+  await expect(other.getByText('Draft saved.')).toBeVisible();
+  await page.getByRole('button', { name: 'Save mine anyway' }).click();
+  await expect(changed).toBeVisible();
+  await page.waitForLoadState('networkidle');
   await page.getByRole('button', { name: 'Save mine anyway' }).click();
   await expect(page.getByText('Draft saved.')).toBeVisible();
   // And this tab's next save goes through as usual.

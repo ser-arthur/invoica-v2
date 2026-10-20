@@ -7,6 +7,7 @@ import {
   formatMoney,
   presetFor,
   rescaleMinor,
+  rescaleMinorHalfUp,
   roundingDefaultFor,
 } from '@invoica/core';
 import type { OnboardingInput, OrganisationProfileInput } from '@invoica/schemas';
@@ -166,15 +167,20 @@ async function assertNumbersDoNotRepeat(tx: Tx, input: OrganisationProfileInput)
 
 /**
  * Saved items are priced in the business's currency. When it changes, each keeps its figure in the new one (£500.00
- * becomes ¥500), and the change is refused while a price cannot be written in it (£12.34 in yen).
+ * becomes ¥500), and the change is refused while a saved item in use has a price it cannot write (£12.34 in yen).
  */
 async function rescaleItems(tx: Tx, to: string): Promise<void> {
   const [org] = await tx.select({ baseCurrency: organisation.baseCurrency }).from(organisation);
   const from = org?.baseCurrency;
   if (!from || from === to) return;
-  const items = await tx.select({ id: item.id, name: item.name, unitPrice: item.unitPrice }).from(item);
+  const items = await tx
+    .select({ id: item.id, name: item.name, unitPrice: item.unitPrice, archivedAt: item.archivedAt })
+    .from(item);
   for (const i of items) {
-    const price = rescaleMinor(i.unitPrice, from, to);
+    // An archived item cannot be seen or changed in the app, so it is rounded to the new currency's unit.
+    const price = i.archivedAt
+      ? rescaleMinorHalfUp(i.unitPrice, from, to)
+      : rescaleMinor(i.unitPrice, from, to);
     if (price === null) {
       throw new DomainError(
         'item_price_not_in_currency',

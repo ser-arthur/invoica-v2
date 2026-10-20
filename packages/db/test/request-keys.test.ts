@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 import { clientInput, itemInput, organisationProfileInput, taxCodeInput } from '@invoica/schemas';
-import { createClient } from '../src/clients';
+import { createClient, updateClient } from '../src/clients';
 import { getOrganisation, updateOrganisationProfile } from '../src/organisations';
 import { createItem } from '../src/items';
 import { createDraft, deleteDraft, issueDocument, updateDraft, voidDocument } from '../src/documents';
@@ -176,5 +176,41 @@ describe('the business’s currency changed with saved items', () => {
       await failure(b.run(async (tx) => updateOrganisationProfile(tx, b.actor, await profile(b, 'JPY')))),
     ).toBe('The saved item “Sticker” costs £12.34, which cannot be written in JPY. Change its price first.');
     expect(await prices(b)).toEqual([['Sticker', 1234]]);
+  });
+
+  it('an archived item is rounded to the new currency, so it never blocks the change', async () => {
+    const b = await business(t, 'Currency Archived Office');
+    const id = await b.run((tx) => createItem(tx, b.actor, anItem('Old sticker')));
+    await b.run((tx) =>
+      tx.update(item).set({ unitPrice: 1250, archivedAt: new Date() }).where(eq(item.id, id)),
+    );
+    await b.run(async (tx) => updateOrganisationProfile(tx, b.actor, await profile(b, 'JPY')));
+    expect(await prices(b)).toEqual([['Old sticker', 13]]);
+  });
+});
+
+describe('R11-L6: a corrected repeat never replaces a later change', () => {
+  it('an edit made on the record’s page, or the correction itself, is kept when an older request arrives', async () => {
+    const b = await business(t, 'Later Change Office');
+    const req = (n: string, email: string) =>
+      clientInput.parse({ name: n, email, idempotencyKey: 'late-client-0001' });
+    const id = await b.run((tx) => createClient(tx, b.actor, req('Harbour Mil Ltd', 'old@harbour.example')));
+    await b.run((tx) => createClient(tx, b.actor, req('Harbour Mill Ltd', 'ap@harbour.example')));
+    // The original request, delayed, arrives after its correction.
+    await b.run((tx) => createClient(tx, b.actor, req('Harbour Mil Ltd', 'old@harbour.example')));
+    let [kept] = await b.run((tx) => tx.select().from(client).where(eq(client.id, id)));
+    expect([kept!.name, kept!.email]).toEqual(['Harbour Mill Ltd', 'ap@harbour.example']);
+    // Edited on the client's page, then a repeat of another version arrives.
+    await b.run((tx) =>
+      updateClient(
+        tx,
+        b.actor,
+        id,
+        clientInput.parse({ name: 'Harbour Mill Ltd', email: 'ap@harbour.example', phone: '0113 496 0000' }),
+      ),
+    );
+    await b.run((tx) => createClient(tx, b.actor, req('Harbour Mil Ltd', 'old@harbour.example')));
+    [kept] = await b.run((tx) => tx.select().from(client).where(eq(client.id, id)));
+    expect([kept!.name, kept!.phone]).toEqual(['Harbour Mill Ltd', '0113 496 0000']);
   });
 });

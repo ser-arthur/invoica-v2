@@ -527,6 +527,26 @@ export async function lockDocument(tx: Tx, id: string): Promise<DocumentRow> {
   return doc;
 }
 
+const DRAFT_CHANGED =
+  'This draft has changed since this page last saved it: in another tab, on another device, or by a save from here whose answer did not arrive. Save yours anyway to replace it, or reload the page to see it.';
+
+/**
+ * Refuses the repeat of a new draft's first save (its answer lost) once the draft has been changed since it was made,
+ * in another tab or on another device, unless the person says to replace it.
+ */
+export async function assertDraftUnchangedSinceCreated(
+  tx: Tx,
+  id: string,
+  overwrite: boolean,
+): Promise<void> {
+  if (overwrite) return;
+  const [row] = await tx
+    .select({ changed: sql<boolean>`${document.updatedAt} <> ${document.createdAt}` })
+    .from(document)
+    .where(eq(document.id, id));
+  if (row?.changed) throw new DomainError('draft_changed', DRAFT_CHANGED);
+}
+
 /** A draft's version: when it was last changed, in microseconds, as text. Null when there is no such document. */
 export async function draftVersion(tx: Tx, id: string): Promise<string | null> {
   const [row] = await tx
@@ -556,10 +576,7 @@ export async function updateDraft(
   }
   // Saved from a page opened before another tab or device changed it: refused unless the person says to replace it.
   if (input.version && !input.overwrite && (await draftVersion(tx, id)) !== input.version) {
-    throw new DomainError(
-      'draft_changed',
-      'This draft was changed in another tab or on another device since you opened it. Save yours anyway to replace those changes, or reload the page to see them.',
-    );
+    throw new DomainError('draft_changed', DRAFT_CHANGED);
   }
   await assertClient(tx, input.clientId);
   const org = await getOrganisation(tx, actor);

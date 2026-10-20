@@ -175,3 +175,12 @@ export function rescaleMinor(amount: number, from: string, to: string): number |
     return null;
   }
 }
+
+/** As `rescaleMinor`, rounded half up to the other currency's smallest unit when it cannot write the figure exactly. */
+export function rescaleMinorHalfUp(amount: number, from: string, to: string): number {
+  const exact = rescaleMinor(amount, from, to);
+  if (exact !== null) return exact;
+  const scale = 10n ** BigInt(currency(from).exponent - currency(to).exponent);
+  const value = BigInt(amount);
+  return toSafeNumber((value * 2n + scale) / (scale * 2n));
+}

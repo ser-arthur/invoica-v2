@@ -28,11 +28,17 @@ export async function createItem(tx: Tx, actor: Actor, input: ItemInput): Promis
   const repeat = async () => {
     if (!key) return undefined;
     const [row] = await tx
-      .select({ id: item.id, requestFingerprint: item.requestFingerprint })
+      .select({
+        id: item.id,
+        requestFingerprint: item.requestFingerprint,
+        changed: sql<boolean>`${item.updatedAt} <> ${item.createdAt}`,
+      })
       .from(item)
       .where(eq(item.idempotencyKey, key));
     if (!row) return undefined;
-    if (row.requestFingerprint !== digest) {
+    // A correction is applied only to the record as its first request made it: an edit made since, or a correction
+    // already applied, is never replaced by an older request arriving late.
+    if (row.requestFingerprint !== digest && !row.changed) {
       await updateItem(tx, actor, row.id, input);
       await tx.update(item).set({ requestFingerprint: digest }).where(eq(item.id, row.id));
     }

@@ -7,6 +7,7 @@ import {
   parseMoney,
   retypeForCurrency,
   rescaleMinor,
+  rescaleMinorHalfUp,
   sumMinor,
   toDecimalString,
 } from '../src/money';
@@ -216,5 +217,17 @@ describe('rescaleMinor', () => {
         },
       ),
     );
+  });
+});
+
+describe('rescaleMinorHalfUp', () => {
+  it.each([
+    [1234, 'GBP', 'JPY', 12],
+    [1250, 'GBP', 'JPY', 13],
+    [50_000, 'GBP', 'JPY', 500],
+    [500, 'JPY', 'GBP', 50_000],
+    [12_345, 'KWD', 'GBP', 1235],
+  ])('%i in %s, written in %s to the nearest unit, is %i', (amount, from, to, expected) => {
+    expect(rescaleMinorHalfUp(amount, from, to)).toBe(expected);
   });
 });

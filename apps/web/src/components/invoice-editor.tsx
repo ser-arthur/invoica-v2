@@ -322,6 +322,16 @@ function parse(state: EditorState, taxCodes: EditorTaxCode[], org: EditorProps['
   return { input, lineErrors, totals, totalsError, lines };
 }
 
+/** Refusals after which the editor fetches the server's data again; see `save`. */
+const REFRESH_AFTER = new Set([
+  'total_changed',
+  'sterling_rate_stale',
+  'draft_changed',
+  'period_incomplete',
+  'tax_not_registered',
+  'tax_number_missing',
+]);
+
 export function InvoiceEditor(props: EditorProps) {
   const { org, taxCodes, items, today } = props;
   const router = useRouter();
@@ -337,6 +347,8 @@ export function InvoiceEditor(props: EditorProps) {
   const [version, setVersion] = useState<string | null>(props.version ?? null);
   // A save refused because the draft changed elsewhere since the page opened: which one to send again, replacing it.
   const [conflict, setConflict] = useState<'save' | 'issue' | null>(null);
+  // "Issue mine anyway" opens the confirmation; issuing from it then replaces the change made elsewhere.
+  const [replaceNext, setReplaceNext] = useState(false);
   // Where a link would have gone while the invoice had changes not saved.
   const [leavingTo, setLeavingTo] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: 'danger' | 'info'; text: string } | null>(
@@ -576,9 +588,15 @@ export function InvoiceEditor(props: EditorProps) {
     });
   }
 
-  function save(issue: boolean, overwrite = false) {
+  /**
+   * Saves, or saves and issues. `replace` sends it again after the server said the draft changed elsewhere: with the
+   * version the page has fetched since (so a change made after that is still caught), or, for a new invoice whose
+   * first answer was lost, with leave to replace.
+   */
+  function save(issue: boolean, replace = false) {
     setMessage(null);
     setConflict(null);
+    setReplaceNext(false);
     if (Object.keys(parsed.lineErrors).length) {
       setMessage({ tone: 'danger', text: 'Some lines need attention before saving.' });
       return;
@@ -606,10 +624,12 @@ export function InvoiceEditor(props: EditorProps) {
     start(async () => {
       // What the rate was worked out for goes with it, so the same figure typed for a new month is accepted.
       // With the version opened, so a change made in another tab since is not replaced without asking.
+      const sendVersion = docId ? (replace ? (props.version ?? version) : version) : null;
       const sent = {
         ...parsed.input,
         sterlingRateFor: rateEnteredFor,
-        ...(docId && version ? { version, ...(overwrite ? { overwrite: true } : {}) } : {}),
+        ...(sendVersion ? { version: sendVersion } : {}),
+        ...(!docId && replace ? { overwrite: true } : {}),
       };
       const input = docId ? sent : { ...sent, idempotencyKey: createKey };
       const result = issue
@@ -620,11 +640,10 @@ export function InvoiceEditor(props: EditorProps) {
         setErrors(result.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: result.message });
         if (result.code === 'draft_changed') setConflict(issue ? 'issue' : 'save');
-        // Today, the tax codes, the settings and the next number as the server has them now, so what the page
-        // works out (the total, what a rate is for) matches what the server checks. A draft issued meanwhile stays
-        // on screen with the message, as reloading would open the invoice in its place.
-        if (!result.unreachable && !result.signedOut && result.code !== 'document_not_draft')
-          router.refresh();
+        // Today, the tax codes, the settings, the next number and the draft's version as the server has them now,
+        // so what the page works out (the total, what a rate is for) matches what the server checks. Only for these
+        // refusals: after others (a draft deleted or issued elsewhere) a reload would leave the page.
+        if (result.code && REFRESH_AFTER.has(result.code)) router.refresh();
         return;
       }
       setDirty(false);
@@ -687,7 +706,13 @@ export function InvoiceEditor(props: EditorProps) {
             type="button"
             variant="danger"
             disabled={pending}
-            onClick={() => save(conflict === 'issue', true)}
+            onClick={() => {
+              // Issuing asks again, with the total as it is now.
+              if (conflict === 'issue') {
+                setReplaceNext(true);
+                setConfirmIssue(true);
+              } else save(false, true);
+            }}
           >
             {conflict === 'issue' ? 'Issue mine anyway' : 'Save mine anyway'}
           </Button>
@@ -1478,7 +1503,7 @@ export function InvoiceEditor(props: EditorProps) {
             <Button type="button" variant="ghost" onClick={() => setConfirmIssue(false)}>
               Keep editing
             </Button>
-            <Button type="button" disabled={pending} onClick={() => save(true)} autoFocus>
+            <Button type="button" disabled={pending} onClick={() => save(true, replaceNext)} autoFocus>
               {pending ? 'Issuing' : 'Issue invoice'}
             </Button>
           </div>

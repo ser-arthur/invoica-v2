@@ -69,11 +69,17 @@ export async function createClient(tx: Tx, actor: Actor, input: ClientInput): Pr
   const repeat = async () => {
     if (!key) return undefined;
     const [row] = await tx
-      .select({ id: client.id, requestFingerprint: client.requestFingerprint })
+      .select({
+        id: client.id,
+        requestFingerprint: client.requestFingerprint,
+        changed: sql<boolean>`${client.updatedAt} <> ${client.createdAt}`,
+      })
       .from(client)
       .where(eq(client.idempotencyKey, key));
     if (!row) return undefined;
-    if (row.requestFingerprint !== digest) {
+    // A correction is applied only to the record as its first request made it: an edit made since, or a correction
+    // already applied, is never replaced by an older request arriving late.
+    if (row.requestFingerprint !== digest && !row.changed) {
       await updateClient(tx, actor, row.id, input);
       await tx.update(client).set({ requestFingerprint: digest }).where(eq(client.id, row.id));
     }
