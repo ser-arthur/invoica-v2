@@ -6,8 +6,8 @@ import { withOrganisation } from '../src/tenancy';
 import { createTestDatabase, createUserWithOrganisation, type TestDatabase } from './helpers';
 
 /**
- * The outbox worker runs as its own role (review 1, L3): the app role can no longer call the functions that claim
- * and finish jobs across organisations, and the worker role can call nothing else.
+ * The outbox worker runs as its own role: the app role cannot call the functions that claim and finish jobs across
+ * organisations, and the worker role can call nothing else.
  */
 
 let t: TestDatabase;
@@ -49,7 +49,20 @@ describe('the app role', () => {
     const job = await jobByKey(a, 'app-cannot-claim');
     expect(
       await failure(t.db.execute(sql`select app.finish_outbox(${job.id}::uuid, true, null::text, true)`)),
-    ).toMatch(/permission denied|does not exist/);
+    ).toMatch(/permission denied for function finish_outbox/);
+  });
+});
+
+describe('both roles', () => {
+  it('cannot create temporary tables', async () => {
+    for (const [role, db] of [
+      ['app', t.db],
+      ['worker', t.worker.db],
+    ] as const) {
+      expect(await failure(db.execute(sql`create temporary table scratch (n int)`)), role).toMatch(
+        /permission denied to create temporary tables/,
+      );
+    }
   });
 });
 
