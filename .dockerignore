@@ -9,4 +9,5 @@
 .env
 .env.*
 !.env.example
+**/*.env
 docs/design/round-1/mock/node_modules

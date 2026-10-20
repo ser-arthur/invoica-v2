@@ -24,9 +24,14 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @invoica/web build
 
-# Applies new migrations with DATABASE_OWNER_URL, then exits.
-FROM build AS migrate
-CMD ["pnpm", "db:migrate"]
+# Applies new migrations with DATABASE_OWNER_URL, then exits. It holds the dependencies, the migrations and the
+# script that applies them, and nothing else from the repository.
+FROM deps AS migrate
+COPY packages/db/migrations packages/db/migrations
+COPY packages/db/src/migrate.ts packages/db/src/
+COPY packages/db/scripts/migrate.ts packages/db/scripts/
+USER node
+CMD ["packages/db/node_modules/.bin/tsx", "packages/db/scripts/migrate.ts"]
 
 FROM base AS runner
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000 \

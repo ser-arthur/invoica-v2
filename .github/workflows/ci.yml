@@ -42,12 +42,37 @@ jobs:
           DATABASE_URL: postgres://invoica_app:invoica_app@localhost:5432/invoica
 
   image:
-    # The container images build from every commit (Dockerfile; docs/deploy.md).
+    # The container images build from every commit (Dockerfile; docs/deploy.md), and the migration image applies
+    # every migration to an empty database set up as the deployment guide sets one up.
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - run: docker build --target migrate -t invoica-migrate .
       - run: docker build --target runner -t invoica-app .
+      - name: The migration image migrates an empty database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -v ON_ERROR_STOP=1 \
+            -c "create role invoica_owner login password 'owner' nosuperuser nobypassrls createdb" \
+            -c "create role invoica_app login password 'app' nosuperuser nobypassrls nocreatedb nocreaterole" \
+            -c "create role invoica_worker login password 'worker' nosuperuser nobypassrls nocreatedb nocreaterole" \
+            -c "create database invoica owner invoica_owner"
+          docker run --rm --network host \
+            -e DATABASE_OWNER_URL=postgres://invoica_owner:owner@localhost:5432/invoica invoica-migrate
+          docker run --rm --network host \
+            -e DATABASE_OWNER_URL=postgres://invoica_owner:owner@localhost:5432/invoica invoica-migrate
 
   e2e:
     # End-to-end tests at desktop and phone widths against the development server, on a fresh migrated database.

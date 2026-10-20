@@ -46,8 +46,8 @@ On the server, next to `deploy/compose.yaml`, create four files (never committed
 `invoica.env`, for the app:
 
 ```
-DATABASE_URL=postgres://invoica_app:...@<host>:5432/invoica?sslmode=require
-DATABASE_WORKER_URL=postgres://invoica_worker:...@<host>:5432/invoica?sslmode=require
+DATABASE_URL=postgres://invoica_app:...@<host>:5432/invoica?sslmode=verify-full
+DATABASE_WORKER_URL=postgres://invoica_worker:...@<host>:5432/invoica?sslmode=verify-full
 BETTER_AUTH_SECRET=<48 random characters>
 BETTER_AUTH_URL=https://app.<domain>
 CRON_SECRET=<40 random letters and digits>
@@ -57,9 +57,13 @@ EMAIL_FROM=Invoica <invoices@send.<domain>>
 INVOICA_CLIENT_IP_HEADER=cf-connecting-ip
 ```
 
-`migrate.env`, for the migration image only: `DATABASE_OWNER_URL=postgres://invoica_owner:...@<host>:5432/invoica?sslmode=require`.
+`migrate.env`, for the migration image only: `DATABASE_OWNER_URL=postgres://invoica_owner:...@<host>:5432/invoica?sslmode=verify-full`.
 
 `scheduler.env`, with the same `CRON_SECRET` and nothing else, and `tunnel.env`, with `TUNNEL_TOKEN=<the tunnel token>` and nothing else.
+
+Git and Docker ignore every `*.env` file, so a commit or an image build on the server never takes these files with it.
+
+The database connection is encrypted and checks the server's certificate (`sslmode=verify-full`; the driver Invoica uses, pg 8, reads `sslmode=require` the same way). A provider whose certificate comes from a public authority needs nothing more. A provider that signs with its own authority publishes a root certificate: save it next to the settings files as `db-ca.crt`, add `NODE_EXTRA_CA_CERTS=/etc/invoica/db-ca.crt` to `invoica.env` and `migrate.env`, add `- ./db-ca.crt:/etc/invoica/db-ca.crt:ro` to the app's `volumes` in `deploy/compose.yaml`, and add `-v "$PWD/deploy/db-ca.crt:/etc/invoica/db-ca.crt:ro"` to the `docker run` of the migration image. Without it, the health check fails with a certificate error, and nothing is sent unencrypted.
 
 A production server checks its settings when it starts (`apps/web/src/lib/config-check.ts`) and stops with a list of anything missing or wrong, without repeating any value.
 

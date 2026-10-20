@@ -5,6 +5,8 @@ coverage/
 .env
 .env.*
 !.env.example
+# Settings files for a server (docs/deploy.md), which hold its secrets.
+*.env
 .data/
 *.tsbuildinfo
 playwright-report/
