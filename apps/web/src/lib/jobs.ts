@@ -3,6 +3,7 @@ import { reminderEmail, type DocumentSnapshot } from '@invoica/core';
 import {
   documentPdfState,
   drainOutbox,
+  getOrganisation,
   markSent,
   audit,
   queueDueReminders,
@@ -13,7 +14,7 @@ import {
 import { getDb, getWorkerDb } from './db';
 import { keptPdf } from './pdf';
 import { EMAIL_FROM, getEmailAdapter } from './email';
-import { senderFor } from './sender';
+import { messageSender } from './sender';
 
 function actorOf(job: ClaimedJob) {
   if (!job.requestedBy) throw new Error('Job has no requesting user.');
@@ -34,9 +35,9 @@ const handlers = {
     // A document voided after its email was queued is not sent; the job finishes without sending.
     if (!state || state.lifecycle === 'void') return;
     const snapshot = state.snapshot as unknown as DocumentSnapshot;
+    const business = await withOrganisation(getDb(), actor, (tx) => getOrganisation(tx, actor));
     const sent = await getEmailAdapter().send({
-      from: senderFor(snapshot.seller.name, EMAIL_FROM()),
-      replyTo: snapshot.seller.email,
+      ...messageSender(business, snapshot.seller.email, EMAIL_FROM()),
       to: String(job.payload.to),
       subject: String(job.payload.subject),
       text: String(job.payload.message),
@@ -82,9 +83,9 @@ const handlers = {
     });
     const state = await withOrganisation(getDb(), actor, (tx) => documentPdfState(tx, documentId));
     const snapshot = state?.snapshot as unknown as DocumentSnapshot | undefined;
+    const business = await withOrganisation(getDb(), actor, (tx) => getOrganisation(tx, actor));
     const sent = await getEmailAdapter().send({
-      from: senderFor(context.business, EMAIL_FROM()),
-      replyTo: snapshot?.seller.email ?? null,
+      ...messageSender(business, snapshot?.seller.email ?? null, EMAIL_FROM()),
       to: context.to,
       subject: email.subject,
       text: email.text,

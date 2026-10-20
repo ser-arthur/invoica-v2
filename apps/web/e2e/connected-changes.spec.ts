@@ -456,3 +456,66 @@ test('a draft changed in another tab is not replaced without asking', async ({ p
   await other.reload();
   await expect(other.locator('#e-title')).toHaveValue('Spring survey, north site only');
 });
+
+test('the business’s name and email changed after issuing: its emails come from it as it is now, replies go to its email now, and the PDF stays as issued', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'First Name Studio', { vat: true });
+  await page.goto('/settings');
+  await page.fill('#s-email', 'old-desk@studio.example');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText(/Settings saved\./)).toBeVisible();
+  const client = `moved${Date.now()}@client.example`;
+  await addClient(page, 'Kestrel Mill Ltd', client);
+  await page.goto('/settings#reminders');
+  await page.getByLabel('Remind clients about unpaid invoices').check();
+  await page.getByRole('button', { name: 'Save reminder settings' }).click();
+  await expect(page.getByText('Reminder settings saved.')).toBeVisible();
+
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Kestrel Mill Ltd' });
+  await page.getByLabel('Line 1 description').fill('Millwork survey');
+  await page.getByLabel('Line 1 price').fill('300');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\?issued=1/);
+  const url = page.url().replace('?issued=1', '');
+
+  // The business moves to a new name and a new mailbox.
+  await page.goto('/settings');
+  await page.fill('#s-name', 'Second Name Studio');
+  await page.fill('#s-email', 'new-desk@studio.example');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText(/Settings saved\./)).toBeVisible();
+
+  const header = (raw: string, name: string) =>
+    new RegExp(`^${name}: (.*)$`, 'm').exec(raw.split('\r\n\r\n')[0]!)?.[1] ?? '';
+  const nextEmail = async (since: number) => {
+    await expect.poll(() => emailsTo(client, since).length, { timeout: 10_000 }).toBeGreaterThan(0);
+    return emailsTo(client, since).at(-1)!;
+  };
+
+  // The invoice issued before the move.
+  await page.goto(url);
+  let started = Date.now();
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Send invoice' }).click();
+  await expect(page.getByText(new RegExp(`On its way to ${client}`))).toBeVisible();
+  const invoiceEmail = await nextEmail(started);
+  expect(header(invoiceEmail.raw, 'From')).toMatch(/^Second Name Studio via Invoica </);
+  expect(header(invoiceEmail.raw, 'Reply-To')).toBe('new-desk@studio.example');
+
+  // A reminder about it.
+  await page.reload();
+  started = Date.now();
+  await page.getByRole('button', { name: 'Send a reminder now' }).click();
+  await expect(page.getByText('A reminder is on its way.')).toBeVisible();
+  const reminder = await nextEmail(started);
+  expect(header(reminder.raw, 'From')).toMatch(/^Second Name Studio via Invoica </);
+  expect(header(reminder.raw, 'Reply-To')).toBe('new-desk@studio.example');
+
+  // The invoice itself stays as it was issued.
+  const kept = page.frameLocator('iframe').first();
+  await expect(kept.getByText('First Name Studio').first()).toBeVisible();
+  await expect(kept.getByText('old-desk@studio.example').first()).toBeVisible();
+});

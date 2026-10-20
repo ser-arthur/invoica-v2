@@ -19,9 +19,11 @@ On the dashboard, for each invoice still owed whose latest email or reminder cou
 2. Of those that could not be sent, only the latest of each kind is shown, and only while it is the latest of its kind: an email sent or queued after it clears it.
 3. Only the invoice's own business sees them (the outbox's row-level security).
 4. The development mailbox refuses an address at the reserved domain `.invalid` for good, as a provider refuses an address that cannot exist, so this path can be tried locally.
+5. An invoice or reminder email comes from the business as it is now ("Second Name Studio via Invoica"), and replies go to the business's email now, or to the email printed on the invoice when the business has none now. A business that changes its name or mailbox after issuing gets its replies where it reads them. The attached PDF is the invoice as it was issued.
 
 ## Acceptance criteria
 
 1. Rules 1 to 3, and the dashboard's list: `packages/db/test/deliveries.test.ts`.
 2. Rule 4: `apps/web/src/lib/email-adapters.test.ts`.
 3. An invoice emailed to an address that cannot exist says so on its page and on the dashboard, stays "Issued", and both messages go once the invoice is emailed to a good address (`apps/web/e2e/invoice-flow.spec.ts`).
+4. Rule 5: `apps/web/src/lib/sender.test.ts`, and `apps/web/e2e/connected-changes.spec.ts` ("the business's name and email changed after issuing").

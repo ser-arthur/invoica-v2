@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { senderFor } from './sender';
+import { messageSender, senderFor } from './sender';
 
 /** The From of an invoice or reminder: the business's name, "via Invoica", and Invoica's sending address. */
 
@@ -29,5 +29,31 @@ describe('senderFor', () => {
     expect(from).not.toMatch(/[\r\n]/);
     expect(from.endsWith(' <invoices@send.invoica.example>')).toBe(true);
     expect(from.match(/</g)).toHaveLength(1);
+  });
+});
+
+/** docs/specs/email-status.md, rule 5: who an invoice or reminder email comes from, and where replies go. */
+describe('messageSender', () => {
+  it('names the business as it is now, with replies to its email now', () => {
+    expect(
+      messageSender(
+        { name: 'Second Name Studio', email: 'new-desk@studio.example' },
+        'old@studio.example',
+        FROM,
+      ),
+    ).toEqual({
+      from: 'Second Name Studio via Invoica <invoices@send.invoica.example>',
+      replyTo: 'new-desk@studio.example',
+    });
+  });
+
+  it('sends replies to the email printed on the document when the business has none now, and nowhere with neither', () => {
+    expect(messageSender({ name: 'Studio', email: null }, 'printed@studio.example', FROM).replyTo).toBe(
+      'printed@studio.example',
+    );
+    expect(messageSender({ name: 'Studio', email: '  ' }, 'printed@studio.example', FROM).replyTo).toBe(
+      'printed@studio.example',
+    );
+    expect(messageSender({ name: 'Studio', email: null }, null, FROM).replyTo).toBeNull();
   });
 });
