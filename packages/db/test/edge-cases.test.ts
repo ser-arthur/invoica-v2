@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { MAX_UNIT_PRICE, type DocumentSnapshot } from '@invoica/core';
-import { draftInput, type DraftInput } from '@invoica/schemas';
+import { draftInput, type DraftFormInput, type DraftInput } from '@invoica/schemas';
 import { setClientArchived } from '../src/clients';
 import { getDashboard } from '../src/dashboard';
 import {
@@ -30,7 +30,7 @@ afterAll(async () => {
   await t?.close();
 });
 
-const draft = (b: Business, over: Partial<DraftInput> & { lines?: DraftInput['lines'] }) =>
+const draft = (b: Business, over: Partial<DraftFormInput>) =>
   draftInput.parse({
     clientId: b.clientId,
     currency: 'GBP',
