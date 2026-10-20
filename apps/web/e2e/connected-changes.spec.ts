@@ -118,3 +118,41 @@ test('a client and the business changed after issuing: the issued invoice stays 
   await expect(fresh.getByText('New Name Holdings Ltd').first()).toBeVisible();
   await expect(fresh.getByText('After Rename Studio').first()).toBeVisible();
 });
+
+test('leaving an invoice with changes not saved asks first, from any link', async ({ page }) => {
+  await signUpAndOnboard(page, 'Leaving Studio', { vat: true });
+  await addClient(page, 'Harbourside Ltd');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Harbourside Ltd' });
+  await page.getByLabel('Line 1 description').fill('Mooring plan');
+  await page.getByLabel('Line 1 price').fill('450');
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .first()
+    .getByRole('link', { name: 'Dashboard' })
+    .click();
+  const dialog = page.getByRole('dialog', { name: 'Leave this invoice?' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Keep editing' }).click();
+  await expect(page).toHaveURL(/\/invoices\/new$/);
+  await expect(page.getByLabel('Line 1 description')).toHaveValue('Mooring plan');
+
+  // Saved, it leaves without asking.
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await expect(page.getByText('Draft saved.')).toBeVisible();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\/edit$/);
+  const draft = page.url();
+  await page.getByLabel('Line 1 description').fill('Mooring plan, revised');
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .first()
+    .getByRole('link', { name: 'Invoices' })
+    .click();
+  await dialog.getByRole('button', { name: 'Leave without saving' }).click();
+  await page.waitForURL(/\/invoices$/);
+  await expect(page.getByText('Mooring plan, revised')).toHaveCount(0);
+  await page.goto(draft);
+  await expect(page.getByLabel('Line 1 description')).toHaveValue('Mooring plan');
+  await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Clients' }).click();
+  await page.waitForURL(/\/clients$/);
+});
