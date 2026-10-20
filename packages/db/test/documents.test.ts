@@ -8,6 +8,7 @@ import {
   createCreditNote,
   createDraft,
   deleteDraft,
+  draftVersion,
   duplicateDocument,
   getDocument,
   issueDocument,
@@ -518,5 +519,31 @@ describe('issuing checks the total the person confirmed', () => {
     expect((await run((tx) => getDocument(tx, id, '2026-10-18')))!.document.lifecycle).toBe('draft');
     await run((tx) => issueDocument(tx, actor, id, NOW, { total }));
     expect((await run((tx) => getDocument(tx, id, '2026-10-18')))!.document.lifecycle).toBe('issued');
+  });
+});
+
+describe('a draft changed in another tab or on another device', () => {
+  it('a save from a page opened before the change is refused, and goes through when the person says to', async () => {
+    const id = await run((tx) => createDraft(tx, actor, draft({ title: 'First' })));
+    const opened = await run((tx) => draftVersion(tx, id));
+    expect(opened).toMatch(/^\d+$/);
+    // Another tab saves, then this one, which still has the version it opened.
+    await run((tx) =>
+      updateDraft(tx, actor, id, { ...draft({ title: 'From the other tab' }), version: opened! }),
+    );
+    expect(
+      await failure(
+        run((tx) => updateDraft(tx, actor, id, { ...draft({ title: 'Mine' }), version: opened! })),
+      ),
+    ).toBe(
+      'This draft was changed in another tab or on another device since you opened it. Save yours anyway to replace those changes, or reload the page to see them.',
+    );
+    expect((await run((tx) => getDocument(tx, id, '2026-10-18')))!.document.title).toBe('From the other tab');
+    await run((tx) =>
+      updateDraft(tx, actor, id, { ...draft({ title: 'Mine' }), version: opened!, overwrite: true }),
+    );
+    expect((await run((tx) => getDocument(tx, id, '2026-10-18')))!.document.title).toBe('Mine');
+    // A save without a version (an older page) is taken as before.
+    await run((tx) => updateDraft(tx, actor, id, draft({ title: 'No version' })));
   });
 });

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { getDocument } from '@invoica/db';
+import { draftVersion, getDocument } from '@invoica/db';
 import { InvoiceEditor } from '@/components/invoice-editor';
 import { PageHeader } from '@/components/ui';
 import { draftState, loadEditorData } from '@/lib/editor-data';
@@ -24,7 +24,12 @@ export default async function EditInvoicePage({
     const detail = await getDocument(tx, id, ws.today);
     if (!detail) return null;
     if (detail.document.lifecycle !== 'draft') return { issued: true as const };
-    return { issued: false as const, data: await loadEditorData(tx, ws), initial: draftState(detail) };
+    return {
+      issued: false as const,
+      data: await loadEditorData(tx, ws),
+      initial: draftState(detail),
+      version: await draftVersion(tx, id),
+    };
   });
   if (!result) notFound();
   if (result.issued) redirect(`/invoices/${id}`);
@@ -38,6 +43,7 @@ export default async function EditInvoicePage({
       <InvoiceEditor
         id={id}
         initial={result.initial}
+        version={result.version}
         notice={saved === '1' ? 'Draft saved.' : undefined}
         {...result.data}
       />

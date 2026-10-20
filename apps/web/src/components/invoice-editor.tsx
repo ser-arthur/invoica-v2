@@ -150,6 +150,8 @@ export interface EditorProps {
   initial: EditorState;
   /** A message to show on arrival, such as "Draft saved." after the first save opened this draft. */
   notice?: string;
+  /** The version of the draft as opened (`draftVersion`), sent with each save. */
+  version?: string | null;
   today: string;
   clients: EditorClient[];
   items: EditorItem[];
@@ -332,6 +334,9 @@ export function InvoiceEditor(props: EditorProps) {
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit');
   const [addingClient, setAddingClient] = useState(false);
   const [confirmIssue, setConfirmIssue] = useState(false);
+  const [version, setVersion] = useState<string | null>(props.version ?? null);
+  // A save refused because the draft changed elsewhere since the page opened: which one to send again, replacing it.
+  const [conflict, setConflict] = useState<'save' | 'issue' | null>(null);
   // Where a link would have gone while the invoice had changes not saved.
   const [leavingTo, setLeavingTo] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: 'danger' | 'info'; text: string } | null>(
@@ -571,8 +576,9 @@ export function InvoiceEditor(props: EditorProps) {
     });
   }
 
-  function save(issue: boolean) {
+  function save(issue: boolean, overwrite = false) {
     setMessage(null);
+    setConflict(null);
     if (Object.keys(parsed.lineErrors).length) {
       setMessage({ tone: 'danger', text: 'Some lines need attention before saving.' });
       return;
@@ -599,7 +605,12 @@ export function InvoiceEditor(props: EditorProps) {
     }
     start(async () => {
       // What the rate was worked out for goes with it, so the same figure typed for a new month is accepted.
-      const sent = { ...parsed.input, sterlingRateFor: rateEnteredFor };
+      // With the version opened, so a change made in another tab since is not replaced without asking.
+      const sent = {
+        ...parsed.input,
+        sterlingRateFor: rateEnteredFor,
+        ...(docId && version ? { version, ...(overwrite ? { overwrite: true } : {}) } : {}),
+      };
       const input = docId ? sent : { ...sent, idempotencyKey: createKey };
       const result = issue
         ? await reach(saveAndIssueAction(docId, input, totals ? { total: totals.total } : undefined))
@@ -608,6 +619,7 @@ export function InvoiceEditor(props: EditorProps) {
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: result.message });
+        if (result.code === 'draft_changed') setConflict(issue ? 'issue' : 'save');
         // Today, the tax codes, the settings and the next number as the server has them now, so what the page
         // works out (the total, what a rate is for) matches what the server checks. A draft issued meanwhile stays
         // on screen with the message, as reloading would open the invoice in its place.
@@ -628,6 +640,7 @@ export function InvoiceEditor(props: EditorProps) {
         router.replace(`/invoices/${result.data.id}/edit?saved=1`);
         return;
       }
+      if ('version' in result.data) setVersion(result.data.version);
       setMessage({ tone: 'info', text: 'Draft saved.' });
       router.refresh();
     });
@@ -668,6 +681,18 @@ export function InvoiceEditor(props: EditorProps) {
       </div>
 
       {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
+      {conflict ? (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="danger"
+            disabled={pending}
+            onClick={() => save(conflict === 'issue', true)}
+          >
+            {conflict === 'issue' ? 'Issue mine anyway' : 'Save mine anyway'}
+          </Button>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,620px)_minmax(0,1fr)]">
         <div className={cx('flex flex-col gap-5', mobileView === 'preview' && 'hidden lg:flex')}>

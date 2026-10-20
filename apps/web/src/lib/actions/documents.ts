@@ -8,6 +8,7 @@ import {
   createDraft,
   deleteDraft,
   documentForKey,
+  draftVersion,
   lockRequestKey,
   enqueue,
   getDocument,
@@ -59,23 +60,27 @@ async function earlierForKey(tx: Tx, key: string | undefined) {
 export async function saveDraftAction(
   id: string | null,
   input: unknown,
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ id: string; version: string | null }>> {
   const parsed = draftInput.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
   try {
-    const savedId = await inWorkspace(async (tx, ws) => {
+    const saved = await inWorkspace(async (tx, ws) => {
       // A repeated first save (its answer lost on the way back) finds the draft it created. The key is held for the
       // transaction, so a repeat that overlaps the first waits for it.
       const earlier = id ? null : await earlierForKey(tx, parsed.data.idempotencyKey);
       const existing = id ?? earlier?.id ?? null;
+      let savedId: string;
       if (existing) {
         if (!earlier || earlier.lifecycle === 'draft') await updateDraft(tx, ws.actor, existing, parsed.data);
-        return existing;
+        savedId = existing;
+      } else {
+        savedId = await createDraft(tx, ws.actor, parsed.data);
       }
-      return createDraft(tx, ws.actor, parsed.data);
+      // The version as saved, so the page's next save is checked against this one.
+      return { id: savedId, version: await draftVersion(tx, savedId) };
     });
-    refresh(savedId);
-    return { ok: true, data: { id: savedId } };
+    refresh(saved.id);
+    return { ok: true, data: saved };
   } catch (error) {
     return failure(error);
   }

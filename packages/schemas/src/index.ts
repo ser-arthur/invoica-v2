@@ -316,6 +316,13 @@ export const draftInput = z
     lines: z.array(lineInput).max(200, 'An invoice can have at most 200 lines.'),
     /** Sent with the first save of a new invoice, so a repeated save finds the same draft. */
     idempotencyKey: z.string().min(8).max(100).optional(),
+    /** The version of the draft the page opened (`draftVersion`), so a change made elsewhere since is not lost. */
+    version: z
+      .string()
+      .regex(/^\d{1,20}$/)
+      .optional(),
+    /** Replace a change made elsewhere since the page opened, when the person says to. */
+    overwrite: z.boolean().optional(),
   })
   .refine((d) => !d.dueDate || !d.issueDate || d.dueDate >= d.issueDate, {
     message: 'The due date cannot be before the issue date.',

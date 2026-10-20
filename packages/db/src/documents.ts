@@ -527,6 +527,15 @@ export async function lockDocument(tx: Tx, id: string): Promise<DocumentRow> {
   return doc;
 }
 
+/** A draft's version: when it was last changed, in microseconds, as text. Null when there is no such document. */
+export async function draftVersion(tx: Tx, id: string): Promise<string | null> {
+  const [row] = await tx
+    .select({ version: sql<string>`(extract(epoch from ${document.updatedAt}) * 1000000)::bigint::text` })
+    .from(document)
+    .where(eq(document.id, id));
+  return row?.version ?? null;
+}
+
 export async function updateDraft(
   tx: Tx,
   actor: Actor,
@@ -543,6 +552,13 @@ export async function updateDraft(
       doc.number
         ? `This ${what} has already been issued as ${doc.number}, so it can no longer be changed.`
         : 'Only drafts can be edited.',
+    );
+  }
+  // Saved from a page opened before another tab or device changed it: refused unless the person says to replace it.
+  if (input.version && !input.overwrite && (await draftVersion(tx, id)) !== input.version) {
+    throw new DomainError(
+      'draft_changed',
+      'This draft was changed in another tab or on another device since you opened it. Save yours anyway to replace those changes, or reload the page to see them.',
     );
   }
   await assertClient(tx, input.clientId);

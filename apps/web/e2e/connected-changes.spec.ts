@@ -414,3 +414,36 @@ test('the way rates are chosen changed in another tab: the editor asks for the r
   await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\/edit\?saved=1/);
   await expect(page.locator('#e-sterling-rate')).toHaveValue('1.1450');
 });
+
+test('a draft changed in another tab is not replaced without asking', async ({ page }) => {
+  await signUpAndOnboard(page, 'Two Tabs Studio');
+  await addClient(page, 'Heron Wharf Ltd');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Heron Wharf Ltd' });
+  await page.fill('#e-title', 'Spring survey');
+  await page.getByLabel('Line 1 description').fill('Survey');
+  await page.getByLabel('Line 1 price').fill('300');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\/edit\?saved=1/);
+  const draft = page.url().replace('?saved=1', '');
+
+  const other = await page.context().newPage();
+  await other.goto(draft);
+  await other.waitForLoadState('networkidle');
+  await other.fill('#e-title', 'Spring survey, both sites');
+  await other.getByRole('button', { name: 'Save draft' }).click();
+  await expect(other.getByText('Draft saved.')).toBeVisible();
+
+  await page.fill('#e-title', 'Spring survey, north site');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await expect(page.getByText(/This draft was changed in another tab or on another device/)).toBeVisible();
+  await expect(page.locator('#e-title')).toHaveValue('Spring survey, north site');
+  await page.getByRole('button', { name: 'Save mine anyway' }).click();
+  await expect(page.getByText('Draft saved.')).toBeVisible();
+  // And this tab's next save goes through as usual.
+  await page.fill('#e-title', 'Spring survey, north site only');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await expect(page.getByText('Draft saved.')).toBeVisible();
+  await other.reload();
+  await expect(other.locator('#e-title')).toHaveValue('Spring survey, north site only');
+});

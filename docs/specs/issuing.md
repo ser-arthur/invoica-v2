@@ -10,9 +10,11 @@ How a draft becomes an issued invoice, and what holds when the world around it c
 4. The request carries the total the person confirmed. The server works the total out again from the records as they are; when another tab or device changed a tax rate or a setting meanwhile, the total differs and nothing is saved or issued. The editor says "The total changed while this was open: it is now £110.00, with the tax rates and settings as they are now. Check it and issue again.", fetches the current tax codes and settings, and shows the new total to confirm.
 5. A draft saved or issued again once it is issued (a lost answer tried again, or a page opened before it was issued elsewhere) is refused with its number: "This invoice has already been issued as INV-0007, so it can no longer be changed."
 6. A new invoice issued again with the same request key returns the invoice the first request issued.
+7. A draft saved or issued from a page opened before another tab or device changed it is refused: "This draft was changed in another tab or on another device since you opened it. Save yours anyway to replace those changes, or reload the page to see them." The editor keeps what was typed and offers "Save mine anyway" (or "Issue mine anyway"). Each save carries the version the page has (`draftVersion`), and the editor takes the new version after each of its own saves.
 
 ## Acceptance criteria
 
 1. Rules 1 to 3: `packages/db/test/documents.test.ts`, `apps/web/e2e/connected-changes.spec.ts` ("a client and the business changed after issuing").
 2. Rule 4: a total other than the one confirmed is refused with the new figure and the draft stays a draft (`packages/db/test/documents.test.ts`); a tax rate changed in another tab shows the new total to confirm, and the invoice is issued with it (`apps/web/e2e/connected-changes.spec.ts`).
 3. Rules 5 and 6: `packages/db/test/request-keys.test.ts`, `apps/web/e2e/connection.spec.ts`.
+4. Rule 7: `packages/db/test/documents.test.ts`, `apps/web/e2e/connected-changes.spec.ts` ("a draft changed in another tab is not replaced without asking").
