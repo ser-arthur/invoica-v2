@@ -11,6 +11,7 @@ import {
   setRemindersPaused,
   updateReminderSettings,
 } from '../src/reminders';
+import { enqueue } from '../src/outbox';
 import { withOrganisation } from '../src/tenancy';
 import { createTestDatabase, type TestDatabase } from './helpers';
 import { business, failure, issued, pay, type Business } from './business';
@@ -207,16 +208,16 @@ describe('sending', () => {
 
 describe('the scan’s view across organisations', () => {
   it('only the worker can run it, and it returns ids only', async () => {
-    expect(await failure(t.db.execute(sql`select * from app.due_reminders(now())`))).toMatch(
-      /permission denied/,
-    );
-    const rows = await t.worker.db.execute(sql`select * from app.due_reminders(${at('2026-10-17')})`);
-    expect(rows.fields.map((f) => f.name)).toEqual([
-      'organisation_id',
-      'document_id',
-      'offset_days',
-      'owner_user_id',
-    ]);
+    for (const scan of [sql`app.reminder_candidates`, sql`app.due_reminders`]) {
+      expect(await failure(t.db.execute(sql`select * from ${scan}(now())`))).toMatch(/permission denied/);
+      const rows = await t.worker.db.execute(sql`select * from ${scan}(${at('2026-10-17')})`);
+      expect(rows.fields.map((f) => f.name)).toEqual([
+        'organisation_id',
+        'document_id',
+        'offset_days',
+        'owner_user_id',
+      ]);
+    }
   });
 
   it('setting the scan flag gives the app role nothing more', async () => {
@@ -374,7 +375,9 @@ describe('the scan offers an invoice only near the day a reminder falls due', ()
       at('2026-10-01'),
     );
     const offered = async (now: Date) =>
-      (await t.worker.db.execute<{ document_id: string }>(sql`select * from app.due_reminders(${now})`)).rows
+      (
+        await t.worker.db.execute<{ document_id: string }>(sql`select * from app.reminder_candidates(${now})`)
+      ).rows
         .map((r) => r.document_id)
         .includes(id);
     expect(await offered(new Date('2026-10-20T14:00:00Z'))).toBe(false);
@@ -385,6 +388,42 @@ describe('the scan offers an invoice only near the day a reminder falls due', ()
     await queueDueReminders(t.db, t.worker.db, new Date('2026-10-20T23:30:00Z'));
     expect(await queued(b, id)).toEqual([0]);
     expect(await offered(new Date('2026-10-21T12:00:00Z'))).toBe(false);
+  });
+});
+
+describe('decision 0011: the scan an app image from before migration 0022 calls', () => {
+  it('app.due_reminders offers the reminder due by the database’s own date, on the day, as that image expects', async () => {
+    const b = await remindingBusiness('Older Image Office');
+    await b.run((tx) =>
+      tx
+        .update(organisation)
+        .set({ reminderOffsets: [-3, 0] })
+        .where(eq(organisation.id, b.actor.organisationId)),
+    );
+    // Issued on 19 October, due on 21 October in London (BST): "three days before" falls before the issue day.
+    const id = await issued(
+      b,
+      [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }],
+      { issueDate: '2026-10-19', dueDate: '2026-10-21' },
+      new Date('2026-10-19T09:00:00Z'),
+    );
+    const offers = async (now: Date) =>
+      (
+        await t.worker.db.execute<{ document_id: string; offset_days: number }>(
+          sql`select * from app.due_reminders(${now})`,
+        )
+      ).rows
+        .filter((r) => r.document_id === id)
+        .map((r) => r.offset_days);
+    // 23:30 on the 20th in London: nothing yet, though the newer scan's window already reaches the 21st.
+    expect(await offers(new Date('2026-10-20T22:30:00Z'))).toEqual([]);
+    // 00:30 on the 21st: the due-date reminder, which that image queues as offered.
+    expect(await offers(new Date('2026-10-20T23:30:00Z'))).toEqual([0]);
+    // Once queued, it is offered no more.
+    await b.run((tx) =>
+      enqueue(tx, b.actor, 'document.reminder', { documentId: id, offset: 0 }, `reminder:${id}:0`),
+    );
+    expect(await offers(new Date('2026-10-21T12:00:00Z'))).toEqual([]);
   });
 });
 

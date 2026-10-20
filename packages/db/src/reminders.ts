@@ -24,7 +24,8 @@ const scheduledKey = (documentId: string, offset: number) => `reminder:${documen
 
 /**
  * Queues every scheduled reminder due at `now`. The scan reads across organisations only through
- * `app.due_reminders`, as the worker role, which returns the ids of invoices that may have a reminder due. Inside
+ * `app.reminder_candidates`, as the worker role, which returns the ids of invoices that may have a reminder due
+ * (`app.due_reminders` serves app images from before migration 0022, decision 0011). Inside
  * each invoice's organisation, as its owner, the plan is checked and the reminder due is chosen with the business
  * date worked out here (`todayIn`, `dueReminder`), as the invoice page works it out, so the database's own time zone
  * data never decides the day. A reminder's key is its invoice and offset, so a second scan queues nothing more.
@@ -36,7 +37,7 @@ export async function queueDueReminders(db: Database, worker: Database, now: Dat
     document_id: string;
     offset_days: number;
     owner_user_id: string;
-  }>(sql`select * from app.due_reminders(${now})`);
+  }>(sql`select * from app.reminder_candidates(${now})`);
   let queued = 0;
   for (const row of due.rows) {
     const actor: Actor = { userId: row.owner_user_id, organisationId: row.organisation_id };

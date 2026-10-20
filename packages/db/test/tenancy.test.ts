@@ -105,7 +105,7 @@ describe('cross-organisation access is refused', () => {
     ).rows;
     await owner.end();
     const tenant = TENANT_TABLES.filter((t) => t !== 'audit_log').map((t) => `${t} tenant public ALL`);
-    // The reminder scan (migration 0015) reads these as the owner role, inside app.due_reminders only.
+    // The reminder scan reads these as the owner role, inside app.reminder_candidates and app.due_reminders only.
     const scan = ['client', 'document', 'payment', 'refund', 'reminder_pause'].map(
       (t) => `${t} reminder_scan invoica_owner SELECT`,
     );
@@ -150,6 +150,7 @@ describe('cross-organisation access is refused', () => {
         'invoica_worker claim_outbox',
         'invoica_worker due_reminders',
         'invoica_worker finish_outbox',
+        'invoica_worker reminder_candidates',
       ].sort(),
     );
     const all = 'DELETE,INSERT,SELECT,UPDATE';

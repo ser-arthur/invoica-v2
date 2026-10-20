@@ -55,7 +55,7 @@ A business tool for client management, invoicing, cash flow and dashboards, ship
 ## Tenancy and security
 
 - The app connects as `invoica_app`, which owns nothing and cannot bypass row-level security. Every query runs inside `withOrganisation(db, actor, fn)`; the actor's user id comes from the verified session.
-- Background jobs are claimed and finished as `invoica_worker`, which can call only the two outbox functions; each job's work then runs as `invoica_app` inside the job's organisation.
+- Background jobs are claimed and finished as `invoica_worker`, which can call only the two outbox functions and the two reminder scans; each job's work then runs as `invoica_app` inside the job's organisation.
 - `packages/db/test/tenancy.test.ts` must pass.
 - Authorisation is checked on the server for every request. Inputs are validated with `@invoica/schemas`.
 - Never commit secrets. `.env.example` lists variable names only.

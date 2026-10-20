@@ -82,16 +82,16 @@ The health check answers `{"status":"ok"}` when the app reaches its database. Po
 ## 7. Each new version
 
 1. Pull the new code (a release tag from `main`).
-2. Build both images. If the release adds a migration in the table below, stop the scheduler first. Run the migration image, then `docker compose -f deploy/compose.yaml up -d app`, and start the scheduler again if it was stopped.
+2. Build both images. Run the migration image, then `docker compose -f deploy/compose.yaml up -d app`. If the release adds a migration in the table below, do what it says.
 3. Check `/api/health` and sign in.
 
 Migrations are only ever added, never edited, so the previous version keeps working against the new database while the new one starts, with the exceptions below. To go back, start the previous image; never undo a migration by hand.
 
-A previous image cannot run the reminder scan against a database with these migrations:
+The scheduler keeps running through an upgrade and after going back: since migration 0026 the database keeps the reminder scan each image calls, `app.due_reminders` for an image from before 0022 and `app.reminder_candidates` for later ones (decision 0011).
 
 | Migration | Why | What to do |
 | --- | --- | --- |
-| 0022, 0024 | The scan offers invoices that may have a reminder due, with a margin, and the app chooses. An app from before 0022 queues what it is offered, so some reminders go up to a day early, and one can go before the day the invoice was issued. | Stop the scheduler (`docker compose -f deploy/compose.yaml stop scheduler`) before running the migration image, and start it again (`start scheduler`) once the new app is up. To go back to an image from before 0022, keep the scheduler stopped while it runs. |
+| 0022 to 0025 | Against a database at 0022 to 0025 without 0026, an image from before 0022 sends some reminders up to a day early, and one can go before the day the invoice was issued. | Upgrade with the migration image of a release that includes 0026, which applies them together. A database already at one of these: run that migration image before starting an older image. |
 
 ## 8. Backups
 
