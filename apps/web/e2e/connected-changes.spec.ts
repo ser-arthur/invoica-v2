@@ -708,3 +708,28 @@ test('a draft deleted in another tab: the editor still open saves what was typed
   await page.goto('/invoices');
   await expect(page.getByRole('row', { name: /Fenwick Yard Ltd/ })).toHaveCount(1);
 });
+
+test('an invoice page left open past midnight records a payment on the new day', async ({ page }) => {
+  await signUpAndOnboard(page, 'Overnight Studio', { vat: true });
+  await addClient(page, 'Harrow Lane Bakery Ltd');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Harrow Lane Bakery Ltd' });
+  await page.getByLabel('Line 1 description').fill('Shop fit-out');
+  await page.getByLabel('Line 1 price').fill('500');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\?issued=1/);
+  const url = page.url().replace('?issued=1', '');
+
+  // The page opens today and stays open until the same time tomorrow.
+  await page.clock.install();
+  await page.goto(url);
+  await page.waitForLoadState('networkidle');
+  await page.clock.fastForward('24:00:00');
+  const londonDay = (ms: number) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(ms));
+  const tomorrow = londonDay(Date.now() + 86_400_000);
+  await page.getByRole('button', { name: 'Record payment' }).click();
+  await expect(page.locator('#pay-date')).toHaveValue(tomorrow);
+  await expect(page.locator('#pay-date')).toHaveAttribute('max', tomorrow);
+});

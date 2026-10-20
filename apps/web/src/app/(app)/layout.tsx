@@ -6,7 +6,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { organisation, user } = await requireWorkspace();
   const theme = (await cookies()).get('invoica_theme')?.value ?? 'light';
   return (
-    <AppShell organisationName={organisation.name} userName={user.email} theme={theme}>
+    <AppShell
+      organisationName={organisation.name}
+      userName={user.email}
+      theme={theme}
+      timeZone={organisation.timeZone}
+    >
       {children}
     </AppShell>
   );

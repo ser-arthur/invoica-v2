@@ -9,6 +9,7 @@ import { removeAllKept } from '@/lib/kept-typing';
 import { reach, reachAuth } from '@/lib/reach';
 import { showNotice } from '@/lib/notice';
 import { Notices } from './notices';
+import { BusinessTimeZoneProvider } from './business-time';
 import { ButtonLink, Wordmark, cx } from './ui';
 
 const NAV = [
@@ -26,11 +27,14 @@ export function AppShell({
   organisationName,
   userName,
   theme,
+  timeZone,
   children,
 }: {
   organisationName: string;
   userName: string;
   theme: string;
+  /** The business's time zone, for dates worked out while a page stays open. */
+  timeZone: string;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -150,7 +154,7 @@ export function AppShell({
       </header>
 
       <main id="main" className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-10">
-        {children}
+        <BusinessTimeZoneProvider timeZone={timeZone}>{children}</BusinessTimeZoneProvider>
       </main>
 
       <nav

@@ -37,6 +37,7 @@ import {
 } from '@/lib/actions/documents';
 import { requestKey } from '@/lib/request-key';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
+import { useBusinessToday } from './business-time';
 import { showNotice } from '@/lib/notice';
 import { reach } from '@/lib/reach';
 
@@ -122,7 +123,7 @@ export function PaymentDialog({
   id,
   balance,
   currency,
-  today,
+  today: pageToday,
   onClose,
 }: {
   id: string;
@@ -132,6 +133,9 @@ export function PaymentDialog({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const todayNow = useBusinessToday();
+  // Worked out when the form opens, so a page left open past midnight offers the new day.
+  const [today] = useState(() => todayNow(pageToday));
   const [amount, setAmount] = useState(toDecimalString(balance, currency));
   const [paidOn, setPaidOn] = useState(today);
   const [method, setMethod] = useState('bank_transfer');
@@ -379,6 +383,9 @@ export function CreditNoteButton({
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
+  const todayNow = useBusinessToday();
+  // The day the dialog opened, worked out then, so a page left open past midnight offers the new day.
+  const [refundDay, setRefundDay] = useState(today);
   const [refundedOn, setRefundedOn] = useState(today);
   const [refundMethod, setRefundMethod] = useState('bank_transfer');
   const [refundReference, setRefundReference] = useState('');
@@ -397,7 +404,9 @@ export function CreditNoteButton({
     setQuantities({});
     setAmount('');
     setReason('');
-    setRefundedOn(today);
+    const day = todayNow(today);
+    setRefundDay(day);
+    setRefundedOn(day);
     setRefundMethod('bank_transfer');
     setRefundReference('');
     setMessage(null);
@@ -613,7 +622,7 @@ export function CreditNoteButton({
                     <Input
                       id="cn-refund-date"
                       min={latestPaidOn ?? undefined}
-                      max={today}
+                      max={refundDay}
                       type="date"
                       value={refundedOn}
                       onChange={(e) => setRefundedOn(e.target.value)}
