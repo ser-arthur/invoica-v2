@@ -121,6 +121,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 0008 | Email provider | Accepted: Resend |
 | 0009 | Credit notes worked out slot by slot | Proposed; built |
 | 0010 | Hosting | Proposed: Cloudflare in front, one small server, managed Postgres |
+| 0011 | The reminder scan when an older image runs | Proposed: a second scan function for the worker |
 
 ## Choices made during the build (reversible, flagged for Kobby)
 
@@ -168,7 +169,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 ## Open questions
 
 1. Hosting: approve decision 0010 (`docs/deploy.md` is the runbook for it).
-2. The reminder scan for an older image (review 10, R10-L6): keep the old scan function as it was and give the worker role a second one for the new scan? It changes the worker's grants. Until then the guide says to stop the scheduler while migrating.
+2. The reminder scan for an older image (review 10, R10-L6; decision 0011): keep the old scan function as it was and give the worker role a second one for the new scan? It changes the worker's grants. Until then the guide says to stop the scheduler while migrating.
 3. Merge `fix/confirm-then-sign-in`? Opening a confirmation link would confirm the address and sign nobody in; sign-in then asks for the password. It changes an auth rule (review 8, R8-M2), so it waits for a yes. And should confirming an address also ask for the account's password (review 9, R9-M4), so a click by someone who does not know it confirms nothing?
 4. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
 5. The domain to buy, then the sending subdomain for Resend.

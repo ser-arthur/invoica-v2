@@ -30,7 +30,7 @@ This is the **v2 repository**: a re-architecture from scratch (decision 0001). T
 **Waiting for approval:**
 
 - The branch `fix/confirm-then-sign-in` (review 8, R8-M2; review 9, R9-M4), rebased onto `main` this round: a confirmation link confirms the address and signs nobody in, and sign-in asks for the password. On the branch the sign-in, real-world and connection end-to-end tests pass (27 passed, 25 skipped by design) and the web unit tests pass (69). It changes an auth rule.
-- Review 10, R10-L6, not built: an app image from before migration 0022 sends some reminders early against the newer scan. The guide now says to stop the scheduler while migrating and while an older image runs. The fuller fix keeps the old scan function as it was and adds the new one as a function of its own for the worker role, which changes the worker's grants (a tenancy rule), so it waits for a yes.
+- Review 10, R10-L6, not built: an app image from before migration 0022 sends some reminders early against the newer scan. The guide now says to stop the scheduler while migrating and while an older image runs. The fuller fix (decision 0011) keeps the old scan function as it was and adds the new one as a function of its own for the worker role, which changes the worker's grants (a tenancy rule), so it waits for a yes.
 - A further step review 9 suggests, not built: someone who signs up with another person's address can still have the account confirmed by that person's click, and then use it. Asking for the account's password on the confirmation page (so a click by someone who does not know it confirms nothing), or letting the person who confirms choose the password there, would close that. Either changes sign-in, so it needs the owner's choice.
 
 **Reviews:** reviews 1 to 10 (`docs/reviews/`), each with a Resolution section mapping findings to fixes and tests.
@@ -96,3 +96,4 @@ The list is kept in `docs/BLUEPRINT.md`, "Open questions" (9 items).
 | 0008 | Email provider | Accepted: Resend |
 | 0009 | Credit notes worked out slot by slot | Proposed, built |
 | 0010 | Hosting | Proposed |
+| 0011 | The reminder scan when an older image runs | Proposed |
