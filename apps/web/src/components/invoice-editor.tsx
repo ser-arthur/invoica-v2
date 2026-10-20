@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useDeferredValue, useEffect, useMemo, useState, useTransition } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { ArrowDown, ArrowUp, Eye, PenLine, Plus, Trash2, X } from 'lucide-react';
 import {
   addDays,
@@ -341,6 +341,9 @@ export function InvoiceEditor(props: EditorProps) {
   const [docId, setDocId] = useState(props.id);
   // Sent with the first save of a new invoice, so a repeat of that save finds the same draft.
   const [createKey] = useState(() => requestKey());
+  // The draft was deleted in another tab or on another device: "Save as a new draft" keeps what was typed.
+  const [deleted, setDeleted] = useState(false);
+  const newDraftKey = useRef<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit');
   const [addingClient, setAddingClient] = useState(false);
@@ -571,10 +574,15 @@ export function InvoiceEditor(props: EditorProps) {
    * version the page has fetched since (so a change made after that is still caught), or, for a new invoice whose
    * first answer was lost, with leave to replace.
    */
-  function save(issue: boolean, replace = false) {
+  function save(issue: boolean, replace = false, asNew = false) {
     setMessage(null);
     setConflict(null);
     setReplaceNext(false);
+    setDeleted(false);
+    // Saved as a new draft once this one was deleted elsewhere: with a key of its own, kept for repeats.
+    if (asNew) newDraftKey.current ??= requestKey();
+    const id = asNew ? null : docId;
+    const key = asNew ? newDraftKey.current! : createKey;
     if (Object.keys(parsed.lineErrors).length) {
       setMessage({ tone: 'danger', text: 'Some lines need attention before saving.' });
       return;
@@ -602,22 +610,23 @@ export function InvoiceEditor(props: EditorProps) {
     start(async () => {
       // What the rate was worked out for goes with it, so the same figure typed for a new month is accepted.
       // With the version opened, so a change made in another tab since is not replaced without asking.
-      const sendVersion = docId ? (replace ? (props.version ?? version) : version) : null;
+      const sendVersion = id ? (replace ? (props.version ?? version) : version) : null;
       const sent = {
         ...parsed.input,
         sterlingRateFor: rateEnteredFor,
         ...(sendVersion ? { version: sendVersion } : {}),
-        ...(!docId && replace ? { overwrite: true } : {}),
+        ...(!id && replace ? { overwrite: true } : {}),
       };
-      const input = docId ? sent : { ...sent, idempotencyKey: createKey };
+      const input = id ? sent : { ...sent, idempotencyKey: key };
       const result = issue
-        ? await reach(saveAndIssueAction(docId, input, totals ? { total: totals.total } : undefined))
-        : await reach(saveDraftAction(docId, input));
+        ? await reach(saveAndIssueAction(id, input, totals ? { total: totals.total } : undefined))
+        : await reach(saveDraftAction(id, input));
       setConfirmIssue(false);
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: result.message });
         if (result.code === 'draft_changed') setConflict(issue ? 'issue' : 'save');
+        if (result.code === 'draft_deleted') setDeleted(true);
         // Today, the tax codes, the settings, the next number and the draft's version as the server has them now,
         // so what the page works out (the total, what a rate is for) matches what the server checks. Only for these
         // refusals: after others (a draft deleted or issued elsewhere) a reload would leave the page.
@@ -631,7 +640,7 @@ export function InvoiceEditor(props: EditorProps) {
         router.refresh();
         return;
       }
-      if (!docId) {
+      if (!id) {
         // The draft opens at its own address, a new page, which says it was saved.
         setDocId(result.data.id);
         router.replace(`/invoices/${result.data.id}/edit?saved=1`);
@@ -678,6 +687,13 @@ export function InvoiceEditor(props: EditorProps) {
       </div>
 
       {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
+      {deleted ? (
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" disabled={pending} onClick={() => save(false, false, true)}>
+            Save as a new draft
+          </Button>
+        </div>
+      ) : null}
       {conflict ? (
         <div className="flex flex-wrap gap-2">
           <Button

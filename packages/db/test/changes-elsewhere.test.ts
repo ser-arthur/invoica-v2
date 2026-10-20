@@ -18,7 +18,8 @@ import {
   taxCodeVersionOf,
 } from '../src/versions';
 import { createTestDatabase, type TestDatabase } from './helpers';
-import { business, type Business } from './business';
+import { business, draftFor, type Business } from './business';
+import { createDraft, deleteDraft, updateDraft } from '../src/documents';
 
 /** docs/specs/changes-elsewhere.md: settings, clients, saved items and tax codes edited from an older page. */
 
@@ -257,5 +258,15 @@ describe('the version a page shows', () => {
       for (const code of await listTaxCodes(tx))
         expect(taxCodeVersionOf(code)).toBe(await taxCodeVersion(tx, code.id));
     });
+  });
+});
+
+describe('a draft deleted elsewhere', () => {
+  it('a save from the page still open says so, with its own code, so the page can save what was typed as a new draft', async () => {
+    const b = await business(t, 'Deleted Draft Office');
+    const draft = draftFor(b, [{ quantity: 1000, unitPrice: 30_000, code: b.codes.vat20 }]);
+    const id = await b.run((tx) => createDraft(tx, b.actor, draft));
+    await b.run((tx) => deleteDraft(tx, b.actor, id));
+    expect(await outcome(b.run((tx) => updateDraft(tx, b.actor, id, draft)))).toBe('draft_deleted');
   });
 });

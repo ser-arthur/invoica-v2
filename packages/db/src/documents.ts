@@ -527,6 +527,9 @@ export async function lockDocument(tx: Tx, id: string): Promise<DocumentRow> {
   return doc;
 }
 
+const DRAFT_DELETED =
+  'This draft was deleted in another tab or on another device. Save what you typed as a new draft to keep it.';
+
 const DRAFT_CHANGED =
   'This draft has changed since this page last saved it: in another tab, on another device, or by a save from here whose answer did not arrive. Save yours anyway to replace it, or reload the page to see it.';
 
@@ -563,6 +566,9 @@ export async function updateDraft(
   input: DraftInput,
   now: Date = new Date(),
 ): Promise<void> {
+  // Saved from a page still open on a draft deleted elsewhere: the page offers to save it as a new draft.
+  const [exists] = await tx.select({ id: document.id }).from(document).where(eq(document.id, id));
+  if (!exists) throw new DomainError('draft_deleted', DRAFT_DELETED);
   const doc = await lockDocument(tx, id);
   if (doc.lifecycle !== 'draft') {
     // Saved or issued again after a lost answer, or from a page opened before it was issued elsewhere.

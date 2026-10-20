@@ -670,3 +670,41 @@ test('a tax code archived after a saved item used it: the item keeps it, says so
   await expect(page.getByRole('button', { name: /Child car seat/ })).toContainText('£85.00');
   await expect(page.getByRole('button', { name: /Child car seat/ })).toContainText('Reduced rate (archived)');
 });
+
+test('a draft deleted in another tab: the editor still open saves what was typed as a new draft', async ({
+  page,
+  context,
+}) => {
+  await signUpAndOnboard(page, 'Deleted Draft Studio', { vat: true });
+  await addClient(page, 'Fenwick Yard Ltd');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Fenwick Yard Ltd' });
+  await page.getByLabel('Line 1 description').fill('Survey');
+  await page.getByLabel('Line 1 price').fill('300');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\/edit/);
+  const draft = new URL(page.url()).pathname;
+
+  const other = await context.newPage();
+  await other.goto(draft);
+  await other.getByRole('button', { name: 'Delete draft' }).click();
+  await other.getByRole('dialog').getByRole('button', { name: 'Delete draft' }).click();
+  await other.waitForURL(/\/invoices$/);
+  await other.close();
+
+  await page.getByLabel('Line 1 description').fill('Survey and report');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await expect(
+    page.getByText(
+      'This draft was deleted in another tab or on another device. Save what you typed as a new draft to keep it.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByLabel('Line 1 description')).toHaveValue('Survey and report');
+  await page.getByRole('button', { name: 'Save as a new draft' }).click();
+  await page.waitForURL(
+    (url) => /\/invoices\/[0-9a-f-]{36}\/edit/.test(url.pathname) && url.pathname !== draft,
+  );
+  await expect(page.getByLabel('Line 1 description')).toHaveValue('Survey and report');
+  await page.goto('/invoices');
+  await expect(page.getByRole('row', { name: /Fenwick Yard Ltd/ })).toHaveCount(1);
+});
