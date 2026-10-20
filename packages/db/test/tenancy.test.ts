@@ -17,6 +17,8 @@ const TENANT_TABLES = [
   'number_counter',
   'audit_log',
   'outbox',
+  'refund',
+  'reminder_pause',
 ];
 
 /** Resolves with the database's own error message, looking through the query wrapper. */
@@ -76,6 +78,104 @@ describe('cross-organisation access is refused', () => {
       const forced = r.relname !== 'outbox';
       expect([r.relname, r.relrowsecurity, r.relforcerowsecurity]).toEqual([r.relname, true, forced]);
     }
+  });
+
+  it('every table holding an organisation’s records is in this suite', async () => {
+    const owner = new pg.Client({ connectionString: t.ownerUrl });
+    await owner.connect();
+    const rows = (
+      await owner.query<{ table_name: string }>(
+        `select table_name from information_schema.columns
+         where table_schema = 'public' and column_name = 'organisation_id'`,
+      )
+    ).rows;
+    await owner.end();
+    // Memberships are read through their own policy and written only by security-definer functions.
+    expect(rows.map((r) => r.table_name).sort()).toEqual([...TENANT_TABLES, 'membership'].sort());
+  });
+
+  it('the policies are exactly these: any new one needs a review', async () => {
+    const owner = new pg.Client({ connectionString: t.ownerUrl });
+    await owner.connect();
+    const rows = (
+      await owner.query<{ line: string }>(
+        `select tablename || ' ' || policyname || ' ' || array_to_string(roles, ',') || ' ' || cmd as line
+         from pg_policies where schemaname = 'public' order by 1`,
+      )
+    ).rows;
+    await owner.end();
+    const tenant = TENANT_TABLES.filter((t) => t !== 'audit_log').map((t) => `${t} tenant public ALL`);
+    // The reminder scan (migration 0015) reads these as the owner role, inside app.due_reminders only.
+    const scan = ['client', 'document', 'payment', 'refund', 'reminder_pause'].map(
+      (t) => `${t} reminder_scan invoica_owner SELECT`,
+    );
+    expect(rows.map((r) => r.line).sort()).toEqual(
+      [
+        ...tenant,
+        ...scan,
+        'audit_log audit_read public SELECT',
+        'audit_log audit_write public INSERT',
+        'membership membership_visible public SELECT',
+        'organisation organisation_member public SELECT',
+        'organisation organisation_update public UPDATE',
+      ].sort(),
+    );
+  });
+
+  it('the app and worker roles may run and touch exactly these: any change needs a review', async () => {
+    const owner = new pg.Client({ connectionString: t.ownerUrl });
+    await owner.connect();
+    // Functions that run with their owner's rights, which is where reading across organisations could happen.
+    const definers = (
+      await owner.query<{ line: string }>(
+        `select r.role || ' ' || p.proname as line
+         from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+         cross join (values ('invoica_app'), ('invoica_worker')) as r(role)
+         where n.nspname = 'app' and p.prosecdef and has_function_privilege(r.role, p.oid, 'execute')`,
+      )
+    ).rows.map((r) => r.line);
+    const tables = (
+      await owner.query<{ line: string }>(
+        `select grantee || ' ' || table_name || ' ' || string_agg(privilege_type, ',' order by privilege_type) as line
+         from information_schema.role_table_grants
+         where grantee in ('invoica_app', 'invoica_worker') group by grantee, table_name`,
+      )
+    ).rows.map((r) => r.line);
+    await owner.end();
+    expect(definers.sort()).toEqual(
+      [
+        'invoica_app create_organisation',
+        'invoica_app current_organisation_id',
+        'invoica_app my_organisations',
+        'invoica_worker claim_outbox',
+        'invoica_worker due_reminders',
+        'invoica_worker finish_outbox',
+      ].sort(),
+    );
+    const all = 'DELETE,INSERT,SELECT,UPDATE';
+    expect(tables.sort()).toEqual(
+      [
+        'invoica_app audit_log INSERT,SELECT',
+        `invoica_app auth_account ${all}`,
+        `invoica_app auth_session ${all}`,
+        `invoica_app auth_user ${all}`,
+        `invoica_app auth_verification ${all}`,
+        `invoica_app client ${all}`,
+        `invoica_app client_field ${all}`,
+        `invoica_app document ${all}`,
+        `invoica_app document_line ${all}`,
+        `invoica_app item ${all}`,
+        'invoica_app membership SELECT',
+        'invoica_app number_counter INSERT,SELECT,UPDATE',
+        'invoica_app organisation SELECT,UPDATE',
+        `invoica_app outbox ${all}`,
+        'invoica_app payment INSERT,SELECT,UPDATE',
+        'invoica_app refund INSERT,SELECT',
+        'invoica_app reminder_pause DELETE,INSERT,SELECT',
+        `invoica_app stored_file ${all}`,
+        `invoica_app tax_code ${all}`,
+      ].sort(),
+    );
   });
 
   it('a user cannot open another organisation', async () => {
