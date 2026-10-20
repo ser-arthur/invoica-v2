@@ -48,7 +48,9 @@ function createAuth() {
     emailVerification: {
       sendOnSignUp: true,
       sendOnSignIn: true,
-      autoSignInAfterVerification: true,
+      // Opening the link confirms the address and nothing more: the person then signs in with the password they
+      // chose, so someone who signed up with another person's address never gets them signed in to it.
+      autoSignInAfterVerification: false,
       expiresIn: 60 * 60 * 24,
       sendVerificationEmail: async ({ user, url }) => sendLater(user.email, verificationEmail({ url })),
     },

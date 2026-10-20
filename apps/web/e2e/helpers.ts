@@ -29,8 +29,11 @@ export async function signUpAndOnboard(page: Page, business: string, options: { 
   const started = Date.now();
   await signUp(page, email);
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
-  await page.goto(linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started)));
-  await page.waitForURL('**/onboarding');
+  await confirmAndSignIn(
+    page,
+    email,
+    linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started)),
+  );
   await page.fill('#name', business);
   if (options.vat) {
     await page.getByLabel('I am registered for VAT').check();
@@ -39,6 +42,17 @@ export async function signUpAndOnboard(page: Page, business: string, options: { 
   await page.getByRole('button', { name: 'Continue to Invoica' }).click();
   await page.waitForURL('**/dashboard**');
   return email;
+}
+
+/** Opens a confirmation link, which confirms the address and asks for the password; signing in opens onboarding. */
+export async function confirmAndSignIn(page: Page, email: string, link: string) {
+  await page.goto(link);
+  await page.waitForURL('**/sign-in?confirmed=1');
+  await expect(page.getByText('Your email address is confirmed. Sign in to continue.')).toBeVisible();
+  await page.fill('#email', email);
+  await page.fill('#password', PASSWORD);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.waitForURL('**/onboarding');
 }
 
 export async function signIn(page: Page, email: string) {

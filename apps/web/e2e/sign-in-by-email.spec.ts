@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PASSWORD, signUp, uniqueEmail } from './helpers';
+import { PASSWORD, confirmAndSignIn, signUp, uniqueEmail } from './helpers';
 import { emailsTo, linkIn, waitForEmail } from './mailbox';
 
 /** docs/specs/sign-in-by-email.md, acceptance criteria 1 to 6. */
@@ -8,7 +8,9 @@ test.skip(({ isMobile }) => isMobile, 'The flows are the same at every width; th
 
 const NEW_PASSWORD = 'a different long passphrase';
 
-test('1: sign-up waits for the email link, which signs in and opens onboarding', async ({ page }) => {
+test('1: sign-up waits for the email link, which confirms the address and asks for the password', async ({
+  page,
+}) => {
   const started = Date.now();
   const email = uniqueEmail('verify');
   await signUp(page, email);
@@ -17,8 +19,7 @@ test('1: sign-up waits for the email link, which signs in and opens onboarding',
   await page.goto('/dashboard');
   await page.waitForURL('**/sign-in');
   const sent = await waitForEmail(email, 'Confirm your email for Invoica', started);
-  await page.goto(linkIn(sent));
-  await page.waitForURL('**/onboarding');
+  await confirmAndSignIn(page, email, linkIn(sent));
 });
 
 test('2: signing up again with the same address looks the same and tells the owner instead', async ({
@@ -69,8 +70,11 @@ test('4: a used or broken confirmation link says so and can send a new one', asy
   await page.fill('#email', email);
   await page.getByRole('button', { name: 'Send a new link' }).click();
   await expect(page.getByText(`If ${email} needs confirming, a new link is on its way.`)).toBeVisible();
-  await page.goto(linkIn(await waitForEmail(email, 'Confirm your email for Invoica', again)));
-  await page.waitForURL('**/onboarding');
+  await confirmAndSignIn(
+    page,
+    email,
+    linkIn(await waitForEmail(email, 'Confirm your email for Invoica', again)),
+  );
 });
 
 test('5: a reset request for an unknown address looks the same and sends nothing', async ({ page }) => {
@@ -92,8 +96,11 @@ test('6: a reset link sets a new password once, and the owner is told', async ({
   const started = Date.now();
   const email = uniqueEmail('reset');
   await signUp(page, email);
-  await page.goto(linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started)));
-  await page.waitForURL('**/onboarding');
+  await confirmAndSignIn(
+    page,
+    email,
+    linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started)),
+  );
   await page.context().clearCookies();
 
   const asked = Date.now();
@@ -149,4 +156,25 @@ test('7: a name over two lines is refused alike for a new address and one with a
   const email = uniqueEmail('greeting');
   await signUp(page, email);
   expect((await waitForEmail(email, 'Confirm your email for Invoica', started)).text).toMatch(/^Hello,\n/);
+});
+
+test('8: someone who signs up with another person’s address gets nobody signed in when that person confirms', async ({
+  page,
+  browser,
+}) => {
+  const started = Date.now();
+  const email = uniqueEmail('owner');
+  // Someone else signs up with the owner's address and a password of their own.
+  await signUp(page, email);
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  const link = linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started));
+  // The owner of the address opens the link in their own browser: the address is confirmed, nobody is signed in.
+  const owner = await browser.newContext();
+  const ownerPage = await owner.newPage();
+  await ownerPage.goto(link);
+  await ownerPage.waitForURL('**/sign-in?confirmed=1');
+  expect((await owner.cookies()).some((c) => c.name.includes('session_token'))).toBe(false);
+  await ownerPage.goto('/onboarding');
+  await ownerPage.waitForURL('**/sign-in');
+  await owner.close();
 });
