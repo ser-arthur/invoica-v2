@@ -460,7 +460,14 @@ export function CreditNoteButton({
       reason,
       idempotencyKey: key,
       ...(refund > 0
-        ? { refund: { refundedOn, method: refundMethod, reference: refundReference.trim() || null } }
+        ? {
+            refund: {
+              amount: refund,
+              refundedOn,
+              method: refundMethod,
+              reference: refundReference.trim() || null,
+            },
+          }
         : {}),
     };
     const input =
@@ -477,7 +484,12 @@ export function CreditNoteButton({
           : { ...base, mode, amount: parseMoney(amount, currency) ?? 0 };
     start(async () => {
       const r = await reach(creditNoteAction(input));
-      if (!r.ok) return setMessage(r.fieldErrors?.reason ?? r.message);
+      if (!r.ok) {
+        setMessage(r.fieldErrors?.reason ?? r.message);
+        // The balance may have changed since the page loaded: show the dialog's figures from the current one.
+        if (!r.unreachable) router.refresh();
+        return;
+      }
       setOpen(false);
       router.push(`/invoices/${r.data.id}`);
       router.refresh();

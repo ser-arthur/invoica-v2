@@ -29,6 +29,7 @@ A credit note on an invoice that has been paid may go above the balance still ow
 4. Recording a payment checks the balance with refunds counted: total less (payments less refunds) less credit notes.
 5. The database enforces 1 to 4 (a new migration), as it does the existing credit and payment rules; the app checks them first so the person gets a clear message.
 6. A repeated request (the dialog's key) returns the first result, as credit notes do today.
+7. The request carries the refund the person confirmed. The server works the refund out again from the balance at that moment; when the two differ (a payment was recorded or removed while the dialog was open), the request is refused with the new figure, nothing is recorded, and the dialog shows the new refund to confirm.
 
 ## Printed documents
 
@@ -46,3 +47,4 @@ Each becomes a test before it is built.
 6. A refund in another currency, for another invoice's credit note, or for an issued credit note is refused by the database; refunds cannot be updated or deleted.
 7. The dashboard's received figures and the client's "Paid to date" are net of refunds, on the refund's date.
 8. The invoice page lists the refund under payments and in the activity record; the CSV export lists it as a refund.
+9. A refund confirmed at £60.00 is refused once the other £60.00 has been recorded meanwhile ("the refund would now be £120.00"), and one confirmed at £120.00 is refused once a £60.00 payment has been removed; nothing is recorded either time.

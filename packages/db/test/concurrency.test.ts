@@ -59,21 +59,27 @@ describe('at the same moment', () => {
       // Half the rounds start the credit first, half the removal, the other following a moment later.
       const later = <T>(run: () => Promise<T>) =>
         new Promise<T>((done, fail) => setTimeout(() => run().then(done, fail), 5));
+      // Confirmed as the dialog showed it, with £120.00 received.
       const creditIt = () =>
-        credit(b, { mode: 'whole', invoiceId: id, idempotencyKey: `race-a-${i}-cn`, refund: REFUND });
+        credit(b, {
+          mode: 'whole',
+          invoiceId: id,
+          idempotencyKey: `race-a-${i}-cn`,
+          refund: { ...REFUND, amount: 12_000 },
+        });
       const removeIt = () => b.run((tx) => removePayment(tx, b.actor, first.id, 'Bounced'));
       const results = await Promise.allSettled(
         i % 2 === 0 ? [creditIt(), later(removeIt)] : [later(creditIt), removeIt()],
       );
       outcomes.add(settled(results).join(','));
       const { refunded, d } = await consistent(b, id);
-      if (results[0]!.status === 'fulfilled') expect(d.balance).toBe(0);
-      // Removing the payment first leaves £60.00 received, so the whole credit refunds £60.00; otherwise £120.00.
-      if (results[1]!.status === 'fulfilled' && results[0]!.status === 'fulfilled')
-        expect(refunded).toBe(6000);
+      // The credit first: £120.00 refunded, and the removal is refused. The removal first: the refund confirmed is
+      // no longer the right one, so the credit is refused and nothing is refunded.
+      if (results[0]!.status === 'fulfilled') expect([d.balance, refunded]).toEqual([0, 12_000]);
+      else expect([d.balance, refunded]).toEqual([6000, 0]);
     }
-    // The credit always goes through; the removal only when it came first. Both orders happened.
-    expect([...outcomes].sort()).toEqual(['true,false', 'true,true']);
+    // Exactly one goes through, and both orders happened.
+    expect([...outcomes].sort()).toEqual(['false,true', 'true,false']);
   });
 
   it('two credit notes that together would go above the balance', async () => {
@@ -115,7 +121,7 @@ describe('at the same moment', () => {
         invoiceId: id,
         amount: 2500,
         idempotencyKey: `race-d-${i}-cn`,
-        refund: REFUND,
+        refund: { ...REFUND, amount: 3000 },
       });
       await b.run((tx) => removePayment(tx, b.actor, one.id, 'Bounced'));
       // £120.00 less £60.00 received after the £30.00 refund, less the £30.00 credit: £60.00 owed.
@@ -138,7 +144,7 @@ describe('at the same moment', () => {
         mode: 'whole' as const,
         invoiceId: id,
         idempotencyKey: `race-e-${i}-cn`,
-        refund: REFUND,
+        refund: { ...REFUND, amount: 12_000 },
       };
       const results = await Promise.allSettled([credit(b, input), credit(b, input)]);
       expect(settled(results)).toEqual([true, true]);

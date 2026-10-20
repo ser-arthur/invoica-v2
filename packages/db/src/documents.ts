@@ -11,6 +11,7 @@ import {
   creditState,
   deriveState,
   formatDocumentNumber,
+  formatMoney,
   isOverdue,
   planAmountCredit,
   planBalanceCredit,
@@ -967,6 +968,13 @@ export async function createCreditNote(
     throw new DomainError(
       'refund_not_needed',
       'This credit note is within the balance owed, so it needs no refund.',
+    );
+  }
+  // The figure the person confirmed: a payment recorded or removed since they saw it changes the refund.
+  if (input.refund && input.refund.amount !== refundAmount) {
+    throw new DomainError(
+      'refund_changed',
+      `The amount owed changed while this was open: the refund would now be ${formatMoney(refundAmount, invoice.currency)}. Check it and issue again.`,
     );
   }
   checkCredit({

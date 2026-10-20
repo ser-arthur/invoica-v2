@@ -138,6 +138,47 @@ test('a credit note from a tab opened before the invoice was paid asks for the r
   expect(errors).toEqual([]);
 });
 
+test('a refund confirmed in one tab is refused when another tab records a payment, and shows the new figure', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await signUpAndOnboard(page, 'Two Refunds Studio', { vat: true });
+  await addClient(page, 'Lock Keeper Ltd');
+  const url = await issueInvoice(page, 'Lock Keeper Ltd');
+  await page.getByRole('button', { name: 'Record payment' }).click();
+  await page.fill('#pay-amount', '60');
+  await page.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Part paid');
+
+  await page.getByRole('button', { name: 'Credit note' }).click();
+  await page.locator('#cn-mode').selectOption('whole');
+  await page.fill('#cn-reason', 'Order cancelled.');
+  await expect(page.getByRole('dialog').getByText('Refund of £60.00')).toBeVisible();
+
+  const other = await secondTab(page, url);
+  await other.getByRole('button', { name: 'Record payment' }).click();
+  await other.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
+  await expect(other.getByRole('heading', { level: 1 })).toContainText('Paid');
+
+  const issue = page.getByRole('dialog').getByRole('button', { name: 'Issue credit note and record refund' });
+  await issue.click();
+  await expect(
+    page
+      .getByRole('dialog')
+      .getByText('The amount owed changed while this was open: the refund would now be £120.00.', {
+        exact: false,
+      }),
+  ).toBeVisible();
+  await expect(page.getByRole('dialog').getByText('Refund of £120.00')).toBeVisible();
+  await expect(page.locator('#cn-reason')).toHaveValue('Order cancelled.');
+  await issue.click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('CN-0001');
+  await other.reload();
+  await expect(other.getByRole('heading', { level: 1 })).toContainText('Credited');
+  await expect(other.getByText('£120.00').first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('going back after issuing opens the invoice, not an editor for it', async ({ page }) => {
   await signUpAndOnboard(page, 'Back Button Studio', { vat: true });
   await addClient(page, 'Granary Ltd');

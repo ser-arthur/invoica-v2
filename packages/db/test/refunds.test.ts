@@ -25,6 +25,9 @@ const REFUND = {
   reference: 'Returned to sort code ending 00',
 };
 
+/** The refund as the dialog confirms it: its details and the figure shown. */
+const refundOf = (amount: number) => ({ ...REFUND, amount });
+
 /** An invoice of £100.00 plus VAT at 20%: £120.00. */
 const invoiceOf120 = (b: Business) => issued(b, [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }]);
 
@@ -47,7 +50,7 @@ describe('criterion 1: a paid invoice credited in full', () => {
       mode: 'whole',
       invoiceId: id,
       idempotencyKey: 'cn-refund-0001',
-      refund: REFUND,
+      refund: refundOf(12_000),
     });
     const [r] = await b.run((tx) => tx.select().from(refund).where(eq(refund.creditNoteId, cn.id)));
     expect([r!.amount, r!.documentId, r!.refundedOn, r!.method]).toEqual([
@@ -66,13 +69,18 @@ describe('criterion 1: a paid invoice credited in full', () => {
     const b = await business(t, 'Repeat Office');
     const id = await invoiceOf120(b);
     await b.run((tx) => recordPayment(tx, b.actor, pay(id, 12_000, 'pay-repeat-0001')));
-    const input = { mode: 'whole' as const, invoiceId: id, idempotencyKey: 'cn-repeat-0001', refund: REFUND };
+    const input = {
+      mode: 'whole' as const,
+      invoiceId: id,
+      idempotencyKey: 'cn-repeat-0001',
+      refund: refundOf(12_000),
+    };
     const first = await credit(b, input);
     const again = await credit(b, input);
     expect([again.id, again.duplicate]).toEqual([first.id, true]);
     expect(await b.run((tx) => tx.select().from(refund))).toHaveLength(1);
     expect(
-      await failure(credit(b, { ...input, refund: { ...REFUND, reference: 'Something else' } })),
+      await failure(credit(b, { ...input, refund: { ...refundOf(12_000), reference: 'Something else' } })),
     ).toMatch(/already used/);
   });
 });
@@ -86,7 +94,7 @@ describe('criterion 2: part paid', () => {
       mode: 'whole',
       invoiceId: id,
       idempotencyKey: 'cn-part-000001',
-      refund: REFUND,
+      refund: refundOf(10_000),
     });
     const [r] = await b.run((tx) => tx.select().from(refund).where(eq(refund.creditNoteId, cn.id)));
     expect(r!.amount).toBe(10_000);
@@ -105,7 +113,7 @@ describe('criterion 3: within the balance', () => {
           invoiceId: id,
           amount: 5000,
           idempotencyKey: 'cn-within-0001',
-          refund: REFUND,
+          refund: refundOf(1),
         }),
       ),
     ).toMatch(/needs no refund/);
@@ -122,7 +130,7 @@ describe('criteria 4 and 5: payments after a refund', () => {
       invoiceId: id,
       amount: 5000,
       idempotencyKey: 'cn-remove-0001',
-      refund: REFUND,
+      refund: refundOf(6_000),
     });
     expect(await failure(b.run((tx) => removePayment(tx, b.actor, paid.id, 'Bounced')))).toMatch(
       /refunds on the invoice would be more than the payments left/,
@@ -140,7 +148,7 @@ describe('criteria 4 and 5: payments after a refund', () => {
       invoiceId: id,
       amount: 5000,
       idempotencyKey: 'cn-again-00001',
-      refund: REFUND,
+      refund: refundOf(6_000),
     });
     expect((await detail(b, id)).balance).toBe(0);
     expect(await failure(b.run((tx) => recordPayment(tx, b.actor, pay(id, 1, 'pay-again-00003'))))).toMatch(
@@ -218,7 +226,7 @@ describe('criterion 6: the database guards refunds', () => {
       mode: 'whole',
       invoiceId: first.id,
       idempotencyKey: 'cn-guard-00001',
-      refund: REFUND,
+      refund: refundOf(12_000),
     });
     expect(await failure(insertRefund(b, { invoice: first.id, note: issuedNote.id, amount: 1 }))).toMatch(
       /before the note is issued/,
@@ -233,7 +241,7 @@ describe('criterion 6: the database guards refunds', () => {
       mode: 'whole',
       invoiceId: id,
       idempotencyKey: 'cn-fixed-00001',
-      refund: REFUND,
+      refund: refundOf(12_000),
     });
     expect(
       await failure(
@@ -308,7 +316,7 @@ describe('criterion 7: received figures are net of refunds', () => {
       invoiceId: id,
       amount: 5000,
       idempotencyKey: 'cn-net-000001',
-      refund: REFUND,
+      refund: refundOf(6_000),
     });
     const [row] = await b.run((tx) => listDocuments(tx, { kind: 'invoice', today: TODAY }));
     expect([row!.paid, row!.credited, row!.balance]).toEqual([6000, 6000, 0]);
@@ -322,9 +330,79 @@ describe('criterion 7: received figures are net of refunds', () => {
     const b = await business(t, 'Listed Office');
     const id = await invoiceOf120(b);
     await b.run((tx) => recordPayment(tx, b.actor, pay(id, 12_000, 'pay-listed-0001')));
-    await credit(b, { mode: 'whole', invoiceId: id, idempotencyKey: 'cn-listed-0001', refund: REFUND });
+    await credit(b, {
+      mode: 'whole',
+      invoiceId: id,
+      idempotencyKey: 'cn-listed-0001',
+      refund: refundOf(12_000),
+    });
     const d = await detail(b, id);
     expect(d.payments.filter((p) => !p.removedAt).map((p) => p.amount)).toEqual([12_000]);
     expect(await b.run((tx) => tx.select().from(payment))).toHaveLength(1);
+  });
+});
+
+describe('the refund recorded is the refund confirmed', () => {
+  it('a payment recorded while the dialog was open makes the confirmed refund wrong, and it is refused', async () => {
+    const b = await business(t, 'Confirmed Office');
+    const id = await invoiceOf120(b);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 6000, 'pay-confirm-0001')));
+    // The dialog shows a refund of £60.00; meanwhile the client's other £60.00 is recorded.
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 6000, 'pay-confirm-0002')));
+    const stale = { mode: 'whole' as const, invoiceId: id, idempotencyKey: 'cn-confirm-0001' };
+    expect(await failure(credit(b, { ...stale, refund: refundOf(6000) }))).toMatch(
+      /The amount owed changed while this was open: the refund would now be £120\.00\. Check it and issue again\./,
+    );
+    expect(await b.run((tx) => tx.select().from(refund))).toHaveLength(0);
+    expect(
+      await b.run((tx) => tx.select().from(document).where(eq(document.kind, 'credit_note'))),
+    ).toHaveLength(0);
+    await credit(b, { ...stale, idempotencyKey: 'cn-confirm-0002', refund: refundOf(12_000) });
+    expect((await detail(b, id)).refunds.map((r) => r.amount)).toEqual([12_000]);
+  });
+
+  it('a payment removed while the dialog was open is refused the same way', async () => {
+    const b = await business(t, 'Removed Meanwhile Office');
+    const id = await invoiceOf120(b);
+    const first = await b.run((tx) => recordPayment(tx, b.actor, pay(id, 6000, 'pay-removed-0001')));
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 6000, 'pay-removed-0002')));
+    await b.run((tx) => removePayment(tx, b.actor, first.id, 'Bounced'));
+    expect(
+      await failure(
+        credit(b, {
+          mode: 'whole',
+          invoiceId: id,
+          idempotencyKey: 'cn-removed-0001',
+          refund: refundOf(12_000),
+        }),
+      ),
+    ).toMatch(/the refund would now be £60\.00/);
+    expect(await b.run((tx) => tx.select().from(refund))).toHaveLength(0);
+  });
+
+  it('a refund of any other figure is refused, and a repeat of the accepted request is the same note', async () => {
+    const b = await business(t, 'Exact Figure Office');
+    const id = await invoiceOf120(b);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 12_000, 'pay-figure-0001')));
+    for (const amount of [1, 11_999, 12_001]) {
+      expect(
+        await failure(
+          credit(b, {
+            mode: 'whole',
+            invoiceId: id,
+            idempotencyKey: `cn-figure-${amount}`,
+            refund: refundOf(amount),
+          }),
+        ),
+      ).toMatch(/the refund would now be £120\.00/);
+    }
+    const input = {
+      mode: 'whole' as const,
+      invoiceId: id,
+      idempotencyKey: 'cn-figure-ok01',
+      refund: refundOf(12_000),
+    };
+    const first = await credit(b, input);
+    expect(await credit(b, input)).toEqual({ ...first, duplicate: true });
   });
 });

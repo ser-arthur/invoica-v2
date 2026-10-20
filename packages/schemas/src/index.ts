@@ -329,8 +329,12 @@ export const paymentInput = z.object({
 });
 export type PaymentInput = z.infer<typeof paymentInput>;
 
-/** The refund made with a credit note above the balance owed (docs/specs/refunds.md). Its amount is worked out. */
+/**
+ * The refund made with a credit note above the balance owed (docs/specs/refunds.md). `amount` is the refund the
+ * person confirmed; the server works it out again and refuses the request when the two differ.
+ */
 export const refundInput = z.object({
+  amount: z.number().int('Amounts are whole minor units.').min(1).max(Number.MAX_SAFE_INTEGER),
   refundedOn: businessDate,
   method: z.enum(paymentMethods),
   reference: optionalText(100),

@@ -1,7 +1,16 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { and, eq, sql } from 'drizzle-orm';
-import { addDays, todayIn, type DocumentSnapshot, type DocumentState } from '@invoica/core';
+import {
+  addDays,
+  planAmountCredit,
+  planBalanceCredit,
+  planLineCredit,
+  refundFor,
+  todayIn,
+  type DocumentSnapshot,
+  type DocumentState,
+} from '@invoica/core';
 import {
   draftInput,
   organisationProfileInput,
@@ -11,6 +20,7 @@ import {
 import { getDashboard } from '../src/dashboard';
 import {
   createCreditNote,
+  creditPosition,
   createDraft,
   getDocument,
   issueDocument,
@@ -483,10 +493,50 @@ async function step(b: Business, codes: Record<CodeName, string>, m: Model, op: 
           ? op.refundPolicy === 'always' ||
             (op.refundPolicy === 'right' && credited(inv) === 0 && inv.total > before)
           : false;
+      // The refund the dialog shows, worked out from the invoice page's figures as the dialog does.
+      const shown = await b.run(async (tx) => {
+        const [row] = await tx.select().from(document).where(eq(document.id, inv.id));
+        const position = await creditPosition(tx, row!);
+        if (!position.ok) return 1;
+        const { source, state } = position;
+        const ids = (
+          await tx
+            .select({ id: documentLine.id })
+            .from(documentLine)
+            .where(eq(documentLine.documentId, inv.id))
+            .orderBy(documentLine.position)
+        ).map((l) => l.id);
+        try {
+          const plan =
+            input.mode === 'whole'
+              ? planLineCredit(
+                  source,
+                  state,
+                  source.lines.map((l, index) => ({ index, quantity: l.quantity })),
+                )
+              : input.mode === 'lines'
+                ? planLineCredit(
+                    source,
+                    state,
+                    input.lines.map((r) => ({ index: ids.indexOf(r.lineId), quantity: r.quantity })),
+                  )
+                : input.mode === 'amount'
+                  ? planAmountCredit(source, state, input.amount)
+                  : planBalanceCredit(source, state, before);
+          return Math.max(1, refundFor(plan.totals.total, before));
+        } catch {
+          return 1;
+        }
+      });
       const run = (refund: boolean) =>
         attempt(b, () =>
           b.run((tx) =>
-            createCreditNote(tx, b.actor, { ...input, ...(refund ? { refund: refundDetails } : {}) }, NOW),
+            createCreditNote(
+              tx,
+              b.actor,
+              { ...input, ...(refund ? { refund: { ...refundDetails, amount: shown } } : {}) },
+              NOW,
+            ),
           ),
         );
       let r = await run(withRefund);
@@ -515,6 +565,8 @@ async function step(b: Business, codes: Record<CodeName, string>, m: Model, op: 
         expect(r.error).toMatch(
           /credit_|refund_|more than|nothing left|too small|cannot be credited|Choose at least one line/,
         );
+        // Nothing changed between the page and the request, so the refund shown is always the right one.
+        expect(r.error).not.toMatch(/refund_changed|owed changed/);
         return;
       }
       if (r.value.duplicate) throw new Error('A fresh key came back as a repeat.');
