@@ -184,7 +184,13 @@ export function PaymentDialog({
             />
           </Field>
           <Field label="Received on" htmlFor="pay-date">
-            <Input id="pay-date" type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} />
+            <Input
+              id="pay-date"
+              type="date"
+              value={paidOn}
+              max={today}
+              onChange={(e) => setPaidOn(e.target.value)}
+            />
           </Field>
         </div>
         <Field label="How it was paid" htmlFor="pay-method">
@@ -584,6 +590,7 @@ export function CreditNoteButton({
                   <Field label="Refunded on" htmlFor="cn-refund-date">
                     <Input
                       id="cn-refund-date"
+                      max={today}
                       type="date"
                       value={refundedOn}
                       onChange={(e) => setRefundedOn(e.target.value)}

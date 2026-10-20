@@ -1170,6 +1170,7 @@ export function InvoiceEditor(props: EditorProps) {
                   <Field label="On" htmlFor={`p-d-${d.key}`}>
                     <Input
                       id={`p-d-${d.key}`}
+                      max={today}
                       type="date"
                       value={d.paidOn}
                       onChange={(e) =>

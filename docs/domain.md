@@ -135,7 +135,7 @@ A credit note alone does not make an invoice part paid: with nothing received, a
 **Total.** What the client is asked to pay: subtotal, less discounts, plus charges, plus tax. It always equals the sum of its parts as printed.
 *Current app:* `total_incl_vat`.
 
-**Balance.** What is still owed on an issued document: its total, less payments and credit notes applied to it.
+**Balance.** What is still owed on an issued document: its total, less payments (net of refunds) and credit notes applied to it.
 *Current app:* not tracked; an invoice is either paid in full or not.
 
 **Outstanding.** The sum of balances on issued documents that are not paid or void, for a client or the organisation. One definition, used on every screen.
@@ -145,7 +145,9 @@ A credit note alone does not make an invoice part paid: with nothing received, a
 
 ## Payments and cash flow
 
-**Payment.** Money received against one or more documents: an amount, a date, a method, and a reference. Recording a payment is idempotent: a repeated request or a double click never records it twice. Paid and part paid are derived from payments.
+**Payment.** Money received against one or more documents: an amount, a date, a method, and a reference. Recording a payment is idempotent: a repeated request or a double click never records it twice. Paid and part paid are derived from payments, less refunds. A payment, a deposit and a refund are dated on or before today in the organisation's time zone, never after.
+
+**Refund.** Money paid back to a client with a credit note above the balance owed: exactly the part above it (`docs/specs/refunds.md`).
 *Current app:* no payment records; "mark as paid" sets a status and sometimes a date.
 
 **Payment date.** The calendar date the money was received, in the organisation's time zone.

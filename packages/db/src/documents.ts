@@ -562,6 +562,12 @@ export async function issueDocument(
   if (dueDate < issueDate)
     throw new DomainError('due_before_issue', 'The due date cannot be before the issue date.');
   const supplyDate = doc.supplyDate ?? (doc.servicePeriodStart ? null : issueDate);
+  if (doc.prepayments.some((p) => p.paidOn > today)) {
+    throw new DomainError(
+      'deposit_in_future',
+      'A payment received before the invoice cannot be dated after today. Check the date of each one.',
+    );
+  }
   const totals = draftTotals(doc, lines);
   if (totals.total <= 0)
     throw new DomainError('total_not_positive', 'An invoice must be for more than zero.');
@@ -694,6 +700,7 @@ export async function recordPayment(
   tx: Tx,
   actor: Actor,
   input: PaymentInput,
+  now: Date = new Date(),
 ): Promise<{ id: string; duplicate: boolean }> {
   const doc = await lockDocument(tx, input.documentId);
   const requestFingerprint = fingerprint({
@@ -714,6 +721,11 @@ export async function recordPayment(
     throw new DomainError('payment_wrong_kind', 'Payments are recorded on invoices.');
   const applied = (await appliedAmounts(tx, [doc.id])).get(doc.id)!;
   checkPayment(doc.lifecycle, doc.total - applied.paid - applied.credited, input.amount);
+  // Money is recorded once received: a date after today, where the business is, is a mistake.
+  const { timeZone } = await getOrganisation(tx, actor);
+  if (input.paidOn > todayIn(timeZone, now)) {
+    throw new DomainError('payment_in_future', 'A payment cannot be dated after today.');
+  }
   const [row] = await tx
     .insert(payment)
     .values({
@@ -968,6 +980,9 @@ export async function createCreditNote(
 
   const org = await getOrganisationForIssue(tx, actor);
   const today = todayIn(org.timeZone, now);
+  if (input.refund && input.refund.refundedOn > today) {
+    throw new DomainError('refund_in_future', 'A refund cannot be dated after today.');
+  }
   const [created] = await tx
     .insert(document)
     .values({
