@@ -32,6 +32,14 @@ export async function sendAuthEmail(to: string, email: AuthEmail): Promise<void>
   }
 }
 
+/**
+ * Sends a sign-in email after the response, and returns at once. Better Auth's route for a new confirmation link
+ * waits for its sender, so that sender must not wait for the provider (docs/specs/sign-in-by-email.md, rule 4).
+ */
+export function sendLater(to: string, email: AuthEmail): void {
+  inBackground(sendAuthEmail(to, email));
+}
+
 /** Runs work after the response is sent, so a request takes as long whether or not it sends an email. */
 export function inBackground(work: Promise<unknown>) {
   try {

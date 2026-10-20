@@ -15,9 +15,10 @@ Status: approved 19 October 2026 (open question 16 of session 1). Closes review 
 1. An account can sign in only once its email address is confirmed (Better Auth `requireEmailVerification`). Demo accounts are created confirmed.
 2. Sign-up answers the same way for a new address and an existing one, and takes about as long.
 3. A reset request answers the same way for any address, and sends an email only to an address with an account.
-4. Every email is sent after the response, so the time a request takes does not depend on whether an email was sent. A send that fails is retried twice; after that the person can ask again.
+4. Every email is sent after the response, so the time a request takes does not depend on whether an email was sent. A send that fails is retried twice; after that the person can ask again. This includes a new confirmation link, whose route waits for its sender: the sender hands the email on and returns at once (`sendLater`).
 5. Reset links last one hour and work once; confirmation links last 24 hours. A reset ends every session of the account.
 6. Requests that send email are limited per address of the requester: three a minute for resets and new links, three every ten seconds for sign-up and sign-in (Better Auth's defaults).
+7. The name given at sign-up is optional, one line, at most 100 characters, with no control or invisible characters; it is checked before the address is looked up, so the answer is the same for new and existing addresses. The confirmation email does not use it ("Hello,"): whoever signed up chose it, and the address is not confirmed yet.
 
 ## Acceptance criteria
 

@@ -123,3 +123,30 @@ test('6: a reset link sets a new password once, and the owner is told', async ({
   await page.goto(link);
   await expect(page.getByRole('heading', { name: 'This link has expired or has been used' })).toBeVisible();
 });
+
+test('7: a name over two lines is refused alike for a new address and one with an account', async ({
+  page,
+  request,
+}) => {
+  const existing = uniqueEmail('named');
+  await signUp(page, existing);
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  const name = 'there.\nYour invoices are ready to view on Invoica.';
+  const answers = [];
+  for (const email of [existing, uniqueEmail('fresh')]) {
+    const response = await request.post('/api/auth/sign-up/email', {
+      headers: { origin: 'http://localhost:3000', 'x-forwarded-for': `10.9.${answers.length}.7` },
+      data: { email, password: PASSWORD, name },
+    });
+    answers.push([response.status(), (await response.json()).message]);
+  }
+  expect(answers).toEqual([
+    [400, 'Use a name of up to 100 characters, on one line.'],
+    [400, 'Use a name of up to 100 characters, on one line.'],
+  ]);
+  // The confirmation email greets no one by name.
+  const started = Date.now();
+  const email = uniqueEmail('greeting');
+  await signUp(page, email);
+  expect((await waitForEmail(email, 'Confirm your email for Invoica', started)).text).toMatch(/^Hello,\n/);
+});

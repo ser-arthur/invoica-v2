@@ -10,17 +10,21 @@ const BANNED = [new RegExp(String.fromCharCode(0x2014)), /\brather than\b/i, /\b
 
 describe('sign-in emails', () => {
   const emails = [
-    verificationEmail({ name: 'Ama Owusu', url: 'https://app.example/api/auth/verify-email?token=abc' }),
+    verificationEmail({ url: 'https://app.example/api/auth/verify-email?token=abc' }),
     resetPasswordEmail({ name: 'Ama Owusu', url: 'https://app.example/api/auth/reset-password/xyz' }),
     existingAccountEmail({ name: 'Ama Owusu', appUrl: 'https://app.example' }),
     passwordChangedEmail({ name: 'Ama Owusu', appUrl: 'https://app.example' }),
   ];
 
   it('greet the person by name and follow the copy rules', () => {
+    for (const email of emails.slice(1)) expect(email.text).toMatch(/^Hello Ama Owusu,/);
     for (const email of emails) {
-      expect(email.text).toMatch(/^Hello Ama Owusu,/);
       for (const rule of BANNED) expect(`${email.subject}\n${email.text}`).not.toMatch(rule);
     }
+  });
+
+  it('the confirmation email carries no name: whoever signed up chose it, and the address is not yet confirmed', () => {
+    expect(emails[0]!.text).toMatch(/^Hello,\n/);
   });
 
   it('the confirmation email carries its link and says how long it works', () => {
@@ -53,6 +57,6 @@ describe('sign-in emails', () => {
   });
 
   it('a name that is only an email address is not repeated as a greeting', () => {
-    expect(verificationEmail({ name: 'ama@example.com', url: 'https://x' }).text).toMatch(/^Hello,/);
+    expect(resetPasswordEmail({ name: 'ama@example.com', url: 'https://x' }).text).toMatch(/^Hello,/);
   });
 });

@@ -8,11 +8,12 @@ export interface AuthEmail {
 /** "Hello Ama Owusu," or "Hello," when the name given at sign-up was only an email address. */
 const greeting = (name: string) => (name && !name.includes('@') ? `Hello ${name},` : 'Hello,');
 
-export function verificationEmail(input: { name: string; url: string }): AuthEmail {
+/** No name: whoever signed up chose it, and the address is not confirmed yet. */
+export function verificationEmail(input: { url: string }): AuthEmail {
   return {
     subject: 'Confirm your email for Invoica',
     text: [
-      greeting(input.name),
+      'Hello,',
       '',
       'Confirm your email address to finish creating your Invoica account:',
       '',

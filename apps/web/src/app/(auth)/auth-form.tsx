@@ -116,7 +116,7 @@ export function AuthForm({ mode, notice }: { mode: 'sign-in' | 'sign-up'; notice
       {error ? <FormMessage>{error}</FormMessage> : null}
       {mode === 'sign-up' ? (
         <Field label="Your name" htmlFor="name">
-          <Input id="name" name="name" autoComplete="name" required />
+          <Input id="name" name="name" autoComplete="name" maxLength={100} required />
         </Field>
       ) : null}
       <Field label="Email" htmlFor="email">
