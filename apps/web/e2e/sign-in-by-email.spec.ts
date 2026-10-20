@@ -281,7 +281,7 @@ test('11: before the page’s script runs, sign-in cannot be sent, so a password
   await context.close();
 });
 
-test('12: the owner of an address someone else signed up with takes the account over', async ({
+test('12: the owner of an address someone else signed up with takes the account over with a reset', async ({
   page,
   browser,
 }) => {
@@ -314,18 +314,15 @@ test('12: the owner of an address someone else signed up with takes the account 
   await owner.getByRole('button', { name: 'Change password' }).click();
   await owner.waitForURL('**/sign-in?reset=done');
 
-  // Signing in sends a new confirmation link, which the owner's password confirms.
-  const confirming = Date.now();
+  // The reset proved the mailbox, so it confirmed the address too: signing in opens onboarding, with no new link.
+  const signedIn = Date.now();
   await owner.fill('#email', email);
   await owner.fill('#password', NEW_PASSWORD);
   await owner.getByRole('button', { name: 'Sign in' }).click();
-  await expect(
-    owner.getByText('Confirm your email address first. We have sent you a new link.'),
-  ).toBeVisible();
-  await owner.goto(linkIn(await waitForEmail(email, 'Confirm your email for Invoica', confirming)));
-  await owner.fill('#password', NEW_PASSWORD);
-  await owner.getByRole('button', { name: 'Confirm and sign in' }).click();
   await owner.waitForURL('**/onboarding');
+  expect(
+    emailsTo(email, signedIn).filter((e) => e.subject === 'Confirm your email for Invoica'),
+  ).toHaveLength(0);
 
   // The other person's password and link no longer get them in.
   await page.goto(theirLink);

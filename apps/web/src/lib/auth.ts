@@ -44,8 +44,15 @@ function createAuth() {
       sendResetPassword: async ({ user, url }) => sendAuthEmail(user.email, resetPasswordEmail({ url })),
       onExistingUserSignUp: async ({ user }) =>
         sendAuthEmail(user.email, existingAccountEmail({ appUrl: env.authUrl })),
-      onPasswordReset: async ({ user }) =>
-        inBackground(sendAuthEmail(user.email, passwordChangedEmail({ appUrl: env.authUrl }))),
+      // Opening a reset link proves the mailbox, as a confirmation link does, so a reset also confirms the address
+      // (docs/specs/sign-in-by-email.md, rule 8): the owner of an address someone else signed up with takes the
+      // account over with a reset and then signs in.
+      onPasswordReset: async ({ user }) => {
+        if (!user.emailVerified) {
+          await (await getAuth().$context).internalAdapter.updateUser(user.id, { emailVerified: true });
+        }
+        inBackground(sendAuthEmail(user.email, passwordChangedEmail({ appUrl: env.authUrl })));
+      },
     },
     emailVerification: {
       sendOnSignUp: true,
