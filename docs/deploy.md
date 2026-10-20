@@ -82,10 +82,16 @@ The health check answers `{"status":"ok"}` when the app reaches its database. Po
 ## 7. Each new version
 
 1. Pull the new code (a release tag from `main`).
-2. Build both images, run the migration image, then `docker compose -f deploy/compose.yaml up -d app`.
+2. Build both images. If the release adds a migration in the table below, stop the scheduler first. Run the migration image, then `docker compose -f deploy/compose.yaml up -d app`, and start the scheduler again if it was stopped.
 3. Check `/api/health` and sign in.
 
-Migrations are only ever added, never edited, so the previous version keeps working against the new database while the new one starts. To go back, start the previous image; never undo a migration by hand.
+Migrations are only ever added, never edited, so the previous version keeps working against the new database while the new one starts, with the exceptions below. To go back, start the previous image; never undo a migration by hand.
+
+A previous image cannot run the reminder scan against a database with these migrations:
+
+| Migration | Why | What to do |
+| --- | --- | --- |
+| 0022, 0024 | The scan offers invoices that may have a reminder due, with a margin, and the app chooses. An app from before 0022 queues what it is offered, so some reminders go up to a day early, and one can go before the day the invoice was issued. | Stop the scheduler (`docker compose -f deploy/compose.yaml stop scheduler`) before running the migration image, and start it again (`start scheduler`) once the new app is up. To go back to an image from before 0022, keep the scheduler stopped while it runs. |
 
 ## 8. Backups
 
