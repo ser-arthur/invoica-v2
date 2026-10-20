@@ -47,6 +47,9 @@ export async function signIn(page: Page, email: string) {
   await page.fill('#password', PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await page.waitForURL('**/dashboard');
+  // Signing in moves to the dashboard and then refreshes it; a navigation started before that ends is cut short.
+  await expect(page.getByRole('navigation', { name: 'Main' }).first()).toBeVisible();
+  await page.waitForLoadState('networkidle');
 }
 
 export async function addClient(page: Page, name: string, email = 'accounts@client.example') {
