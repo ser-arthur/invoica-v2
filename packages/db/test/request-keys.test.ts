@@ -1,10 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { and, eq } from 'drizzle-orm';
 import { itemInput, taxCodeInput } from '@invoica/schemas';
 import { createItem } from '../src/items';
-import { item, taxCode } from '../src/schema';
+import { createDraft, deleteDraft, voidDocument } from '../src/documents';
+import { auditLog, document, item, taxCode } from '../src/schema';
 import { createTaxCode } from '../src/taxes';
 import { createTestDatabase, type TestDatabase } from './helpers';
-import { business } from './business';
+import { NOW, business, draftFor, issued } from './business';
 
 /** A new saved item or tax code saved again after a lost answer, or twice at once, is made once. */
 
@@ -63,5 +65,30 @@ describe('request keys', () => {
     const labels = (await b.run((tx) => tx.select().from(taxCode))).map((r) => r.label);
     expect(labels.filter((l) => l === 'Old VAT')).toHaveLength(1);
     expect(labels.filter((l) => l === 'Levy')).toHaveLength(1);
+  });
+});
+
+describe('asked again after a lost answer', () => {
+  it('voiding an invoice already void, or deleting a draft already deleted, is done already', async () => {
+    const b = await business(t, 'Again Office');
+    const id = await issued(b, [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }]);
+    await b.run((tx) => voidDocument(tx, b.actor, id, 'Raised in error', NOW));
+    await b.run((tx) => voidDocument(tx, b.actor, id, 'Raised in error', NOW));
+    const [doc] = await b.run((tx) => tx.select().from(document).where(eq(document.id, id)));
+    expect(doc!.lifecycle).toBe('void');
+    const voided = await b.run((tx) =>
+      tx
+        .select()
+        .from(auditLog)
+        .where(and(eq(auditLog.action, 'document.voided'), eq(auditLog.entityId, id))),
+    );
+    expect(voided).toHaveLength(1);
+
+    const draft = await b.run((tx) =>
+      createDraft(tx, b.actor, draftFor(b, [{ quantity: 1000, unitPrice: 5000, code: b.codes.vat20 }])),
+    );
+    await b.run((tx) => deleteDraft(tx, b.actor, draft));
+    await b.run((tx) => deleteDraft(tx, b.actor, draft));
+    expect(await b.run((tx) => tx.select().from(document).where(eq(document.id, draft)))).toHaveLength(0);
   });
 });

@@ -553,6 +553,9 @@ export async function updateDraft(
 }
 
 export async function deleteDraft(tx: Tx, actor: Actor, id: string): Promise<void> {
+  const [found] = await tx.select({ id: document.id }).from(document).where(eq(document.id, id));
+  // Asked again after a lost answer: it is deleted already.
+  if (!found) return;
   const doc = await lockDocument(tx, id);
   if (doc.lifecycle !== 'draft') throw new DomainError('document_not_draft', 'Only drafts can be deleted.');
   await tx.delete(document).where(eq(document.id, id));
@@ -747,6 +750,8 @@ export async function voidDocument(
   now: Date,
 ): Promise<void> {
   const doc = await lockDocument(tx, id);
+  // Asked again after a lost answer: it is void already.
+  if (doc.lifecycle === 'void') return;
   if (doc.kind === 'credit_note') {
     throw new DomainError(
       'void_credit_note',

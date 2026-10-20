@@ -592,7 +592,8 @@ async function step(b: Business, codes: Record<CodeName, string>, m: Model, op: 
         b.run((tx) => voidDocument(tx, b.actor, inv.id, 'Raised in error', NOW)),
       );
       log.push(`void ${inv.number}: ${r.ok ? 'ok' : r.error}`);
-      const allowed = inv.lifecycle !== 'void' && activePaid(inv) === 0 && inv.credits.length === 0;
+      // Voiding again is done already; otherwise only with nothing paid or credited.
+      const allowed = inv.lifecycle === 'void' || (activePaid(inv) === 0 && inv.credits.length === 0);
       expect(r.ok).toBe(allowed);
       if (r.ok) inv.lifecycle = 'void';
       return;
