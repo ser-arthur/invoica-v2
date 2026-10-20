@@ -16,6 +16,7 @@ import {
   parseQuantity,
   parseRate,
   QUANTITY_SCALE,
+  retypeForCurrency,
   staleRateMessage,
   sterlingRateDate,
   sterlingRateFor,
@@ -547,7 +548,16 @@ export function InvoiceEditor(props: EditorProps) {
       return;
     }
     const c = clients.find((x) => x.id === id);
-    update({ clientId: id, currency: c?.currency ?? state.currency });
+    const currency = c?.currency ?? state.currency;
+    // Amounts already typed are written for the new currency where the figure is the same ("100.00" to "100").
+    const retype = (text: string) => retypeForCurrency(text, state.currency, currency);
+    update({
+      clientId: id,
+      currency,
+      lines: state.lines.map((l) => ({ ...l, unitPrice: retype(l.unitPrice) })),
+      discounts: state.discounts.map((d) => (d.kind === 'amount' ? { ...d, value: retype(d.value) } : d)),
+      deposits: state.deposits.map((d) => ({ ...d, amount: retype(d.amount) })),
+    });
   }
 
   function save(issue: boolean) {

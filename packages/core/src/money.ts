@@ -137,14 +137,34 @@ export function parseMoney(input: string, currencyCode: string): number | null {
   const match = /^(-)?(\d{1,3}(?:,\d{3})+|\d+)?(?:\.(\d*))?$/.exec(text);
   if (!match || (match[2] === undefined && !match[3])) return null;
   const [, minus, wholeRaw = '0', fractionRaw = ''] = match;
-  // Zeros past the currency's places change nothing ("100.00" in yen is 100); any other digit there is refused.
-  if (/[^0]/.test(fractionRaw.slice(exponent))) return null;
-  const fraction = fractionRaw.slice(0, exponent);
+  // More places than the currency has is refused, zeros included: "1.500" may be one thousand five hundred.
+  if (fractionRaw.length > exponent) return null;
   const whole = wholeRaw.replace(/,/g, '');
-  const minor = BigInt(whole) * 10n ** BigInt(exponent) + BigInt(fraction.padEnd(exponent, '0') || '0');
+  const minor = BigInt(whole) * 10n ** BigInt(exponent) + BigInt(fractionRaw.padEnd(exponent, '0') || '0');
   try {
     return toSafeNumber(minus ? -minor : minor);
   } catch {
     return null;
+  }
+}
+
+/**
+ * An amount typed for one currency, written for another when the figure is the same in both: "100.00" in euros is
+ * "100" in yen, "100" in yen is "100.00" in euros. Anything else (more places than the new currency has, or text
+ * that is not an amount) is left as typed, for the person to correct.
+ */
+export function retypeForCurrency(text: string, from: string, to: string): string {
+  if (from === to) return text;
+  const minor = parseMoney(text, from);
+  if (minor === null) return text;
+  const shift = currency(to).exponent - currency(from).exponent;
+  const scale = 10n ** BigInt(Math.abs(shift));
+  const value = BigInt(minor);
+  if (shift < 0 && value % scale !== 0n) return text;
+  const converted = shift >= 0 ? value * scale : value / scale;
+  try {
+    return toDecimalString(toSafeNumber(converted), to);
+  } catch {
+    return text;
   }
 }

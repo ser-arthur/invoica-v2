@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { allocate, divRound, formatMoney, parseMoney, sumMinor, toDecimalString } from '../src/money';
+import {
+  allocate,
+  divRound,
+  formatMoney,
+  parseMoney,
+  retypeForCurrency,
+  sumMinor,
+  toDecimalString,
+} from '../src/money';
 
 describe('divRound', () => {
   const cases: [bigint, bigint, 'half-up' | 'half-even' | 'down', bigint][] = [
@@ -128,11 +136,10 @@ describe('parseMoney', () => {
     ['1500', 'JPY', 1500],
     ['1.5', 'JPY', null],
     ['1.234', 'KWD', 1234],
-    // Zeros past the currency's places change nothing: a price typed in euros stays readable in yen.
-    ['100.00', 'JPY', 100],
-    ['12.500', 'GBP', 1250],
-    ['100.50', 'JPY', null],
-    ['12.501', 'GBP', null],
+    // More places than the currency has are refused, zeros too: "1.500" is how much of Europe writes 1,500.
+    ['1.500', 'GBP', null],
+    ['1.500', 'EUR', null],
+    ['100.00', 'JPY', null],
   ];
   it.each(cases)('reads %j in %s as %s', (input, code, expected) => {
     expect(parseMoney(input, code)).toBe(expected);
@@ -145,6 +152,37 @@ describe('parseMoney', () => {
         fc.constantFrom('GBP', 'JPY', 'KWD', 'GHS'),
         (n, code) => {
           expect(parseMoney(toDecimalString(n, code), code)).toBe(n);
+        },
+      ),
+    );
+  });
+});
+
+describe('retypeForCurrency', () => {
+  it.each([
+    ['100.00', 'EUR', 'JPY', '100'],
+    ['1,250.50', 'GBP', 'KWD', '1250.500'],
+    ['100', 'JPY', 'EUR', '100.00'],
+    ['100.50', 'EUR', 'JPY', '100.50'],
+    ['abc', 'EUR', 'JPY', 'abc'],
+    ['', 'EUR', 'JPY', ''],
+    ['9007199254740991', 'JPY', 'KWD', '9007199254740991'],
+  ])('%j typed in %s reads in %s as %j', (text, from, to, expected) => {
+    expect(retypeForCurrency(text, from, to)).toBe(expected);
+  });
+
+  it('keeps the same figure whenever it can, and leaves anything else as typed', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 1e12 }),
+        fc.constantFrom('GBP', 'JPY', 'KWD'),
+        fc.constantFrom('GBP', 'JPY', 'KWD'),
+        (n, from, to) => {
+          const text = toDecimalString(n, from);
+          const out = retypeForCurrency(text, from, to);
+          const back = parseMoney(out, to);
+          if (back !== null) expect(retypeForCurrency(out, to, from)).toBe(text);
+          else expect(out).toBe(text);
         },
       ),
     );

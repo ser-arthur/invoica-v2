@@ -94,12 +94,13 @@ test('a rate entered for euros is cleared and asked for again when the invoice m
   await page.goto('/invoices/new');
   await page.getByLabel('Bill to').selectOption({ label: 'Lyon Ateliers SARL' });
   await page.getByLabel('Line 1 description').fill('Print run');
-  await page.getByLabel('Line 1 price').fill('100');
+  await page.getByLabel('Line 1 price').fill('100.00');
   await page.fill('#e-sterling-rate', '1.15');
   await page.getByRole('button', { name: 'Save draft' }).click();
   await expect(page.getByText('Draft saved.')).toBeVisible();
 
   await page.getByLabel('Bill to').selectOption({ label: 'Kyoto Prints KK' });
+  await expect(page.getByLabel('Line 1 price')).toHaveValue('100');
   await expect(page.locator('#e-sterling-rate')).toHaveValue('');
   await expect(
     page.getByText('The exchange rate was entered for EUR. Enter the rate for JPY.'),
