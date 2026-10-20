@@ -2,11 +2,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 import { itemInput, taxCodeInput } from '@invoica/schemas';
 import { createItem } from '../src/items';
-import { createDraft, deleteDraft, voidDocument } from '../src/documents';
+import { createDraft, deleteDraft, issueDocument, updateDraft, voidDocument } from '../src/documents';
 import { auditLog, document, item, taxCode } from '../src/schema';
 import { createTaxCode } from '../src/taxes';
 import { createTestDatabase, type TestDatabase } from './helpers';
-import { NOW, business, draftFor, issued } from './business';
+import { NOW, business, draftFor, failure, issued } from './business';
 
 /** A new saved item or tax code saved again after a lost answer, or twice at once, is made once. */
 
@@ -90,5 +90,17 @@ describe('asked again after a lost answer', () => {
     await b.run((tx) => deleteDraft(tx, b.actor, draft));
     await b.run((tx) => deleteDraft(tx, b.actor, draft));
     expect(await b.run((tx) => tx.select().from(document).where(eq(document.id, draft)))).toHaveLength(0);
+  });
+});
+
+describe('R9-L3: a draft saved or issued again once it is issued', () => {
+  it('says which number it was issued as', async () => {
+    const b = await business(t, 'Issued Twice Office');
+    const lines = [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }];
+    const id = await b.run((tx) => createDraft(tx, b.actor, draftFor(b, lines)));
+    const { number } = await b.run((tx) => issueDocument(tx, b.actor, id, NOW));
+    expect(await failure(b.run((tx) => updateDraft(tx, b.actor, id, draftFor(b, lines))))).toBe(
+      `This invoice has already been issued as ${number}, so it can no longer be changed.`,
+    );
   });
 });

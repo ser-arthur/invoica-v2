@@ -540,7 +540,16 @@ export async function updateDraft(
   now: Date = new Date(),
 ): Promise<void> {
   const doc = await lockDocument(tx, id);
-  if (doc.lifecycle !== 'draft') throw new DomainError('document_not_draft', 'Only drafts can be edited.');
+  if (doc.lifecycle !== 'draft') {
+    // Saved or issued again after a lost answer, or from a page opened before it was issued elsewhere.
+    const what = doc.kind === 'credit_note' ? 'credit note' : 'invoice';
+    throw new DomainError(
+      'document_not_draft',
+      doc.number
+        ? `This ${what} has already been issued as ${doc.number}, so it can no longer be changed.`
+        : 'Only drafts can be edited.',
+    );
+  }
   await assertClient(tx, input.clientId);
   const org = await getOrganisation(tx, actor);
   const lines = await prepareLines(tx, actor, id, input.lines);

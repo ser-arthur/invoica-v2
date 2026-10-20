@@ -201,3 +201,48 @@ test('a new saved item whose answer is lost is saved once when tried again', asy
   await page.reload();
   await expect(page.getByText('Half-day workshop')).toHaveCount(1);
 });
+
+test('a page from before a new version says to reload, and keeps what was typed', async ({ page }) => {
+  await signUpAndOnboard(page, 'Old Page Studio', { vat: true });
+  await page.goto('/clients/new');
+  await page.fill('#c-name', 'Ferry Lane Ltd');
+  // The server no longer knows the page's actions, as after a new version is deployed.
+  await page.route(
+    (url) => !url.pathname.startsWith('/_next'),
+    async (route) => {
+      if (route.request().method() !== 'POST' || !route.request().headers()['next-action']) {
+        return route.fallback();
+      }
+      await route.fulfill({ status: 404, headers: { 'x-nextjs-action-not-found': '1' }, body: '' });
+    },
+  );
+  await page.getByRole('button', { name: 'Save client' }).click();
+  await expect(
+    page.getByText('Invoica has been updated. Copy anything you typed, then reload the page.'),
+  ).toBeVisible();
+  await expect(page.getByText(UNREACHABLE)).toHaveCount(0);
+  await expect(page.locator('#c-name')).toHaveValue('Ferry Lane Ltd');
+});
+
+test('issuing a saved draft again after a lost answer says which number it was issued as', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Lost Issue Studio', { vat: true });
+  await addClient(page, 'Tannery Yard Ltd');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Tannery Yard Ltd' });
+  await page.getByLabel('Line 1 description').fill('Signage');
+  await page.getByLabel('Line 1 price').fill('240');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\/edit\?saved=1/);
+  const reached = await loseNextAnswer(page);
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await expect(page.getByText(UNREACHABLE)).toBeVisible();
+  expect(reached()).toBe(true);
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await expect(
+    page.getByText(/This invoice has already been issued as INV-\d+, so it can no longer be changed\./),
+  ).toBeVisible();
+});
