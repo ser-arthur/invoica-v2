@@ -158,14 +158,14 @@ describe('criteria 4 and 5: payments after a refund', () => {
       refund: refundOf(6_000),
     });
     expect((await detail(b, id)).balance).toBe(0);
-    expect(await failure(b.run((tx) => recordPayment(tx, b.actor, pay(id, 1, 'pay-again-00003'))))).toMatch(
-      /more than the balance/,
+    expect(await failure(b.run((tx) => recordPayment(tx, b.actor, pay(id, 1, 'pay-again-00003'))))).toBe(
+      'Nothing is owed on this invoice now, so no payment can be recorded on it.',
     );
     await b.run((tx) => removePayment(tx, b.actor, first.id, 'Bounced'));
     expect((await detail(b, id)).balance).toBe(6000);
-    expect(
-      await failure(b.run((tx) => recordPayment(tx, b.actor, pay(id, 6001, 'pay-again-00004')))),
-    ).toMatch(/more than the balance/);
+    expect(await failure(b.run((tx) => recordPayment(tx, b.actor, pay(id, 6001, 'pay-again-00004'))))).toBe(
+      'The payment is more than the £60.00 still owed.',
+    );
     await b.run((tx) => recordPayment(tx, b.actor, pay(id, 6000, 'pay-again-00005')));
     expect((await detail(b, id)).state).toBe('settled');
   });

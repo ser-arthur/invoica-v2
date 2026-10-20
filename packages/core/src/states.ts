@@ -1,5 +1,6 @@
 import { DomainError } from './errors';
 import { compareDates, type BusinessDate } from './dates';
+import { formatMoney } from './money';
 
 /** The stored part of a document's state. Part paid and paid are derived from payments. */
 export type Lifecycle = 'draft' | 'issued' | 'sent' | 'void';
@@ -81,8 +82,16 @@ export function transition(
   }
 }
 
-/** Whether a payment of `amount` can be recorded against a document with this lifecycle and balance. */
-export function checkPayment(lifecycle: Lifecycle, balance: number, amount: number): void {
+/**
+ * Whether a payment of `amount` can be recorded against a document with this lifecycle and balance. With the
+ * currency, a payment above the balance is refused with the balance named.
+ */
+export function checkPayment(
+  lifecycle: Lifecycle,
+  balance: number,
+  amount: number,
+  currencyCode?: string,
+): void {
   if (!Number.isSafeInteger(amount) || amount <= 0) {
     throw new DomainError('payment_not_positive', 'A payment must be more than zero.');
   }
@@ -95,7 +104,14 @@ export function checkPayment(lifecycle: Lifecycle, balance: number, amount: numb
     );
   }
   if (amount > balance) {
-    throw new DomainError('payment_exceeds_balance', 'The payment is more than the balance due.');
+    throw new DomainError(
+      'payment_exceeds_balance',
+      !currencyCode
+        ? 'The payment is more than the balance due.'
+        : balance <= 0
+          ? 'Nothing is owed on this invoice now, so no payment can be recorded on it.'
+          : `The payment is more than the ${formatMoney(balance, currencyCode)} still owed.`,
+    );
   }
 }
 

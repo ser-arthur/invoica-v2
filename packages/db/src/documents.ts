@@ -815,7 +815,7 @@ export async function recordPayment(
   if (doc.kind !== 'invoice')
     throw new DomainError('payment_wrong_kind', 'Payments are recorded on invoices.');
   const applied = (await appliedAmounts(tx, [doc.id])).get(doc.id)!;
-  checkPayment(doc.lifecycle, doc.total - applied.paid - applied.credited, input.amount);
+  checkPayment(doc.lifecycle, doc.total - applied.paid - applied.credited, input.amount, doc.currency);
   // Money is recorded once received: a date after today, where the business is, is a mistake.
   const { timeZone } = await getOrganisation(tx, actor);
   if (input.paidOn > todayIn(timeZone, now)) {

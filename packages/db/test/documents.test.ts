@@ -280,7 +280,7 @@ describe('payments', () => {
       await failure(
         run((tx) => recordPayment(tx, actor, { ...p, amount: 8200, idempotencyKey: 'pay-key-0002' })),
       ),
-    ).toMatch(/more than the balance/);
+    ).toBe('The payment is more than the £81.99 still owed.');
     await run((tx) => recordPayment(tx, actor, { ...p, amount: 8199, idempotencyKey: 'pay-key-0003' }));
     d = await run((tx) => getDocument(tx, id, TODAY));
     expect([d!.state, d!.balance]).toEqual(['paid', 0]);

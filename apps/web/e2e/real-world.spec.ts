@@ -93,7 +93,9 @@ test('a tab showing an old balance cannot record too much, and a double click re
   await other.getByRole('button', { name: 'Record payment' }).click();
   await other.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
   await expect(
-    other.getByRole('dialog').getByText('The payment is more than the balance due.'),
+    other
+      .getByRole('dialog')
+      .getByText('Nothing is owed on this invoice now, so no payment can be recorded on it.'),
   ).toBeVisible();
   await other.reload();
   await expect(other.getByRole('heading', { level: 1 })).toContainText('Paid');

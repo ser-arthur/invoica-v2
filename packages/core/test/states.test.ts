@@ -53,6 +53,13 @@ describe('payments', () => {
   it('accepts a payment up to the balance on an issued document', () => {
     expect(() => checkPayment('sent', 1000, 1000)).not.toThrow();
     expect(() => checkPayment('sent', 1000, 1001)).toThrow(/more than the balance/);
+    // With the currency, the balance is named, as a page opened before another payment needs to know it.
+    expect(() => checkPayment('sent', 6000, 12_000, 'GBP')).toThrow(
+      'The payment is more than the £60.00 still owed.',
+    );
+    expect(() => checkPayment('sent', 0, 12_000, 'GBP')).toThrow(
+      'Nothing is owed on this invoice now, so no payment can be recorded on it.',
+    );
     expect(() => checkPayment('draft', 1000, 10)).toThrow();
     expect(() => checkPayment('void', 1000, 10)).toThrow(
       'This invoice is void, so no payment can be recorded on it.',
