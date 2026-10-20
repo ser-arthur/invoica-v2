@@ -21,6 +21,15 @@ export interface ItemValue {
   version?: string;
 }
 
+/** A tax code an item can use; an archived one is offered only to the item that already uses it. */
+export interface TaxCodeOption {
+  id: string;
+  label: string;
+  archived: boolean;
+}
+
+const optionLabel = (t: TaxCodeOption) => (t.archived ? `${t.label} (archived)` : t.label);
+
 export function ItemEditor({
   item,
   currency,
@@ -29,7 +38,7 @@ export function ItemEditor({
 }: {
   item: ItemValue | null;
   currency: string;
-  taxCodes: { id: string; label: string }[];
+  taxCodes: TaxCodeOption[];
   onDone: () => void;
 }) {
   const router = useRouter();
@@ -121,11 +130,13 @@ export function ItemEditor({
       <Field label="Tax" htmlFor="i-tax" className="sm:col-span-2">
         <Select id="i-tax" name="taxCodeId" defaultValue={item?.taxCodeId ?? ''}>
           <option value="">Use the default</option>
-          {taxCodes.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.label}
-            </option>
-          ))}
+          {taxCodes
+            .filter((t) => !t.archived || t.id === item?.taxCodeId)
+            .map((t) => (
+              <option key={t.id} value={t.id}>
+                {optionLabel(t)}
+              </option>
+            ))}
         </Select>
       </Field>
       <div className="flex flex-wrap gap-2 sm:col-span-2">
@@ -177,10 +188,13 @@ export function ItemsList({
 }: {
   items: ItemValue[];
   currency: string;
-  taxCodes: { id: string; label: string }[];
+  taxCodes: TaxCodeOption[];
 }) {
   const [editing, setEditing] = useState<string | 'new' | null>(items.length === 0 ? 'new' : null);
-  const label = (id: string | null) => taxCodes.find((t) => t.id === id)?.label ?? 'Default tax';
+  const label = (id: string | null) => {
+    const code = taxCodes.find((t) => t.id === id);
+    return code ? optionLabel(code) : 'Default tax';
+  };
   return (
     <div className="flex flex-col gap-4">
       {editing === 'new' ? (

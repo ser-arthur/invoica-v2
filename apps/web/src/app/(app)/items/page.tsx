@@ -9,7 +9,8 @@ export const metadata: Metadata = { title: 'Items' };
 export default async function ItemsPage() {
   const data = await inWorkspace(async (tx, ws) => ({
     items: await listItems(tx),
-    taxCodes: await listTaxCodes(tx),
+    // Archived ones too, for the items that still use them.
+    taxCodes: await listTaxCodes(tx, { includeArchived: true }),
     currency: ws.organisation.baseCurrency,
   }));
   return (
@@ -21,7 +22,7 @@ export default async function ItemsPage() {
       <ItemsList
         items={data.items.map((i) => ({ ...i, version: itemVersionOf(i) }))}
         currency={data.currency}
-        taxCodes={data.taxCodes.map((t) => ({ id: t.id, label: t.label }))}
+        taxCodes={data.taxCodes.map((t) => ({ id: t.id, label: t.label, archived: t.archivedAt !== null }))}
       />
     </div>
   );

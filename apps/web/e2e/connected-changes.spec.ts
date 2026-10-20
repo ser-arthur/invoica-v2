@@ -644,3 +644,29 @@ test('leaving the settings or a client with changes not saved asks first; saved,
   await page.goto(clientUrl);
   await expect(page.getByText('Rhiannon Moor')).toHaveCount(0);
 });
+
+test('a tax code archived after a saved item used it: the item keeps it, says so, and keeps it when its price changes', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Archived Rate Studio', { vat: true });
+  await page.goto('/items');
+  await page.fill('#i-name', 'Child car seat');
+  await page.fill('#i-price', '80');
+  await page.locator('#i-tax').selectOption({ label: 'Reduced rate' });
+  await page.getByRole('button', { name: 'Add item' }).click();
+  await expect(page.getByRole('button', { name: /Child car seat/ })).toContainText('Reduced rate');
+
+  await page.goto('/settings');
+  await page.locator('li', { hasText: 'Reduced rate' }).getByRole('button', { name: 'Archive' }).click();
+  await expect(page.locator('li', { hasText: 'Reduced rate' })).toHaveCount(0);
+
+  await page.goto('/items');
+  const row = page.getByRole('button', { name: /Child car seat/ });
+  await expect(row).toContainText('Reduced rate (archived)');
+  await row.click();
+  await expect(page.locator('#i-tax option:checked')).toHaveText('Reduced rate (archived)');
+  await page.fill('#i-price', '85');
+  await page.getByRole('button', { name: 'Save item' }).click();
+  await expect(page.getByRole('button', { name: /Child car seat/ })).toContainText('£85.00');
+  await expect(page.getByRole('button', { name: /Child car seat/ })).toContainText('Reduced rate (archived)');
+});
