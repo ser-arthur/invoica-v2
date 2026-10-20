@@ -8,6 +8,7 @@ import { saveClientAction } from '@/lib/actions/clients';
 import { COUNTRIES } from '@/lib/countries';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
 import { reach } from '@/lib/reach';
+import { requestKey } from '@/lib/request-key';
 
 export interface ClientFormValues {
   name: string;
@@ -47,6 +48,8 @@ export function ClientForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  // A new client's form keeps one request key, so saving again after a lost answer makes one client.
+  const [key] = useState(() => requestKey());
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,6 +58,7 @@ export function ClientForm({
     const text = (k: string) => String(f.get(k) ?? '');
     const terms = text('paymentTermsDays').trim();
     const input = {
+      ...(id ? {} : { idempotencyKey: key }),
       name: text('name'),
       contactName: text('contactName'),
       email: text('email'),

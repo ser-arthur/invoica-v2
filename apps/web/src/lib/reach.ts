@@ -6,7 +6,7 @@ export const UNREACHABLE =
 /**
  * Waits for a server action and turns a call that fails on the way (the connection drops, the answer is lost, a new
  * version of the app replaced the one this page came from) into a message. The page and everything typed in it
- * stay as they are, so trying again is one click. Payments, credit notes, emails and new drafts carry a request key,
+ * stay as they are, so trying again is one click. Payments, credit notes, emails, new drafts and new clients carry a request key,
  * so trying one again after a lost answer records it once.
  */
 export async function reach<T>(call: Promise<ActionResult<T>>): Promise<ActionResult<T>> {

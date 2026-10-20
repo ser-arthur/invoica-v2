@@ -148,6 +148,8 @@ export const clientFieldInput = z.object({
 });
 
 export const clientInput = z.object({
+  /** Made when the new-client form opens, so saving it again creates one client. */
+  idempotencyKey: z.string().min(8).max(100).optional(),
   name: requiredText(200, 'Enter the client’s name.'),
   contactName: optionalText(200),
   email,

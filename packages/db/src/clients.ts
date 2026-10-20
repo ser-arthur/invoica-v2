@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike, isNull, isNotNull, or } from 'drizzle-orm';
+import { and, asc, eq, ilike, isNull, isNotNull, or, sql } from 'drizzle-orm';
 import type { ClientInput } from '@invoica/schemas';
 import type { Tx } from './client';
 import { client, clientField } from './schema';
@@ -43,7 +43,7 @@ export async function getClient(
 }
 
 function columns(input: ClientInput) {
-  const { fields: _fields, remindersEnabled, ...rest } = input;
+  const { fields: _fields, remindersEnabled, idempotencyKey: _key, ...rest } = input;
   return remindersEnabled === undefined ? rest : { ...rest, remindersEnabled };
 }
 
@@ -58,11 +58,24 @@ async function replaceFields(tx: Tx, actor: Actor, clientId: string, input: Clie
 }
 
 export async function createClient(tx: Tx, actor: Actor, input: ClientInput): Promise<string> {
+  const key = input.idempotencyKey ?? null;
+  const existing = async () =>
+    key
+      ? (await tx.select({ id: client.id }).from(client).where(eq(client.idempotencyKey, key)))[0]?.id
+      : undefined;
+  const earlier = await existing();
+  if (earlier) return earlier;
   await assertRoomForClient(tx, actor.organisationId, new Date());
   const [row] = await tx
     .insert(client)
-    .values({ organisationId: actor.organisationId, ...columns(input) })
+    .values({ organisationId: actor.organisationId, ...columns(input), idempotencyKey: key })
+    .onConflictDoNothing({
+      target: [client.organisationId, client.idempotencyKey],
+      where: sql`${client.idempotencyKey} is not null`,
+    })
     .returning({ id: client.id });
+  // Saved at the same moment by another request with the same key: that one is the client.
+  if (!row) return (await existing())!;
   await replaceFields(tx, actor, row!.id, input);
   await audit(tx, actor, 'client.created', 'client', row!.id);
   return row!.id;

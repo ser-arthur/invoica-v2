@@ -190,6 +190,8 @@ export const client = pgTable('client', {
   archivedAt: ts('archived_at'),
   /** Whether this client is sent reminders about unpaid invoices. */
   remindersEnabled: boolean('reminders_enabled').notNull().default(true),
+  /** The request key of the form that created it (migration 0020). */
+  idempotencyKey: text('idempotency_key'),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });

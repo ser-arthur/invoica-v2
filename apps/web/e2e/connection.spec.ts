@@ -148,3 +148,18 @@ test('signing in or asking for a reset link while offline says so, and the form 
   await expect(page.getByRole('main').getByText(UNREACHABLE)).toBeVisible();
   await page.context().setOffline(false);
 });
+
+test('a new client whose answer is lost is saved once when tried again', async ({ page }) => {
+  await signUpAndOnboard(page, 'Lost Client Studio', { vat: true });
+  await page.goto('/clients/new');
+  await page.fill('#c-name', 'Saltmarsh Trading Ltd');
+  await page.fill('#c-email', 'accounts@saltmarsh.example');
+  const reached = await loseNextAnswer(page);
+  await page.getByRole('button', { name: 'Save client' }).click();
+  await expect(page.getByText(UNREACHABLE)).toBeVisible();
+  expect(reached()).toBe(true);
+  await page.getByRole('button', { name: 'Save client' }).click();
+  await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
+  await page.goto('/clients');
+  await expect(page.getByText('Saltmarsh Trading Ltd')).toHaveCount(1);
+});
