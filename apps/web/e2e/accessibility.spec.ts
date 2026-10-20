@@ -120,7 +120,11 @@ test('open dialogs have no automated accessibility violations, in light and dark
       await expect(page.getByRole('dialog')).toBeVisible();
       const result = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();
       examined += 1;
-      expect(result.violations.map((v) => `${theme} ${opener}: ${v.id}`)).toEqual([]);
+      expect(
+        result.violations.map(
+          (v) => `${theme} ${opener}: ${v.id} at ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`,
+        ),
+      ).toEqual([]);
     }
   }
   expect(examined).toBe(4);

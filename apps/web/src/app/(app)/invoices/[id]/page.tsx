@@ -12,7 +12,15 @@ import {
   reminderStatus,
 } from '@invoica/db';
 import { renderDocumentHtml } from '@invoica/documents';
-import { FormMessage, PageHeader, Panel, PanelHeading, StatePill, buttonClass } from '@/components/ui';
+import {
+  FormMessage,
+  PageHeader,
+  Panel,
+  PanelHeading,
+  StatePill,
+  buttonClass,
+  inlineLinkClass,
+} from '@/components/ui';
 import {
   CreditNoteButton,
   DuplicateButton,
@@ -235,7 +243,7 @@ export default async function InvoicePage({
                 <div className="px-5 py-3 text-[14px]">
                   <dt className="text-muted">Credits</dt>
                   <dd>
-                    <Link href={`/invoices/${doc.creditedDocumentId}`} className="text-brand hover:underline">
+                    <Link href={`/invoices/${doc.creditedDocumentId}`} className={inlineLinkClass}>
                       {snapshot.credits.number}
                     </Link>
                     : {snapshot.credits.reason}
@@ -261,7 +269,7 @@ export default async function InvoicePage({
                       <p className="text-[13px] text-muted">
                         Refund, {formatBusinessDate(r.refundedOn)}, {METHOD[r.method] ?? r.method}
                         {r.reference ? `, ${r.reference}` : ''}, with{' '}
-                        <Link href={`/invoices/${r.creditNoteId}`} className="text-brand hover:underline">
+                        <Link href={`/invoices/${r.creditNoteId}`} className={inlineLinkClass}>
                           {creditNumber.get(r.creditNoteId) ?? 'its credit note'}
                         </Link>
                       </p>
@@ -309,7 +317,7 @@ export default async function InvoicePage({
                 {remindersInPlan && !reminders.on ? (
                   <>
                     {' '}
-                    <Link href="/settings#reminders" className="text-brand hover:underline">
+                    <Link href="/settings#reminders" className={inlineLinkClass}>
                       Turn them on in Settings
                     </Link>
                     .

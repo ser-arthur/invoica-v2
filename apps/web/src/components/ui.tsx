@@ -90,6 +90,9 @@ export function Field({
   );
 }
 
+/** A link inside a sentence: underlined, because the brand colour alone does not set it apart from the text. */
+export const inlineLinkClass = 'font-medium text-brand underline underline-offset-4 hover:decoration-2';
+
 export const inputClass =
   'h-10 rounded-[10px] border border-line-strong bg-surface px-3 text-[15px] text-ink placeholder:text-muted/70 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 aria-[invalid=true]:border-danger';
 
