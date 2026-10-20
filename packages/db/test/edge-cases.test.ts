@@ -108,7 +108,7 @@ describe('currencies without minor units, and with three', () => {
       createCreditNote(
         tx,
         b.actor,
-        { mode: 'balance', invoiceId: id, reason: 'Waived', idempotencyKey: 'kwd-balance-1' },
+        { mode: 'balance', invoiceId: id, balance: 7499, reason: 'Waived', idempotencyKey: 'kwd-balance-1' },
         NOW,
       ),
     );
@@ -350,11 +350,12 @@ describe('clients and names', () => {
       tx.select({ key: outbox.idempotencyKey }).from(outbox).where(eq(outbox.topic, 'document.reminder')),
     );
     expect(keys.map((k) => k.key)).toEqual([`reminder:${id}:0`]);
+    const owed = (await detail(b, id)).balance;
     await b.run((tx) =>
       createCreditNote(
         tx,
         b.actor,
-        { mode: 'balance', invoiceId: id, reason: 'Closed', idempotencyKey: 'arch-cn-01' },
+        { mode: 'balance', invoiceId: id, balance: owed, reason: 'Closed', idempotencyKey: 'arch-cn-01' },
         NOW,
       ),
     );

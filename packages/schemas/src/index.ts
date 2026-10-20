@@ -374,7 +374,12 @@ export const creditNoteInput = z.discriminatedUnion('mode', [
     ...creditNoteBase,
     amount: minorAmount.min(1, 'Enter the amount to credit.'),
   }),
-  z.object({ mode: z.literal('balance'), ...creditNoteBase }),
+  z.object({
+    mode: z.literal('balance'),
+    ...creditNoteBase,
+    /** The balance the person confirmed: refused when the balance owed is another by the time it is issued. */
+    balance: z.number().int('Amounts are whole minor units.').min(1).max(Number.MAX_SAFE_INTEGER),
+  }),
 ]);
 export type CreditNoteInput = z.infer<typeof creditNoteInput>;
 

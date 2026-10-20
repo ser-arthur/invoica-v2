@@ -474,17 +474,19 @@ export function CreditNoteButton({
         : {}),
     };
     const input =
-      mode === 'whole' || mode === 'balance'
-        ? { ...base, mode }
-        : mode === 'lines'
-          ? {
-              ...base,
-              mode,
-              lines: lineRequest
-                .filter((r) => (r.quantity ?? 0) > 0)
-                .map((r) => ({ lineId: r.line.id, quantity: r.quantity ?? 0 })),
-            }
-          : { ...base, mode, amount: parseMoney(amount, currency) ?? 0 };
+      mode === 'balance'
+        ? { ...base, mode, balance }
+        : mode === 'whole'
+          ? { ...base, mode }
+          : mode === 'lines'
+            ? {
+                ...base,
+                mode,
+                lines: lineRequest
+                  .filter((r) => (r.quantity ?? 0) > 0)
+                  .map((r) => ({ lineId: r.line.id, quantity: r.quantity ?? 0 })),
+              }
+            : { ...base, mode, amount: parseMoney(amount, currency) ?? 0 };
     start(async () => {
       const r = await reach(creditNoteAction(input));
       if (!r.ok) {

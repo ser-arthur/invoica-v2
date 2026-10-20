@@ -487,7 +487,7 @@ async function step(b: Business, codes: Record<CodeName, string>, m: Model, op: 
                   mode: 'amount' as const,
                   amount: Math.max(1, Math.floor((inv.total * op.share) / 1000)),
                 }
-              : { ...base, mode: 'balance' as const };
+              : { ...base, mode: 'balance' as const, balance: Math.max(1, before) };
       if (input.mode === 'lines' && input.lines.length === 0) return;
       const withRefund =
         op.kind === 'creditWhole'

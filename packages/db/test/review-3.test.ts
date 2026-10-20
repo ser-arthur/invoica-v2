@@ -51,7 +51,13 @@ describe('R3-M1: everything still owed after a part payment', () => {
       createCreditNote(
         tx,
         a.actor,
-        { mode: 'balance', invoiceId: id, reason: 'Rest waived', idempotencyKey: 'r3m1-balance-01' },
+        {
+          mode: 'balance',
+          invoiceId: id,
+          balance: 5997,
+          reason: 'Rest waived',
+          idempotencyKey: 'r3m1-balance-01',
+        },
         NOW,
       ),
     );

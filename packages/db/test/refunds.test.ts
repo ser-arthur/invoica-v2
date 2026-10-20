@@ -557,3 +557,34 @@ describe('a refund’s date', () => {
     expect((await detail(b, id)).refunds.map((r) => r.refundedOn)).toEqual(['2026-10-15']);
   });
 });
+
+describe('everything still owed is the figure confirmed', () => {
+  it('a payment removed while the dialog was open makes the confirmed balance wrong, and it is refused', async () => {
+    const b = await business(t, 'Balance Removed Office');
+    const id = await invoiceOf120(b);
+    const paid = await b.run((tx) => recordPayment(tx, b.actor, pay(id, 6000, 'pay-bal-00001')));
+    // The dialog offers "Everything still owed, £60.00"; meanwhile the payment bounces.
+    await b.run((tx) => removePayment(tx, b.actor, paid.id, 'Bounced'));
+    const input = { mode: 'balance' as const, invoiceId: id, balance: 6000 };
+    expect(await failure(credit(b, { ...input, idempotencyKey: 'cn-bal-00001' }))).toMatch(
+      /The amount owed changed while this was open: everything still owed is now £120\.00\. Check it and issue again\./,
+    );
+    expect(
+      await b.run((tx) => tx.select().from(document).where(eq(document.kind, 'credit_note'))),
+    ).toHaveLength(0);
+    const cn = await credit(b, { ...input, balance: 12_000, idempotencyKey: 'cn-bal-00002' });
+    expect((await detail(b, id)).balance).toBe(0);
+    expect(cn.duplicate).toBe(false);
+  });
+
+  it('a payment recorded meanwhile is refused the same way', async () => {
+    const b = await business(t, 'Balance Paid Office');
+    const id = await invoiceOf120(b);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 6000, 'pay-bal-00002')));
+    expect(
+      await failure(
+        credit(b, { mode: 'balance', invoiceId: id, balance: 12_000, idempotencyKey: 'cn-bal-00003' }),
+      ),
+    ).toMatch(/everything still owed is now £60\.00/);
+  });
+});

@@ -990,6 +990,7 @@ export async function createCreditNote(
     mode: input.mode,
     lines: input.mode === 'lines' ? input.lines : null,
     amount: input.mode === 'amount' ? input.amount : null,
+    balance: input.mode === 'balance' ? input.balance : null,
     refund: input.refund ?? null,
   });
   const [existing] = await tx
@@ -1051,6 +1052,13 @@ export async function createCreditNote(
     plan = planAmountCredit(source, state, input.amount);
   } else {
     plan = planBalanceCredit(source, state, balance);
+    // The balance the person confirmed: a payment recorded or removed since they saw it changes what is owed.
+    if (input.balance !== balance) {
+      throw new DomainError(
+        'balance_changed',
+        `The amount owed changed while this was open: everything still owed is now ${formatMoney(balance, invoice.currency)}. Check it and issue again.`,
+      );
+    }
   }
   // The part above the balance owed is money paid back, recorded with the note (docs/specs/refunds.md).
   const refundAmount = input.refund ? refundFor(plan.totals.total, balance) : 0;
