@@ -61,7 +61,9 @@ test('a draft is still there after a reload and signing in again, and two tabs c
   await page.waitForURL(/\?issued=1/);
   await other.getByRole('button', { name: 'Issue invoice' }).click();
   await other.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
-  await expect(other.getByRole('alert')).toBeVisible();
+  await expect(
+    other.getByText(/This invoice has already been issued as INV-\d+, so it can no longer be changed\./),
+  ).toBeVisible();
   await other.reload();
   // The editor of an issued invoice opens the invoice itself.
   await expect(other).toHaveURL(/\/invoices\/[0-9a-f-]{36}$/);
