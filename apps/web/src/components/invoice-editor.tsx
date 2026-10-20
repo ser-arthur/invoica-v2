@@ -598,8 +598,9 @@ export function InvoiceEditor(props: EditorProps) {
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: result.message });
-        // The tax codes, settings and next number as they are now, so the figures shown match the server's.
-        if (issue && !result.unreachable) router.refresh();
+        // Today, the tax codes, the settings and the next number as the server has them now, so what the page
+        // works out (the total, what a rate is for) matches what the server checks.
+        if (!result.unreachable) router.refresh();
         return;
       }
       setDirty(false);

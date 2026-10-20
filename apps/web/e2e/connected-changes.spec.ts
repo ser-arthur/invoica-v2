@@ -373,3 +373,44 @@ test('a client’s page follows its invoices: payments, credit notes and refunds
   await page.reload();
   await expect(figure('Owes you now')).toHaveText('£0.00');
 });
+
+test('the way rates are chosen changed in another tab: the editor asks for the rate again, and then saves', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Rate Method Studio', { vat: true });
+  await page.goto('/clients/new');
+  await page.fill('#c-name', 'Lyon Ateliers SARL');
+  await page.fill('#c-email', 'compta@lyon.example');
+  await page.selectOption('#c-currency', 'EUR');
+  await page.getByRole('button', { name: 'Save client' }).click();
+  await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
+
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Lyon Ateliers SARL' });
+  await page.getByLabel('Line 1 description').fill('Workshop');
+  await page.getByLabel('Line 1 price').fill('100');
+  await page.fill('#e-sterling-rate', '1.1400');
+
+  const settings = await page.context().newPage();
+  await settings.goto('/settings');
+  await settings.selectOption('#s-sterling', 'market');
+  await settings.getByRole('button', { name: 'Save settings' }).click();
+  await expect(settings.getByText(/Settings saved\./)).toBeVisible();
+  await settings.close();
+
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await expect(
+    page
+      .getByText('The exchange rate was entered before the way rates are chosen changed. Enter it again.')
+      .first(),
+  ).toBeVisible();
+  // The page now knows the new way, so the rate typed again is taken.
+  await expect(page.locator('#e-sterling-rate')).toHaveValue('');
+  // HMRC's monthly rates are no longer offered: the market rate on the day is.
+  await expect(page.getByRole('link', { name: /^\w+ \d{4}$/ })).toHaveCount(0);
+  await expect(page.getByLabel('Line 1 description')).toHaveValue('Workshop');
+  await page.fill('#e-sterling-rate', '1.1450');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\/edit\?saved=1/);
+  await expect(page.locator('#e-sterling-rate')).toHaveValue('1.1450');
+});
