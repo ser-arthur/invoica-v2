@@ -24,9 +24,11 @@ const scheduledKey = (documentId: string, offset: number) => `reminder:${documen
 
 /**
  * Queues every scheduled reminder due at `now`. The scan reads across organisations only through
- * `app.due_reminders`, as the worker role, which returns ids; each reminder is then queued inside its organisation
- * as its owner, where the plan is checked. A reminder's key is its invoice and offset, so a second scan queues
- * nothing more. Returns how many this scan added. A reminder that fails to queue is left for the next scan.
+ * `app.due_reminders`, as the worker role, which returns the ids of invoices that may have a reminder due. Inside
+ * each invoice's organisation, as its owner, the plan is checked and the reminder due is chosen with the business
+ * date worked out here (`todayIn`, `dueReminder`), as the invoice page works it out, so the database's own time zone
+ * data never decides the day. A reminder's key is its invoice and offset, so a second scan queues nothing more.
+ * Returns how many this scan added. A reminder that fails to queue is left for the next scan.
  */
 export async function queueDueReminders(db: Database, worker: Database, now: Date): Promise<number> {
   const due = await worker.execute<{
@@ -42,12 +44,24 @@ export async function queueDueReminders(db: Database, worker: Database, now: Dat
       await withOrganisation(db, actor, async (tx) => {
         const [org] = await tx.select().from(organisation).where(eq(organisation.id, actor.organisationId));
         if (!org || !organisationEntitlements(org, now).reminders) return;
+        const [doc] = await tx
+          .select({ dueDate: document.dueDate, issuedAt: document.issuedAt })
+          .from(document)
+          .where(eq(document.id, row.document_id));
+        if (!doc?.dueDate || !doc.issuedAt) return;
+        const offset = dueReminder(
+          doc.dueDate,
+          org.reminderOffsets,
+          todayIn(org.timeZone, now),
+          todayIn(org.timeZone, doc.issuedAt),
+        );
+        if (offset === null) return;
         const added = await enqueue(
           tx,
           actor,
           'document.reminder',
-          { documentId: row.document_id, offset: row.offset_days },
-          scheduledKey(row.document_id, row.offset_days),
+          { documentId: row.document_id, offset },
+          scheduledKey(row.document_id, offset),
         );
         if (added) queued += 1;
       });

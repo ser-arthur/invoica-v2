@@ -40,12 +40,30 @@ export function todayIn(timeZone: string, now: Date = new Date()): BusinessDate 
   return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
+/** The regions of the time zone database's names; migration 0022 checks the same in the database. */
+export const TIME_ZONE_REGIONS = [
+  'Africa',
+  'America',
+  'Antarctica',
+  'Arctic',
+  'Asia',
+  'Atlantic',
+  'Australia',
+  'Europe',
+  'Etc',
+  'Indian',
+  'Pacific',
+] as const;
+
+const TIME_ZONE_NAME = new RegExp(`^(UTC|(${TIME_ZONE_REGIONS.join('|')})(/[A-Za-z0-9_+-]+)+)$`);
+
 /**
- * A region name from the time zone database ("Europe/London", "UTC"). Bare offsets such as "+05:30" are refused:
- * PostgreSQL reads them the other way round (POSIX), so the app and the database would disagree on the date.
+ * A place in the time zone database ("Europe/London", "Etc/GMT-14") or "UTC". Bare offsets such as "+05:30" are
+ * refused, as PostgreSQL reads them the other way round (POSIX), and so are the names outside a region ("CET",
+ * "Factory", "localtime"), which the database and the app read differently or not at all.
  */
 export function isValidTimeZone(timeZone: string): boolean {
-  if (!/^[A-Za-z][A-Za-z_]*(\/[A-Za-z0-9_+-]+)*$/.test(timeZone)) return false;
+  if (!TIME_ZONE_NAME.test(timeZone)) return false;
   try {
     new Intl.DateTimeFormat('en-GB', { timeZone });
     return true;

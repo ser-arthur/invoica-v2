@@ -24,8 +24,9 @@ An email from the business (the same sender as invoices), with the invoice's kep
 7. The wording follows the day the email is sent, not the offset that queued it: a due-date reminder caught up two days later uses the late wording, "2 days overdue".
 8. No reminder goes for a day before the invoice was issued, in the organisation's time zone. An invoice issued with two days to pay gets no "three days before" reminder, and one issued after its due date waits for the next reminder after it was issued.
 9. Reminders can be turned on only on a plan that includes them; they can be turned off on any plan.
-10. A business's time zone is a region name the database knows ("Europe/London"); bare offsets such as "+05:30" are refused, because PostgreSQL reads them the other way round. The scan works one business at a time: a business whose date cannot be worked out is left out with a warning, a reminder that fails to queue waits for the next scan, and the jobs run even when the scan fails (the drain then answers 500).
+10. A business's time zone is a place in one of the time zone database's regions, or UTC ("Europe/London", "Etc/GMT-14"), that the database knows; bare offsets such as "+05:30" are refused, because PostgreSQL reads them the other way round, and so are names outside a region ("CET", "Factory", "localtime"), which the app reads differently or not at all. The scan works one business at a time: a business whose date cannot be worked out is left out with a warning, a reminder that fails to queue waits for the next scan, and the jobs run even when the scan fails (the drain then answers 500).
 11. The invoice page names the reminder the scan sends today when one is due and not yet sent ("Next reminder today"), and otherwise the next one to come.
+12. The business date that decides which reminder is due is worked out in the app, for the scan as for the invoice page (`todayIn` and `dueReminder` in `@invoica/core`). The database's time zone data and the app's are updated separately and can read an hour apart (one business in Casablanca or Vancouver), so the database only offers the invoices that may have a reminder due by its own reading, with a day's margin, and the app chooses.
 
 ## How it runs
 
@@ -41,7 +42,7 @@ An email from the business (the same sender as invoices), with the invoice's kep
 4. A scan after missed days sends only the latest reminder that was due (both files).
 5. The email shows the balance at sending, the invoice number and the due date, and attaches the kept PDF (`apps/web/e2e/reminders.spec.ts`).
 6. Each reminder appears in the invoice's activity (same file).
-7. Rules 7 to 11: `packages/core/test/reminders.test.ts`, `packages/db/test/reminders.test.ts` and `apps/web/src/app/api/jobs/drain/route.test.ts`.
+7. Rules 7 to 12: `packages/core/test/reminders.test.ts`, `packages/core/test/dates.test.ts`, `packages/db/test/reminders.test.ts` and `apps/web/src/app/api/jobs/drain/route.test.ts`. For rule 12, three businesses in zones whose data differ are scanned every hour for five days, and the scan queues exactly what the app's own date says is due.
 
 ## Default wording
 

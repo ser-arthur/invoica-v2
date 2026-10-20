@@ -66,4 +66,22 @@ describe('business dates', () => {
     expect(isValidTimeZone('Etc/GMT-14')).toBe(true);
     expect(isValidTimeZone('UTC')).toBe(true);
   });
+
+  it('takes a region and a place, or UTC: names the database knows and the app does not, or reads its own way, are refused', () => {
+    for (const zone of ['America/Vancouver', 'Africa/Casablanca', 'Asia/Kolkata', 'America/Argentina/Salta'])
+      expect(isValidTimeZone(zone), zone).toBe(true);
+    for (const zone of [
+      'Factory',
+      'localtime',
+      'posixrules',
+      'CET',
+      'EET',
+      'MET',
+      'WET',
+      'GMT',
+      'Zulu',
+      'US/Pacific',
+    ])
+      expect(isValidTimeZone(zone), zone).toBe(false);
+  });
 });

@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { asc, eq, sql } from 'drizzle-orm';
+import { dueReminder, todayIn } from '@invoica/core';
 import { recordPayment } from '../src/documents';
 import { client, organisation, outbox } from '../src/schema';
 import {
@@ -270,6 +271,55 @@ describe('one business’s time zone never stops the scan for the others', () =>
   });
 });
 
+describe('R9-L1: the scan and the invoice page work the business date out the same way', () => {
+  it('a time zone outside a region, or one the app cannot read, cannot be saved', async () => {
+    const b = await business(t, 'Region Office');
+    const setZone = (timeZone: string) =>
+      b.run((tx) =>
+        tx.update(organisation).set({ timeZone }).where(eq(organisation.id, b.actor.organisationId)),
+      );
+    for (const zone of ['Factory', 'localtime', 'posixrules', 'CET', 'WET', 'GMT', 'US/Pacific']) {
+      expect(await failure(setZone(zone)), zone).toMatch(/Choose a time zone from the list/);
+    }
+    for (const zone of ['UTC', 'Etc/GMT-14', 'America/Vancouver', 'Europe/London']) await setZone(zone);
+  });
+
+  it('in every zone, at every hour, the scan queues what the app’s own date says is due', async () => {
+    const zones = ['America/Vancouver', 'Africa/Casablanca', 'Europe/London'];
+    const offsets = [-3, 0, 7];
+    const invoices: { b: Business; id: string; zone: string; issuedOn: string }[] = [];
+    for (const zone of zones) {
+      const b = await remindingBusiness(`Hourly ${zone}`);
+      await b.run((tx) =>
+        tx
+          .update(organisation)
+          .set({ timeZone: zone, reminderOffsets: offsets })
+          .where(eq(organisation.id, b.actor.organisationId)),
+      );
+      const issuedAt = new Date('2026-10-20T12:00:00Z');
+      const id = await issued(
+        b,
+        [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }],
+        { issueDate: '2026-10-20', dueDate: '2026-11-02' },
+        issuedAt,
+      );
+      invoices.push({ b, id, zone, issuedOn: todayIn(zone, issuedAt) });
+    }
+    const expected = new Map(invoices.map((i) => [i.id, new Set<number>()]));
+    for (let h = 0; h <= 5 * 24; h += 1) {
+      const now = new Date(Date.UTC(2026, 9, 29, 0, 30) + h * 3_600_000);
+      await queueDueReminders(t.db, t.worker.db, now);
+      for (const inv of invoices) {
+        const offset = dueReminder('2026-11-02', offsets, todayIn(inv.zone, now), inv.issuedOn);
+        if (offset !== null) expected.get(inv.id)!.add(offset);
+        expect(new Set(await queued(inv.b, inv.id)), `${inv.zone} at ${now.toISOString()}`).toEqual(
+          expected.get(inv.id),
+        );
+      }
+    }
+  });
+});
+
 describe('a reminder never goes for a day before the invoice was issued', () => {
   it('an invoice with two days to pay gets no "three days before" reminder', async () => {
     const b = await remindingBusiness('Short Terms Office');
@@ -336,6 +386,17 @@ describe('the scan’s count and its failures', () => {
     const a = await dueOn10October(first);
     const second = await remindingBusiness('Second Fine Office');
     const c = await dueOn10October(second);
+    // Only these two are scanned, so the first transaction of the scan is one of their reminders.
+    const { Client } = await import('pg');
+    const admin = new Client({ connectionString: t.ownerUrl });
+    await admin.connect();
+    try {
+      await admin.query('update organisation set reminders_enabled = false where id <> all($1::uuid[])', [
+        [first.actor.organisationId, second.actor.organisationId],
+      ]);
+    } finally {
+      await admin.end();
+    }
     let calls = 0;
     const flaky = new Proxy(t.db, {
       get(target, prop, receiver) {
