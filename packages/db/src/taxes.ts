@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, ne } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { DomainError, assertTaxCode, presetFor, type TaxCode } from '@invoica/core';
 import type { TaxCodeInput } from '@invoica/schemas';
 import type { Tx } from './client';
@@ -31,9 +31,16 @@ async function clearDefault(tx: Tx, exceptId: string | null) {
 }
 
 export async function createTaxCode(tx: Tx, actor: Actor, input: TaxCodeInput): Promise<string> {
+  const key = input.idempotencyKey ?? null;
+  const existing = async () =>
+    key
+      ? (await tx.select({ id: taxCode.id }).from(taxCode).where(eq(taxCode.idempotencyKey, key)))[0]?.id
+      : undefined;
+  const earlier = await existing();
+  if (earlier) return earlier;
   assertTaxCode(input);
   if (input.isDefault) await clearDefault(tx, null);
-  const existing = await tx.select({ sort: taxCode.sort }).from(taxCode).orderBy(asc(taxCode.sort));
+  const sorted = await tx.select({ sort: taxCode.sort }).from(taxCode).orderBy(asc(taxCode.sort));
   const [row] = await tx
     .insert(taxCode)
     .values({
@@ -42,9 +49,16 @@ export async function createTaxCode(tx: Tx, actor: Actor, input: TaxCodeInput): 
       treatment: input.treatment,
       components: input.components,
       isDefault: input.isDefault,
-      sort: (existing.at(-1)?.sort ?? 0) + 1,
+      sort: (sorted.at(-1)?.sort ?? 0) + 1,
+      idempotencyKey: key,
+    })
+    .onConflictDoNothing({
+      target: [taxCode.organisationId, taxCode.idempotencyKey],
+      where: sql`${taxCode.idempotencyKey} is not null`,
     })
     .returning({ id: taxCode.id });
+  // Saved at the same moment by another request with the same key: that one is the code.
+  if (!row) return (await existing())!;
   await audit(tx, actor, 'tax_code.created', 'tax_code', row!.id, {
     label: input.label,
     components: input.components,

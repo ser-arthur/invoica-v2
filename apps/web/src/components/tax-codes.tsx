@@ -8,6 +8,7 @@ import { archiveTaxCodeAction, loadPresetAction, saveTaxCodeAction } from '@/lib
 import { Button, Checkbox, Field, FormMessage, Input, Panel, PanelHeading, Select } from './ui';
 import { showNotice } from '@/lib/notice';
 import { reach } from '@/lib/reach';
+import { requestKey } from '@/lib/request-key';
 
 export interface TaxCodeValue {
   id: string;
@@ -41,6 +42,8 @@ function Editor({ code, onDone }: { code: TaxCodeValue | null; onDone: () => voi
   const [isDefault, setDefault] = useState(code?.isDefault ?? false);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  // A new code's form keeps one request key, so saving again after a lost answer makes one code.
+  const [key] = useState(() => requestKey());
 
   function save() {
     const components: TaxComponent[] = [];
@@ -54,7 +57,13 @@ function Editor({ code, onDone }: { code: TaxCodeValue | null; onDone: () => voi
     }
     start(async () => {
       const result = await reach(
-        saveTaxCodeAction(code?.id ?? null, { label, treatment, components, isDefault }),
+        saveTaxCodeAction(code?.id ?? null, {
+          ...(code ? {} : { idempotencyKey: key }),
+          label,
+          treatment,
+          components,
+          isDefault,
+        }),
       );
       if (!result.ok) {
         setMessage(result.message);

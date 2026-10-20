@@ -6,6 +6,7 @@ import { formatMoney, parseMoney, toDecimalString } from '@invoica/core';
 import { archiveItemAction, saveItemAction } from '@/lib/actions/items';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
 import { reach } from '@/lib/reach';
+import { requestKey } from '@/lib/request-key';
 
 export interface ItemValue {
   id: string;
@@ -31,6 +32,8 @@ export function ItemEditor({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  // A new item's form keeps one request key, so saving again after a lost answer makes one item.
+  const [key] = useState(() => requestKey());
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -41,6 +44,7 @@ export function ItemEditor({
       return;
     }
     const input = {
+      ...(item ? {} : { idempotencyKey: key }),
       name: String(f.get('name') ?? ''),
       description: String(f.get('description') ?? ''),
       unitPrice: price,

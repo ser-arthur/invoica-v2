@@ -66,6 +66,8 @@ export const taxComponentInput = z.object({
 });
 
 export const taxCodeInput = z.object({
+  /** Made when the new-code form opens, so saving it again creates one code. */
+  idempotencyKey: z.string().min(8).max(100).optional(),
   label: requiredText(80, 'Give the tax code a name.'),
   treatment: z
     .enum(TAX_TREATMENTS as [string, ...string[]])
@@ -206,6 +208,8 @@ export const reminderSettingsInput = z.object({
 export type ReminderSettingsInput = z.infer<typeof reminderSettingsInput>;
 
 export const itemInput = z.object({
+  /** Made when the new-item form opens, so saving it again creates one item. */
+  idempotencyKey: z.string().min(8).max(100).optional(),
   name: requiredText(200, 'Name the item.'),
   description: optionalText(2000),
   unitPrice: minorAmount,

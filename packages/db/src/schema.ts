@@ -166,6 +166,8 @@ export const taxCode = pgTable('tax_code', {
   isDefault: boolean('is_default').notNull().default(false),
   sort: integer('sort').notNull().default(0),
   archivedAt: ts('archived_at'),
+  /** The request key of the form that created it (migration 0021). */
+  idempotencyKey: text('idempotency_key'),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });
@@ -215,6 +217,8 @@ export const item = pgTable('item', {
   unit: text('unit'),
   taxCodeId: uuid('tax_code_id'),
   archivedAt: ts('archived_at'),
+  /** The request key of the form that created it (migration 0021). */
+  idempotencyKey: text('idempotency_key'),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });

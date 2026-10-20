@@ -184,3 +184,20 @@ test('a copy of an invoice whose answer is lost is made once when asked again', 
   await page.goto('/invoices');
   await expect(page.getByText('Monthly upkeep')).toHaveCount(2);
 });
+
+test('a new saved item whose answer is lost is saved once when tried again', async ({ page }) => {
+  await signUpAndOnboard(page, 'Lost Item Studio', { vat: true });
+  await page.goto('/items');
+  // With no items yet, the form for a new one is already open.
+  await expect(page.getByRole('heading', { name: 'New item' })).toBeVisible();
+  await page.fill('#i-name', 'Half-day workshop');
+  await page.fill('#i-price', '600');
+  const reached = await loseNextAnswer(page);
+  await page.getByRole('button', { name: 'Add item' }).click();
+  await expect(page.getByText(UNREACHABLE)).toBeVisible();
+  expect(reached()).toBe(true);
+  await page.getByRole('button', { name: 'Add item' }).click();
+  await expect(page.getByText(UNREACHABLE)).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByText('Half-day workshop')).toHaveCount(1);
+});
