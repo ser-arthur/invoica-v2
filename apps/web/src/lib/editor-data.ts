@@ -21,7 +21,8 @@ export async function loadEditorData(tx: Tx, ws: Workspace): Promise<Omit<Editor
   const org = ws.organisation;
   const clients = await clientsForEditor(tx);
   const items = await listItems(tx);
-  const codes = await listTaxCodes(tx);
+  // Archived codes too, so a draft line that uses one still shows it and is worked out with it.
+  const codes = await listTaxCodes(tx, { includeArchived: true });
   const nextNumber = await peekNextNumber(tx, 'invoice', org);
   return {
     today: ws.today,
@@ -44,7 +45,8 @@ export async function loadEditorData(tx: Tx, ws: Workspace): Promise<Omit<Editor
     taxCodes: codes.map((c) => ({
       id: c.id,
       label: c.label,
-      isDefault: c.isDefault,
+      isDefault: c.isDefault && !c.archivedAt,
+      archived: c.archivedAt !== null,
       code: { label: c.label, treatment: c.treatment, components: c.components } satisfies TaxCode,
     })),
     org: {

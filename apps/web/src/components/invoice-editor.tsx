@@ -75,6 +75,8 @@ export interface EditorTaxCode {
   id: string;
   label: string;
   isDefault: boolean;
+  /** Archived: offered only on a line that already uses it. */
+  archived: boolean;
   code: TaxCode;
 }
 
@@ -1057,11 +1059,13 @@ export function InvoiceEditor(props: EditorProps) {
                             <option value="">No tax</option>
                             {taxCodes
                               .filter(
-                                (t) => registered || t.code.components.length === 0 || t.id === l.taxCodeId,
+                                (t) =>
+                                  t.id === l.taxCodeId ||
+                                  (!t.archived && (registered || t.code.components.length === 0)),
                               )
                               .map((t) => (
                                 <option key={t.id} value={t.id}>
-                                  {t.label}
+                                  {t.archived ? `${t.label} (archived)` : t.label}
                                 </option>
                               ))}
                           </Select>
