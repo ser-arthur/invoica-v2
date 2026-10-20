@@ -5,21 +5,35 @@ import {
   archiveTaxCode,
   createTaxCode,
   loadPreset,
+  taxCodeVersion,
   updateOrganisationProfile,
   updateReminderSettings,
   updateTaxCode,
 } from '@invoica/db';
-import { organisationProfileInput, reminderSettingsInput, taxCodeInput } from '@invoica/schemas';
+import {
+  organisationProfileInput,
+  recordVersion,
+  reminderSettingsInput,
+  taxCodeInput,
+} from '@invoica/schemas';
 import { inWorkspace } from '../workspace';
 import { failure, invalid, type ActionResult } from './result';
 
-export async function saveProfileAction(input: unknown): Promise<ActionResult> {
+/** Saves the settings from a page that showed version `base`, and answers with the version to send next. */
+export async function saveProfileAction(
+  input: unknown,
+  base?: unknown,
+): Promise<ActionResult<{ version: string }>> {
   const parsed = organisationProfileInput.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
+  const shown = recordVersion.safeParse(base);
+  if (!shown.success) return invalid(shown.error);
   try {
-    await inWorkspace((tx, ws) => updateOrganisationProfile(tx, ws.actor, parsed.data));
+    const version = await inWorkspace((tx, ws) =>
+      updateOrganisationProfile(tx, ws.actor, parsed.data, shown.data),
+    );
     revalidatePath('/', 'layout');
-    return { ok: true, data: undefined };
+    return { ok: true, data: { version } };
   } catch (error) {
     return failure(error);
   }
@@ -28,19 +42,20 @@ export async function saveProfileAction(input: unknown): Promise<ActionResult> {
 export async function saveTaxCodeAction(
   id: string | null,
   input: unknown,
-): Promise<ActionResult<{ id: string }>> {
+  base?: unknown,
+): Promise<ActionResult<{ id: string; version: string }>> {
   const parsed = taxCodeInput.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
+  const shown = recordVersion.safeParse(base);
+  if (!shown.success) return invalid(shown.error);
   try {
-    const savedId = await inWorkspace(async (tx, ws) => {
-      if (id) {
-        await updateTaxCode(tx, ws.actor, id, parsed.data);
-        return id;
-      }
-      return createTaxCode(tx, ws.actor, parsed.data);
+    const saved = await inWorkspace(async (tx, ws) => {
+      if (id) return { id, version: await updateTaxCode(tx, ws.actor, id, parsed.data, shown.data) };
+      const created = await createTaxCode(tx, ws.actor, parsed.data);
+      return { id: created, version: (await taxCodeVersion(tx, created))! };
     });
     revalidatePath('/settings');
-    return { ok: true, data: { id: savedId } };
+    return { ok: true, data: saved };
   } catch (error) {
     return failure(error);
   }

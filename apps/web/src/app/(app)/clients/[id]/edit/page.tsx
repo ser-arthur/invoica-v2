@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getClient } from '@invoica/db';
+import { clientVersionOf, getClient } from '@invoica/db';
 import { ClientFormPanel } from '@/components/client-form';
 import { PageHeader } from '@/components/ui';
 import { inWorkspace } from '@/lib/workspace';
@@ -22,6 +22,7 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
       <PageHeader title={`Edit ${client.name}`} back={{ href: `/clients/${id}`, label: client.name }} />
       <ClientFormPanel
         id={id}
+        version={clientVersionOf(client, fields)}
         defaultCountry={data.country}
         initial={{
           ...client,

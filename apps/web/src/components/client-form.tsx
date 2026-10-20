@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { Plus, X } from 'lucide-react';
 import { SUPPORTED_CURRENCIES } from '@invoica/core';
 import { saveClientAction } from '@/lib/actions/clients';
@@ -32,12 +32,15 @@ export interface ClientFormValues {
 
 export function ClientForm({
   id,
+  version: shown,
   initial,
   defaultCountry,
   onSaved,
   compact,
 }: {
   id: string | null;
+  /** The version of the client this page shows (docs/specs/changes-elsewhere.md); none for a new client. */
+  version?: string;
   initial?: Partial<ClientFormValues>;
   defaultCountry: string;
   /** Called instead of navigating, when the form is used inside the invoice editor. */
@@ -52,6 +55,11 @@ export function ClientForm({
   const [pending, startTransition] = useTransition();
   // A new client's form keeps one request key, so saving again after a lost answer makes one client.
   const [key] = useState(() => requestKey());
+  // Refused because the client changed elsewhere: "Save mine anyway" saves against the version fetched since.
+  const [conflict, setConflict] = useState(false);
+  const replacing = useRef(false);
+  // The version this form opened with; a successful save leaves the page.
+  const [initialVersion] = useState(shown);
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,11 +86,18 @@ export function ClientForm({
       remindersEnabled: compact ? (initial?.remindersEnabled ?? true) : f.get('remindersEnabled') === 'on',
       fields,
     };
+    const replace = replacing.current;
+    replacing.current = false;
     startTransition(async () => {
-      const result = await reach(saveClientAction(id, input));
+      const result = await reach(saveClientAction(id, input, replace ? shown : initialVersion));
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setMessage(result.message);
+        if (result.code === 'client_changed') {
+          setConflict(true);
+          // The page's version is fetched again, for "Save mine anyway"; what was typed stays.
+          router.refresh();
+        }
         return;
       }
       if (onSaved) onSaved(result.data.id, input.name.trim());
@@ -251,6 +266,18 @@ export function ClientForm({
         <Button type="submit" disabled={pending || !ready}>
           {pending ? 'Saving' : id ? 'Save changes' : 'Save client'}
         </Button>
+        {conflict ? (
+          <Button
+            type="submit"
+            variant="danger"
+            disabled={pending}
+            onClick={() => {
+              replacing.current = true;
+            }}
+          >
+            Save mine anyway
+          </Button>
+        ) : null}
       </div>
     </form>
   );

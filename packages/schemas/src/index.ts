@@ -77,6 +77,13 @@ export const taxCodeInput = z.object({
 });
 export type TaxCodeInput = z.infer<typeof taxCodeInput>;
 
+/** The version of a record a form showed (docs/specs/changes-elsewhere.md); left out by an older page. */
+export const recordVersion = z
+  .string()
+  .regex(/^[0-9a-f]{64}$/)
+  .nullable()
+  .optional();
+
 export const businessTypes = ['sole_trader', 'limited_company', 'partnership', 'other'] as const;
 
 export const onboardingInput = z.object({

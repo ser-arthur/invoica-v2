@@ -519,3 +519,85 @@ test('the business’s name and email changed after issuing: its emails come fro
   await expect(kept.getByText('First Name Studio').first()).toBeVisible();
   await expect(kept.getByText('old-desk@studio.example').first()).toBeVisible();
 });
+
+test('settings changed in another tab: the older tab’s save is refused, the change is kept, and "Save mine anyway" then saves', async ({
+  page,
+  context,
+}) => {
+  await signUpAndOnboard(page, 'Two Tab Settings Studio', { vat: true });
+  await page.goto('/settings');
+  await page.waitForLoadState('networkidle');
+  const phone = await context.newPage();
+  await phone.goto('/settings');
+  await phone.fill('#s-an', '87654321');
+  await phone.fill('#s-sc', '40-11-22');
+  await phone.getByRole('button', { name: 'Save settings' }).click();
+  await expect(phone.getByText(/Settings saved\./)).toBeVisible();
+
+  // The first tab opened before the bank details changed, so its save is refused and changes nothing.
+  await page.fill('#s-phone', '0113 496 0100');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(
+    page.getByText(
+      'These settings were changed in another tab or on another device after this page opened. The page now shows those changes, except in the fields you changed here. Check them, then save yours anyway.',
+    ),
+  ).toBeVisible();
+  await phone.reload();
+  await expect(phone.locator('#s-an')).toHaveValue('87654321');
+  await expect(phone.locator('#s-phone')).not.toHaveValue('0113 496 0100');
+  // What was typed is still there, and the fields not typed in now show the change made elsewhere.
+  await expect(page.locator('#s-phone')).toHaveValue('0113 496 0100');
+  await expect(page.locator('#s-an')).toHaveValue('87654321');
+  await page.getByRole('button', { name: 'Save mine anyway' }).click();
+  await expect(page.getByText(/Settings saved\./)).toBeVisible();
+  await phone.reload();
+  await expect(phone.locator('#s-phone')).toHaveValue('0113 496 0100');
+  await expect(phone.locator('#s-an')).toHaveValue('87654321');
+
+  // Saved again from the same page, with the reminder settings saved in between: accepted.
+  await phone.close();
+  await page.getByLabel('Remind clients about unpaid invoices').check();
+  await page.getByRole('button', { name: 'Save reminder settings' }).click();
+  await expect(page.getByText('Reminder settings saved.')).toBeVisible();
+  await page.fill('#s-phone', '0113 496 0101');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText(/Settings saved\./)).toBeVisible();
+  await page.fill('#s-phone', '0113 496 0102');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText(/Settings saved\./)).toBeVisible();
+  await page.reload();
+  await expect(page.locator('#s-phone')).toHaveValue('0113 496 0102');
+});
+
+test('a client changed in another tab: the older tab’s save is refused, the change is kept, and "Save mine anyway" then saves', async ({
+  page,
+  context,
+}) => {
+  await signUpAndOnboard(page, 'Two Tab Client Studio', { vat: true });
+  await addClient(page, 'Wren Valley Ltd', 'accounts@wren.example');
+  const clientUrl = page.url();
+  await page.goto(`${clientUrl}/edit`);
+  await page.waitForLoadState('networkidle');
+  const phone = await context.newPage();
+  await phone.goto(`${clientUrl}/edit`);
+  await phone.fill('#c-email', 'payables@wren.example');
+  await phone.getByRole('button', { name: 'Save changes' }).click();
+  await phone.waitForURL(clientUrl);
+
+  await page.fill('#c-contact', 'Ada Wren');
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(
+    page.getByText(
+      'This client was changed in another tab or on another device after this page opened. The form now shows those changes, except in the fields you changed here. Check them, then save yours anyway.',
+    ),
+  ).toBeVisible();
+  await phone.reload();
+  await expect(phone.getByText('payables@wren.example')).toBeVisible();
+  // What was typed stays; a field not typed in now shows the change made elsewhere.
+  await expect(page.locator('#c-contact')).toHaveValue('Ada Wren');
+  await expect(page.locator('#c-email')).toHaveValue('payables@wren.example');
+  await page.getByRole('button', { name: 'Save mine anyway' }).click();
+  await page.waitForURL(clientUrl);
+  await expect(page.getByText('Ada Wren')).toBeVisible();
+  await expect(page.getByText('payables@wren.example')).toBeVisible();
+});

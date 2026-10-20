@@ -14,3 +14,4 @@ export * from './plans';
 export * from './export';
 export * as schema from './schema';
 export * from './reminders';
+export * from './versions';

@@ -8,6 +8,7 @@ import { COUNTRIES, TIME_ZONES } from '@/lib/countries';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
 import type { DocumentSnapshot } from '@invoica/core';
 import { TemplatePicker } from './template-picker';
+import { followUntouched } from '@/lib/follow-untouched';
 import { reach } from '@/lib/reach';
 import { useHydrated } from '@/lib/use-hydrated';
 
@@ -125,11 +126,14 @@ function describeRounding(choice: RoundingChoice, country: string): { label: str
 
 export function SettingsForm({
   initial,
+  version: shown,
   logoUrl,
   brandNote = null,
   next = { invoice: 1, creditNote: 1 },
 }: {
   initial: ProfileValues;
+  /** The version of the settings this page shows (docs/specs/changes-elsewhere.md). */
+  version: string;
   logoUrl: string | null;
   /** Shown beside the template and colour when the plan keeps documents in Invoica's own look. */
   brandNote?: string | null;
@@ -139,9 +143,20 @@ export function SettingsForm({
   const router = useRouter();
   const ready = useHydrated();
   const [v, setV] = useState(initial);
+  // The settings as the page last had them from the server. When they change (fetched again after a refusal, or
+  // after a save), each field not changed here takes the new value, and what was typed stays.
+  const [loaded, setLoaded] = useState(initial);
+  if (initial !== loaded) {
+    setLoaded(initial);
+    setV(followUntouched(loaded, v, initial));
+  }
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ tone: 'danger' | 'info'; text: string } | null>(null);
   const [pending, start] = useTransition();
+  // The version each save is made against: the one shown, then the one each save answers with.
+  const [version, setVersion] = useState(shown);
+  // Refused because the settings changed elsewhere: "Save mine anyway" saves against the version fetched since.
+  const [conflict, setConflict] = useState(false);
 
   const set = <K extends keyof ProfileValues>(key: K, value: ProfileValues[K]) =>
     setV((prev) => ({ ...prev, [key]: value }));
@@ -188,20 +203,29 @@ export function SettingsForm({
     roundingChoices.find((c) => c.taxLevel === v.taxLevel && c.rounding === v.rounding) ??
     roundingChoices[0]!;
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
+  function save(replace: boolean) {
     setMessage(null);
     start(async () => {
       // A choice not offered for the country (after the country changed) becomes the country's usual one.
       const r = await reach(
-        saveProfileAction({ ...v, taxLevel: rounding.taxLevel, rounding: rounding.rounding }),
+        saveProfileAction(
+          { ...v, taxLevel: rounding.taxLevel, rounding: rounding.rounding },
+          replace ? shown : version,
+        ),
       );
       if (!r.ok) {
         setErrors(r.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: r.message });
+        if (r.code === 'settings_changed') {
+          setConflict(true);
+          // The page's version is fetched again, for "Save mine anyway"; what was typed stays.
+          router.refresh();
+        }
         return;
       }
       setErrors({});
+      setConflict(false);
+      setVersion(r.data.version);
       setMessage({
         tone: 'info',
         text: 'Settings saved. New invoices use them; issued invoices keep what they were issued with.',
@@ -210,9 +234,13 @@ export function SettingsForm({
     });
   }
 
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    save(false);
+  }
+
   return (
     <form onSubmit={submit} className="flex flex-col gap-6" noValidate>
-      {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
       <Section
         id="business"
         title="Business"
@@ -526,10 +554,29 @@ export function SettingsForm({
         </Field>
       </Section>
 
-      <div className="sticky bottom-20 z-20 flex justify-end md:bottom-4">
-        <Button type="submit" size="lg" disabled={pending || !ready} className="shadow-lift">
-          {pending ? 'Saving' : 'Save settings'}
-        </Button>
+      <div className="sticky bottom-20 z-20 flex flex-col items-end gap-2 md:bottom-4">
+        {message ? (
+          <div className="w-full max-w-xl shadow-lift">
+            <FormMessage tone={message.tone}>{message.text}</FormMessage>
+          </div>
+        ) : null}
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button type="submit" size="lg" disabled={pending || !ready} className="shadow-lift">
+            {pending ? 'Saving' : 'Save settings'}
+          </Button>
+          {conflict ? (
+            <Button
+              type="button"
+              size="lg"
+              variant="danger"
+              disabled={pending}
+              className="shadow-lift"
+              onClick={() => save(true)}
+            >
+              Save mine anyway
+            </Button>
+          ) : null}
+        </div>
       </div>
     </form>
   );

@@ -3,6 +3,7 @@ import type { ClientInput } from '@invoica/schemas';
 import type { Tx } from './client';
 import { client, clientField } from './schema';
 import { audit } from './audit';
+import { CHANGED_ELSEWHERE, clientVersion, saveAgainst } from './versions';
 import { fingerprint } from './fingerprint';
 import type { Actor } from './tenancy';
 import { assertRoomForClient } from './plans';
@@ -108,15 +109,29 @@ export async function createClient(tx: Tx, actor: Actor, input: ClientInput): Pr
   return row!.id;
 }
 
-export async function updateClient(tx: Tx, actor: Actor, id: string, input: ClientInput): Promise<void> {
-  const updated = await tx
-    .update(client)
-    .set(columns(input))
-    .where(eq(client.id, id))
-    .returning({ id: client.id });
-  if (updated.length === 0) throw new Error('Client not found.');
-  await replaceFields(tx, actor, id, input);
-  await audit(tx, actor, 'client.updated', 'client', id);
+/** Changes a client from a form that showed version `base` (docs/specs/changes-elsewhere.md). Answers the new version. */
+export async function updateClient(
+  tx: Tx,
+  actor: Actor,
+  id: string,
+  input: ClientInput,
+  base?: string | null,
+): Promise<string> {
+  return saveAgainst(
+    base,
+    () => clientVersion(tx, id),
+    async () => {
+      const updated = await tx
+        .update(client)
+        .set(columns(input))
+        .where(eq(client.id, id))
+        .returning({ id: client.id });
+      if (updated.length === 0) throw new Error('Client not found.');
+      await replaceFields(tx, actor, id, input);
+      await audit(tx, actor, 'client.updated', 'client', id);
+    },
+    CHANGED_ELSEWHERE.client,
+  );
 }
 
 export async function setClientArchived(tx: Tx, actor: Actor, id: string, archived: boolean): Promise<void> {

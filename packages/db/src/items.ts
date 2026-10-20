@@ -4,6 +4,7 @@ import type { ItemInput } from '@invoica/schemas';
 import type { Tx } from './client';
 import { item } from './schema';
 import { audit } from './audit';
+import { CHANGED_ELSEWHERE, itemVersion, saveAgainst } from './versions';
 import { fingerprint } from './fingerprint';
 import type { Actor } from './tenancy';
 
@@ -65,11 +66,25 @@ export async function createItem(tx: Tx, actor: Actor, input: ItemInput): Promis
   return row!.id;
 }
 
-export async function updateItem(tx: Tx, actor: Actor, id: string, input: ItemInput): Promise<void> {
+/** Changes a saved item from a form that showed version `base` (docs/specs/changes-elsewhere.md). Answers the new version. */
+export async function updateItem(
+  tx: Tx,
+  actor: Actor,
+  id: string,
+  input: ItemInput,
+  base?: string | null,
+): Promise<string> {
   const { idempotencyKey: _key, ...values } = input;
-  const updated = await tx.update(item).set(values).where(eq(item.id, id)).returning({ id: item.id });
-  if (updated.length === 0) throw new Error('Item not found.');
-  await audit(tx, actor, 'item.updated', 'item', id);
+  return saveAgainst(
+    base,
+    () => itemVersion(tx, id),
+    async () => {
+      const updated = await tx.update(item).set(values).where(eq(item.id, id)).returning({ id: item.id });
+      if (updated.length === 0) throw new Error('Item not found.');
+      await audit(tx, actor, 'item.updated', 'item', id);
+    },
+    CHANGED_ELSEWHERE.item,
+  );
 }
 
 export async function archiveItem(tx: Tx, actor: Actor, id: string): Promise<void> {

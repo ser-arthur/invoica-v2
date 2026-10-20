@@ -14,6 +14,7 @@ import type { OnboardingInput, OrganisationProfileInput } from '@invoica/schemas
 import type { Database, Tx } from './client';
 import { document, item, numberCounter, organisation, taxCode } from './schema';
 import { audit } from './audit';
+import { CHANGED_ELSEWHERE, profileVersion, saveAgainst } from './versions';
 import { withUser, type Actor } from './tenancy';
 
 export const TRIAL_DAYS = 30;
@@ -195,7 +196,8 @@ export async function updateOrganisationProfile(
   tx: Tx,
   actor: Actor,
   input: OrganisationProfileInput,
-): Promise<void> {
+  base?: string | null,
+): Promise<string> {
   const allowed = allowedRounding(input.countryCode);
   if (!allowed.some((c) => c.taxLevel === input.taxLevel && c.rounding === input.rounding)) {
     throw new DomainError(
@@ -203,25 +205,27 @@ export async function updateOrganisationProfile(
       'Choose one of the rounding options offered for your country.',
     );
   }
-  // Held first, so no issue can number a document between the checks below and the save.
-  await tx
-    .select({ id: organisation.id })
-    .from(organisation)
-    .where(eq(organisation.id, actor.organisationId))
-    .for('update');
-  await assertNumbersDoNotRepeat(tx, input);
-  await rescaleItems(tx, input.baseCurrency);
-  await tx
-    .update(organisation)
-    .set({
-      ...input,
-      taxNumber: input.taxRegistered ? input.taxNumber : null,
-      paymentDetails: input.paymentDetails as Organisation['paymentDetails'],
-    })
-    .where(eq(organisation.id, actor.organisationId));
-  await audit(tx, actor, 'organisation.updated', 'organisation', actor.organisationId, {
-    fields: Object.keys(input),
-  });
+  // The version read first holds the row, so no issue can number a document between the checks below and the save.
+  return saveAgainst(
+    base,
+    () => profileVersion(tx, actor.organisationId),
+    async () => {
+      await assertNumbersDoNotRepeat(tx, input);
+      await rescaleItems(tx, input.baseCurrency);
+      await tx
+        .update(organisation)
+        .set({
+          ...input,
+          taxNumber: input.taxRegistered ? input.taxNumber : null,
+          paymentDetails: input.paymentDetails as Organisation['paymentDetails'],
+        })
+        .where(eq(organisation.id, actor.organisationId));
+      await audit(tx, actor, 'organisation.updated', 'organisation', actor.organisationId, {
+        fields: Object.keys(input),
+      });
+    },
+    CHANGED_ELSEWHERE.settings,
+  );
 }
 
 export async function setLogo(tx: Tx, actor: Actor, fileId: string | null): Promise<void> {

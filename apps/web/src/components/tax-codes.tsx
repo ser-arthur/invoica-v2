@@ -16,6 +16,8 @@ export interface TaxCodeValue {
   treatment: TaxTreatment;
   components: TaxComponent[];
   isDefault: boolean;
+  /** The version this page shows (docs/specs/changes-elsewhere.md). */
+  version?: string;
 }
 
 const TREATMENTS: { value: TaxTreatment; label: string }[] = [
@@ -44,8 +46,12 @@ function Editor({ code, onDone }: { code: TaxCodeValue | null; onDone: () => voi
   const [pending, start] = useTransition();
   // A new code's form keeps one request key, so saving again after a lost answer makes one code.
   const [key] = useState(() => requestKey());
+  // The version this editor opened with; a successful save closes it.
+  const [opened] = useState(code?.version);
+  // Refused because the code changed elsewhere: "Save mine anyway" saves against the version fetched since.
+  const [conflict, setConflict] = useState(false);
 
-  function save() {
+  function save(replace = false) {
     const components: TaxComponent[] = [];
     for (const r of rows) {
       const ratePpm = parseRate(r.rate);
@@ -57,16 +63,25 @@ function Editor({ code, onDone }: { code: TaxCodeValue | null; onDone: () => voi
     }
     start(async () => {
       const result = await reach(
-        saveTaxCodeAction(code?.id ?? null, {
-          ...(code ? {} : { idempotencyKey: key }),
-          label,
-          treatment,
-          components,
-          isDefault,
-        }),
+        saveTaxCodeAction(
+          code?.id ?? null,
+          {
+            ...(code ? {} : { idempotencyKey: key }),
+            label,
+            treatment,
+            components,
+            isDefault,
+          },
+          replace ? code?.version : opened,
+        ),
       );
       if (!result.ok) {
         setMessage(result.message);
+        if (result.code === 'tax_code_changed') {
+          setConflict(true);
+          // The code's version is fetched again, for "Save mine anyway"; what was typed stays.
+          router.refresh();
+        }
         return;
       }
       router.refresh();
@@ -156,9 +171,14 @@ function Editor({ code, onDone }: { code: TaxCodeValue | null; onDone: () => voi
         onChange={(e) => setDefault(e.target.checked)}
       />
       <div className="flex gap-2">
-        <Button type="button" onClick={save} disabled={pending}>
+        <Button type="button" onClick={() => save()} disabled={pending}>
           {pending ? 'Saving' : 'Save tax code'}
         </Button>
+        {conflict ? (
+          <Button type="button" variant="danger" onClick={() => save(true)} disabled={pending}>
+            Save mine anyway
+          </Button>
+        ) : null}
         <Button type="button" variant="ghost" onClick={onDone}>
           Cancel
         </Button>

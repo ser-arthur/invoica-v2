@@ -3,6 +3,8 @@ import { presetFor } from '@invoica/core';
 import {
   listTaxCodes,
   peekNextSequence,
+  profileVersionOf,
+  taxCodeVersionOf,
   organisationEntitlements,
   organisationPlan,
   plansEnforced,
@@ -110,6 +112,7 @@ export default async function SettingsPage() {
         <LogoUpload logoUrl={org.logoFileId ? `/files/${org.logoFileId}` : null} name={org.name} />
         <SettingsForm
           initial={initial}
+          version={profileVersionOf(org)}
           logoUrl={org.logoFileId ? `/files/${org.logoFileId}` : null}
           brandNote={brandNote}
           next={next}
@@ -124,6 +127,7 @@ export default async function SettingsPage() {
             treatment: c.treatment,
             components: c.components,
             isDefault: c.isDefault,
+            version: taxCodeVersionOf(c),
           }))}
         />
         <ReminderSettings

@@ -4,6 +4,7 @@ import type { TaxCodeInput } from '@invoica/schemas';
 import type { Tx } from './client';
 import { taxCode } from './schema';
 import { audit } from './audit';
+import { CHANGED_ELSEWHERE, saveAgainst, taxCodeVersion } from './versions';
 import { fingerprint } from './fingerprint';
 import type { Actor } from './tenancy';
 
@@ -90,24 +91,37 @@ export async function createTaxCode(tx: Tx, actor: Actor, input: TaxCodeInput): 
  * Changes a tax code. Lines already on documents keep the tax they were saved with, so this only
  * affects lines added or edited afterwards.
  */
-export async function updateTaxCode(tx: Tx, actor: Actor, id: string, input: TaxCodeInput): Promise<void> {
+export async function updateTaxCode(
+  tx: Tx,
+  actor: Actor,
+  id: string,
+  input: TaxCodeInput,
+  base?: string | null,
+): Promise<string> {
   assertTaxCode(input);
-  if (input.isDefault) await clearDefault(tx, id);
-  const updated = await tx
-    .update(taxCode)
-    .set({
-      label: input.label,
-      treatment: input.treatment,
-      components: input.components,
-      isDefault: input.isDefault,
-    })
-    .where(eq(taxCode.id, id))
-    .returning({ id: taxCode.id });
-  if (updated.length === 0) throw new Error('Tax code not found.');
-  await audit(tx, actor, 'tax_code.updated', 'tax_code', id, {
-    label: input.label,
-    components: input.components,
-  });
+  return saveAgainst(
+    base,
+    () => taxCodeVersion(tx, id),
+    async () => {
+      if (input.isDefault) await clearDefault(tx, id);
+      const updated = await tx
+        .update(taxCode)
+        .set({
+          label: input.label,
+          treatment: input.treatment,
+          components: input.components,
+          isDefault: input.isDefault,
+        })
+        .where(eq(taxCode.id, id))
+        .returning({ id: taxCode.id });
+      if (updated.length === 0) throw new Error('Tax code not found.');
+      await audit(tx, actor, 'tax_code.updated', 'tax_code', id, {
+        label: input.label,
+        components: input.components,
+      });
+    },
+    CHANGED_ELSEWHERE.taxCode,
+  );
 }
 
 export async function archiveTaxCode(tx: Tx, actor: Actor, id: string): Promise<void> {

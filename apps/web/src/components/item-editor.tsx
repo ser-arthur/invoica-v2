@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { formatMoney, parseMoney, toDecimalString } from '@invoica/core';
 import { archiveItemAction, saveItemAction } from '@/lib/actions/items';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
@@ -16,6 +16,8 @@ export interface ItemValue {
   unitPrice: number;
   unit: string | null;
   taxCodeId: string | null;
+  /** The version this page shows (docs/specs/changes-elsewhere.md). */
+  version?: string;
 }
 
 export function ItemEditor({
@@ -36,6 +38,11 @@ export function ItemEditor({
   const [pending, start] = useTransition();
   // A new item's form keeps one request key, so saving again after a lost answer makes one item.
   const [key] = useState(() => requestKey());
+  // The version this editor opened with; a successful save closes it.
+  const [opened] = useState(item?.version);
+  // Refused because the item changed elsewhere: "Save mine anyway" saves against the version fetched since.
+  const [conflict, setConflict] = useState(false);
+  const replacing = useRef(false);
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -53,11 +60,18 @@ export function ItemEditor({
       unit: String(f.get('unit') ?? ''),
       taxCodeId: String(f.get('taxCodeId') ?? '') || null,
     };
+    const replace = replacing.current;
+    replacing.current = false;
     start(async () => {
-      const r = await reach(saveItemAction(item?.id ?? null, input));
+      const r = await reach(saveItemAction(item?.id ?? null, input, replace ? item?.version : opened));
       if (!r.ok) {
         setErrors(r.fieldErrors ?? {});
         setMessage(r.message);
+        if (r.code === 'item_changed') {
+          setConflict(true);
+          // The item's version is fetched again, for "Save mine anyway"; what was typed stays.
+          router.refresh();
+        }
         return;
       }
       router.refresh();
@@ -113,6 +127,18 @@ export function ItemEditor({
         <Button type="submit" disabled={pending || !ready}>
           {pending ? 'Saving' : item ? 'Save item' : 'Add item'}
         </Button>
+        {conflict ? (
+          <Button
+            type="submit"
+            variant="danger"
+            disabled={pending}
+            onClick={() => {
+              replacing.current = true;
+            }}
+          >
+            Save mine anyway
+          </Button>
+        ) : null}
         <Button type="button" variant="ghost" onClick={onDone}>
           Cancel
         </Button>
