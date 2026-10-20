@@ -1,6 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { chaseOrder, formatBusinessDate, formatMoney, type ReceivablesSummary } from '@invoica/core';
+import {
+  chaseOrder,
+  formatBusinessDate,
+  formatMoney,
+  sumMinor,
+  type ReceivablesSummary,
+} from '@invoica/core';
 import { getDashboard, listClients, withOrganisation } from '@invoica/db';
 import { ButtonLink, Headline, Money, Panel, PanelHeading, StatePill, cx } from '@/components/ui';
 import { getDb } from '@/lib/db';
@@ -224,6 +230,7 @@ export default async function DashboardPage() {
   const baseSummary = dash.receivables.find((r) => r.currency === base);
   const otherOwed = dash.receivables.filter((r) => r.currency !== base);
   const paid30 = dash.paidLast30Days.find((p) => p.currency === base)?.amount ?? 0;
+  const refunded30 = dash.refundedLast30Days.find((p) => p.currency === base)?.amount ?? 0;
   const invoiced = dash.invoicedThisMonth.find((p) => p.currency === base)?.amount ?? 0;
   const issuedMonth = dash.issuedThisMonth.find((p) => p.currency === base)?.amount ?? 0;
   const creditedMonth = dash.creditedThisMonth.find((p) => p.currency === base)?.amount ?? 0;
@@ -266,7 +273,13 @@ export default async function DashboardPage() {
           <Panel>
             <dl className="grid divide-y divide-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
               {[
-                { label: 'Paid in the last 30 days', value: formatMoney(paid30, base), note: null },
+                refunded30 > 0
+                  ? {
+                      label: 'Net received in the last 30 days',
+                      value: formatMoney(paid30, base),
+                      note: `${formatMoney(sumMinor([paid30, refunded30]), base)} paid, ${formatMoney(refunded30, base)} refunded`,
+                    }
+                  : { label: 'Paid in the last 30 days', value: formatMoney(paid30, base), note: null },
                 creditedMonth > 0
                   ? {
                       label: 'Net invoiced this month',

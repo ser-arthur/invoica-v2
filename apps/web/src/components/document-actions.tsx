@@ -345,6 +345,7 @@ export function CreditNoteButton({
   balance,
   received,
   today,
+  latestPaidOn,
   currency,
   canCreditWhole,
   lines,
@@ -359,6 +360,8 @@ export function CreditNoteButton({
   /** Payments received less refunds already made: what a refund can return. */
   received: number;
   today: string;
+  /** A refund returns money received, so it is dated no earlier than the latest payment. */
+  latestPaidOn: string | null;
   currency: string;
   canCreditWhole: boolean;
   lines: CreditableLine[];
@@ -607,6 +610,7 @@ export function CreditNoteButton({
                   <Field label="Refunded on" htmlFor="cn-refund-date">
                     <Input
                       id="cn-refund-date"
+                      min={latestPaidOn ?? undefined}
                       max={today}
                       type="date"
                       value={refundedOn}

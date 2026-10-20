@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
+import { DomainError } from '@invoica/core';
 import type { CreditNoteInput } from '@invoica/schemas';
 import { getDashboard } from '../src/dashboard';
 import { createCreditNote, getDocument, listDocuments, recordPayment, removePayment } from '../src/documents';
@@ -135,6 +136,12 @@ describe('criteria 4 and 5: payments after a refund', () => {
     expect(await failure(b.run((tx) => removePayment(tx, b.actor, paid.id, 'Bounced')))).toMatch(
       /refunds on the invoice would be more than the payments left/,
     );
+    // The app says so before the database is asked.
+    const error = await b
+      .run((tx) => removePayment(tx, b.actor, paid.id, 'Bounced'))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(DomainError);
+    expect((error as DomainError).code).toBe('payment_needed_by_refund');
   });
 
   it('with the refunds still covered, a payment can be removed, and the balance then takes payments again', async () => {
@@ -233,6 +240,68 @@ describe('criterion 6: the database guards refunds', () => {
     );
   });
 
+  it('a draft credit note with a refund cannot move to another invoice', async () => {
+    const b = await business(t, 'Moving Note Office');
+    const { id, note } = await paidInvoiceWithDraftNote(b);
+    const other = await invoiceOf120(b);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(other, 12_000, 'pay-moving-0001')));
+    const outcome = await failure(
+      b.run(async (tx) => {
+        await tx.insert(refund).values({
+          organisationId: b.actor.organisationId,
+          documentId: id,
+          creditNoteId: note,
+          amount: 12_000,
+          currency: 'GBP',
+          refundedOn: TODAY,
+          method: 'bank_transfer',
+        });
+        await tx.update(document).set({ creditedDocumentId: other }).where(eq(document.id, note));
+      }),
+    );
+    expect(outcome).toMatch(/A credit note with a refund cannot move to another invoice/);
+    expect(await b.run((tx) => tx.select().from(refund))).toHaveLength(0);
+  });
+
+  it('payments, refunds and credit notes are refused outside read committed, where the guards hold', async () => {
+    const b = await business(t, 'Isolation Office');
+    const id = await invoiceOf120(b);
+    const { Client } = await import('pg');
+    const app = new Client({ connectionString: t.appUrl });
+    await app.connect();
+    try {
+      for (const level of ['repeatable read', 'serializable']) {
+        await app.query(`begin isolation level ${level}`);
+        await app.query(
+          `select set_config('app.user_id', $1, true), set_config('app.organisation_id', $2, true)`,
+          [b.actor.userId, b.actor.organisationId],
+        );
+        await expect(
+          app.query(
+            `insert into payment (organisation_id, document_id, amount, currency, paid_on, method, idempotency_key)
+             values ($1, $2, 100, 'GBP', $3, 'cash', $4)`,
+            [b.actor.organisationId, id, TODAY, `iso-${level.replace(' ', '-')}`],
+          ),
+          level,
+        ).rejects.toThrow(/only in read committed/);
+        await app.query('rollback');
+        await app.query(`begin isolation level ${level}`);
+        await app.query(
+          `select set_config('app.user_id', $1, true), set_config('app.organisation_id', $2, true)`,
+          [b.actor.userId, b.actor.organisationId],
+        );
+        await expect(
+          app.query(`update document set updated_at = now() where id = $1`, [id]),
+          level,
+        ).rejects.toThrow(/only in read committed/);
+        await app.query('rollback');
+      }
+    } finally {
+      await app.end();
+    }
+    expect(await b.run((tx) => tx.select().from(payment))).toHaveLength(0);
+  });
+
   it('a refund cannot be changed or deleted', async () => {
     const b = await business(t, 'Fixed Office');
     const id = await invoiceOf120(b);
@@ -307,7 +376,7 @@ describe('criterion 6: the database guards refunds', () => {
 });
 
 describe('criterion 7: received figures are net of refunds', () => {
-  it('the list, the client’s paid to date and the dashboard count payments less refunds', async () => {
+  it('the list and the dashboard count payments less refunds', async () => {
     const b = await business(t, 'Net Office');
     const id = await invoiceOf120(b);
     await b.run((tx) => recordPayment(tx, b.actor, pay(id, 12_000, 'pay-net-000001')));
@@ -322,8 +391,35 @@ describe('criterion 7: received figures are net of refunds', () => {
     expect([row!.paid, row!.credited, row!.balance]).toEqual([6000, 6000, 0]);
     const dash = await b.run((tx) => getDashboard(tx, TODAY, 'GBP'));
     expect(dash.paidLast30Days).toEqual([{ currency: 'GBP', amount: 6000 }]);
+    expect(dash.refundedLast30Days).toEqual([{ currency: 'GBP', amount: 6000 }]);
     expect(dash.monthlyPaid.at(-1)!.amount).toBe(6000);
     expect(dash.topClients[0]!.paid).toBe(6000);
+  });
+
+  it('each on its own date: a payment from September refunded in October counts in each month, and per client', async () => {
+    const b = await business(t, 'Dated Net Office');
+    const id = await invoiceOf120(b);
+    await b.run((tx) =>
+      recordPayment(tx, b.actor, { ...pay(id, 12_000, 'pay-dated-0001'), paidOn: '2026-09-01' }),
+    );
+    await credit(b, {
+      mode: 'whole',
+      invoiceId: id,
+      idempotencyKey: 'cn-dated-0001',
+      refund: refundOf(12_000),
+    });
+    const dash = await b.run((tx) => getDashboard(tx, TODAY, 'GBP'));
+    expect(dash.paidLast30Days).toEqual([{ currency: 'GBP', amount: -12_000 }]);
+    expect(dash.refundedLast30Days).toEqual([{ currency: 'GBP', amount: 12_000 }]);
+    expect(dash.monthlyPaid.slice(-2).map((m) => [m.month, m.amount])).toEqual([
+      ['2026-09', 12_000],
+      ['2026-10', -12_000],
+    ]);
+    // The client's "Paid to date" sums the list's figure for each invoice: payments less refunds.
+    const forClient = await b.run((tx) =>
+      listDocuments(tx, { kind: 'invoice', clientId: b.clientId, today: TODAY }),
+    );
+    expect(forClient.map((d) => d.paid)).toEqual([0]);
   });
 
   it('payments recorded are still listed as they were', async () => {
@@ -404,5 +500,60 @@ describe('the refund recorded is the refund confirmed', () => {
     };
     const first = await credit(b, input);
     expect(await credit(b, input)).toEqual({ ...first, duplicate: true });
+  });
+});
+
+describe('a refund’s date', () => {
+  it('cannot be before the latest payment it returns, in the app or in the database', async () => {
+    const b = await business(t, 'Refund Date Office');
+    const id = await invoiceOf120(b);
+    await b.run((tx) =>
+      recordPayment(tx, b.actor, { ...pay(id, 6000, 'pay-date-0001'), paidOn: '2026-10-01' }),
+    );
+    await b.run((tx) =>
+      recordPayment(tx, b.actor, { ...pay(id, 6000, 'pay-date-0002'), paidOn: '2026-10-15' }),
+    );
+    const input = { mode: 'whole' as const, invoiceId: id };
+    expect(
+      await failure(
+        credit(b, {
+          ...input,
+          idempotencyKey: 'cn-date-00001',
+          refund: { ...refundOf(12_000), refundedOn: '2026-10-14' },
+        }),
+      ),
+    ).toMatch(/A refund cannot be dated before the latest payment on the invoice, 15 October 2026/);
+    // The database refuses it too, whoever writes it.
+    const { Client } = await import('pg');
+    const app = new Client({ connectionString: t.appUrl });
+    await app.connect();
+    try {
+      await app.query('begin');
+      await app.query(
+        `select set_config('app.user_id', $1, true), set_config('app.organisation_id', $2, true)`,
+        [b.actor.userId, b.actor.organisationId],
+      );
+      const note = await app.query(
+        `insert into document (organisation_id, kind, client_id, credited_document_id, currency, created_by)
+         values ($1, 'credit_note', $2, $3, 'GBP', $4) returning id`,
+        [b.actor.organisationId, b.clientId, id, b.actor.userId],
+      );
+      await expect(
+        app.query(
+          `insert into refund (organisation_id, document_id, credit_note_id, amount, currency, refunded_on, method)
+           values ($1, $2, $3, 100, 'GBP', '2026-10-14', 'cash')`,
+          [b.actor.organisationId, id, note.rows[0].id],
+        ),
+      ).rejects.toThrow(/cannot be dated before the latest payment/);
+      await app.query('rollback');
+    } finally {
+      await app.end();
+    }
+    await credit(b, {
+      ...input,
+      idempotencyKey: 'cn-date-00002',
+      refund: { ...refundOf(12_000), refundedOn: '2026-10-15' },
+    });
+    expect((await detail(b, id)).refunds.map((r) => r.refundedOn)).toEqual(['2026-10-15']);
   });
 });

@@ -21,7 +21,10 @@ export interface Dashboard {
   today: BusinessDate;
   baseCurrency: string;
   receivables: ReceivablesSummary[];
+  /** Payments less refunds, each on its own date, in the last 30 days. */
   paidLast30Days: CurrencyAmount[];
+  /** Refunds in the last 30 days, already taken off `paidLast30Days`. */
+  refundedLast30Days: CurrencyAmount[];
   /** Invoices issued this month, less credit notes issued this month. */
   invoicedThisMonth: CurrencyAmount[];
   /** Invoices issued this month. */
@@ -78,10 +81,12 @@ export async function getDashboard(tx: Tx, today: BusinessDate, baseCurrency: st
     .where(gte(refund.refundedOn, since));
   const received = [...payments, ...refunds.map((r) => ({ ...r, amount: -r.amount }))];
   const thirtyDaysAgo = addDays(today, -30);
+  const inLast30Days = (p: { paidOn: string }) => p.paidOn > thirtyDaysAgo && p.paidOn <= today;
   const paidLast30Days = byCurrency(
-    received
-      .filter((p) => p.paidOn > thirtyDaysAgo && p.paidOn <= today)
-      .map((p) => ({ currency: p.currency, amount: p.amount })),
+    received.filter(inLast30Days).map((p) => ({ currency: p.currency, amount: p.amount })),
+  );
+  const refundedLast30Days = byCurrency(
+    refunds.filter(inLast30Days).map((r) => ({ currency: r.currency, amount: r.amount })),
   );
   const monthStart = `${today.slice(0, 7)}-01`;
   const inMonth = (d: DocumentSummary) =>
@@ -129,6 +134,7 @@ export async function getDashboard(tx: Tx, today: BusinessDate, baseCurrency: st
     baseCurrency,
     receivables,
     paidLast30Days,
+    refundedLast30Days,
     invoicedThisMonth,
     issuedThisMonth,
     creditedThisMonth,

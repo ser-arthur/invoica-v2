@@ -30,6 +30,8 @@ A credit note on an invoice that has been paid may go above the balance still ow
 5. The database enforces 1 to 4 (a new migration), as it does the existing credit and payment rules; the app checks them first so the person gets a clear message.
 6. A repeated request (the dialog's key) returns the first result, as credit notes do today.
 7. The request carries the refund the person confirmed. The server works the refund out again from the balance at that moment; when the two differ (a payment was recorded or removed while the dialog was open), the request is refused with the new figure, nothing is recorded, and the dialog shows the new refund to confirm.
+8. A draft credit note with a refund cannot move to another invoice (migration 0017).
+9. Payments, refunds and documents are written only in read committed transactions, where the guards' locks and sums hold; the database refuses them under repeatable read or serializable (migration 0017).
 
 ## Printed documents
 

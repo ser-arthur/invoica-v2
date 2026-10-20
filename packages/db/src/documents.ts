@@ -10,6 +10,7 @@ import {
   creditSourceOf,
   creditState,
   deriveState,
+  formatBusinessDate,
   formatDocumentNumber,
   formatMoney,
   isOverdue,
@@ -755,6 +756,23 @@ export async function removePayment(tx: Tx, actor: Actor, paymentId: string, rea
   if (!row) throw new DomainError('payment_not_found', 'This payment does not exist.');
   if (row.removedAt) return;
   await lockDocument(tx, row.documentId);
+  // Refunds return money received, so the payments left must still cover them (the database checks this too).
+  const [left] = await tx
+    .select({ amount: sql<string>`coalesce(sum(${payment.amount}), 0)` })
+    .from(payment)
+    .where(
+      and(eq(payment.documentId, row.documentId), isNull(payment.removedAt), sql`${payment.id} <> ${row.id}`),
+    );
+  const [refunded] = await tx
+    .select({ amount: sql<string>`coalesce(sum(${refund.amount}), 0)` })
+    .from(refund)
+    .where(eq(refund.documentId, row.documentId));
+  if (Number(refunded!.amount) > Number(left!.amount)) {
+    throw new DomainError(
+      'payment_needed_by_refund',
+      'This payment cannot be removed: the refunds on the invoice would be more than the payments left.',
+    );
+  }
   await tx
     .update(payment)
     .set({ removedAt: new Date(), removedReason: reason })
@@ -990,6 +1008,18 @@ export async function createCreditNote(
   const today = todayIn(org.timeZone, now);
   if (input.refund && input.refund.refundedOn > today) {
     throw new DomainError('refund_in_future', 'A refund cannot be dated after today.');
+  }
+  if (input.refund) {
+    const [latest] = await tx
+      .select({ paidOn: sql<string | null>`max(${payment.paidOn})` })
+      .from(payment)
+      .where(and(eq(payment.documentId, invoice.id), isNull(payment.removedAt)));
+    if (latest?.paidOn && input.refund.refundedOn < latest.paidOn) {
+      throw new DomainError(
+        'refund_before_payment',
+        `A refund cannot be dated before the latest payment on the invoice, ${formatBusinessDate(latest.paidOn, 'long')}.`,
+      );
+    }
   }
   const [created] = await tx
     .insert(document)

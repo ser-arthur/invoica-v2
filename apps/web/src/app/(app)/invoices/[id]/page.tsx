@@ -371,6 +371,13 @@ export default async function InvoicePage({
                     balance={detail.balance}
                     received={detail.applied.paid}
                     today={today}
+                    latestPaidOn={
+                      detail.payments
+                        .filter((p) => !p.removedAt)
+                        .map((p) => p.paidOn)
+                        .sort()
+                        .at(-1) ?? null
+                    }
                     currency={doc.currency}
                     canCreditWhole={detail.applied.credited === 0}
                     lines={creditable
