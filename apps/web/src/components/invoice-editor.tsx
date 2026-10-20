@@ -139,6 +139,8 @@ export interface EditorState {
 export interface EditorProps {
   id: string | null;
   initial: EditorState;
+  /** A message to show on arrival, such as "Draft saved." after the first save opened this draft. */
+  notice?: string;
   today: string;
   clients: EditorClient[];
   items: EditorItem[];
@@ -318,8 +320,14 @@ export function InvoiceEditor(props: EditorProps) {
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit');
   const [addingClient, setAddingClient] = useState(false);
   const [confirmIssue, setConfirmIssue] = useState(false);
-  const [message, setMessage] = useState<{ tone: 'danger' | 'info'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ tone: 'danger' | 'info'; text: string } | null>(
+    props.notice ? { tone: 'info', text: props.notice } : null,
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // The notice came in the address; it is shown once, so a reload does not repeat it.
+  useEffect(() => {
+    if (props.notice) window.history.replaceState(null, '', window.location.pathname);
+  }, [props.notice]);
   const [pending, start] = useTransition();
 
   // The line open for editing on phones.
@@ -550,11 +558,13 @@ export function InvoiceEditor(props: EditorProps) {
         router.refresh();
         return;
       }
-      setMessage({ tone: 'info', text: 'Draft saved.' });
       if (!docId) {
+        // The draft opens at its own address, a new page, which says it was saved.
         setDocId(result.data.id);
-        router.replace(`/invoices/${result.data.id}/edit`);
+        router.replace(`/invoices/${result.data.id}/edit?saved=1`);
+        return;
       }
+      setMessage({ tone: 'info', text: 'Draft saved.' });
       router.refresh();
     });
   }

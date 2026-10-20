@@ -135,7 +135,7 @@ test('7: a name over two lines is refused alike for a new address and one with a
   const answers = [];
   for (const email of [existing, uniqueEmail('fresh')]) {
     const response = await request.post('/api/auth/sign-up/email', {
-      headers: { origin: 'http://localhost:3000', 'x-forwarded-for': `10.9.${answers.length}.7` },
+      headers: { origin: new URL(page.url()).origin, 'x-forwarded-for': `10.9.${answers.length}.7` },
       data: { email, password: PASSWORD, name },
     });
     answers.push([response.status(), (await response.json()).message]);

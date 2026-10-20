@@ -10,8 +10,15 @@ import { DeleteDraftButton } from '@/components/document-actions';
 
 export const metadata: Metadata = { title: 'Edit draft' };
 
-export default async function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditInvoicePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ saved?: string }>;
+}) {
   const { id } = await params;
+  const { saved } = await searchParams;
   if (!isUuid(id)) notFound();
   const result = await inWorkspace(async (tx, ws) => {
     const detail = await getDocument(tx, id, ws.today);
@@ -28,7 +35,12 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
         back={{ href: '/invoices', label: 'Invoices' }}
         actions={<DeleteDraftButton id={id} />}
       />
-      <InvoiceEditor id={id} initial={result.initial} {...result.data} />
+      <InvoiceEditor
+        id={id}
+        initial={result.initial}
+        notice={saved === '1' ? 'Draft saved.' : undefined}
+        {...result.data}
+      />
     </div>
   );
 }

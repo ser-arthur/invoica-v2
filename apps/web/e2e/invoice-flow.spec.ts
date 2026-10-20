@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { addClient, signUpAndOnboard, watchErrors } from './helpers';
+import { waitForEmail } from './mailbox';
 
 test('a VAT-registered business invoices a client, issues, downloads the PDF and records a part payment', async ({
   page,
@@ -79,8 +80,6 @@ test('an issued invoice cannot be opened by another business', async ({ browser 
 });
 
 test('an issued invoice is emailed with its PDF and marked as sent', async ({ page }) => {
-  const { readdirSync, readFileSync, statSync } = await import('node:fs');
-  const { join } = await import('node:path');
   await signUpAndOnboard(page, 'Field Office');
   await addClient(page, 'Mara Linden Ceramics');
   await page.goto('/invoices/new');
@@ -98,23 +97,9 @@ test('an issued invoice is emailed with its PDF and marked as sent', async ({ pa
   await page.getByRole('dialog').getByRole('button', { name: 'Send invoice' }).click();
   await expect(page.getByText(/On its way to accounts@client.example/)).toBeVisible();
 
-  const dir = join(process.cwd(), '.data/mail');
-  let found = '';
-  for (let i = 0; i < 40 && !found; i++) {
-    await page.waitForTimeout(500);
-    try {
-      for (const f of readdirSync(dir)) {
-        const full = join(dir, f);
-        if (statSync(full).mtimeMs < started) continue;
-        const text = readFileSync(full, 'utf8');
-        if (text.includes(`Subject: Invoice ${number} from Field Office`)) found = text;
-      }
-    } catch {
-      // The mailbox folder appears with the first email.
-    }
-  }
-  expect(found).toContain('To: accounts@client.example');
-  expect(found).toContain(`filename="${number}.pdf"`);
+  const email = await waitForEmail('accounts@client.example', `Invoice ${number} from Field Office`, started);
+  expect(email.raw).toContain('To: accounts@client.example');
+  expect(email.raw).toContain(`filename="${number}.pdf"`);
   await page.reload();
   await expect(page.getByText('Sent').first()).toBeVisible();
 });
