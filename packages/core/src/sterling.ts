@@ -82,6 +82,28 @@ export interface SterlingVat {
   reverseCharge: number;
 }
 
+/** The dates on a document that decide its tax point. */
+export interface SupplyDates {
+  supplyDate: BusinessDate | null;
+  servicePeriodStart: BusinessDate | null;
+  servicePeriodEnd: BusinessDate | null;
+  issueDate: BusinessDate;
+}
+
+/** The date of supply an invoice prints: the one given, or the issue date when no service period is given. */
+export function supplyDateOf(d: SupplyDates): BusinessDate | null {
+  if (d.supplyDate) return d.supplyDate;
+  return d.servicePeriodStart || d.servicePeriodEnd ? null : d.issueDate;
+}
+
+/**
+ * The tax point, worked out the same way in the editor, on save and on issue: the date of supply, else the end of
+ * the service period, else the issue date.
+ */
+export function taxPointOf(d: SupplyDates): BusinessDate {
+  return supplyDateOf(d) ?? d.servicePeriodEnd ?? d.issueDate;
+}
+
 /** The date a rate applies to: HMRC's period rate is for the month of the tax point, a market rate for the day. */
 export function sterlingRateDate(method: SterlingRateMethod, taxPoint: BusinessDate): BusinessDate {
   return method === 'hmrc_period' ? `${taxPoint.slice(0, 7)}-01` : taxPoint;

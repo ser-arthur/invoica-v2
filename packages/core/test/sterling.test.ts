@@ -8,6 +8,8 @@ import {
   staleRateMessage,
   sterlingRateFor,
   sterlingVat,
+  supplyDateOf,
+  taxPointOf,
   type SterlingVat,
 } from '../src/sterling';
 import type { TaxSummaryRow } from '../src/totals';
@@ -206,6 +208,61 @@ describe('what a rate was entered for', () => {
     );
     expect(staleRateMessage('EUR|market|2026-10-16', 'EUR|hmrc_period|2026-10')).toBe(
       'The exchange rate was entered before the way rates are chosen changed. Enter it again.',
+    );
+  });
+});
+
+describe('the date of supply and the tax point', () => {
+  const none = {
+    supplyDate: null,
+    servicePeriodStart: null,
+    servicePeriodEnd: null,
+    issueDate: '2026-11-03',
+  };
+
+  it('take the supply date given, then the end of a period, then the issue date', () => {
+    expect(taxPointOf({ ...none, supplyDate: '2026-10-28' })).toBe('2026-10-28');
+    expect(supplyDateOf({ ...none, supplyDate: '2026-10-28' })).toBe('2026-10-28');
+    const period = { ...none, servicePeriodStart: '2026-10-01', servicePeriodEnd: '2026-10-31' };
+    expect(taxPointOf(period)).toBe('2026-10-31');
+    expect(supplyDateOf(period)).toBeNull();
+    expect(taxPointOf(none)).toBe('2026-11-03');
+    expect(supplyDateOf(none)).toBe('2026-11-03');
+  });
+
+  it('for a period with one date, take its end when there is one, and print no supply date', () => {
+    for (const d of [
+      { ...none, servicePeriodEnd: '2026-10-31' },
+      { ...none, servicePeriodStart: '2026-10-01' },
+    ]) {
+      expect(supplyDateOf(d)).toBeNull();
+      expect(taxPointOf(d)).toBe(d.servicePeriodEnd ?? d.issueDate);
+    }
+  });
+
+  it('is always one of the dates given, and the supply date when there is one', () => {
+    const date = fc
+      .date({
+        min: new Date('2024-01-01T00:00:00Z'),
+        max: new Date('2028-12-31T00:00:00Z'),
+        noInvalidDate: true,
+      })
+      .map((d) => d.toISOString().slice(0, 10));
+    fc.assert(
+      fc.property(
+        fc.option(date, { nil: null }),
+        fc.option(date, { nil: null }),
+        fc.option(date, { nil: null }),
+        date,
+        (supplyDate, servicePeriodStart, servicePeriodEnd, issueDate) => {
+          const d = { supplyDate, servicePeriodStart, servicePeriodEnd, issueDate };
+          const point = taxPointOf(d);
+          expect([supplyDate, servicePeriodEnd, issueDate]).toContain(point);
+          if (supplyDate) expect(point).toBe(supplyDate);
+          const supply = supplyDateOf(d);
+          if (supply) expect(point).toBe(supply);
+        },
+      ),
     );
   });
 });

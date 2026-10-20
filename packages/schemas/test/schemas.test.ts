@@ -40,6 +40,40 @@ describe('schemas', () => {
     ).toBe(false);
   });
 
+  it('takes both dates of a service period, or neither', () => {
+    const base = {
+      clientId: '7f0c2c63-5b5e-4c4a-9d4e-111111111111',
+      currency: 'EUR',
+      lineStyle: 'amount',
+      pricesIncludeTax: false,
+      template: 'receipt',
+      lines: [{ title: 'Retainer', quantity: 1000, unitPrice: 50000 }],
+    };
+    const endOnly = draftInput.safeParse({ ...base, servicePeriodEnd: '2026-10-31' });
+    expect(endOnly.success).toBe(false);
+    if (!endOnly.success)
+      expect(fieldErrors(endOnly.error).servicePeriodStart).toBe(
+        'Enter both dates of the period, or neither.',
+      );
+    const startOnly = draftInput.safeParse({
+      ...base,
+      servicePeriodStart: '2026-10-01',
+      servicePeriodEnd: '',
+    });
+    expect(startOnly.success).toBe(false);
+    if (!startOnly.success)
+      expect(fieldErrors(startOnly.error).servicePeriodEnd).toBe(
+        'Enter both dates of the period, or neither.',
+      );
+    expect(
+      draftInput.safeParse({ ...base, servicePeriodStart: '2026-10-01', servicePeriodEnd: '2026-10-31' })
+        .success,
+    ).toBe(true);
+    expect(draftInput.safeParse({ ...base, servicePeriodStart: '', servicePeriodEnd: null }).success).toBe(
+      true,
+    );
+  });
+
   it('validates onboarding and the profile', () => {
     expect(
       onboardingInput.safeParse({

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import type { DocumentSnapshot } from '@invoica/core';
 import { createCreditNote, createDraft, getDocument, issueDocument, updateDraft } from '../src/documents';
-import { organisation } from '../src/schema';
+import { document, organisation } from '../src/schema';
 import { createTestDatabase, type TestDatabase } from './helpers';
 import { NOW, TODAY, business, draftFor, failure, type Business } from './business';
 
@@ -235,5 +235,64 @@ describe('a rate belongs to the currency and month it was entered for', () => {
     );
     await b.run((tx) => issueDocument(tx, b.actor, id, NOW));
     expect((await snapshotOf(b, id)).sterlingVat).toBeUndefined();
+  });
+});
+
+describe('R9-M2: the tax point of a service period', () => {
+  const lines = (b: Business) => [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }];
+  const november = new Date('2026-11-03T10:00:00Z');
+
+  it('an invoice dated in November for October takes October’s rate, as the editor asks', async () => {
+    const b = await business(t, 'October Period Office');
+    const id = await b.run((tx) =>
+      createDraft(
+        tx,
+        b.actor,
+        draftFor(b, lines(b), {
+          currency: 'EUR',
+          issueDate: '2026-11-03',
+          servicePeriodStart: '2026-10-01',
+          servicePeriodEnd: '2026-10-31',
+          sterlingRate: '1.1500',
+        }),
+        november,
+      ),
+    );
+    const saved = await b.run((tx) => getDocument(tx, id, '2026-11-03'));
+    expect(saved!.document.sterlingRateFor).toBe('EUR|hmrc_period|2026-10');
+    await b.run((tx) => issueDocument(tx, b.actor, id, november));
+    const snap = await snapshotOf(b, id);
+    expect(snap.sterlingVat?.rateDate).toBe('2026-10-01');
+    expect(snap.supplyDate).toBeNull();
+    expect(snap.servicePeriod).toEqual({ start: '2026-10-01', end: '2026-10-31' });
+  });
+
+  it('a draft kept with one date of its period is refused at issue, whichever date it has', async () => {
+    for (const missing of ['servicePeriodStart', 'servicePeriodEnd'] as const) {
+      const b = await business(t, `One Date Office ${missing}`);
+      const id = await b.run((tx) =>
+        createDraft(
+          tx,
+          b.actor,
+          draftFor(b, lines(b), {
+            currency: 'EUR',
+            issueDate: '2026-11-03',
+            servicePeriodStart: '2026-10-01',
+            servicePeriodEnd: '2026-10-31',
+            sterlingRate: '1.1500',
+          }),
+          november,
+        ),
+      );
+      await b.run((tx) =>
+        tx
+          .update(document)
+          .set({ [missing]: null })
+          .where(eq(document.id, id)),
+      );
+      expect(await failure(b.run((tx) => issueDocument(tx, b.actor, id, november)))).toBe(
+        'Enter both dates of the period, or neither.',
+      );
+    }
   });
 });

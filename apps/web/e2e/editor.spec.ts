@@ -116,3 +116,36 @@ test('a rate entered for euros is cleared and asked for again when the invoice m
       .getByText(/£1 = 190\.2500 JPY/),
   ).toBeVisible();
 });
+
+test('a period asks for the rate of the month it ends, needs both its dates, and prints that month', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Period Studio', { vat: true });
+  await page.goto('/clients/new');
+  await page.fill('#c-name', 'Lyon Ateliers SARL');
+  await page.fill('#c-email', 'compta@lyon.example');
+  await page.selectOption('#c-currency', 'EUR');
+  await page.getByRole('button', { name: 'Save client' }).click();
+  await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
+
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Lyon Ateliers SARL' });
+  await page.getByLabel('Line 1 description').fill('September retainer');
+  await page.getByLabel('Line 1 price').fill('100');
+  await page.selectOption('#e-supplymode', 'period');
+  await page.fill('#e-pe', '2026-09-30');
+  await expect(page.getByRole('link', { name: 'September 2026' })).toHaveAttribute(
+    'href',
+    /exchange_rates\/view\/2026-9$/,
+  );
+  await page.fill('#e-sterling-rate', '1.1400');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await expect(page.getByText('Enter both dates of the period, or neither.')).toBeVisible();
+
+  await page.fill('#e-ps', '2026-09-01');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\?issued=1/);
+  const frame = page.frameLocator('iframe').first();
+  await expect(frame.getByText(/£1 = 1\.1400 EUR, HMRC period rate for September 2026/)).toBeVisible();
+});

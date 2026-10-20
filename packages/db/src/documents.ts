@@ -23,6 +23,8 @@ import {
   staleRateMessage,
   sterlingRateDate,
   sterlingRateFor,
+  supplyDateOf,
+  taxPointOf,
   sterlingVatFor,
   sumMinor,
   todayIn,
@@ -377,20 +379,6 @@ async function prepareLines(tx: Tx, actor: Actor, documentId: string, input: Dra
   }));
 }
 
-/**
- * The tax point of a document: its supply date, else the end of its service period, else its issue date, as
- * `issueDocument` keeps it.
- */
-function taxPointOf(d: {
-  supplyDate: BusinessDate | null;
-  servicePeriodStart: BusinessDate | null;
-  servicePeriodEnd: BusinessDate | null;
-  issueDate: BusinessDate;
-}): BusinessDate {
-  const supply = d.supplyDate ?? (d.servicePeriodStart ? null : d.issueDate);
-  return supply ?? d.servicePeriodEnd ?? d.issueDate;
-}
-
 /** What the draft's rate is for now, worked out from the draft as saved on `today`. */
 function rateForDraft(input: DraftInput, org: Organisation, today: BusinessDate): string | null {
   if (input.sterlingRate === null || input.sterlingRate === undefined) return null;
@@ -620,7 +608,11 @@ export async function issueDocument(
   const dueDate = doc.dueDate ?? addDays(issueDate, buyer.paymentTermsDays ?? org.defaultPaymentTermsDays);
   if (dueDate < issueDate)
     throw new DomainError('due_before_issue', 'The due date cannot be before the issue date.');
-  const supplyDate = doc.supplyDate ?? (doc.servicePeriodStart ? null : issueDate);
+  if (!doc.servicePeriodStart !== !doc.servicePeriodEnd) {
+    throw new DomainError('period_incomplete', 'Enter both dates of the period, or neither.');
+  }
+  const dates = { ...doc, issueDate };
+  const supplyDate = supplyDateOf(dates);
   if (doc.prepayments.some((p) => p.paidOn > today)) {
     throw new DomainError(
       'deposit_in_future',
@@ -630,7 +622,7 @@ export async function issueDocument(
   const totals = draftTotals(doc, lines);
   if (totals.total <= 0)
     throw new DomainError('total_not_positive', 'An invoice must be for more than zero.');
-  const taxPoint = supplyDate ?? doc.servicePeriodEnd ?? issueDate;
+  const taxPoint = taxPointOf(dates);
   if (
     doc.sterlingRate &&
     doc.sterlingRateFor &&

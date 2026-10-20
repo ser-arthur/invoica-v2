@@ -20,6 +20,8 @@ import {
   staleRateMessage,
   sterlingRateDate,
   sterlingRateFor,
+  supplyDateOf,
+  taxPointOf,
   sterlingVatFor,
   sumMinor,
   toDecimalString,
@@ -405,16 +407,19 @@ export function InvoiceEditor(props: EditorProps) {
   const needsSterling =
     !!parsed.totals && needsSterlingVat(sellerVat, { currency: state.currency, taxes: parsed.totals.taxes });
   const sterlingRate = parseExchangeRate(state.sterlingRate);
-  const taxPoint =
-    state.supplyMode === 'period'
-      ? isBusinessDate(state.periodEnd)
-        ? state.periodEnd
-        : today
-      : isBusinessDate(state.supplyDate)
-        ? state.supplyDate
-        : isBusinessDate(state.issueDate)
-          ? state.issueDate
-          : today;
+  // The dates as the next save sends them, with today for an issue date left blank, as issuing today would take.
+  const supplyDates = useMemo(
+    () => ({
+      supplyDate: state.supplyMode === 'date' && isBusinessDate(state.supplyDate) ? state.supplyDate : null,
+      servicePeriodStart:
+        state.supplyMode === 'period' && isBusinessDate(state.periodStart) ? state.periodStart : null,
+      servicePeriodEnd:
+        state.supplyMode === 'period' && isBusinessDate(state.periodEnd) ? state.periodEnd : null,
+      issueDate: isBusinessDate(state.issueDate) ? state.issueDate : today,
+    }),
+    [state.supplyMode, state.supplyDate, state.periodStart, state.periodEnd, state.issueDate, today],
+  );
+  const taxPoint = taxPointOf(supplyDates);
   const rateDate = sterlingRateDate(org.sterlingRateMethod, taxPoint);
   // A rate belongs to the currency and the month (or day) it was entered for: when either changes, it is cleared
   // and asked for again, as the server would refuse it.
@@ -442,18 +447,11 @@ export function InvoiceEditor(props: EditorProps) {
     const snap = assembleSnapshot({
       kind: 'invoice',
       number: org.nextNumber,
-      issueDate: state.issueDate && isBusinessDate(state.issueDate) ? state.issueDate : today,
+      issueDate: supplyDates.issueDate,
       dueDate: state.dueDate && isBusinessDate(state.dueDate) ? state.dueDate : null,
-      supplyDate:
-        state.supplyMode === 'date'
-          ? state.supplyDate && isBusinessDate(state.supplyDate)
-            ? state.supplyDate
-            : state.issueDate || today
-          : null,
-      servicePeriodStart:
-        state.supplyMode === 'period' && isBusinessDate(state.periodStart) ? state.periodStart : null,
-      servicePeriodEnd:
-        state.supplyMode === 'period' && isBusinessDate(state.periodEnd) ? state.periodEnd : null,
+      supplyDate: supplyDateOf(supplyDates),
+      servicePeriodStart: supplyDates.servicePeriodStart,
+      servicePeriodEnd: supplyDates.servicePeriodEnd,
       reference: state.reference || null,
       title: state.title || null,
       summary: state.summary || null,
@@ -505,12 +503,12 @@ export function InvoiceEditor(props: EditorProps) {
     state,
     org,
     client,
-    today,
     props.logoUrl,
     props.entitlements,
     sterlingRate,
     rateDate,
     sellerVat,
+    supplyDates,
   ]);
 
   function addLine(from?: EditorItem) {
@@ -838,7 +836,7 @@ export function InvoiceEditor(props: EditorProps) {
                 </Field>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="From" htmlFor="e-ps">
+                  <Field label="From" htmlFor="e-ps" error={errors.servicePeriodStart}>
                     <Input
                       id="e-ps"
                       type="date"

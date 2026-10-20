@@ -316,6 +316,15 @@ export const draftInput = z
     message: 'The due date cannot be before the issue date.',
     path: ['dueDate'],
   })
+  // A period is both dates or neither, so the tax point, the rate for VAT in sterling and the printed period agree.
+  .refine((d) => !d.servicePeriodEnd || !!d.servicePeriodStart, {
+    message: 'Enter both dates of the period, or neither.',
+    path: ['servicePeriodStart'],
+  })
+  .refine((d) => !d.servicePeriodStart || !!d.servicePeriodEnd, {
+    message: 'Enter both dates of the period, or neither.',
+    path: ['servicePeriodEnd'],
+  })
   .refine((d) => !d.servicePeriodStart || !d.servicePeriodEnd || d.servicePeriodEnd >= d.servicePeriodStart, {
     message: 'The period cannot end before it starts.',
     path: ['servicePeriodEnd'],
