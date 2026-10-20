@@ -32,6 +32,7 @@ A credit note on an invoice that has been paid may go above the balance still ow
 7. The request carries the refund the person confirmed. The server works the refund out again from the balance at that moment; when the two differ (a payment was recorded or removed while the dialog was open), the request is refused with the new figure, nothing is recorded, and the dialog shows the new refund to confirm.
 8. A draft credit note with a refund cannot move to another invoice (migration 0017).
 9. Payments, refunds and documents are written only in read committed transactions, where the guards' locks and sums hold; the database refuses them under repeatable read or serializable (migration 0017).
+10. A payment or refund dated after today, in the business's time zone, is refused by the app; the database refuses one dated more than a day after its own reading of today (migration 0023), since its time zone data and the app's can read an hour apart.
 
 ## Printed documents
 
@@ -50,3 +51,4 @@ Each becomes a test before it is built.
 7. The dashboard's received figures and the client's "Paid to date" are net of refunds, on the refund's date.
 8. The invoice page lists the refund under payments and in the activity record; the CSV export lists it as a refund.
 9. A refund confirmed at £60.00 is refused once the other £60.00 has been recorded meanwhile ("the refund would now be £120.00"), and one confirmed at £120.00 is refused once a £60.00 payment has been removed; nothing is recorded either time.
+10. A payment or refund written straight to the database for a later day is refused, and one for today is kept (`packages/db/test/edge-cases.test.ts`, `packages/db/test/refunds.test.ts`).

@@ -193,7 +193,7 @@ describe('criterion 6: the database guards refunds', () => {
 
   const insertRefund = (
     b: Business,
-    o: { invoice: string; note: string; amount: number; currency?: string },
+    o: { invoice: string; note: string; amount: number; currency?: string; refundedOn?: string },
   ) =>
     b.run(async (tx) => {
       await tx.insert(refund).values({
@@ -202,11 +202,19 @@ describe('criterion 6: the database guards refunds', () => {
         creditNoteId: o.note,
         amount: o.amount,
         currency: o.currency ?? 'GBP',
-        refundedOn: TODAY,
+        refundedOn: o.refundedOn ?? TODAY,
         method: 'bank_transfer',
       });
       // The refund is checked again at commit: its credit note must be issued by then.
     });
+
+  it('refuses a refund dated well after today', async () => {
+    const b = await business(t, 'Later Refund Office');
+    const { id, note } = await paidInvoiceWithDraftNote(b);
+    expect(
+      await failure(insertRefund(b, { invoice: id, note, amount: 1000, refundedOn: '2099-01-01' })),
+    ).toBe('A refund cannot be dated after today.');
+  });
 
   it('refuses a refund that is never issued with its credit note', async () => {
     const b = await business(t, 'Deferred Office');

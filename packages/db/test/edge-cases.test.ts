@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { MAX_UNIT_PRICE, type DocumentSnapshot } from '@invoica/core';
+import { MAX_UNIT_PRICE, addDays, todayIn, type DocumentSnapshot } from '@invoica/core';
 import { draftInput, type DraftFormInput, type DraftInput } from '@invoica/schemas';
 import { setClientArchived } from '../src/clients';
 import { getDashboard } from '../src/dashboard';
@@ -14,7 +14,7 @@ import {
   updateDraft,
 } from '../src/documents';
 import { queueDueReminders, updateReminderSettings } from '../src/reminders';
-import { client, document, organisation, outbox } from '../src/schema';
+import { client, document, organisation, outbox, payment } from '../src/schema';
 import { createTestDatabase, type TestDatabase } from './helpers';
 import { NOW, TODAY, business, failure, pay, type Business } from './business';
 
@@ -263,6 +263,33 @@ describe('payments and refunds are not dated in the future', () => {
         ),
       ),
     ).toMatch(/dated after today/);
+  });
+});
+
+describe('R9-L7: the database refuses money dated well after today', () => {
+  it('a payment written straight to the database for a later day is refused, and one for today is kept', async () => {
+    const b = await business(t, 'Direct Payment Office');
+    const id = await issueOf(b, draft(b, {}));
+    const insert = (paidOn: string, key: string) =>
+      b.run((tx) =>
+        tx.insert(payment).values({
+          organisationId: b.actor.organisationId,
+          documentId: id,
+          amount: 100,
+          currency: 'GBP',
+          paidOn,
+          method: 'bank_transfer',
+          idempotencyKey: key,
+        }),
+      );
+    expect(await failure(insert('2099-01-01', 'direct-future-1'))).toBe(
+      'A payment cannot be dated after today.',
+    );
+    const today = todayIn('Europe/London', new Date());
+    expect(await failure(insert(addDays(today, 3), 'direct-future-2'))).toBe(
+      'A payment cannot be dated after today.',
+    );
+    await insert(today, 'direct-today-1');
   });
 });
 
