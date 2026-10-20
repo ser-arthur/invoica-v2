@@ -42,7 +42,7 @@ const draft = (b: Business, over: Partial<DraftFormInput>) =>
   });
 
 const issueOf = async (b: Business, input: DraftInput, now = NOW) => {
-  const id = await b.run((tx) => createDraft(tx, b.actor, input));
+  const id = await b.run((tx) => createDraft(tx, b.actor, input, NOW));
   await b.run((tx) => issueDocument(tx, b.actor, id, now));
   return id;
 };
@@ -148,7 +148,7 @@ describe('very large figures', () => {
         taxCodeId: b.codes.vat20,
       })),
     });
-    expect(await failure(b.run((tx) => createDraft(tx, b.actor, huge)))).toMatch(/too large/i);
+    expect(await failure(b.run((tx) => createDraft(tx, b.actor, huge, NOW)))).toMatch(/too large/i);
     expect(await b.run((tx) => tx.select().from(document))).toHaveLength(0);
   });
 });
@@ -157,8 +157,8 @@ describe('drafts that change after a rate is entered', () => {
   it('switched to pounds, or to lines without VAT, they need no VAT in sterling', async () => {
     const b = await business(t, 'Change Office');
     const euros = draft(b, { currency: 'EUR', sterlingRate: '1.1500' });
-    const id = await b.run((tx) => createDraft(tx, b.actor, euros));
-    await b.run((tx) => updateDraft(tx, b.actor, id, { ...euros, currency: 'GBP' }));
+    const id = await b.run((tx) => createDraft(tx, b.actor, euros, NOW));
+    await b.run((tx) => updateDraft(tx, b.actor, id, { ...euros, currency: 'GBP' }, NOW));
     await b.run((tx) => issueDocument(tx, b.actor, id, NOW));
     expect((await snapshotOf(b, id)).sterlingVat).toBeUndefined();
 
@@ -176,16 +176,16 @@ describe('drafts that change after a rate is entered', () => {
   it('a rate cleared before issuing is asked for again', async () => {
     const b = await business(t, 'Cleared Office');
     const euros = draft(b, { currency: 'EUR', sterlingRate: '1.1500' });
-    const id = await b.run((tx) => createDraft(tx, b.actor, euros));
-    await b.run((tx) => updateDraft(tx, b.actor, id, { ...euros, sterlingRate: null }));
+    const id = await b.run((tx) => createDraft(tx, b.actor, euros, NOW));
+    await b.run((tx) => updateDraft(tx, b.actor, id, { ...euros, sterlingRate: null }, NOW));
     expect(await failure(b.run((tx) => issueDocument(tx, b.actor, id, NOW)))).toMatch(/exchange rate/);
   });
 
   it('a rate changed on the draft is the one kept', async () => {
     const b = await business(t, 'Rate Change Office');
     const euros = draft(b, { currency: 'EUR', sterlingRate: '1.1500' });
-    const id = await b.run((tx) => createDraft(tx, b.actor, euros));
-    await b.run((tx) => updateDraft(tx, b.actor, id, { ...euros, sterlingRate: 1_160_000 }));
+    const id = await b.run((tx) => createDraft(tx, b.actor, euros, NOW));
+    await b.run((tx) => updateDraft(tx, b.actor, id, { ...euros, sterlingRate: 1_160_000 }, NOW));
     await b.run((tx) => issueDocument(tx, b.actor, id, NOW));
     expect((await snapshotOf(b, id)).sterlingVat?.rate).toBe(1_160_000);
   });

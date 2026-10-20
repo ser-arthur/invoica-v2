@@ -350,7 +350,7 @@ async function step(b: Business, codes: Record<CodeName, string>, m: Model, op: 
         })),
       });
       const r = await attempt(b, async () => {
-        const id = await b.run((tx) => createDraft(tx, b.actor, input));
+        const id = await b.run((tx) => createDraft(tx, b.actor, input, NOW));
         try {
           await b.run((tx) => issueDocument(tx, b.actor, id, NOW));
         } catch (error) {

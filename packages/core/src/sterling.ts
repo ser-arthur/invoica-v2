@@ -1,5 +1,5 @@
 import { currency } from './currency';
-import type { BusinessDate } from './dates';
+import { formatBusinessDate, type BusinessDate } from './dates';
 import { DomainError } from './errors';
 import { divRound, sumMinor, toSafeNumber } from './money';
 import type { TaxSummaryRow } from './totals';
@@ -106,4 +106,73 @@ export function sterlingVatFor(args: {
     );
   }
   return { ...args.rate, ...sterlingVat(doc, args.rate.rate) };
+}
+
+/**
+ * A credit note's VAT in sterling, at the invoice's rate, kept as a ledger against the invoice's sterling figures:
+ * the notes together never credit more sterling than the invoice charged, and the note that credits the last of
+ * the invoice's VAT credits the last of its sterling. Each note on its own is converted as usual, so credit notes in
+ * pieces add up to the invoice exactly. Charged and reverse-charge VAT are kept apart.
+ */
+export function creditNoteSterlingVat(args: {
+  invoice: SterlingVat;
+  invoiceTaxes: readonly TaxSummaryRow[];
+  earlier: readonly {
+    taxes: readonly TaxSummaryRow[];
+    sterling: { charged: number; reverseCharge: number };
+  }[];
+  currency: string;
+  taxes: readonly TaxSummaryRow[];
+}): SterlingVat {
+  const vat = (taxes: readonly TaxSummaryRow[], charged: boolean) =>
+    sumMinor(taxes.filter((t) => t.charged === charged).map((t) => t.amount));
+  const kept = (charged: boolean) => {
+    const invoiced = vat(args.invoiceTaxes, charged);
+    const before = sumMinor(args.earlier.map((n) => vat(n.taxes, charged)));
+    const now = vat(args.taxes, charged);
+    const sterlingInvoiced = charged ? args.invoice.charged : args.invoice.reverseCharge;
+    const sterlingBefore = sumMinor(
+      args.earlier.map((n) => (charged ? n.sterling.charged : n.sterling.reverseCharge)),
+    );
+    const left = Math.max(0, sterlingInvoiced - sterlingBefore);
+    if (now === 0) return 0;
+    if (sumMinor([before, now]) >= invoiced) return left;
+    return Math.min(toPence(now, args.currency, args.invoice.rate), left);
+  };
+  return {
+    rate: args.invoice.rate,
+    method: args.invoice.method,
+    rateDate: args.invoice.rateDate,
+    charged: kept(true),
+    reverseCharge: kept(false),
+  };
+}
+
+/**
+ * What a rate was entered for: the currency, the method, and the month of the tax point for HMRC's period rate or
+ * the day for a market rate. A draft keeps it with its rate, so a rate that no longer fits is asked for again.
+ */
+export function sterlingRateFor(
+  method: SterlingRateMethod,
+  currency: string,
+  taxPoint: BusinessDate,
+): string {
+  return `${currency}|${method}|${method === 'hmrc_period' ? taxPoint.slice(0, 7) : taxPoint}`;
+}
+
+/** Why a rate entered for `entered` does not fit a document that now needs one for `needed`. */
+export function staleRateMessage(entered: string, needed: string): string {
+  const [fromCurrency, fromMethod, fromWhen] = entered.split('|');
+  const [toCurrency, toMethod, toWhen] = needed.split('|');
+  if (fromCurrency !== toCurrency) {
+    return `The exchange rate was entered for ${fromCurrency}. Enter the rate for ${toCurrency}.`;
+  }
+  if (fromMethod !== toMethod) {
+    return 'The exchange rate was entered before the way rates are chosen changed. Enter it again.';
+  }
+  if (toMethod === 'hmrc_period') {
+    const month = (m: string) => formatBusinessDate(`${m}-01`, 'long').replace(/^1 /, '');
+    return `The exchange rate was entered for ${month(fromWhen!)}. Enter HMRC’s rate for ${month(toWhen!)}.`;
+  }
+  return `The exchange rate was entered for ${formatBusinessDate(fromWhen!, 'long')}. Enter the market rate for ${formatBusinessDate(toWhen!, 'long')}.`;
 }

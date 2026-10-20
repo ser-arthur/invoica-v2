@@ -75,3 +75,43 @@ test('a UK VAT invoice in euros asks for the rate to pounds and prints the VAT i
   await expect(frame.getByText('£17.39')).toBeVisible();
   await expect(frame.getByText(/£1 = 1\.1500 EUR, HMRC period rate for/)).toBeVisible();
 });
+
+test('a rate entered for euros is cleared and asked for again when the invoice moves to yen', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Two Currency Studio', { vat: true });
+  for (const [name, currency] of [
+    ['Lyon Ateliers SARL', 'EUR'],
+    ['Kyoto Prints KK', 'JPY'],
+  ] as const) {
+    await page.goto('/clients/new');
+    await page.fill('#c-name', name);
+    await page.fill('#c-email', `accounts@${currency.toLowerCase()}.example`);
+    await page.selectOption('#c-currency', currency);
+    await page.getByRole('button', { name: 'Save client' }).click();
+    await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
+  }
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Lyon Ateliers SARL' });
+  await page.getByLabel('Line 1 description').fill('Print run');
+  await page.getByLabel('Line 1 price').fill('100');
+  await page.fill('#e-sterling-rate', '1.15');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await expect(page.getByText('Draft saved.')).toBeVisible();
+
+  await page.getByLabel('Bill to').selectOption({ label: 'Kyoto Prints KK' });
+  await expect(page.locator('#e-sterling-rate')).toHaveValue('');
+  await expect(
+    page.getByText('The exchange rate was entered for EUR. Enter the rate for JPY.'),
+  ).toBeVisible();
+  await page.fill('#e-sterling-rate', '190.25');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\?issued=1/);
+  await expect(
+    page
+      .frameLocator('iframe')
+      .first()
+      .getByText(/£1 = 190\.2500 JPY/),
+  ).toBeVisible();
+});

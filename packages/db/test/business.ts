@@ -103,7 +103,7 @@ export async function issued(
   over: Partial<DraftFormInput> = {},
   issuedAt = NOW,
 ) {
-  const id = await b.run((tx) => createDraft(tx, b.actor, draftFor(b, lines, over)));
+  const id = await b.run((tx) => createDraft(tx, b.actor, draftFor(b, lines, over), issuedAt));
   await b.run((tx) => issueDocument(tx, b.actor, id, issuedAt));
   return id;
 }

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import type { DocumentSnapshot } from '@invoica/core';
-import { createCreditNote, createDraft, getDocument, issueDocument } from '../src/documents';
+import { createCreditNote, createDraft, getDocument, issueDocument, updateDraft } from '../src/documents';
 import { organisation } from '../src/schema';
 import { createTestDatabase, type TestDatabase } from './helpers';
 import { NOW, TODAY, business, draftFor, failure, type Business } from './business';
@@ -128,5 +128,112 @@ describe('criterion 7: a credit note uses the invoice’s rate', () => {
       charged: 870,
       reverseCharge: 0,
     });
+  });
+});
+
+describe('credit notes in pieces', () => {
+  it('ten notes of a tenth credit exactly the sterling the invoice charged', async () => {
+    const b = await business(t, 'Pieces Office');
+    const id = await euroDraft(b, '1.1500');
+    await b.run((tx) => issueDocument(tx, b.actor, id, NOW));
+    expect((await snapshotOf(b, id)).sterlingVat?.charged).toBe(1739);
+    const notes: number[] = [];
+    for (let i = 0; i < 10; i++) {
+      const cn = await b.run((tx) =>
+        createCreditNote(
+          tx,
+          b.actor,
+          {
+            mode: 'amount',
+            invoiceId: id,
+            amount: 1000,
+            reason: 'Part returned',
+            idempotencyKey: `pieces-${i}-cn`,
+          },
+          NOW,
+        ),
+      );
+      notes.push((await snapshotOf(b, cn.id)).sterlingVat!.charged);
+    }
+    expect(notes.reduce((a, n) => a + n, 0)).toBe(1739);
+    expect(notes.at(-1)).toBe(173);
+  });
+});
+
+describe('a rate belongs to the currency and month it was entered for', () => {
+  const lines = (b: Business) => [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }];
+
+  it('a rate kept when the currency changes is refused, and the right one is accepted', async () => {
+    const b = await business(t, 'Currency Change Office');
+    const id = await euroDraft(b, '1.1500');
+    const yen = draftFor(b, lines(b), { currency: 'JPY', supplyDate: '2026-10-16', sterlingRate: '1.1500' });
+    expect(await failure(b.run((tx) => updateDraft(tx, b.actor, id, yen)))).toMatch(
+      /The exchange rate was entered for EUR\. Enter the rate for JPY\./,
+    );
+    await b.run((tx) =>
+      updateDraft(
+        tx,
+        b.actor,
+        id,
+        draftFor(b, lines(b), { currency: 'JPY', supplyDate: '2026-10-16', sterlingRate: '190.25' }),
+      ),
+    );
+    await b.run((tx) => issueDocument(tx, b.actor, id, NOW));
+    expect((await snapshotOf(b, id)).sterlingVat?.rate).toBe(190_250_000);
+  });
+
+  it('with HMRC’s period rate, a rate kept when the tax point moves to another month is refused', async () => {
+    const b = await business(t, 'Month Change Office');
+    const id = await euroDraft(b, '1.1500');
+    const november = draftFor(b, lines(b), {
+      currency: 'EUR',
+      supplyDate: '2026-11-02',
+      sterlingRate: '1.1500',
+    });
+    expect(await failure(b.run((tx) => updateDraft(tx, b.actor, id, november)))).toMatch(
+      /The exchange rate was entered for October 2026\. Enter HMRC’s rate for November 2026\./,
+    );
+  });
+
+  it('a draft with no dates, saved in October and issued in November, asks for November’s rate', async () => {
+    const b = await business(t, 'Late Issue Office');
+    const id = await b.run((tx) =>
+      createDraft(
+        tx,
+        b.actor,
+        draftFor(b, lines(b), { currency: 'EUR', sterlingRate: '1.1500' }),
+        new Date('2026-10-30T12:00:00Z'),
+      ),
+    );
+    expect(
+      await failure(b.run((tx) => issueDocument(tx, b.actor, id, new Date('2026-11-02T10:00:00Z')))),
+    ).toMatch(/The exchange rate was entered for October 2026\. Enter HMRC’s rate for November 2026\./);
+    await b.run((tx) =>
+      updateDraft(
+        tx,
+        b.actor,
+        id,
+        draftFor(b, lines(b), { currency: 'EUR', sterlingRate: '1.1520' }),
+        new Date('2026-11-02T10:00:00Z'),
+      ),
+    );
+    await b.run((tx) => issueDocument(tx, b.actor, id, new Date('2026-11-02T10:00:00Z')));
+    const kept = (await snapshotOf(b, id)).sterlingVat!;
+    expect([kept.rate, kept.rateDate]).toEqual([1_152_000, '2026-11-01']);
+  });
+
+  it('a draft moved to pounds keeps working: it needs no rate', async () => {
+    const b = await business(t, 'To Pounds Office');
+    const id = await euroDraft(b, '1.1500');
+    await b.run((tx) =>
+      updateDraft(
+        tx,
+        b.actor,
+        id,
+        draftFor(b, lines(b), { currency: 'GBP', supplyDate: '2026-10-16', sterlingRate: '1.1500' }),
+      ),
+    );
+    await b.run((tx) => issueDocument(tx, b.actor, id, NOW));
+    expect((await snapshotOf(b, id)).sterlingVat).toBeUndefined();
   });
 });

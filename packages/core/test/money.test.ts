@@ -128,6 +128,11 @@ describe('parseMoney', () => {
     ['1500', 'JPY', 1500],
     ['1.5', 'JPY', null],
     ['1.234', 'KWD', 1234],
+    // Zeros past the currency's places change nothing: a price typed in euros stays readable in yen.
+    ['100.00', 'JPY', 100],
+    ['12.500', 'GBP', 1250],
+    ['100.50', 'JPY', null],
+    ['12.501', 'GBP', null],
   ];
   it.each(cases)('reads %j in %s as %s', (input, code, expected) => {
     expect(parseMoney(input, code)).toBe(expected);

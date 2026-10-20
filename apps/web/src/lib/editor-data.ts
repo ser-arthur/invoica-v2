@@ -86,6 +86,7 @@ export function newDraftState(
     lineStyle: org.taxRegistered ? 'quantity' : 'amount',
     pricesIncludeTax: org.pricesIncludeTax,
     sterlingRate: '',
+    sterlingRateFor: null,
     lines: [
       {
         key: key(),
@@ -134,6 +135,7 @@ export function draftState(detail: DocumentDetail): EditorState {
     lineStyle: d.lineStyle,
     pricesIncludeTax: d.pricesIncludeTax,
     sterlingRate: d.sterlingRate ? formatExchangeRate(d.sterlingRate) : '',
+    sterlingRateFor: d.sterlingRateFor,
     lines: detail.lines.map((l) => ({
       key: key(),
       title: l.title,

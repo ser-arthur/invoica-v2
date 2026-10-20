@@ -137,9 +137,11 @@ export function parseMoney(input: string, currencyCode: string): number | null {
   const match = /^(-)?(\d{1,3}(?:,\d{3})+|\d+)?(?:\.(\d*))?$/.exec(text);
   if (!match || (match[2] === undefined && !match[3])) return null;
   const [, minus, wholeRaw = '0', fractionRaw = ''] = match;
-  if (fractionRaw.length > exponent) return null;
+  // Zeros past the currency's places change nothing ("100.00" in yen is 100); any other digit there is refused.
+  if (/[^0]/.test(fractionRaw.slice(exponent))) return null;
+  const fraction = fractionRaw.slice(0, exponent);
   const whole = wholeRaw.replace(/,/g, '');
-  const minor = BigInt(whole) * 10n ** BigInt(exponent) + BigInt(fractionRaw.padEnd(exponent, '0') || '0');
+  const minor = BigInt(whole) * 10n ** BigInt(exponent) + BigInt(fraction.padEnd(exponent, '0') || '0');
   try {
     return toSafeNumber(minus ? -minor : minor);
   } catch {

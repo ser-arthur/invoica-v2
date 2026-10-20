@@ -16,7 +16,9 @@ import {
   parseQuantity,
   parseRate,
   QUANTITY_SCALE,
+  staleRateMessage,
   sterlingRateDate,
+  sterlingRateFor,
   sterlingVatFor,
   sumMinor,
   toDecimalString,
@@ -121,6 +123,8 @@ export interface EditorState {
   pricesIncludeTax: boolean;
   /** Units of the invoice's currency to £1, as typed, for VAT in sterling. */
   sterlingRate: string;
+  /** What the saved rate was entered for (`sterlingRateFor`), or null for a new draft. Not sent back. */
+  sterlingRateFor: string | null;
   lines: EditorLine[];
   discounts: EditorDiscount[];
   deposits: EditorDeposit[];
@@ -390,6 +394,17 @@ export function InvoiceEditor(props: EditorProps) {
           ? state.issueDate
           : today;
   const rateDate = sterlingRateDate(org.sterlingRateMethod, taxPoint);
+  // A rate belongs to the currency and the month (or day) it was entered for: when either changes, it is cleared
+  // and asked for again, as the server would refuse it.
+  const rateFor = sterlingRateFor(org.sterlingRateMethod, state.currency, taxPoint);
+  const [rateEnteredFor, setRateEnteredFor] = useState(props.initial.sterlingRateFor ?? rateFor);
+  useEffect(() => {
+    if (rateEnteredFor === rateFor) return;
+    setRateEnteredFor(rateFor);
+    if (!state.sterlingRate.trim()) return;
+    setState((s) => ({ ...s, sterlingRate: '' }));
+    setErrors((e) => ({ ...e, sterlingRate: staleRateMessage(rateEnteredFor, rateFor) }));
+  }, [rateFor, rateEnteredFor, state.sterlingRate]);
 
   const previewHtml = useMemo(() => {
     const totals =
@@ -729,7 +744,10 @@ export function InvoiceEditor(props: EditorProps) {
                       inputMode="decimal"
                       placeholder="1.1500"
                       value={state.sterlingRate}
-                      onChange={(e) => update({ sterlingRate: e.target.value })}
+                      onChange={(e) => {
+                        setRateEnteredFor(rateFor);
+                        update({ sterlingRate: e.target.value });
+                      }}
                       aria-invalid={!!errors.sterlingRate}
                       className="tabular"
                     />

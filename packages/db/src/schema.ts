@@ -292,6 +292,7 @@ export const document = pgTable('document', {
   requestFingerprint: text('request_fingerprint'),
   /** For a draft in another currency: units of that currency to £1, in millionths. */
   sterlingRate: bigint('sterling_rate', { mode: 'number' }),
+  sterlingRateFor: text('sterling_rate_for'),
 });
 
 export const documentLine = pgTable('document_line', {

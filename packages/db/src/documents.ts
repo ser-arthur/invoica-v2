@@ -6,6 +6,7 @@ import {
   checkCredit,
   checkPayment,
   computeDocument,
+  creditNoteSterlingVat,
   creditSlots,
   creditSourceOf,
   creditState,
@@ -14,11 +15,14 @@ import {
   formatDocumentNumber,
   formatMoney,
   isOverdue,
+  needsSterlingVat,
   planAmountCredit,
   planBalanceCredit,
   planLineCredit,
   refundFor,
+  staleRateMessage,
   sterlingRateDate,
+  sterlingRateFor,
   sterlingVatFor,
   sumMinor,
   todayIn,
@@ -373,7 +377,31 @@ async function prepareLines(tx: Tx, actor: Actor, documentId: string, input: Dra
   }));
 }
 
-function draftColumns(input: DraftInput, org: Organisation, totals: DocumentTotals) {
+/**
+ * The tax point of a document: its supply date, else the end of its service period, else its issue date, as
+ * `issueDocument` keeps it.
+ */
+function taxPointOf(d: {
+  supplyDate: BusinessDate | null;
+  servicePeriodStart: BusinessDate | null;
+  servicePeriodEnd: BusinessDate | null;
+  issueDate: BusinessDate;
+}): BusinessDate {
+  const supply = d.supplyDate ?? (d.servicePeriodStart ? null : d.issueDate);
+  return supply ?? d.servicePeriodEnd ?? d.issueDate;
+}
+
+/** What the draft's rate is for now, worked out from the draft as saved on `today`. */
+function rateForDraft(input: DraftInput, org: Organisation, today: BusinessDate): string | null {
+  if (input.sterlingRate === null || input.sterlingRate === undefined) return null;
+  return sterlingRateFor(
+    org.sterlingRateMethod,
+    input.currency,
+    taxPointOf({ ...input, issueDate: input.issueDate ?? today }),
+  );
+}
+
+function draftColumns(input: DraftInput, org: Organisation, totals: DocumentTotals, rateFor: string | null) {
   return {
     clientId: input.clientId,
     currency: input.currency,
@@ -396,6 +424,7 @@ function draftColumns(input: DraftInput, org: Organisation, totals: DocumentTota
     template: input.template,
     options: input.options,
     sterlingRate: input.sterlingRate,
+    sterlingRateFor: rateFor,
     subtotal: totals.subtotal,
     discountTotal: totals.discountTotal,
     taxTotal: totals.taxTotal,
@@ -426,7 +455,12 @@ function totalsFor(
   return totals;
 }
 
-export async function createDraft(tx: Tx, actor: Actor, input: DraftInput): Promise<string> {
+export async function createDraft(
+  tx: Tx,
+  actor: Actor,
+  input: DraftInput,
+  now: Date = new Date(),
+): Promise<string> {
   await assertClient(tx, input.clientId);
   const org = await getOrganisation(tx, actor);
   const [created] = await tx
@@ -445,7 +479,7 @@ export async function createDraft(tx: Tx, actor: Actor, input: DraftInput): Prom
   const totals = totalsFor(input, org, lines);
   await tx
     .update(document)
-    .set(draftColumns(input, org, totals))
+    .set(draftColumns(input, org, totals, rateForDraft(input, org, todayIn(org.timeZone, now))))
     .where(eq(document.id, id));
   if (lines.length) await tx.insert(documentLine).values(lines);
   await audit(tx, actor, 'document.draft_created', 'document', id);
@@ -482,18 +516,38 @@ export async function lockDocument(tx: Tx, id: string): Promise<DocumentRow> {
   return doc;
 }
 
-export async function updateDraft(tx: Tx, actor: Actor, id: string, input: DraftInput): Promise<void> {
+export async function updateDraft(
+  tx: Tx,
+  actor: Actor,
+  id: string,
+  input: DraftInput,
+  now: Date = new Date(),
+): Promise<void> {
   const doc = await lockDocument(tx, id);
   if (doc.lifecycle !== 'draft') throw new DomainError('document_not_draft', 'Only drafts can be edited.');
   await assertClient(tx, input.clientId);
   const org = await getOrganisation(tx, actor);
   const lines = await prepareLines(tx, actor, id, input.lines);
   const totals = totalsFor(input, org, lines);
+  const rateFor = rateForDraft(input, org, todayIn(org.timeZone, now));
+  // The same rate kept while the currency or the tax point changed was entered for something else.
+  if (
+    rateFor &&
+    doc.sterlingRateFor &&
+    input.sterlingRate === doc.sterlingRate &&
+    rateFor !== doc.sterlingRateFor &&
+    needsSterlingVat(
+      { taxRegistered: org.taxRegistered, countryCode: org.countryCode },
+      { currency: input.currency, taxes: totals.taxes },
+    )
+  ) {
+    throw new DomainError('sterling_rate_stale', staleRateMessage(doc.sterlingRateFor, rateFor));
+  }
   await tx.delete(documentLine).where(eq(documentLine.documentId, id));
   if (lines.length) await tx.insert(documentLine).values(lines);
   await tx
     .update(document)
-    .set(draftColumns(input, org, totals))
+    .set(draftColumns(input, org, totals, rateFor))
     .where(eq(document.id, id));
   await audit(tx, actor, 'document.draft_updated', 'document', id);
 }
@@ -574,6 +628,19 @@ export async function issueDocument(
   if (totals.total <= 0)
     throw new DomainError('total_not_positive', 'An invoice must be for more than zero.');
   const taxPoint = supplyDate ?? doc.servicePeriodEnd ?? issueDate;
+  if (
+    doc.sterlingRate &&
+    doc.sterlingRateFor &&
+    needsSterlingVat(
+      { taxRegistered: org.taxRegistered, countryCode: org.countryCode },
+      { currency: doc.currency, taxes: totals.taxes },
+    )
+  ) {
+    const needed = sterlingRateFor(org.sterlingRateMethod, doc.currency, taxPoint);
+    if (needed !== doc.sterlingRateFor) {
+      throw new DomainError('sterling_rate_stale', staleRateMessage(doc.sterlingRateFor, needed));
+    }
+  }
   const sterlingVat = sterlingVatFor({
     seller: { taxRegistered: org.taxRegistered, countryCode: org.countryCode },
     currency: doc.currency,
@@ -1125,18 +1192,36 @@ export async function createCreditNote(
     credits: { number: invoice.number ?? '', issueDate: invoice.issueDate ?? today, reason: input.reason },
     entitlements: organisationEntitlements(org, now),
     ledger: plan.taken,
-    // A credit note converts the VAT it credits at the invoice's rate.
-    sterlingVat: snapshot.sterlingVat
-      ? sterlingVatFor({
-          seller: {
-            taxRegistered: snapshot.seller.taxRegistered,
-            countryCode: snapshot.seller.address.countryCode,
-          },
-          currency: invoice.currency,
-          taxes: totals.taxes,
-          rate: snapshot.sterlingVat,
-        })
-      : null,
+    // A credit note converts the VAT it credits at the invoice's rate, kept as a ledger against the invoice's
+    // sterling figures, so notes in pieces add up to what the invoice charged.
+    sterlingVat:
+      snapshot.sterlingVat &&
+      needsSterlingVat(
+        { taxRegistered: snapshot.seller.taxRegistered, countryCode: snapshot.seller.address.countryCode },
+        { currency: invoice.currency, taxes: totals.taxes },
+      )
+        ? creditNoteSterlingVat({
+            invoice: snapshot.sterlingVat,
+            invoiceTaxes: snapshot.totals.taxes,
+            earlier: (
+              await tx
+                .select({ snapshot: document.snapshot })
+                .from(document)
+                .where(
+                  and(
+                    eq(document.creditedDocumentId, invoice.id),
+                    eq(document.kind, 'credit_note'),
+                    inArray(document.lifecycle, ['issued', 'sent']),
+                  ),
+                )
+            )
+              .map((n) => n.snapshot as unknown as DocumentSnapshot)
+              .filter((n) => n.sterlingVat)
+              .map((n) => ({ taxes: n.totals.taxes, sterling: n.sterlingVat! })),
+            currency: invoice.currency,
+            taxes: totals.taxes,
+          })
+        : null,
   });
   await tx
     .update(document)

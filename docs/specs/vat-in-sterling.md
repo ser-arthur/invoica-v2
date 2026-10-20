@@ -14,12 +14,14 @@ An invoice or credit note needs VAT in sterling when its seller is registered fo
 - It must be a rate HMRC accepts: its period rate for the month of the tax point (the default), or the UK market selling rate at the time of supply (VAT Notice 700 paragraph 7.6; HMRC VAT Valuation manual, VATVAL09500). The business chooses its method in Settings and uses it for every invoice; the method and the rate's date are kept on the invoice.
 - The editor links to HMRC's published rates for the month of the tax point.
 - A credit note uses the rate of the invoice it credits.
+- A rate belongs to what it was entered for: the currency, the method, and the month of the tax point (HMRC's period rate) or its day (a market rate). A draft keeps that with its rate. When the currency or the tax point's month or day changes, the editor clears the rate and asks for the new one ("The exchange rate was entered for EUR. Enter the rate for JPY."), and the server refuses the old rate on saving and on issue. A draft with no dates saved in October and issued in November is asked for November's rate.
 - A difference between this rate and what the bank pays when the client settles is not a VAT difference: the VAT due is the sterling figure on the invoice, and the difference is a currency gain or loss in the accounts.
 
 ## The figures
 
 - VAT in sterling is the document's VAT total converted at the rate and rounded half up to the penny. Reverse-charge VAT, which is shown and not charged, is converted on its own.
 - Each figure is converted once from the document's total, never added up from converted rows, so it is the conversion of the total the document shows.
+- Credit notes are kept as a ledger against the invoice's sterling figures: together they never credit more sterling than the invoice charged, and the note that credits the last of the invoice's VAT credits the last of its sterling. Ten notes of a tenth of €20.00 of VAT at 1.1500 credit £1.74 nine times and £1.73 once, £17.39 in all, as the invoice charged.
 
 ## Acceptance criteria
 
@@ -30,6 +32,8 @@ An invoice or credit note needs VAT in sterling when its seller is registered fo
 5. Issuing an invoice that needs sterling VAT without a rate is refused, in the editor and on the server (`packages/db/test/sterling.test.ts`, `apps/web/e2e/editor.spec.ts`).
 6. The invoice keeps the rate, its date and the method in its snapshot, and every template prints the sterling VAT beside the totals (`packages/db/test/sterling.test.ts`, `packages/documents/test/sterling-view.test.ts`).
 7. A credit note against such an invoice uses the invoice's rate and prints the VAT it credits in sterling (same files).
+8. A rate kept when the currency or the tax point's month changes is refused on saving and on issue, and the editor clears it and asks again (`packages/db/test/sterling.test.ts`, `apps/web/e2e/editor.spec.ts`).
+9. Credit notes in pieces credit exactly the sterling the invoice charged, for any split (`packages/core/test/sterling.test.ts`, `packages/db/test/sterling.test.ts`).
 
 ## Printed wording
 
