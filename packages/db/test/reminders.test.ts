@@ -320,6 +320,37 @@ describe('R9-L1: the scan and the invoice page work the business date out the sa
   });
 });
 
+describe('the scan offers an invoice only near the day a reminder falls due', () => {
+  it('mid-afternoon the day before, nothing; just before midnight, offered and not yet queued; just after, queued', async () => {
+    const b = await remindingBusiness('Window Office');
+    await b.run((tx) =>
+      tx
+        .update(organisation)
+        .set({ reminderOffsets: [0] })
+        .where(eq(organisation.id, b.actor.organisationId)),
+    );
+    // Due on 21 October in London (BST, an hour ahead of UTC).
+    const id = await issued(
+      b,
+      [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }],
+      { issueDate: '2026-10-01', dueDate: '2026-10-21' },
+      at('2026-10-01'),
+    );
+    const offered = async (now: Date) =>
+      (await t.worker.db.execute<{ document_id: string }>(sql`select * from app.due_reminders(${now})`)).rows
+        .map((r) => r.document_id)
+        .includes(id);
+    expect(await offered(new Date('2026-10-20T14:00:00Z'))).toBe(false);
+    const late = new Date('2026-10-20T22:30:00Z');
+    expect(await offered(late)).toBe(true);
+    await queueDueReminders(t.db, t.worker.db, late);
+    expect(await queued(b, id)).toEqual([]);
+    await queueDueReminders(t.db, t.worker.db, new Date('2026-10-20T23:30:00Z'));
+    expect(await queued(b, id)).toEqual([0]);
+    expect(await offered(new Date('2026-10-21T12:00:00Z'))).toBe(false);
+  });
+});
+
 describe('a reminder never goes for a day before the invoice was issued', () => {
   it('an invoice with two days to pay gets no "three days before" reminder', async () => {
     const b = await remindingBusiness('Short Terms Office');
