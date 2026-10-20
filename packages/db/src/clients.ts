@@ -3,6 +3,7 @@ import type { ClientInput } from '@invoica/schemas';
 import type { Tx } from './client';
 import { client, clientField } from './schema';
 import { audit } from './audit';
+import { fingerprint } from './fingerprint';
 import type { Actor } from './tenancy';
 import { assertRoomForClient } from './plans';
 
@@ -57,25 +58,45 @@ async function replaceFields(tx: Tx, actor: Actor, clientId: string, input: Clie
   }
 }
 
+/**
+ * Makes a client. A request key from the form makes a repeat find the client the first request made: the same
+ * request again changes nothing, and one corrected between a lost answer and the second press is saved as corrected.
+ */
 export async function createClient(tx: Tx, actor: Actor, input: ClientInput): Promise<string> {
   const key = input.idempotencyKey ?? null;
-  const existing = async () =>
-    key
-      ? (await tx.select({ id: client.id }).from(client).where(eq(client.idempotencyKey, key)))[0]?.id
-      : undefined;
-  const earlier = await existing();
+  const { idempotencyKey: _key, ...request } = input;
+  const digest = fingerprint(request);
+  const repeat = async () => {
+    if (!key) return undefined;
+    const [row] = await tx
+      .select({ id: client.id, requestFingerprint: client.requestFingerprint })
+      .from(client)
+      .where(eq(client.idempotencyKey, key));
+    if (!row) return undefined;
+    if (row.requestFingerprint !== digest) {
+      await updateClient(tx, actor, row.id, input);
+      await tx.update(client).set({ requestFingerprint: digest }).where(eq(client.id, row.id));
+    }
+    return row.id;
+  };
+  const earlier = await repeat();
   if (earlier) return earlier;
   await assertRoomForClient(tx, actor.organisationId, new Date());
   const [row] = await tx
     .insert(client)
-    .values({ organisationId: actor.organisationId, ...columns(input), idempotencyKey: key })
+    .values({
+      organisationId: actor.organisationId,
+      ...columns(input),
+      idempotencyKey: key,
+      requestFingerprint: key ? digest : null,
+    })
     .onConflictDoNothing({
       target: [client.organisationId, client.idempotencyKey],
       where: sql`${client.idempotencyKey} is not null`,
     })
     .returning({ id: client.id });
   // Saved at the same moment by another request with the same key: that one is the client.
-  if (!row) return (await existing())!;
+  if (!row) return (await repeat())!;
   await replaceFields(tx, actor, row!.id, input);
   await audit(tx, actor, 'client.created', 'client', row!.id);
   return row!.id;

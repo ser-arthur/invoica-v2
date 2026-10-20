@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { and, asc, desc, eq, inArray, isNull, isNotNull, sql } from 'drizzle-orm';
 import {
   DomainError,
@@ -54,6 +53,7 @@ import {
 } from './schema';
 import type { DocumentKind, PaymentMethod } from './schema';
 import { audit } from './audit';
+import { fingerprint } from './fingerprint';
 import { enqueue } from './outbox';
 import { getOrganisation, getOrganisationForIssue, type Organisation } from './organisations';
 import { toTaxCode } from './taxes';
@@ -512,11 +512,6 @@ export async function documentForKey(
     .from(document)
     .where(eq(document.idempotencyKey, key));
   return row ?? null;
-}
-
-/** A short digest of what a request asked for, stored with its key. */
-function fingerprint(request: unknown): string {
-  return createHash('sha256').update(JSON.stringify(request)).digest('hex');
 }
 
 function keyReused(): DomainError {

@@ -4,6 +4,7 @@ import type { TaxCodeInput } from '@invoica/schemas';
 import type { Tx } from './client';
 import { taxCode } from './schema';
 import { audit } from './audit';
+import { fingerprint } from './fingerprint';
 import type { Actor } from './tenancy';
 
 export type TaxCodeRow = typeof taxCode.$inferSelect;
@@ -30,13 +31,25 @@ async function clearDefault(tx: Tx, exceptId: string | null) {
     );
 }
 
+/** Makes a tax code. A repeated request key behaves as for clients (`createClient`). */
 export async function createTaxCode(tx: Tx, actor: Actor, input: TaxCodeInput): Promise<string> {
   const key = input.idempotencyKey ?? null;
-  const existing = async () =>
-    key
-      ? (await tx.select({ id: taxCode.id }).from(taxCode).where(eq(taxCode.idempotencyKey, key)))[0]?.id
-      : undefined;
-  const earlier = await existing();
+  const { idempotencyKey: _key, ...request } = input;
+  const digest = fingerprint(request);
+  const repeat = async () => {
+    if (!key) return undefined;
+    const [row] = await tx
+      .select({ id: taxCode.id, requestFingerprint: taxCode.requestFingerprint })
+      .from(taxCode)
+      .where(eq(taxCode.idempotencyKey, key));
+    if (!row) return undefined;
+    if (row.requestFingerprint !== digest) {
+      await updateTaxCode(tx, actor, row.id, input);
+      await tx.update(taxCode).set({ requestFingerprint: digest }).where(eq(taxCode.id, row.id));
+    }
+    return row.id;
+  };
+  const earlier = await repeat();
   if (earlier) return earlier;
   assertTaxCode(input);
   if (input.isDefault) await clearDefault(tx, null);
@@ -51,6 +64,7 @@ export async function createTaxCode(tx: Tx, actor: Actor, input: TaxCodeInput): 
       isDefault: input.isDefault,
       sort: (sorted.at(-1)?.sort ?? 0) + 1,
       idempotencyKey: key,
+      requestFingerprint: key ? digest : null,
     })
     .onConflictDoNothing({
       target: [taxCode.organisationId, taxCode.idempotencyKey],
@@ -58,7 +72,7 @@ export async function createTaxCode(tx: Tx, actor: Actor, input: TaxCodeInput): 
     })
     .returning({ id: taxCode.id });
   // Saved at the same moment by another request with the same key: that one is the code.
-  if (!row) return (await existing())!;
+  if (!row) return (await repeat())!;
   await audit(tx, actor, 'tax_code.created', 'tax_code', row!.id, {
     label: input.label,
     components: input.components,

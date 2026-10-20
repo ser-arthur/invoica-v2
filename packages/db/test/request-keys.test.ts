@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
-import { itemInput, taxCodeInput } from '@invoica/schemas';
+import { clientInput, itemInput, taxCodeInput } from '@invoica/schemas';
+import { createClient } from '../src/clients';
 import { createItem } from '../src/items';
 import { createDraft, deleteDraft, issueDocument, updateDraft, voidDocument } from '../src/documents';
-import { auditLog, document, item, taxCode } from '../src/schema';
+import { auditLog, client, document, item, taxCode } from '../src/schema';
 import { createTaxCode } from '../src/taxes';
 import { createTestDatabase, type TestDatabase } from './helpers';
 import { NOW, business, draftFor, failure, issued } from './business';
@@ -102,5 +103,46 @@ describe('R9-L3: a draft saved or issued again once it is issued', () => {
     expect(await failure(b.run((tx) => updateDraft(tx, b.actor, id, draftFor(b, lines))))).toBe(
       `This invoice has already been issued as ${number}, so it can no longer be changed.`,
     );
+  });
+});
+
+describe('R10-L7: a form corrected between a lost answer and the second press', () => {
+  it('a client, an item and a tax code take the correction, and a true repeat changes nothing', async () => {
+    const b = await business(t, 'Correction Office');
+    const name = (n: string, email: string | null) =>
+      clientInput.parse({ name: n, email: email ?? '', idempotencyKey: 'fix-client-0001' });
+    const id = await b.run((tx) => createClient(tx, b.actor, name('Harbour Mil Ltd', null)));
+    expect(
+      await b.run((tx) => createClient(tx, b.actor, name('Harbour Mill Ltd', 'ap@harbour.example'))),
+    ).toBe(id);
+    const [kept] = await b.run((tx) => tx.select().from(client).where(eq(client.id, id)));
+    expect([kept!.name, kept!.email]).toEqual(['Harbour Mill Ltd', 'ap@harbour.example']);
+
+    const itemId = await b.run((tx) =>
+      createItem(tx, b.actor, { ...anItem('Location day', 'fix-item-0001') }),
+    );
+    await b.run((tx) =>
+      createItem(tx, b.actor, { ...anItem('Location day', 'fix-item-0001'), unitPrice: 65_000 }),
+    );
+    const [keptItem] = await b.run((tx) => tx.select().from(item).where(eq(item.id, itemId)));
+    expect(keptItem!.unitPrice).toBe(65_000);
+
+    const codeId = await b.run((tx) => createTaxCode(tx, b.actor, aCode('Reduced rate', 'fix-code-0001')));
+    await b.run((tx) =>
+      createTaxCode(tx, b.actor, {
+        ...aCode('Reduced rate', 'fix-code-0001'),
+        components: [{ name: 'VAT', ratePpm: 125_000, compound: false }],
+      }),
+    );
+    const [keptCode] = await b.run((tx) => tx.select().from(taxCode).where(eq(taxCode.id, codeId)));
+    expect(keptCode!.components[0]!.ratePpm).toBe(125_000);
+
+    // The same request again records nothing more.
+    const before = await b.run((tx) => tx.select().from(auditLog));
+    await b.run((tx) => createClient(tx, b.actor, name('Harbour Mill Ltd', 'ap@harbour.example')));
+    await b.run((tx) =>
+      createItem(tx, b.actor, { ...anItem('Location day', 'fix-item-0001'), unitPrice: 65_000 }),
+    );
+    expect(await b.run((tx) => tx.select().from(auditLog))).toHaveLength(before.length);
   });
 });

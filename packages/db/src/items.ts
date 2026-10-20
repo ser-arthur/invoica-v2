@@ -4,6 +4,7 @@ import type { ItemInput } from '@invoica/schemas';
 import type { Tx } from './client';
 import { item } from './schema';
 import { audit } from './audit';
+import { fingerprint } from './fingerprint';
 import type { Actor } from './tenancy';
 
 export type ItemRow = typeof item.$inferSelect;
@@ -19,25 +20,41 @@ export async function listItems(tx: Tx, options: { search?: string } = {}): Prom
     .orderBy(asc(item.name));
 }
 
+/** Makes a saved item. A repeated request key behaves as for clients (`createClient`). */
 export async function createItem(tx: Tx, actor: Actor, input: ItemInput): Promise<string> {
   const { idempotencyKey, ...values } = input;
   const key = idempotencyKey ?? null;
-  const existing = async () =>
-    key
-      ? (await tx.select({ id: item.id }).from(item).where(eq(item.idempotencyKey, key)))[0]?.id
-      : undefined;
-  const earlier = await existing();
+  const digest = fingerprint(values);
+  const repeat = async () => {
+    if (!key) return undefined;
+    const [row] = await tx
+      .select({ id: item.id, requestFingerprint: item.requestFingerprint })
+      .from(item)
+      .where(eq(item.idempotencyKey, key));
+    if (!row) return undefined;
+    if (row.requestFingerprint !== digest) {
+      await updateItem(tx, actor, row.id, input);
+      await tx.update(item).set({ requestFingerprint: digest }).where(eq(item.id, row.id));
+    }
+    return row.id;
+  };
+  const earlier = await repeat();
   if (earlier) return earlier;
   const [row] = await tx
     .insert(item)
-    .values({ organisationId: actor.organisationId, ...values, idempotencyKey: key })
+    .values({
+      organisationId: actor.organisationId,
+      ...values,
+      idempotencyKey: key,
+      requestFingerprint: key ? digest : null,
+    })
     .onConflictDoNothing({
       target: [item.organisationId, item.idempotencyKey],
       where: sql`${item.idempotencyKey} is not null`,
     })
     .returning({ id: item.id });
   // Saved at the same moment by another request with the same key: that one is the item.
-  if (!row) return (await existing())!;
+  if (!row) return (await repeat())!;
   await audit(tx, actor, 'item.created', 'item', row!.id);
   return row!.id;
 }

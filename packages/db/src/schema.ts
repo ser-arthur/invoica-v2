@@ -168,6 +168,8 @@ export const taxCode = pgTable('tax_code', {
   archivedAt: ts('archived_at'),
   /** The request key of the form that created it (migration 0021). */
   idempotencyKey: text('idempotency_key'),
+  /** A digest of the request that made it, so a corrected repeat is told apart (migration 0025). */
+  requestFingerprint: text('request_fingerprint'),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });
@@ -194,6 +196,8 @@ export const client = pgTable('client', {
   remindersEnabled: boolean('reminders_enabled').notNull().default(true),
   /** The request key of the form that created it (migration 0020). */
   idempotencyKey: text('idempotency_key'),
+  /** A digest of the request that made it, so a corrected repeat is told apart (migration 0025). */
+  requestFingerprint: text('request_fingerprint'),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });
@@ -219,6 +223,8 @@ export const item = pgTable('item', {
   archivedAt: ts('archived_at'),
   /** The request key of the form that created it (migration 0021). */
   idempotencyKey: text('idempotency_key'),
+  /** A digest of the request that made it, so a corrected repeat is told apart (migration 0025). */
+  requestFingerprint: text('request_fingerprint'),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });
