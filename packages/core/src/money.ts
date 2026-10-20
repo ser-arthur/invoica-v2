@@ -156,15 +156,22 @@ export function parseMoney(input: string, currencyCode: string): number | null {
 export function retypeForCurrency(text: string, from: string, to: string): string {
   if (from === to) return text;
   const minor = parseMoney(text, from);
-  if (minor === null) return text;
+  const converted = minor === null ? null : rescaleMinor(minor, from, to);
+  return converted === null ? text : toDecimalString(converted, to);
+}
+
+/**
+ * The same figure in another currency's minor units: 50,000 pence (£500.00) is 500 in yen and 500,000 in dinars. Null
+ * when the other currency cannot write it (£12.34 in yen) or it is past the safe range.
+ */
+export function rescaleMinor(amount: number, from: string, to: string): number | null {
   const shift = currency(to).exponent - currency(from).exponent;
   const scale = 10n ** BigInt(Math.abs(shift));
-  const value = BigInt(minor);
-  if (shift < 0 && value % scale !== 0n) return text;
-  const converted = shift >= 0 ? value * scale : value / scale;
+  const value = BigInt(amount);
+  if (shift < 0 && value % scale !== 0n) return null;
   try {
-    return toDecimalString(toSafeNumber(converted), to);
+    return toSafeNumber(shift >= 0 ? value * scale : value / scale);
   } catch {
-    return text;
+    return null;
   }
 }

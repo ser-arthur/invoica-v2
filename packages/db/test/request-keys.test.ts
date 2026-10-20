@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
-import { clientInput, itemInput, taxCodeInput } from '@invoica/schemas';
+import { clientInput, itemInput, organisationProfileInput, taxCodeInput } from '@invoica/schemas';
 import { createClient } from '../src/clients';
+import { getOrganisation, updateOrganisationProfile } from '../src/organisations';
 import { createItem } from '../src/items';
 import { createDraft, deleteDraft, issueDocument, updateDraft, voidDocument } from '../src/documents';
 import { auditLog, client, document, item, taxCode } from '../src/schema';
@@ -144,5 +145,36 @@ describe('R10-L7: a form corrected between a lost answer and the second press', 
       createItem(tx, b.actor, { ...anItem('Location day', 'fix-item-0001'), unitPrice: 65_000 }),
     );
     expect(await b.run((tx) => tx.select().from(auditLog))).toHaveLength(before.length);
+  });
+});
+
+describe('the business’s currency changed with saved items', () => {
+  const profile = async (b: Awaited<ReturnType<typeof business>>, baseCurrency: string) => {
+    const org = await b.run((tx) => getOrganisation(tx, b.actor));
+    return organisationProfileInput.parse({ ...org, baseCurrency });
+  };
+  const prices = (b: Awaited<ReturnType<typeof business>>) =>
+    b.run(async (tx) => (await tx.select().from(item).orderBy(item.name)).map((i) => [i.name, i.unitPrice]));
+
+  it('keeps each saved item’s figure in the new currency', async () => {
+    const b = await business(t, 'Currency Move Office');
+    await b.run((tx) => createItem(tx, b.actor, anItem('Location day')));
+    await b.run((tx) => tx.update(item).set({ unitPrice: 50_000 }));
+    await b.run(async (tx) => updateOrganisationProfile(tx, b.actor, await profile(b, 'JPY')));
+    expect(await prices(b)).toEqual([['Location day', 500]]);
+    await b.run(async (tx) => updateOrganisationProfile(tx, b.actor, await profile(b, 'KWD')));
+    expect(await prices(b)).toEqual([['Location day', 500_000]]);
+    await b.run(async (tx) => updateOrganisationProfile(tx, b.actor, await profile(b, 'GBP')));
+    expect(await prices(b)).toEqual([['Location day', 50_000]]);
+  });
+
+  it('is refused while a saved item’s price cannot be written in the new currency', async () => {
+    const b = await business(t, 'Currency Refused Office');
+    await b.run((tx) => createItem(tx, b.actor, anItem('Sticker')));
+    await b.run((tx) => tx.update(item).set({ unitPrice: 1234 }));
+    expect(
+      await failure(b.run(async (tx) => updateOrganisationProfile(tx, b.actor, await profile(b, 'JPY')))),
+    ).toBe('The saved item “Sticker” costs £12.34, which cannot be written in JPY. Change its price first.');
+    expect(await prices(b)).toEqual([['Sticker', 1234]]);
   });
 });

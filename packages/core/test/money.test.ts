@@ -6,6 +6,7 @@ import {
   formatMoney,
   parseMoney,
   retypeForCurrency,
+  rescaleMinor,
   sumMinor,
   toDecimalString,
 } from '../src/money';
@@ -183,6 +184,35 @@ describe('retypeForCurrency', () => {
           const back = parseMoney(out, to);
           if (back !== null) expect(retypeForCurrency(out, to, from)).toBe(text);
           else expect(out).toBe(text);
+        },
+      ),
+    );
+  });
+});
+
+describe('rescaleMinor', () => {
+  it.each([
+    [50_000, 'GBP', 'EUR', 50_000],
+    [50_000, 'GBP', 'JPY', 500],
+    [50_000, 'GBP', 'KWD', 500_000],
+    [500, 'JPY', 'GBP', 50_000],
+    [1234, 'GBP', 'JPY', null],
+    [0, 'GBP', 'JPY', 0],
+  ])('%i in %s, written in %s, is %s', (amount, from, to, expected) => {
+    expect(rescaleMinor(amount, from, to)).toBe(expected);
+  });
+
+  it('keeps the figure, or gives null when the other currency cannot write it', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 1e12 }),
+        fc.constantFrom('GBP', 'JPY', 'KWD'),
+        fc.constantFrom('GBP', 'JPY', 'KWD'),
+        (n, from, to) => {
+          const out = rescaleMinor(n, from, to);
+          if (out === null) return;
+          expect(toDecimalString(out, to)).toBe(retypeForCurrency(toDecimalString(n, from), from, to));
+          expect(rescaleMinor(out, to, from)).toBe(n);
         },
       ),
     );

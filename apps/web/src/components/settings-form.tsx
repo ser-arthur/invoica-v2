@@ -270,7 +270,11 @@ export function SettingsForm({
             ))}
           </Select>
         </Field>
-        <Field label="Main currency" htmlFor="s-cur" hint="Dashboard totals are in this currency.">
+        <Field
+          label="Main currency"
+          htmlFor="s-cur"
+          hint="Dashboard totals and saved items are in this currency. Changing it keeps each item's price as the same figure."
+        >
           <Select id="s-cur" {...text('baseCurrency')}>
             {SUPPORTED_CURRENCIES.map((c) => (
               <option key={c.code} value={c.code}>

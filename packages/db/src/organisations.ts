@@ -4,12 +4,14 @@ import {
   NO_TAX,
   allowedRounding,
   formatDocumentNumber,
+  formatMoney,
   presetFor,
+  rescaleMinor,
   roundingDefaultFor,
 } from '@invoica/core';
 import type { OnboardingInput, OrganisationProfileInput } from '@invoica/schemas';
 import type { Database, Tx } from './client';
-import { document, numberCounter, organisation, taxCode } from './schema';
+import { document, item, numberCounter, organisation, taxCode } from './schema';
 import { audit } from './audit';
 import { withUser, type Actor } from './tenancy';
 
@@ -162,6 +164,27 @@ async function assertNumbersDoNotRepeat(tx: Tx, input: OrganisationProfileInput)
   }
 }
 
+/**
+ * Saved items are priced in the business's currency. When it changes, each keeps its figure in the new one (£500.00
+ * becomes ¥500), and the change is refused while a price cannot be written in it (£12.34 in yen).
+ */
+async function rescaleItems(tx: Tx, to: string): Promise<void> {
+  const [org] = await tx.select({ baseCurrency: organisation.baseCurrency }).from(organisation);
+  const from = org?.baseCurrency;
+  if (!from || from === to) return;
+  const items = await tx.select({ id: item.id, name: item.name, unitPrice: item.unitPrice }).from(item);
+  for (const i of items) {
+    const price = rescaleMinor(i.unitPrice, from, to);
+    if (price === null) {
+      throw new DomainError(
+        'item_price_not_in_currency',
+        `The saved item “${i.name}” costs ${formatMoney(i.unitPrice, from)}, which cannot be written in ${to}. Change its price first.`,
+      );
+    }
+    if (price !== i.unitPrice) await tx.update(item).set({ unitPrice: price }).where(eq(item.id, i.id));
+  }
+}
+
 export async function updateOrganisationProfile(
   tx: Tx,
   actor: Actor,
@@ -181,6 +204,7 @@ export async function updateOrganisationProfile(
     .where(eq(organisation.id, actor.organisationId))
     .for('update');
   await assertNumbersDoNotRepeat(tx, input);
+  await rescaleItems(tx, input.baseCurrency);
   await tx
     .update(organisation)
     .set({
