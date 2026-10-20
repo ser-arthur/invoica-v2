@@ -68,7 +68,7 @@ export function watchErrors(page: Page) {
   page.on('console', (m) => {
     // Playwright's own helper script is blocked inside the sandboxed preview frame; that is expected.
     if (m.type() === 'error' && !/favicon|Download the React DevTools|about:srcdoc/.test(m.text()))
-      errors.push(m.text());
+      errors.push(m.location().url ? `${m.text()} (${m.location().url})` : m.text());
   });
   return errors;
 }
