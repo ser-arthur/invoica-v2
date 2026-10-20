@@ -562,7 +562,12 @@ async function step(b: Business, codes: Record<CodeName, string>, m: Model, op: 
           fresh && needs === withRefund,
         );
       }
-      if (op.kind === 'creditBalance' && before === 0) expect(r.ok).toBe(false);
+      if (op.kind === 'creditBalance' && before === 0) {
+        // Nothing is owed, so no balance the page could show is the balance now.
+        expect(r.ok).toBe(false);
+        if (!r.ok) expect(r.error).toMatch(/balance_changed .*nothing is owed on it now/);
+        return;
+      }
       if (!r.ok) {
         expect(r.error).toMatch(
           /credit_|refund_|more than|nothing left|too small|cannot be credited|Choose at least one line/,

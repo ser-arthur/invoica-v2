@@ -595,4 +595,17 @@ describe('everything still owed is the figure confirmed', () => {
       ),
     ).toMatch(/everything still owed is now £60\.00/);
   });
+
+  it('paid in full meanwhile: the answer says nothing is owed now', async () => {
+    const b = await business(t, 'Balance Settled Office');
+    const id = await invoiceOf120(b);
+    await b.run((tx) => recordPayment(tx, b.actor, pay(id, 12_000, 'pay-bal-00003')));
+    expect(
+      await failure(
+        credit(b, { mode: 'balance', invoiceId: id, balance: 12_000, idempotencyKey: 'cn-bal-00004' }),
+      ),
+    ).toBe(
+      'The amount owed changed while this was open: nothing is owed on it now, so there is nothing to credit.',
+    );
+  });
 });

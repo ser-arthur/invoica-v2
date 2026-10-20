@@ -1077,14 +1077,16 @@ export async function createCreditNote(
   } else if (input.mode === 'amount') {
     plan = planAmountCredit(source, state, input.amount);
   } else {
-    plan = planBalanceCredit(source, state, balance);
     // The balance the person confirmed: a payment recorded or removed since they saw it changes what is owed.
     if (input.balance !== balance) {
       throw new DomainError(
         'balance_changed',
-        `The amount owed changed while this was open: everything still owed is now ${formatMoney(balance, invoice.currency)}. Check it and issue again.`,
+        balance <= 0
+          ? 'The amount owed changed while this was open: nothing is owed on it now, so there is nothing to credit.'
+          : `The amount owed changed while this was open: everything still owed is now ${formatMoney(balance, invoice.currency)}. Check it and issue again.`,
       );
     }
+    plan = planBalanceCredit(source, state, balance);
   }
   // The part above the balance owed is money paid back, recorded with the note (docs/specs/refunds.md).
   const refundAmount = input.refund ? refundFor(plan.totals.total, balance) : 0;
