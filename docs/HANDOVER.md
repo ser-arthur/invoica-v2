@@ -73,10 +73,11 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 ## Next steps
 
 1. Approval of `fix/confirm-then-sign-in`, then merge it; and the owner's choice on asking for the password when an address is confirmed (above).
-2. When the owner has the domain and approves decision 0010: follow `docs/deploy.md`.
-3. When GitHub is linked: push the history as `start`, then pull requests with CI (which also builds the container image).
-4. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
-5. Templates round 2 review (phase 3).
+2. Decision 0011 (the reminder scan for an older image): build it on a yes.
+3. When the owner has the domain and approves decision 0010: follow `docs/deploy.md`.
+4. When GitHub is linked: push the history as `start`, then pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
+5. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
+6. Templates round 2 review (phase 3).
 
 ## Open questions
 
