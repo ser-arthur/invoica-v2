@@ -44,14 +44,16 @@ export async function signUpAndOnboard(page: Page, business: string, options: { 
   return email;
 }
 
-/** Opens a confirmation link, which confirms the address and asks for the password; signing in opens onboarding. */
+/**
+ * Opens a confirmation link, which asks for the account's password: the right one confirms the address and signs in,
+ * opening onboarding.
+ */
 export async function confirmAndSignIn(page: Page, email: string, link: string) {
   await page.goto(link);
-  await page.waitForURL('**/sign-in?confirmed=1');
-  await expect(page.getByText('Your email address is confirmed. Sign in to continue.')).toBeVisible();
-  await page.fill('#email', email);
+  await page.waitForURL(/\/confirm-email\?token=/);
+  await expect(page.getByText(email)).toBeVisible();
   await page.fill('#password', PASSWORD);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByRole('button', { name: 'Confirm and sign in' }).click();
   await page.waitForURL('**/onboarding');
 }
 

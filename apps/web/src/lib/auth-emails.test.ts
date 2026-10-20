@@ -10,7 +10,7 @@ const BANNED = [new RegExp(String.fromCharCode(0x2014)), /\brather than\b/i, /\b
 
 describe('sign-in emails', () => {
   const emails = [
-    verificationEmail({ url: 'https://app.example/api/auth/verify-email?token=abc' }),
+    verificationEmail({ url: 'https://app.example/confirm-email?token=abc' }),
     resetPasswordEmail({ url: 'https://app.example/api/auth/reset-password/xyz' }),
     existingAccountEmail({ appUrl: 'https://app.example' }),
     passwordChangedEmail({ appUrl: 'https://app.example' }),
@@ -30,7 +30,8 @@ describe('sign-in emails', () => {
   it('the confirmation email carries its link and says how long it works', () => {
     const [verify] = emails;
     expect(verify!.subject).toBe('Confirm your email for Invoica');
-    expect(verify!.text).toContain('https://app.example/api/auth/verify-email?token=abc');
+    expect(verify!.text).toContain('https://app.example/confirm-email?token=abc');
+    expect(verify!.text).toContain('the password you chose');
     expect(verify!.text).toContain('24 hours');
   });
 

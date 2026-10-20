@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { addClient, signUpAndOnboard } from './helpers';
+import { addClient, signUp, signUpAndOnboard, uniqueEmail } from './helpers';
+import { linkIn, waitForEmail } from './mailbox';
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
@@ -18,6 +19,14 @@ test('public pages have no automated accessibility violations', async ({ page })
     const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();
     expect(result.violations.map((v) => `${path}: ${v.id} (${v.nodes.length})`)).toEqual([]);
   }
+  // The page a confirmation link opens, which asks for the password.
+  const email = uniqueEmail('a11y');
+  const started = Date.now();
+  await signUp(page, email);
+  await page.goto(linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started)));
+  await expect(page.locator('#password')).toBeVisible();
+  const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+  expect(result.violations.map((v) => `confirm: ${v.id} (${v.nodes.length})`)).toEqual([]);
 });
 
 test('app pages have no automated accessibility violations, in light and dark', async ({ page }) => {

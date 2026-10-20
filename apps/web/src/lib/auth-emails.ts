@@ -17,7 +17,7 @@ export function verificationEmail(input: { url: string }): AuthEmail {
     text: [
       GREETING,
       '',
-      'Confirm your email address to finish creating your Invoica account:',
+      'To finish creating your Invoica account, open this link and enter the password you chose:',
       '',
       input.url,
       '',

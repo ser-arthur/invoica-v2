@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { reachAuth } from '@/lib/reach';
+import { useHydrated } from '@/lib/use-hydrated';
 import { Button, Field, FormMessage, Input, inlineLinkClass } from '@/components/ui';
-import { CONFIRMED_URL } from './auth-form';
 
 const linkClass = inlineLinkClass;
 
@@ -18,6 +18,7 @@ function tooMany(error: { status?: number; message?: string }) {
 
 /** Asks for an email address and sends it a reset link; answers alike whether or not an account uses it. */
 export function ForgotPasswordForm() {
+  const ready = useHydrated();
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -53,7 +54,7 @@ export function ForgotPasswordForm() {
       <Field label="Email" htmlFor="email">
         <Input id="email" name="email" type="email" autoComplete="email" required />
       </Field>
-      <Button type="submit" size="lg" disabled={pending}>
+      <Button type="submit" size="lg" disabled={pending || !ready}>
         {pending ? 'One moment' : 'Send a reset link'}
       </Button>
       <p className="text-sm text-muted">
@@ -69,6 +70,7 @@ export function ForgotPasswordForm() {
 /** Sets a new password with the token from a reset link. */
 export function ResetPasswordForm({ token }: { token: string }) {
   const router = useRouter();
+  const ready = useHydrated();
   const [error, setError] = useState<string | null>(null);
   const [expired, setExpired] = useState(false);
   const [pending, setPending] = useState(false);
@@ -113,7 +115,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           required
         />
       </Field>
-      <Button type="submit" size="lg" disabled={pending}>
+      <Button type="submit" size="lg" disabled={pending || !ready}>
         {pending ? 'One moment' : 'Change password'}
       </Button>
     </form>
@@ -122,6 +124,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
 /** Sends a new confirmation link; answers alike for any address. */
 export function ResendConfirmationForm() {
+  const ready = useHydrated();
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -131,7 +134,7 @@ export function ResendConfirmationForm() {
     setError(null);
     setPending(true);
     const email = String(new FormData(event.currentTarget).get('email') ?? '').trim();
-    const result = await reachAuth(authClient.sendVerificationEmail({ email, callbackURL: CONFIRMED_URL }));
+    const result = await reachAuth(authClient.sendVerificationEmail({ email }));
     setPending(false);
     if (result.error) {
       setError(tooMany(result.error));
@@ -149,9 +152,77 @@ export function ResendConfirmationForm() {
       <Field label="Email" htmlFor="email">
         <Input id="email" name="email" type="email" autoComplete="email" required />
       </Field>
-      <Button type="submit" size="lg" disabled={pending}>
+      <Button type="submit" size="lg" disabled={pending || !ready}>
         {pending ? 'One moment' : 'Send a new link'}
       </Button>
+    </form>
+  );
+}
+
+/** Confirms the address with the account's password, which also signs in, then opens onboarding. */
+export function ConfirmEmailForm({ token, email }: { token: string; email: string }) {
+  const router = useRouter();
+  const ready = useHydrated();
+  const [error, setError] = useState<string | null>(null);
+  const [expired, setExpired] = useState(false);
+  const [pending, setPending] = useState(false);
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    const password = String(new FormData(event.currentTarget).get('password') ?? '');
+    if (!password) {
+      setError('Enter the password you chose for this account.');
+      return;
+    }
+    setPending(true);
+    const result = await reachAuth(
+      authClient.$fetch<{ status: boolean }>('/confirm-email', { method: 'POST', body: { token, password } }),
+    );
+    if (result.error) {
+      setPending(false);
+      const code = 'code' in result.error ? result.error.code : undefined;
+      if (code === 'INVALID_TOKEN') setExpired(true);
+      else if (code === 'INVALID_PASSWORD') setError('That is not the password for this account.');
+      else setError(tooMany(result.error));
+      return;
+    }
+    router.push('/onboarding');
+    router.refresh();
+  }
+
+  if (expired) return <LinkExpired kind="confirm" />;
+
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
+      <div>
+        <h1 className="font-display text-[28px] leading-tight font-semibold tracking-[-0.02em]">
+          Confirm your email
+        </h1>
+        <p className="mt-2 text-muted">
+          Enter the password you chose for <span className="font-medium wrap-anywhere text-ink">{email}</span>{' '}
+          to confirm it and sign in.
+        </p>
+      </div>
+      {error ? <FormMessage>{error}</FormMessage> : null}
+      <input type="email" name="email" value={email} autoComplete="username" readOnly hidden />
+      <Field
+        label="Password"
+        htmlFor="password"
+        hint={
+          <Link href="/forgot-password" className={linkClass}>
+            Forgot your password?
+          </Link>
+        }
+      >
+        <Input id="password" name="password" type="password" autoComplete="current-password" required />
+      </Field>
+      <Button type="submit" size="lg" disabled={pending || !ready}>
+        {pending ? 'One moment' : 'Confirm and sign in'}
+      </Button>
+      <p className="text-sm text-muted">
+        If you did not create this account, close this page: nobody can use it until the address is confirmed.
+      </p>
     </form>
   );
 }

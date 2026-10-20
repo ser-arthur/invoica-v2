@@ -15,6 +15,8 @@ import {
 } from './auth-emails';
 import { inBackground, sendAuthEmail, sendLater } from './auth-mail';
 import { signUpNameProblem } from './sign-up-name';
+import { confirmWithPassword } from './auth-confirm';
+import { confirmationUrl } from './confirmation-link';
 
 function createAuth() {
   return betterAuth({
@@ -48,12 +50,15 @@ function createAuth() {
     emailVerification: {
       sendOnSignUp: true,
       sendOnSignIn: true,
-      // Opening the link confirms the address and nothing more: the person then signs in with the password they
-      // chose, so someone who signed up with another person's address never gets them signed in to it.
+      // The link opens a page that asks for the account's password, and only that confirms the address
+      // (`confirmWithPassword`), so a click by someone who does not know the password confirms nothing.
       autoSignInAfterVerification: false,
       expiresIn: 60 * 60 * 24,
-      sendVerificationEmail: async ({ user, url }) => sendLater(user.email, verificationEmail({ url })),
+      sendVerificationEmail: async ({ user, token }) =>
+        sendLater(user.email, verificationEmail({ url: confirmationUrl(env.authUrl, token) })),
     },
+    // Confirms an address on opening its link; the route handler sends those links to the password page instead.
+    disabledPaths: ['/verify-email'],
     session: {
       expiresIn: 60 * 60 * 24 * 14,
       updateAge: 60 * 60 * 24,
@@ -77,7 +82,7 @@ function createAuth() {
       backgroundTasks: { handler: inBackground },
     },
     telemetry: { enabled: false },
-    plugins: [nextCookies()],
+    plugins: [confirmWithPassword(), nextCookies()],
   });
 }
 

@@ -5,10 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { reachAuth } from '@/lib/reach';
+import { useHydrated } from '@/lib/use-hydrated';
 import { Button, Field, FormMessage, Input, inlineLinkClass } from '@/components/ui';
-
-/** Where the link in a confirmation email lands once it has signed the person in. */
-export const CONFIRMED_URL = '/confirm-email';
 
 const linkClass = inlineLinkClass;
 
@@ -28,7 +26,7 @@ export function CheckEmail({ email }: { email: string }) {
 
   async function resend() {
     setState('sending');
-    const result = await reachAuth(authClient.sendVerificationEmail({ email, callbackURL: CONFIRMED_URL }));
+    const result = await reachAuth(authClient.sendVerificationEmail({ email }));
     if (result.error) {
       setError(messageFor(result.error));
       setState('error');
@@ -63,6 +61,7 @@ export function CheckEmail({ email }: { email: string }) {
 
 export function AuthForm({ mode, notice }: { mode: 'sign-in' | 'sign-up'; notice?: string }) {
   const router = useRouter();
+  const ready = useHydrated();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -81,10 +80,9 @@ export function AuthForm({ mode, notice }: { mode: 'sign-in' | 'sign-up'; notice
               email,
               password,
               name: String(form.get('name') ?? '').trim() || email,
-              callbackURL: CONFIRMED_URL,
             }),
           )
-        : await reachAuth(authClient.signIn.email({ email, password, callbackURL: CONFIRMED_URL }));
+        : await reachAuth(authClient.signIn.email({ email, password }));
     setPending(false);
     if (result.error) {
       setError(messageFor(result.error));
@@ -144,7 +142,7 @@ export function AuthForm({ mode, notice }: { mode: 'sign-in' | 'sign-up'; notice
           required
         />
       </Field>
-      <Button type="submit" size="lg" disabled={pending}>
+      <Button type="submit" size="lg" disabled={pending || !ready}>
         {pending ? 'One moment' : mode === 'sign-up' ? 'Create account' : 'Sign in'}
       </Button>
       <p className="text-sm text-muted">

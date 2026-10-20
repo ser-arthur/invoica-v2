@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addClient, signUp, uniqueEmail, watchErrors } from './helpers';
+import { addClient, confirmAndSignIn, signUp, uniqueEmail, watchErrors } from './helpers';
 import { linkIn, waitForEmail } from './mailbox';
 
 /**
@@ -17,8 +17,11 @@ test('a Ghana business invoices in cedis with VAT, NHIL and GETFund Levy, is par
   const started = Date.now();
   await signUp(page, email);
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
-  await page.goto(linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started)));
-  await page.waitForURL('**/onboarding');
+  await confirmAndSignIn(
+    page,
+    email,
+    linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started)),
+  );
   await page.fill('#name', 'Osu Craft Works');
   await page.getByLabel('Country').selectOption({ label: 'Ghana' });
   await expect(page.getByLabel('Main currency')).toHaveValue('GHS');
