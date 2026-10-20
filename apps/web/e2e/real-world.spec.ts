@@ -249,3 +249,25 @@ test.describe('on a phone', () => {
     await expect(page.locator('#cn-refund-method')).toBeInViewport({ ratio: 0.5 });
   });
 });
+
+test('after a refund, the dashboard shows what was received net, with what was paid and refunded', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Net Dashboard Studio', { vat: true });
+  await addClient(page, 'Cobble Yard Ltd');
+  await issueInvoice(page, 'Cobble Yard Ltd');
+  await page.getByRole('button', { name: 'Record payment' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Paid');
+  await page.getByRole('button', { name: 'Credit note' }).click();
+  await page.locator('#cn-mode').selectOption('whole');
+  await page.fill('#cn-reason', 'Cancelled before work began.');
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue credit note and record refund' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('CN-0001');
+  await page.goto('/dashboard');
+  const figure = page
+    .locator('div', { has: page.getByText('Net received in the last 30 days', { exact: true }) })
+    .last();
+  await expect(figure).toContainText('£0.00');
+  await expect(figure).toContainText('£120.00 paid, £120.00 refunded');
+});
