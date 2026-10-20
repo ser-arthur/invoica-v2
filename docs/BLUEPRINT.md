@@ -2,7 +2,7 @@
 
 The plan for building Invoica v2, and where the work stands. Updated at the end of every phase. A new chat starts here.
 
-Last updated: 20 October 2026, about 07:30 (session 2 of the build, through the night and into the morning).
+Last updated: 20 October 2026, about 10:00 (session 2 of the build, through the night and into the morning).
 
 ---
 
@@ -61,6 +61,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 2w | Reminders (`docs/specs/reminders.md`), with the narrow database function and the default wording (migration 0015) | Done |
 | 2z | Testing as the business will use it: journeys against a reference model, operations at the same moment, edge cases (currencies, time zones, clock changes, month ends, large figures), a dropped connection, two tabs, stale dialogs; production readiness (health check, start-up settings check, container image, deploy runbook); review 8 and its fixes (migrations 0016 to 0019) | Done |
 | 2z2 | Review 9 and its fixes: the confirmed balance, one tax point, what a rate was entered for, retries that name the number, reload after a new version, decimal places, sign-in greetings, settings files and certificates, reminders by the app's own date, money dated later (migrations 0022 and 0023); CI against the production server | Done |
+| 2z3 | After bundle 10: issuing checks the confirmed total; emails and reminders that have not gone are shown on the invoice and the dashboard; clearer refusals; review 10 and its fixes (migrations 0024 and 0025); long text wraps on phones | Done |
 | 2x | Billing for the plans, then the plans turned on | Waits for the billing provider; the free version comes first (owner, 20 October) |
 | 2y | Plan limits enforced by the database; the deferred number counter check (review 7, R7-L1) | After 2x |
 | 3 | Invoice templates round 2: four new templates (Ledger, Poster, Letter, Ticket) beside Signature, Studio and Counsel; template picker with live previews of your own details; landing page built around real invoices | Built; waiting for Kobby's review on the design canvas |
@@ -103,6 +104,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **20 Oct, about 05:00 to 06:00.** More testing as the business will use it, around the work in hand: being signed out while typing an invoice (the save now says so and keeps the page), a tax code archived while a draft uses it (the draft showed "No tax" and a preview without the tax the issued invoice would charge; it now keeps the code, marked archived), renames of the client and the business after issuing (the issued invoice keeps its names), settings that stay saved and shape the next invoice, a Ghana business from sign-up to a settled invoice, and the dashboard after a refund. Leaving an invoice with changes not saved now asks first from any link. New clients, items, tax codes and copies carry request keys (migrations 0020 and 0021), onboarding makes one business however often it is sent, and voiding or deleting a draft again is done already. Independent review 9 of the night's work started.
 - **20 Oct, about 06:00 to 07:30.** Review 9 (`docs/reviews/review-9.md`): 4 medium and 7 low findings. Fixed with tests first: "everything still owed" checks the balance the person confirmed; the tax point is worked out once in core for the editor, saving and issue, and a service period takes both its dates; the editor sends what it worked each rate out for, so the same figure typed for a new month is saved, and rates with no record are asked for again; a draft issued again after a lost answer says which number it took, and a page from before a new version says to reload; "1.500" in euros is refused again and typed amounts follow a currency change; sign-in emails greet only confirmed accounts by name, and names may hold the joiners Persian and Sinhala use; `*.env` files are kept out of git and the images, the migration image holds only what it needs, and the guide covers database certificates; time zones are a place in a region or UTC, and reminders are chosen with the app's own date (migration 0022; an hourly scan across Vancouver, Casablanca and London agrees with the invoice page); the database refuses money dated well after today (migration 0023); weak tests now check what they claim; CI runs the end-to-end suite against the production server. Onboarding twice was already fixed. Confirming an email without signing in still waits on its branch, rebased; asking for the password at confirmation is set out for a decision. 610 unit and database tests pass; the production build passed the whole end-to-end suite (77 passed, 35 skipped by design).
+- **20 Oct, about 07:30 to 09:30.** More testing around real use, and review 10. Found and fixed: a tax rate changed in another tab issued an invoice at a total other than the one confirmed (issuing now carries the confirmed total, `docs/specs/issuing.md`); an email that could not be sent was never shown anywhere (now on the invoice page and the dashboard, `docs/specs/email-status.md`); refusals such as "Cannot mark sent a document that is void." now say what to do; long names, titles, references and addresses pushed pages past a phone's screen. The reminder scan offers an invoice only within three hours of its reminder day (migration 0024). Review 10 (`docs/reviews/review-10.md`): 1 medium (the sign-in branch, still waiting) and 8 low, fixed with tests except the scan's contract for an older image, which is documented and waits on a grant (open question 2). New end-to-end tests: voiding, a client's page following its invoices, an address that cannot exist, the rate method changed in another tab, a saved item in yen, a draft prepared ahead. 618 unit and database tests pass; against the production build the end-to-end suite ran 126 (86 passed, 39 skipped by design, 1 failed on a test's own locator, which passed once fixed).
 
 ## Decisions in force
 
@@ -165,15 +167,16 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 ## Open questions
 
 1. Hosting: approve decision 0010 (`docs/deploy.md` is the runbook for it).
-2. Merge `fix/confirm-then-sign-in`? Opening a confirmation link would confirm the address and sign nobody in; sign-in then asks for the password. It changes an auth rule (review 8, R8-M2), so it waits for a yes. And should confirming an address also ask for the account's password (review 9, R9-M4), so a click by someone who does not know it confirms nothing?
-3. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
-4. The domain to buy, then the sending subdomain for Resend.
-5. The GitHub repository's owner and name, and the email address to author commits with (GitHub's private noreply address, if preferred).
-6. Which invoice templates ship in v1. All seven are on the design canvas, page "Round 2, built".
-7. Approve or change 0003, 0006 and 0007.
-8. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
+2. The reminder scan for an older image (review 10, R10-L6): keep the old scan function as it was and give the worker role a second one for the new scan? It changes the worker's grants. Until then the guide says to stop the scheduler while migrating.
+3. Merge `fix/confirm-then-sign-in`? Opening a confirmation link would confirm the address and sign nobody in; sign-in then asks for the password. It changes an auth rule (review 8, R8-M2), so it waits for a yes. And should confirming an address also ask for the account's password (review 9, R9-M4), so a click by someone who does not know it confirms nothing?
+4. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
+5. The domain to buy, then the sending subdomain for Resend.
+6. The GitHub repository's owner and name, and the email address to author commits with (GitHub's private noreply address, if preferred).
+7. Which invoice templates ship in v1. All seven are on the design canvas, page "Round 2, built".
+8. Approve or change 0003, 0006 and 0007.
+9. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-10.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-11.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.
