@@ -63,6 +63,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 2z2 | Review 9 and its fixes: the confirmed balance, one tax point, what a rate was entered for, retries that name the number, reload after a new version, decimal places, sign-in greetings, settings files and certificates, reminders by the app's own date, money dated later (migrations 0022 and 0023); CI against the production server | Done |
 | 2z3 | After bundle 10: issuing checks the confirmed total; emails and reminders that have not gone are shown on the invoice and the dashboard; clearer refusals; review 10 and its fixes (migrations 0024 and 0025); long text wraps on phones | Done |
 | 2z4 | Approved on 20 October: confirming an address asks for the account's password; a reminder scan for each app image (decision 0011, migration 0026); forms wait for the page's script | Done |
+| 2z5 | After bundle 14: a save from an older page never undoes a change made elsewhere (settings, clients, items, tax codes); a password reset also confirms the address; leaving a form with changes not saved asks first; an item keeps an archived tax code; reminder placeholders checked | Done |
 | 2x | Billing for the plans, then the plans turned on | Waits for the billing provider; the free version comes first (owner, 20 October) |
 | 2y | Plan limits enforced by the database; the deferred number counter check (review 7, R7-L1) | After 2x |
 | 3 | Invoice templates round 2: four new templates (Ledger, Poster, Letter, Ticket) beside Signature, Studio and Counsel; template picker with live previews of your own details; landing page built around real invoices | Built; waiting for Kobby's review on the design canvas |
@@ -109,6 +110,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **20 Oct, about 09:25 to 10:10.** Two tabs editing one draft: the later save no longer replaces the other's changes without asking. A change of the business's currency keeps saved items' figures. A payment above the balance names what is owed. 1,000 random journeys clean; the full end-to-end suite run against the production build.
 - **20 Oct, about 10:10 to 11:00.** Review 11 (`docs/reviews/review-11.md`) of everything after review 10: 7 low findings, all fixed with tests (replacing a draft changed elsewhere asks again if it changes again, issuing asks for confirmation again, the editor reloads its data only when it must, an older repeat never replaces a later change, archived items never block a change of currency). Decision 0011 proposed.
 - **20 Oct, about 13:50 to 15:40.** The owner said yes to the three open items. The branch `fix/confirm-then-sign-in` is merged; a confirmation link now opens a page that asks for the account's password, which alone confirms the address and signs in, and Better Auth's confirm-on-open route is off (its links open the same page). The endpoint is limited and guarded against other sites like sign-in, refuses an address already confirmed, and the page sends no referrer. Every form's button waits for the page's script, so a form sent early never puts a password in the address. Decision 0011 built (migration 0026): `app.due_reminders` serves older images as they expect, the app calls `app.reminder_candidates`, and the scheduler needs no stopping during an upgrade. A separate review of the changes found nothing high or medium; its three low points are fixed with tests. Found while testing: emails about an invoice issued before the business changed its name or mailbox went out under the old name with replies to the old address; they now come from the business as it is now. 644 unit and database tests pass; against the production build the end-to-end suite ran 146 (98 passed, 48 skipped by design, 0 failed).
+- **20 Oct, about 15:40 to 17:15.** Testing two tabs on the settings found that a save from a page opened earlier quietly undid changes made elsewhere, so new bank details could come back as they were and every invoice after that would print the old account. Settings, clients, saved items and tax codes now carry the version they showed (`docs/specs/changes-elsewhere.md`): such a save is refused, the page fetches the record again, each field not typed in shows the change, and "Save mine anyway" saves what the form then shows. A password reset also confirms the address (the owner's answer). Leaving the settings, a client or an item with changes not saved asks first, as the editor does. A saved item whose tax code was archived kept it on invoices but was shown as "Default tax", and editing it quietly moved it to the default rate; it now keeps the code and says it is archived. Reminder wording with a placeholder Invoica cannot fill in went to clients as written; it is now refused, naming the placeholder. 659 unit and database tests pass; against the production build the end-to-end suite ran 156 (103 passed, 53 skipped by design, 0 failed).
 
 ## Decisions in force
 
@@ -169,19 +171,19 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 16. Credit note wording approved: "Total before VAT" on every credit note; "Reverse charge: customer to account for the output tax adjustment of £X to HMRC"; "Total before taxes" in Ghana; "Zero-rated reduction". Tax-only credit notes are allowed. VAT in sterling uses the HMRC period rate by default, with the method recorded on each invoice.
 17. Demo data: wiped and reseeded.
 18. 20 October, 13:50: merge `fix/confirm-then-sign-in`; build decision 0011; ask for the account's password when an address is confirmed.
+19. 20 October, 15:36: a password reset also confirms the address.
 
 ## Open questions
 
 1. Hosting: approve decision 0010 (`docs/deploy.md` is the runbook for it).
-2. Should a password reset also confirm the address? Opening a reset link proves the mailbox as a confirmation link does. Today the owner of an address someone else signed up with resets the password, signs in, which sends a new confirmation link, and confirms with the new password; with this, signing in after the reset would be enough. It changes an auth rule.
-3. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
-4. The domain to buy, then the sending subdomain for Resend.
-5. The GitHub repository's owner and name, and the email address to author commits with (GitHub's private noreply address, if preferred).
-6. Which invoice templates ship in v1. All seven are on the design canvas, page "Round 2, built".
-7. Approve or change 0003, 0006 and 0007.
-8. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
+2. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
+3. The domain to buy, then the sending subdomain for Resend.
+4. The GitHub repository's owner and name, and the email address to author commits with (GitHub's private noreply address, if preferred).
+5. Which invoice templates ship in v1. All seven are on the design canvas, page "Round 2, built".
+6. Approve or change 0003, 0006 and 0007.
+7. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-14.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-15.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.

@@ -2,26 +2,26 @@
 
 Read `docs/BLUEPRINT.md` first, then this file. Update both at the end of every session.
 
-## Current state (20 October 2026, about 15:30)
+## Current state (20 October 2026, about 17:15)
 
 This is the **v2 repository**: a re-architecture from scratch (decision 0001). The old Flask app lives in the old repository (`ser-arthur/invoica`) as a reference and receives no changes.
 
 **Working end to end, locally:** sign up with email confirmation (the link asks for the account's password), password reset, onboarding, settings (business, logo, tax, rounding choices allowed for the country, numbering, brand colour, template with live previews, bank and mobile money, tax codes with the country's standard codes on a button, reminders, the rate method for VAT in sterling), clients, saved items, the invoice editor with live totals and preview, issuing with a gapless number and a frozen snapshot, the kept PDF in seven templates, sending by email through the outbox (Resend in production, a development mailbox locally), payments, credit notes of every kind with refunds when they go above the balance, VAT in sterling on UK VAT invoices in other currencies, reminders on a schedule and on demand, voiding, duplicating, quick actions, client pages, a dashboard that names who to chase first, data export, the trial and free plan behind `INVOICA_PLANS=enforced` (off: everyone has everything, which is the free version), a health check and a container image.
 
-**Checks (last full run, 20 October 2026, about 15:40, on `9ad454c`):**
+**Checks (last full run, 20 October 2026, about 17:15, on `2d05333`):**
 
 | Suite | Count | Result |
 | --- | --- | --- |
-| Core (money, tax, totals, the credit ledger, refunds, VAT in sterling with its credit note ledger and tax point, reminders, dates and time zones, plans, property tests) | 248 | pass |
-| Database (tenancy with exact policy and grant snapshots, immutability, numbering, payments, refunds, credit notes, review guards, reminders with an hourly scan across time zones, a stubbed scan and the scan an older image calls, emails not sent, request keys and corrected repeats, draft versions, the business's currency and saved items, the worker role, journeys against a reference model, operations at the same moment, edge cases) | 221 | pass |
-| Schemas | 5 | pass |
+| Core (money, tax, totals, the credit ledger, refunds, VAT in sterling with its credit note ledger and tax point, reminders, dates and time zones, plans, property tests) | 249 | pass |
+| Database (tenancy with exact policy and grant snapshots, immutability, numbering, payments, refunds, credit notes, review guards, reminders with an hourly scan across time zones, a stubbed scan and the scan an older image calls, emails not sent, request keys and corrected repeats, draft versions, settings, clients, items and tax codes changed elsewhere, the business's currency and saved items, the worker role, journeys against a reference model, operations at the same moment, edge cases) | 231 | pass |
+| Schemas | 6 | pass |
 | Document view and rendering | 28 | pass |
 | PDF | 64 | pass |
-| Web unit (settings check, connection handling, action results, sender names and reply addresses, sign-up names, sign-in emails, confirmation links and tokens, the development mailbox, drain route, CSV, ids, paging, secrets) | 78 | pass |
-| End to end, desktop and phone, against the production build run from a copy elsewhere with production settings | 146 | 98 passed, 48 skipped by design (one width only), 0 failed |
+| Web unit (settings check, connection handling, action results, sender names and reply addresses, sign-up names, sign-in emails, confirmation links and tokens, forms following changes made elsewhere, the development mailbox, drain route, CSV, ids, paging, secrets) | 81 | pass |
+| End to end, desktop and phone, against the production build run from a copy elsewhere with production settings | 156 | 103 passed, 53 skipped by design (one width only), 0 failed |
 | Format, copy rules, lint, typecheck, production build | | pass |
 
-644 unit and database tests run, 644 passed, 0 failed, 0 skipped. The journeys suite runs 40 random journeys by default; `JOURNEY_RUNS=1000` and `JOURNEY_RUNS=600` ran clean this morning.
+659 unit and database tests run, 659 passed, 0 failed, 0 skipped. The journeys suite runs 40 random journeys by default; `JOURNEY_RUNS=1000` and `JOURNEY_RUNS=600` ran clean this morning.
 
 **Running the end-to-end suite.** Against the development server: `pnpm dev`, then `E2E_BASE_URL=http://localhost:3000 pnpm test:e2e`. Against a production build: `pnpm build`, start `apps/web/.next/standalone/apps/web/server.js` with `NODE_ENV=production`, `BETTER_AUTH_URL=http://localhost:3100`, `EMAIL_PROVIDER=file`, `MAILBOX_DIR`, `FILE_STORAGE_DIR`, `CRON_SECRET` and `INVOICA_CLIENT_IP_HEADER=x-forwarded-for` (the suite gives each sign-up its own address in that header, so the sign-up limit holds), then run the suite with `E2E_BASE_URL=http://localhost:3100`, the same `MAILBOX_DIR` and the same `CRON_SECRET` (its value, without quotes: the drain tests send it). If the development server reloads a page over and over after a change to `next.config.ts`, stop it, delete `apps/web/.next/dev` and start it again. Editing files while the suite runs against the development server makes tests fail at random; run it against a production build to keep working meanwhile.
 
@@ -42,10 +42,10 @@ The v2 repository is delivered as a **git bundle in a numbered zip** (`invoica-r
 To set up the first time:
 
 ```
-unzip invoica-repo-14.zip -d ~/Downloads/invoica-repo-14
-git clone ~/Downloads/invoica-repo-14/invoica.bundle invoica
+unzip invoica-repo-15.zip -d ~/Downloads/invoica-repo-15
+git clone ~/Downloads/invoica-repo-15/invoica.bundle invoica
 cd invoica
-sh ~/Downloads/invoica-repo-14/verify.sh
+sh ~/Downloads/invoica-repo-15/verify.sh
 ```
 
 To take a later bundle into an existing clone: `git pull ~/Downloads/invoica-repo-NN/invoica.bundle main`.
@@ -53,6 +53,8 @@ To take a later bundle into an existing clone: `git pull ~/Downloads/invoica-rep
 The switch to pull requests (foundation section 7) waits on GitHub: the owner connects GitHub in Settings, Connectors, and creates an empty private repository. The history is then pushed as a branch `start`, which the owner renames to `main` (the assistant never pushes to `main`). From then on every change arrives as a pull request.
 
 ## What changed last
+
+Late afternoon of 20 October 2026, after bundle 14: a save from a page opened earlier no longer undoes a change made elsewhere (`docs/specs/changes-elsewhere.md`). Settings, clients, saved items and tax codes carry the version they showed; a save that would undo a change made since is refused ("These settings were changed in another tab or on another device after this page opened. ..."), the page fetches the record again, every field not typed in shows the change, and "Save mine anyway" saves what the form then shows. Found by testing two tabs: bank details changed on a phone came back as they were when a laptop tab opened earlier saved the business name. The settings form's messages now sit beside its save button, at the foot of the screen. On the owner's yes, a password reset also confirms the address, so the owner of an address someone else signed up with resets the password and signs in. Leaving the settings, the reminder settings, a client's form or a saved item's form with changes not saved now asks first, as the invoice editor does (`docs/specs/unsaved-changes.md`). A saved item whose tax code was archived keeps it when edited; the items page named it "Default tax" and saving the item quietly moved it to the default rate. Reminder wording with a placeholder Invoica cannot fill in ("{amout}") is refused and named under the field (`docs/specs/reminders.md`, rule 13); it was sent to clients as written.
 
 Afternoon of 20 October 2026, after the owner's yes: the branch `fix/confirm-then-sign-in` is merged; a confirmation link opens a page that names the address and asks for the account's password, and only the right password confirms the address and signs in (`docs/specs/sign-in-by-email.md`, rule 1). Better Auth's confirm-on-open route is off, and links in its form open the same page. The endpoint is limited like sign-in and refused from another site. A test walks the owner of an address through taking back an account someone else made with it. Every form's button waits for the page's script, so a form sent before it has started never puts a password in the address. Decision 0011 is built (migration 0026): `app.due_reminders` is back to what an image from before 0022 expects, the app calls `app.reminder_candidates`, and the scheduler needs no stopping during an upgrade. The Ghana end-to-end test now confirms with the password; it had been left on the old flow. A separate review of these changes found nothing high or medium; its three low points are fixed with tests: once an address is confirmed its link signs nobody in, whatever password comes with it (so the link is never a second way to try passwords), the page sends no referrer, and the token rules (expired, another secret, a change of address) have unit tests. Found while testing: an invoice or reminder sent after the business changed its name or email went out under the old name with replies to the old mailbox; both now come from the business as it is now, with replies to its email now (`docs/specs/email-status.md`, rule 5), and the attached PDF stays as issued.
 
@@ -72,15 +74,14 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 
 ## Next steps
 
-1. The owner's answer on whether a password reset should also confirm the address (blueprint, open question 2).
-2. When the owner has the domain and approves decision 0010: follow `docs/deploy.md`.
-3. When GitHub is linked: push the history as `start`, then pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
-4. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
-5. Templates round 2 review (phase 3).
+1. When the owner has the domain and approves decision 0010: follow `docs/deploy.md`.
+2. When GitHub is linked: push the history as `start`, then pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
+3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
+4. Templates round 2 review (phase 3).
 
 ## Open questions
 
-The list is kept in `docs/BLUEPRINT.md`, "Open questions" (8 items).
+The list is kept in `docs/BLUEPRINT.md`, "Open questions" (7 items).
 
 ## Decisions
 
