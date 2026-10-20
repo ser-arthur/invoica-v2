@@ -12,6 +12,7 @@ How a draft becomes an issued invoice, and what holds when the world around it c
 6. A new invoice issued again with the same request key returns the invoice the first request issued.
 7. A draft saved or issued from a page opened before another tab or device changed it is refused: "This draft has changed since this page last saved it: in another tab, on another device, or by a save from here whose answer did not arrive. Save yours anyway to replace it, or reload the page to see it." The editor keeps what was typed, fetches the draft's version again, and offers "Save mine anyway", which saves against that version (so a change made after the refusal is caught too), or "Issue mine anyway", which asks for confirmation again with the total as it is now. Each save carries the version the page has (`draftVersion`), and the editor takes the new version after each of its own saves. The repeat of a new invoice's first save (its answer lost) is refused the same way once the draft has been changed since it was made.
 8. A draft deleted in another tab or on another device, then saved or issued from a page still open on it, is refused: "This draft was deleted in another tab or on another device. Save what you typed as a new draft to keep it." The editor keeps what was typed and offers "Save as a new draft", which saves it as a new draft with a request key of its own (so a repeat after a lost answer makes one draft) and opens it.
+9. A copy of an invoice ("Duplicate") is a new draft priced as one made now: each line takes its tax code as it is now, so a rate changed since the source was issued is the one the copy shows, lists and is issued with; the business's rounding is the one set now. An archived code stays on the copied line, marked archived in the editor.
 
 ## Acceptance criteria
 
@@ -20,3 +21,4 @@ How a draft becomes an issued invoice, and what holds when the world around it c
 3. Rules 5 and 6: `packages/db/test/request-keys.test.ts`, `apps/web/e2e/connection.spec.ts`.
 4. Rule 7: `packages/db/test/documents.test.ts`, `apps/web/e2e/connected-changes.spec.ts` ("a draft changed in another tab is not replaced without asking").
 5. Rule 8: `packages/db/test/changes-elsewhere.test.ts` ("a draft deleted elsewhere"), `apps/web/e2e/connected-changes.spec.ts` ("a draft deleted in another tab").
+6. Rule 9: `packages/db/test/changes-elsewhere.test.ts` ("a copy of an invoice made after a tax rate changed").

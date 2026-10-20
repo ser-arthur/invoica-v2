@@ -1399,12 +1399,19 @@ export async function duplicateDocument(tx: Tx, actor: Actor, id: string, key?: 
   const [source] = await tx.select().from(document).where(eq(document.id, id));
   if (!source || source.kind !== 'invoice')
     throw new DomainError('document_not_found', 'This invoice does not exist.');
-  const lines = await tx
+  const sourceLines = await tx
     .select()
     .from(documentLine)
     .where(eq(documentLine.documentId, id))
     .orderBy(asc(documentLine.position));
   const org = await getOrganisation(tx, actor);
+  // Each line takes its tax code as it is now, as a draft made now would: a rate changed since the source was
+  // issued is the one the copy shows and is issued with.
+  const codes = await resolveTaxCodes(
+    tx,
+    sourceLines.map((l) => l.taxCodeId),
+  );
+  const lines = sourceLines.map((l) => ({ ...l, tax: l.taxCodeId ? codes.get(l.taxCodeId)! : null }));
   const [created] = await tx
     .insert(document)
     .values({

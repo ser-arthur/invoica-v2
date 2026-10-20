@@ -18,8 +18,9 @@ import {
   taxCodeVersionOf,
 } from '../src/versions';
 import { createTestDatabase, type TestDatabase } from './helpers';
-import { business, draftFor, type Business } from './business';
-import { createDraft, deleteDraft, updateDraft } from '../src/documents';
+import { business, draftFor, issued, type Business } from './business';
+import { createDraft, deleteDraft, duplicateDocument, updateDraft } from '../src/documents';
+import { document } from '../src/schema';
 
 /** docs/specs/changes-elsewhere.md: settings, clients, saved items and tax codes edited from an older page. */
 
@@ -268,5 +269,26 @@ describe('a draft deleted elsewhere', () => {
     const id = await b.run((tx) => createDraft(tx, b.actor, draft));
     await b.run((tx) => deleteDraft(tx, b.actor, id));
     expect(await outcome(b.run((tx) => updateDraft(tx, b.actor, id, draft)))).toBe('draft_deleted');
+  });
+});
+
+describe('a copy of an invoice made after a tax rate changed', () => {
+  it('is priced with the rate as it is now, as any draft made now is', async () => {
+    const b = await business(t, 'Copy Rate Office');
+    // £100.00 at 20%: £120.00.
+    const source = await issued(b, [{ quantity: 1000, unitPrice: 10_000, code: b.codes.vat20 }]);
+    const row = (await b.run((tx) => tx.select().from(taxCode).where(eq(taxCode.id, b.codes.vat20))))[0]!;
+    const { idempotencyKey: _key, ...stored } = row;
+    await b.run((tx) =>
+      updateTaxCode(
+        tx,
+        b.actor,
+        b.codes.vat20,
+        taxCodeInput.parse({ ...stored, components: [{ name: 'VAT', ratePpm: 175_000, compound: false }] }),
+      ),
+    );
+    const copy = await b.run((tx) => duplicateDocument(tx, b.actor, source));
+    const [made] = await b.run((tx) => tx.select().from(document).where(eq(document.id, copy)));
+    expect([made!.taxTotal, made!.total]).toEqual([1750, 11_750]);
   });
 });
