@@ -6,6 +6,7 @@ import { formatMoney, parseMoney, toDecimalString } from '@invoica/core';
 import { archiveItemAction, saveItemAction } from '@/lib/actions/items';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
 import { reach } from '@/lib/reach';
+import { useHydrated } from '@/lib/use-hydrated';
 import { requestKey } from '@/lib/request-key';
 
 export interface ItemValue {
@@ -29,6 +30,7 @@ export function ItemEditor({
   onDone: () => void;
 }) {
   const router = useRouter();
+  const ready = useHydrated();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -108,7 +110,7 @@ export function ItemEditor({
         </Select>
       </Field>
       <div className="flex flex-wrap gap-2 sm:col-span-2">
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending || !ready}>
           {pending ? 'Saving' : item ? 'Save item' : 'Add item'}
         </Button>
         <Button type="button" variant="ghost" onClick={onDone}>

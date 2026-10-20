@@ -7,6 +7,7 @@ import { Button, Checkbox, Field, FormMessage, Input, Select } from '@/component
 import { createOrganisationAction } from '@/lib/actions/onboarding';
 import { COUNTRIES, TIME_ZONES } from '@/lib/countries';
 import { reach } from '@/lib/reach';
+import { useHydrated } from '@/lib/use-hydrated';
 
 const BUSINESS_TYPES = [
   { value: 'sole_trader', label: 'Sole trader or freelancer' },
@@ -17,6 +18,7 @@ const BUSINESS_TYPES = [
 
 export function OnboardingForm() {
   const router = useRouter();
+  const ready = useHydrated();
   const [country, setCountry] = useState<string>('GB');
   const preset = COUNTRIES.find((c) => c.code === country) ?? COUNTRIES[0];
   const [currency, setCurrency] = useState<string>(preset.currency);
@@ -127,7 +129,7 @@ export function OnboardingForm() {
           </Field>
         ) : null}
       </div>
-      <Button type="submit" size="lg" disabled={pending} className="self-start">
+      <Button type="submit" size="lg" disabled={pending || !ready} className="self-start">
         {pending ? 'Setting up' : 'Continue to Invoica'}
       </Button>
     </form>

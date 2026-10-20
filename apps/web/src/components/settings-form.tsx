@@ -9,6 +9,7 @@ import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } 
 import type { DocumentSnapshot } from '@invoica/core';
 import { TemplatePicker } from './template-picker';
 import { reach } from '@/lib/reach';
+import { useHydrated } from '@/lib/use-hydrated';
 
 export interface ProfileValues {
   name: string;
@@ -136,6 +137,7 @@ export function SettingsForm({
   next?: { invoice: number; creditNote: number };
 }) {
   const router = useRouter();
+  const ready = useHydrated();
   const [v, setV] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ tone: 'danger' | 'info'; text: string } | null>(null);
@@ -525,7 +527,7 @@ export function SettingsForm({
       </Section>
 
       <div className="sticky bottom-20 z-20 flex justify-end md:bottom-4">
-        <Button type="submit" size="lg" disabled={pending} className="shadow-lift">
+        <Button type="submit" size="lg" disabled={pending || !ready} className="shadow-lift">
           {pending ? 'Saving' : 'Save settings'}
         </Button>
       </div>

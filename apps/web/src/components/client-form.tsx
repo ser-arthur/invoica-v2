@@ -8,6 +8,7 @@ import { saveClientAction } from '@/lib/actions/clients';
 import { COUNTRIES } from '@/lib/countries';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
 import { reach } from '@/lib/reach';
+import { useHydrated } from '@/lib/use-hydrated';
 import { requestKey } from '@/lib/request-key';
 
 export interface ClientFormValues {
@@ -44,6 +45,7 @@ export function ClientForm({
   compact?: boolean;
 }) {
   const router = useRouter();
+  const ready = useHydrated();
   const [fields, setFields] = useState(initial?.fields ?? []);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
@@ -246,7 +248,7 @@ export function ClientForm({
         </Field>
       )}
       <div className="flex gap-3">
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending || !ready}>
           {pending ? 'Saving' : id ? 'Save changes' : 'Save client'}
         </Button>
       </div>
