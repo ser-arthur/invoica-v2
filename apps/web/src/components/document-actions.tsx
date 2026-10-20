@@ -670,6 +670,8 @@ export function CreditNoteButton({
 export function DuplicateButton({ id }: { id: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  // Kept until the copy is made, so asking again after a lost answer makes one copy.
+  const [key, setKey] = useState(() => requestKey());
   return (
     <Button
       type="button"
@@ -677,8 +679,10 @@ export function DuplicateButton({ id }: { id: string }) {
       disabled={pending}
       onClick={() =>
         start(async () => {
-          const r = await reach(duplicateAction(id));
-          if (r.ok) router.push(`/invoices/${r.data.id}/edit`);
+          const r = await reach(duplicateAction(id, key));
+          if (!r.ok) return showNotice(r.message);
+          setKey(requestKey());
+          router.push(`/invoices/${r.data.id}/edit`);
         })
       }
     >

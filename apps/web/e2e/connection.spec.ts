@@ -163,3 +163,24 @@ test('a new client whose answer is lost is saved once when tried again', async (
   await page.goto('/clients');
   await expect(page.getByText('Saltmarsh Trading Ltd')).toHaveCount(1);
 });
+
+test('a copy of an invoice whose answer is lost is made once when asked again', async ({ page }) => {
+  await signUpAndOnboard(page, 'Lost Copy Studio', { vat: true });
+  await addClient(page, 'Juniper Row Ltd');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Juniper Row Ltd' });
+  await page.fill('#e-title', 'Monthly upkeep');
+  await page.getByLabel('Line 1 description').fill('Upkeep');
+  await page.getByLabel('Line 1 price').fill('80');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\?issued=1/);
+  const reached = await loseNextAnswer(page);
+  await page.getByRole('button', { name: 'Duplicate' }).click();
+  await expect(page.getByText(UNREACHABLE)).toBeVisible();
+  expect(reached()).toBe(true);
+  await page.getByRole('button', { name: 'Duplicate' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\/edit$/);
+  await page.goto('/invoices');
+  await expect(page.getByText('Monthly upkeep')).toHaveCount(2);
+});

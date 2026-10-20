@@ -486,4 +486,21 @@ describe('duplicating', () => {
     expect(d!.lines.map((l) => l.title)).toEqual(['Design', 'Hosting']);
     expect(d!.document.total).toBe(13_199);
   });
+
+  it('a duplicate asked for again with the same key, after a lost answer, is one copy', async () => {
+    const id = await run((tx) => createDraft(tx, actor, draft({ title: 'Quarterly review' })));
+    await run((tx) => issueDocument(tx, actor, id, NOW));
+    const first = await run((tx) => duplicateDocument(tx, actor, id, 'dup-key-000001'));
+    const again = await run((tx) => duplicateDocument(tx, actor, id, 'dup-key-000001'));
+    expect(again).toBe(first);
+    const copies = await run((tx) =>
+      tx
+        .select()
+        .from(document)
+        .where(sql`${document.title} = 'Quarterly review' and ${document.lifecycle} = 'draft'`),
+    );
+    expect(copies).toHaveLength(1);
+    const other = await run((tx) => duplicateDocument(tx, actor, id, 'dup-key-000002'));
+    expect(other).not.toBe(first);
+  });
 });

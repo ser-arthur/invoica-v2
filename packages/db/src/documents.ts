@@ -1306,7 +1306,21 @@ export async function clientsForEditor(tx: Tx) {
 }
 
 /** A new draft with the same client, lines, discounts and wording as an existing invoice. Dates and deposits are left out. */
-export async function duplicateDocument(tx: Tx, actor: Actor, id: string): Promise<string> {
+/**
+ * Copies an invoice into a new draft. With a request key, asking again (after a lost answer) returns the same copy.
+ */
+export async function duplicateDocument(tx: Tx, actor: Actor, id: string, key?: string): Promise<string> {
+  const requestFingerprint = fingerprint({ duplicate: id });
+  if (key) {
+    const [existing] = await tx
+      .select({ id: document.id, requestFingerprint: document.requestFingerprint })
+      .from(document)
+      .where(eq(document.idempotencyKey, key));
+    if (existing) {
+      if (existing.requestFingerprint !== requestFingerprint) throw keyReused();
+      return existing.id;
+    }
+  }
   const [source] = await tx.select().from(document).where(eq(document.id, id));
   if (!source || source.kind !== 'invoice')
     throw new DomainError('document_not_found', 'This invoice does not exist.');
@@ -1336,6 +1350,8 @@ export async function duplicateDocument(tx: Tx, actor: Actor, id: string): Promi
       template: source.template,
       options: source.options,
       createdBy: actor.userId,
+      idempotencyKey: key ?? null,
+      requestFingerprint: key ? requestFingerprint : null,
     })
     .returning({ id: document.id });
   const newId = created!.id;

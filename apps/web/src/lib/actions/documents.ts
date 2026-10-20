@@ -176,9 +176,12 @@ export async function creditNoteAction(
   }
 }
 
-export async function duplicateAction(id: string): Promise<ActionResult<{ id: string }>> {
+export async function duplicateAction(id: string, key?: string): Promise<ActionResult<{ id: string }>> {
+  if (key !== undefined && (typeof key !== 'string' || key.length < 8 || key.length > 100)) {
+    return { ok: false, message: 'Something went wrong and nothing was saved. Try again.' };
+  }
   try {
-    const newId = await inWorkspace((tx, ws) => duplicateDocument(tx, ws.actor, id));
+    const newId = await inWorkspace((tx, ws) => duplicateDocument(tx, ws.actor, id, key));
     refresh(newId);
     return { ok: true, data: { id: newId } };
   } catch (error) {

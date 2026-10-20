@@ -7,6 +7,7 @@ import { duplicateAction, markSentAction } from '@/lib/actions/documents';
 import { PaymentDialog } from './document-actions';
 import { showNotice } from '@/lib/notice';
 import { reach } from '@/lib/reach';
+import { requestKey } from '@/lib/request-key';
 
 const item =
   'flex min-h-11 w-full items-center rounded-lg px-3 text-left text-[14px] hover:bg-sunk disabled:opacity-50 sm:min-h-9';
@@ -31,6 +32,7 @@ export function RowActions({
   const [open, setOpen] = useState(false);
   const [paying, setPaying] = useState(false);
   const [pending, start] = useTransition();
+  const [duplicateKey, setDuplicateKey] = useState(() => requestKey());
   const box = useRef<HTMLDivElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
 
@@ -120,8 +122,10 @@ export function RowActions({
               disabled={pending}
               onClick={() =>
                 start(async () => {
-                  const r = await reach(duplicateAction(id));
-                  if (r.ok) router.push(`/invoices/${r.data.id}/edit`);
+                  const r = await reach(duplicateAction(id, duplicateKey));
+                  if (!r.ok) return showNotice(r.message);
+                  setDuplicateKey(requestKey());
+                  router.push(`/invoices/${r.data.id}/edit`);
                 })
               }
             >
