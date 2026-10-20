@@ -56,19 +56,31 @@ test('app pages have no automated accessibility violations, in light and dark', 
 
 test('no page scrolls sideways at phone widths, and nothing is cut off at the edge', async ({ page }) => {
   await signUpAndOnboard(page, 'A business with a rather long name for testing layouts');
+  // An address with no place to break it, as some are.
   await addClient(
     page,
     'Aura Coffee Roasters and Bakery Limited',
-    'accounts.payable@auracoffeeroastersandbakery.example',
+    'accountspayable@auracoffeeroastersandbakerylimitedcompany.example',
   );
+  const clientPage = new URL(page.url()).pathname;
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Aura Coffee Roasters and Bakery Limited' });
+  await page.getByLabel('Line 1 description').fill('Roasting equipment servicing for the winter season');
+  await page.getByLabel('Line 1 price').fill('1250');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\?issued=1/);
+  const invoicePage = new URL(page.url()).pathname;
   const paths = [
     '/dashboard',
     '/invoices',
     '/clients',
+    clientPage,
     '/clients/new',
     '/items',
     '/settings',
     '/invoices/new',
+    invoicePage,
   ];
   let examined = 0;
   for (const width of [320, 360, 375, 390, 430]) {
@@ -97,7 +109,7 @@ test('no page scrolls sideways at phone widths, and nothing is cut off at the ed
       expect(cut, `${path} at ${width}px`).toEqual([]);
     }
   }
-  expect(examined).toBe(35);
+  expect(examined).toBe(45);
 });
 
 test('open dialogs have no automated accessibility violations, in light and dark', async ({ page }) => {

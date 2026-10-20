@@ -133,7 +133,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         </div>
         <Panel className="self-start">
           <PanelHeading>Details</PanelHeading>
-          <dl className="flex flex-col gap-4 px-5 py-4 text-[14px]">
+          <dl className="flex flex-col gap-4 px-5 py-4 text-[14px] [overflow-wrap:anywhere]">
             <div>
               <dt className="text-muted">Email</dt>
               <dd>{client.email ?? 'Not set'}</dd>
