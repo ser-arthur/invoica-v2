@@ -2,7 +2,7 @@
 
 The plan for building Invoica v2, and where the work stands. Updated at the end of every phase. A new chat starts here.
 
-Last updated: 20 October 2026, about 05:00 (session 2 of the build, through the night).
+Last updated: 20 October 2026, about 07:30 (session 2 of the build, through the night and into the morning).
 
 ---
 
