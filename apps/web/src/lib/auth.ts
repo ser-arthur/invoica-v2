@@ -39,23 +39,11 @@ function createAuth() {
       requireEmailVerification: true,
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
-      sendResetPassword: async ({ user, url }) =>
-        sendAuthEmail(
-          user.email,
-          resetPasswordEmail({ name: user.name, confirmed: user.emailVerified, url }),
-        ),
+      sendResetPassword: async ({ user, url }) => sendAuthEmail(user.email, resetPasswordEmail({ url })),
       onExistingUserSignUp: async ({ user }) =>
-        sendAuthEmail(
-          user.email,
-          existingAccountEmail({ name: user.name, confirmed: user.emailVerified, appUrl: env.authUrl }),
-        ),
+        sendAuthEmail(user.email, existingAccountEmail({ appUrl: env.authUrl })),
       onPasswordReset: async ({ user }) =>
-        inBackground(
-          sendAuthEmail(
-            user.email,
-            passwordChangedEmail({ name: user.name, confirmed: user.emailVerified, appUrl: env.authUrl }),
-          ),
-        ),
+        inBackground(sendAuthEmail(user.email, passwordChangedEmail({ appUrl: env.authUrl }))),
     },
     emailVerification: {
       sendOnSignUp: true,
