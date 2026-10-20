@@ -303,3 +303,73 @@ test('a tax rate changed in another tab while issuing: the new total is shown to
   await page.waitForURL(/\?issued=1/);
   await expect(page.getByText('£110.00').first()).toBeVisible();
 });
+
+test('a client’s page follows its invoices: payments, credit notes and refunds as they happen', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Client Page Studio', { vat: true });
+  await addClient(page, 'Lapwing Mill Ltd');
+  await page.getByRole('link', { name: 'Clients' }).first().click();
+  await page
+    .getByRole('link', { name: /Lapwing Mill Ltd/ })
+    .first()
+    .click();
+  await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
+  const clientUrl = page.url();
+  const figure = (label: string) =>
+    page.locator('dt', { hasText: new RegExp(`^${label}$`) }).locator('xpath=following-sibling::dd[1]');
+
+  const issue = async (what: string, price: string) => {
+    await page.goto('/invoices/new');
+    await page.getByLabel('Bill to').selectOption({ label: 'Lapwing Mill Ltd' });
+    await page.getByLabel('Line 1 description').fill(what);
+    await page.getByLabel('Line 1 price').fill(price);
+    await page.getByRole('button', { name: 'Issue invoice' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+    await page.waitForURL(/\?issued=1/);
+    return page.url().replace('?issued=1', '');
+  };
+  // £120.00 and £60.00 with VAT.
+  const first = await issue('Joinery', '100');
+  const second = await issue('Fitting', '50');
+  await page.goto(clientUrl);
+  await expect(figure('Owes you now')).toHaveText('£180.00');
+  await expect(figure('Paid to date')).toHaveText('£0.00');
+
+  await page.goto(first);
+  await page.getByRole('button', { name: 'Record payment' }).click();
+  await page.fill('#pay-amount', '50');
+  await page.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.goto(clientUrl);
+  await expect(figure('Owes you now')).toHaveText('£130.00');
+  await expect(figure('Paid to date')).toHaveText('£50.00');
+
+  await page.goto(second);
+  await page.getByRole('button', { name: 'Credit note' }).click();
+  await page.locator('#cn-mode').selectOption('whole');
+  await page.fill('#cn-reason', 'Fitting not needed.');
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue credit note' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('CN-0001');
+  // Back to the client page with the browser's history, as a person would.
+  await page.goto(clientUrl);
+  await page.goto(second);
+  await page.goBack();
+  await expect(figure('Owes you now')).toHaveText('£70.00');
+
+  await page.goto(first);
+  await page.getByRole('button', { name: 'Record payment' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Paid');
+  await page.getByRole('button', { name: 'Credit note' }).click();
+  await page.locator('#cn-mode').selectOption('whole');
+  await page.fill('#cn-reason', 'Returned.');
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue credit note and record refund' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('CN-0002');
+  await page.goto(clientUrl);
+  await expect(figure('Owes you now')).toHaveText('£0.00');
+  // Paid to date is net of the £120.00 paid back.
+  await expect(figure('Paid to date')).toHaveText('£0.00');
+  await page.reload();
+  await expect(figure('Owes you now')).toHaveText('£0.00');
+});
