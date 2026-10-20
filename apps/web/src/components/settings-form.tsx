@@ -8,6 +8,7 @@ import { COUNTRIES, TIME_ZONES } from '@/lib/countries';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
 import type { DocumentSnapshot } from '@invoica/core';
 import { TemplatePicker } from './template-picker';
+import { LeaveDialog, useLeaveGuard } from './leave-guard';
 import { followUntouched } from '@/lib/follow-untouched';
 import { reach } from '@/lib/reach';
 import { useHydrated } from '@/lib/use-hydrated';
@@ -158,8 +159,16 @@ export function SettingsForm({
   // Refused because the settings changed elsewhere: "Save mine anyway" saves against the version fetched since.
   const [conflict, setConflict] = useState(false);
 
+  // Changed here since the last save: leaving the page asks first.
+  const [dirty, setDirty] = useState(false);
+  const guard = useLeaveGuard(dirty);
+  const change = (update: (prev: ProfileValues) => ProfileValues) => {
+    setDirty(true);
+    setV(update);
+  };
+
   const set = <K extends keyof ProfileValues>(key: K, value: ProfileValues[K]) =>
-    setV((prev) => ({ ...prev, [key]: value }));
+    change((prev) => ({ ...prev, [key]: value }));
   const text = (key: keyof ProfileValues) => ({
     value: (v[key] as string | null) ?? '',
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -225,6 +234,7 @@ export function SettingsForm({
       }
       setErrors({});
       setConflict(false);
+      setDirty(false);
       setVersion(r.data.version);
       setMessage({
         tone: 'info',
@@ -360,7 +370,7 @@ export function SettingsForm({
                   ProfileValues['taxLevel'],
                   ProfileValues['rounding'],
                 ];
-                setV((p) => ({ ...p, taxLevel: level, rounding: mode }));
+                change((p) => ({ ...p, taxLevel: level, rounding: mode }));
               }}
             >
               {roundingChoices.map((c) => (
@@ -554,6 +564,7 @@ export function SettingsForm({
         </Field>
       </Section>
 
+      <LeaveDialog guard={guard} />
       <div className="sticky bottom-20 z-20 flex flex-col items-end gap-2 md:bottom-4">
         {message ? (
           <div className="w-full max-w-xl shadow-lift">

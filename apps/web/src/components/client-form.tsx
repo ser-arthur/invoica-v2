@@ -8,6 +8,7 @@ import { saveClientAction } from '@/lib/actions/clients';
 import { COUNTRIES } from '@/lib/countries';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
 import { reach } from '@/lib/reach';
+import { LeaveDialog, useLeaveGuard } from './leave-guard';
 import { useHydrated } from '@/lib/use-hydrated';
 import { requestKey } from '@/lib/request-key';
 
@@ -49,7 +50,7 @@ export function ClientForm({
 }) {
   const router = useRouter();
   const ready = useHydrated();
-  const [fields, setFields] = useState(initial?.fields ?? []);
+  const [fields, setFieldsState] = useState(initial?.fields ?? []);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -58,6 +59,13 @@ export function ClientForm({
   // Refused because the client changed elsewhere: "Save mine anyway" saves against the version fetched since.
   const [conflict, setConflict] = useState(false);
   const replacing = useRef(false);
+  // Typed in since the page opened: leaving it asks first.
+  const [dirty, setDirty] = useState(false);
+  const setFields = (next: typeof fields) => {
+    setDirty(true);
+    setFieldsState(next);
+  };
+  const guard = useLeaveGuard(dirty && !compact);
   // The version this form opened with; a successful save leaves the page.
   const [initialVersion] = useState(shown);
 
@@ -100,6 +108,7 @@ export function ClientForm({
         }
         return;
       }
+      setDirty(false);
       if (onSaved) onSaved(result.data.id, input.name.trim());
       else {
         router.push(`/clients/${result.data.id}`);
@@ -111,7 +120,8 @@ export function ClientForm({
   const v = (k: keyof ClientFormValues) => (initial?.[k] as string | null | undefined) ?? '';
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
+    <form onSubmit={onSubmit} onChange={() => setDirty(true)} className="flex flex-col gap-6" noValidate>
+      <LeaveDialog guard={guard} />
       {message ? <FormMessage>{message}</FormMessage> : null}
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Client or company name" htmlFor="c-name" error={errors.name} className="sm:col-span-2">

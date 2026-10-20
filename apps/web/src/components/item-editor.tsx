@@ -6,6 +6,7 @@ import { formatMoney, parseMoney, toDecimalString } from '@invoica/core';
 import { archiveItemAction, saveItemAction } from '@/lib/actions/items';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
 import { reach } from '@/lib/reach';
+import { LeaveDialog, useLeaveGuard } from './leave-guard';
 import { useHydrated } from '@/lib/use-hydrated';
 import { requestKey } from '@/lib/request-key';
 
@@ -43,6 +44,9 @@ export function ItemEditor({
   // Refused because the item changed elsewhere: "Save mine anyway" saves against the version fetched since.
   const [conflict, setConflict] = useState(false);
   const replacing = useRef(false);
+  // Typed in since the editor opened: leaving the page asks first.
+  const [dirty, setDirty] = useState(false);
+  const guard = useLeaveGuard(dirty);
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -80,7 +84,8 @@ export function ItemEditor({
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2" noValidate>
+    <form onSubmit={submit} onChange={() => setDirty(true)} className="grid gap-4 sm:grid-cols-2" noValidate>
+      <LeaveDialog guard={guard} />
       {message ? (
         <div className="sm:col-span-2">
           <FormMessage>{message}</FormMessage>

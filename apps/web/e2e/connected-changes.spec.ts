@@ -601,3 +601,46 @@ test('a client changed in another tab: the older tab’s save is refused, the ch
   await expect(page.getByText('Ada Wren')).toBeVisible();
   await expect(page.getByText('payables@wren.example')).toBeVisible();
 });
+
+test('leaving the settings or a client with changes not saved asks first; saved, it leaves without asking', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Leaving Settings Studio', { vat: true });
+  const nav = (name: string) =>
+    page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name }).click();
+  const dialog = page.getByRole('dialog', { name: 'Leave this page?' });
+
+  await page.goto('/settings');
+  await page.fill('#s-an', '11223344');
+  await nav('Dashboard');
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('It has changes that are not saved. Leaving now loses them.');
+  await dialog.getByRole('button', { name: 'Keep editing' }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page.locator('#s-an')).toHaveValue('11223344');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText(/Settings saved\./)).toBeVisible();
+  await nav('Dashboard');
+  await page.waitForURL('**/dashboard');
+
+  // Reminder wording counts as well.
+  await page.goto('/settings#reminders');
+  await page.getByLabel('Remind clients about unpaid invoices').check();
+  await nav('Invoices');
+  await dialog.getByRole('button', { name: 'Leave without saving' }).click();
+  await page.waitForURL(/\/invoices$/);
+  await page.goto('/settings#reminders');
+  await expect(page.getByLabel('Remind clients about unpaid invoices')).not.toBeChecked();
+
+  // A client's form.
+  await addClient(page, 'Moorland Paper Ltd');
+  const clientUrl = page.url();
+  await page.goto(`${clientUrl}/edit`);
+  await page.fill('#c-contact', 'Rhiannon Moor');
+  await nav('Clients');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Leave without saving' }).click();
+  await page.waitForURL(/\/clients$/);
+  await page.goto(clientUrl);
+  await expect(page.getByText('Rhiannon Moor')).toHaveCount(0);
+});

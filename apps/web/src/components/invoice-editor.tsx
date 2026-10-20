@@ -40,6 +40,7 @@ import { saveAndIssueAction, saveDraftAction } from '@/lib/actions/documents';
 import { requestKey } from '@/lib/request-key';
 import { ClientForm } from './client-form';
 import { Dialog } from './dialog';
+import { LeaveDialog, useLeaveGuard } from './leave-guard';
 import { DocumentFrame } from './document-frame';
 import {
   Button,
@@ -349,8 +350,6 @@ export function InvoiceEditor(props: EditorProps) {
   const [conflict, setConflict] = useState<'save' | 'issue' | null>(null);
   // "Issue mine anyway" opens the confirmation; issuing from it then replaces the change made elsewhere.
   const [replaceNext, setReplaceNext] = useState(false);
-  // Where a link would have gone while the invoice had changes not saved.
-  const [leavingTo, setLeavingTo] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: 'danger' | 'info'; text: string } | null>(
     props.notice ? { tone: 'info', text: props.notice } : null,
   );
@@ -392,29 +391,8 @@ export function InvoiceEditor(props: EditorProps) {
     today,
   ]);
 
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
-    // A link to another page of the app asks first, as closing the tab does.
-    const onClick = (e: MouseEvent) => {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const link = e.target instanceof Element ? e.target.closest('a[href]') : null;
-      if (!(link instanceof HTMLAnchorElement) || link.target === '_blank' || link.hasAttribute('download'))
-        return;
-      const url = new URL(link.href, window.location.href);
-      if (url.origin !== window.location.origin) return;
-      if (url.pathname === window.location.pathname && url.search === window.location.search) return;
-      e.preventDefault();
-      e.stopPropagation();
-      setLeavingTo(`${url.pathname}${url.search}${url.hash}`);
-    };
-    window.addEventListener('beforeunload', warn);
-    document.addEventListener('click', onClick, true);
-    return () => {
-      window.removeEventListener('beforeunload', warn);
-      document.removeEventListener('click', onClick, true);
-    };
-  }, [dirty]);
+  // Closing the tab or following a link with changes not saved asks first.
+  const guard = useLeaveGuard(dirty);
 
   const parsed = useMemo(() => parse(state, taxCodes, org), [state, taxCodes, org]);
   const deferred = useDeferredValue(parsed);
@@ -1510,28 +1488,7 @@ export function InvoiceEditor(props: EditorProps) {
         </Dialog>
       ) : null}
 
-      {leavingTo ? (
-        <Dialog title="Leave this invoice?" onClose={() => setLeavingTo(null)}>
-          <p className="text-muted">It has changes that are not saved. Leaving now loses them.</p>
-          <div className="mt-6 flex flex-wrap justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                const to = leavingTo;
-                setDirty(false);
-                setLeavingTo(null);
-                router.push(to);
-              }}
-            >
-              Leave without saving
-            </Button>
-            <Button type="button" onClick={() => setLeavingTo(null)} autoFocus>
-              Keep editing
-            </Button>
-          </div>
-        </Dialog>
-      ) : null}
+      <LeaveDialog guard={guard} title="Leave this invoice?" />
     </div>
   );
 }

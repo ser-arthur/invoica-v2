@@ -11,6 +11,7 @@ import {
 import { saveReminderSettingsAction } from '@/lib/actions/settings';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Textarea } from './ui';
 import { reach } from '@/lib/reach';
+import { LeaveDialog, useLeaveGuard } from './leave-guard';
 
 const WHEN: Record<number, string> = {
   [-3]: '3 days before the due date',
@@ -48,6 +49,9 @@ export function ReminderSettings({
   });
   const [message, setMessage] = useState<{ tone: 'danger' | 'info'; text: string } | null>(null);
   const [pending, start] = useTransition();
+  // What was last saved, or loaded; anything else is a change not saved, and leaving the page asks first.
+  const [saved, setSaved] = useState(() => JSON.stringify({ enabled, offsets, wording }));
+  const guard = useLeaveGuard(JSON.stringify({ enabled, offsets, wording }) !== saved);
 
   function save() {
     // Wording left as the default is not saved, so it follows any later change to the default.
@@ -67,6 +71,7 @@ export function ReminderSettings({
         }),
       );
       if (!r.ok) return setMessage({ tone: 'danger', text: r.message });
+      setSaved(JSON.stringify({ enabled, offsets, wording }));
       setMessage({ tone: 'info', text: 'Reminder settings saved.' });
       router.refresh();
     });
@@ -74,6 +79,7 @@ export function ReminderSettings({
 
   return (
     <Panel id="reminders" className="scroll-mt-24">
+      <LeaveDialog guard={guard} />
       <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[240px_1fr]">
         <div>
           <h2 className="text-[16px] font-semibold">Reminders</h2>
