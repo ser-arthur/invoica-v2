@@ -2,13 +2,13 @@
 
 Read `docs/BLUEPRINT.md` first, then this file. Update both at the end of every session.
 
-## Current state (20 October 2026, about 11:00)
+## Current state (20 October 2026, about 10:10)
 
 This is the **v2 repository**: a re-architecture from scratch (decision 0001). The old Flask app lives in the old repository (`ser-arthur/invoica`) as a reference and receives no changes.
 
 **Working end to end, locally:** sign up with email confirmation, password reset, onboarding, settings (business, logo, tax, rounding choices allowed for the country, numbering, brand colour, template with live previews, bank and mobile money, tax codes with the country's standard codes on a button, reminders, the rate method for VAT in sterling), clients, saved items, the invoice editor with live totals and preview, issuing with a gapless number and a frozen snapshot, the kept PDF in seven templates, sending by email through the outbox (Resend in production, a development mailbox locally), payments, credit notes of every kind with refunds when they go above the balance, VAT in sterling on UK VAT invoices in other currencies, reminders on a schedule and on demand, voiding, duplicating, quick actions, client pages, a dashboard that names who to chase first, data export, the trial and free plan behind `INVOICA_PLANS=enforced` (off: everyone has everything, which is the free version), a health check and a container image.
 
-**Checks (last full run, 20 October 2026, about 10:50, on `053f9a3`):**
+**Checks (last full run, 20 October 2026, about 10:00, on `053f9a3`):**
 
 | Suite | Count | Result |
 | --- | --- | --- |
@@ -58,9 +58,9 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
-Last, before 11:00 on 20 October 2026: a draft changed in another tab or on another device is not replaced without asking ("Save mine anyway", `docs/specs/issuing.md` rule 7); saved items keep their figures when the business's currency changes, and the change is refused while a price cannot be written in the new currency; a payment above the balance names what is still owed ("The payment is more than the £60.00 still owed."); the email-not-sent notices pass the accessibility checks in light and dark; 1,000 random journeys ran clean against the reference model.
+Last, by 10:10 on 20 October 2026: a draft changed in another tab or on another device is not replaced without asking ("Save mine anyway", `docs/specs/issuing.md` rule 7); saved items keep their figures when the business's currency changes, and the change is refused while a price cannot be written in the new currency; a payment above the balance names what is still owed ("The payment is more than the £60.00 still owed."); the email-not-sent notices pass the accessibility checks in light and dark; 1,000 random journeys ran clean against the reference model.
 
-Review 10 (`docs/reviews/review-10.md`), late morning of 20 October 2026: 1 medium (the branch still waiting) and 8 low findings. Fixed with tests: a refused save fetches today and the settings again, so a page opened before midnight or a settings change can save its rate; a saved item keeps its figure on an invoice in another currency; a draft's due date follows the terms until set by hand; sign-in emails greet no one by name; a client, item or tax code corrected after a lost answer is saved as corrected (migration 0025); "everything still owed" paid meanwhile says nothing is owed; the guide says which migrations a previous image cannot run the scan against; a test checks the reminder the app chooses on any machine. Long names and addresses wrap on phones.
+Review 10 (`docs/reviews/review-10.md`), on the morning of 20 October 2026: 1 medium (the branch still waiting) and 8 low findings. Fixed with tests: a refused save fetches today and the settings again, so a page opened before midnight or a settings change can save its rate; a saved item keeps its figure on an invoice in another currency; a draft's due date follows the terms until set by hand; sign-in emails greet no one by name; a client, item or tax code corrected after a lost answer is saved as corrected (migration 0025); "everything still owed" paid meanwhile says nothing is owed; the guide says which migrations a previous image cannot run the scan against; a test checks the reminder the app chooses on any machine. Long names and addresses wrap on phones.
 
 Earlier on the morning of 20 October 2026, after bundle 10: issuing checks the total the person confirmed, so a tax rate or setting changed in another tab shows the new total to confirm (`docs/specs/issuing.md`); refusals of a state change say what to do ("This invoice is void, so it cannot be marked as sent."); the invoice page and the dashboard say when an email or reminder has not gone, is being tried again or could not be sent (`docs/specs/email-status.md`; the development mailbox refuses `.invalid` addresses so this can be tried); the reminder scan offers an invoice only within three hours of its reminder day (migration 0024); end-to-end tests for voiding and for a client's page following its invoices.
 
