@@ -104,6 +104,47 @@ test('an issued invoice is emailed with its PDF and marked as sent', async ({ pa
   await expect(page.getByText('Sent').first()).toBeVisible();
 });
 
+test('an invoice emailed to an address that cannot exist says so, stays issued, and goes to a good one', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Bounce Office');
+  await addClient(page, 'Wrong Address Ltd', 'accounts@wrong-address.invalid');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Wrong Address Ltd' });
+  await page.getByLabel('Line 1 description').fill('Survey');
+  await page.getByLabel('Line 1 price').fill('300');
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\?issued=1/);
+  const url = page.url().replace('?issued=1', '');
+  const number = (await page.getByRole('heading', { level: 1 }).textContent())!.match(/INV-\d+/)![0];
+
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Send invoice' }).click();
+  await expect(page.getByText(/On its way to accounts@wrong-address.invalid/)).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Done' }).click();
+  const refused = page.getByText(
+    'The email to accounts@wrong-address.invalid could not be sent. Check the address, then send it again.',
+  );
+  await expect(async () => {
+    await page.goto(url);
+    await expect(refused).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Issued');
+
+  const started = Date.now();
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await page.getByLabel('To', { exact: true }).fill('accounts@right-address.example');
+  await page.getByRole('dialog').getByRole('button', { name: 'Send invoice' }).click();
+  await waitForEmail('accounts@right-address.example', `Invoice ${number} from Bounce Office`, started);
+  await expect(async () => {
+    await page.goto(url);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Sent', { timeout: 2000 });
+  }).toPass({ timeout: 30_000 });
+  await expect(refused).toHaveCount(0);
+  await expect(page.getByText(/^Sending to /)).toHaveCount(0);
+});
+
 test('two payments recorded from the same page both count, and a credit note credits part of a line', async ({
   page,
 }) => {

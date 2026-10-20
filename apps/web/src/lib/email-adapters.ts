@@ -34,11 +34,18 @@ const base64Lines = (bytes: Uint8Array) => Buffer.from(bytes).toString('base64')
 const header = (value: string) =>
   /^[\x20-\x7e]*$/.test(value) ? value : `=?UTF-8?B?${Buffer.from(value).toString('base64')}?=`;
 
-/** Development mailbox: writes each email as an .eml file that any mail app can open. Nothing is sent. */
+/**
+ * Development mailbox: writes each email as an .eml file that any mail app can open. Nothing is sent. An address at
+ * the reserved domain `.invalid` (RFC 2606) is refused for good, as a provider refuses an address that cannot exist,
+ * so that path can be tried.
+ */
 export function fileMailbox(dir: string): EmailAdapter {
   return {
     name: 'file',
     async send(email) {
+      if (/\.invalid$/i.test(email.to.trim())) {
+        throw new EmailSendError(`The address ${email.to} cannot receive email.`, false);
+      }
       const id = randomUUID();
       const boundary = `invoica-${id}`;
       const parts = [

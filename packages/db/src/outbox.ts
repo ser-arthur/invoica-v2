@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { and, asc, inArray, sql } from 'drizzle-orm';
 import type { Database, Tx } from './client';
 import { outbox } from './schema';
 import type { Actor } from './tenancy';
@@ -99,4 +99,50 @@ export async function drainOutbox(
     }
   }
   return { done, failed };
+}
+
+/** An email or reminder for a document that has not gone (docs/specs/email-status.md). */
+export interface EmailDelivery {
+  kind: 'email' | 'reminder';
+  /** The address an email was written to; null for a reminder, whose address is the client's when it goes. */
+  to: string | null;
+  /** Waiting for its first try, tried and waiting to be tried again, or given up on. */
+  status: 'sending' | 'retrying' | 'failed';
+}
+
+const DELIVERY_TOPICS = { 'document.email': 'email', 'document.reminder': 'reminder' } as const;
+
+/**
+ * The emails and reminders for a document that have not gone: each one waiting or being tried again, and the
+ * latest of each kind that could not be sent, unless one of that kind was sent or queued after it.
+ */
+export async function emailDeliveries(tx: Tx, documentId: string): Promise<EmailDelivery[]> {
+  const rows = await tx
+    .select({
+      topic: outbox.topic,
+      payload: outbox.payload,
+      status: outbox.status,
+      lastError: outbox.lastError,
+    })
+    .from(outbox)
+    .where(
+      and(
+        inArray(outbox.topic, Object.keys(DELIVERY_TOPICS)),
+        sql`${outbox.payload} ->> 'documentId' = ${documentId}`,
+      ),
+    )
+    .orderBy(asc(outbox.createdAt), asc(outbox.id));
+  const out: EmailDelivery[] = [];
+  for (const kind of ['email', 'reminder'] as const) {
+    const mine = rows.filter((r) => DELIVERY_TOPICS[r.topic as keyof typeof DELIVERY_TOPICS] === kind);
+    const to = (r: (typeof mine)[number]) => (kind === 'email' ? String(r.payload.to ?? '') || null : null);
+    for (const r of mine) {
+      if (r.status === 'pending' || r.status === 'running') {
+        out.push({ kind, to: to(r), status: r.lastError ? 'retrying' : 'sending' });
+      }
+    }
+    const last = mine.at(-1);
+    if (last?.status === 'failed') out.push({ kind, to: to(last), status: 'failed' });
+  }
+  return out;
 }

@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { EmailSendError, emailAdapterFor, resendAdapter, type OutgoingEmail } from './email-adapters';
+import { mkdtemp, readdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import {
+  EmailSendError,
+  emailAdapterFor,
+  fileMailbox,
+  resendAdapter,
+  type OutgoingEmail,
+} from './email-adapters';
 
 const email: OutgoingEmail = {
   from: 'Northwind Studio via Invoica <invoices@send.example.com>',
@@ -35,6 +44,19 @@ const failure = async (p: Promise<unknown>) => {
   }
   throw new Error('Expected the send to fail.');
 };
+
+describe('the development mailbox', () => {
+  it('refuses an address at the reserved domain .invalid, for good, as a provider refuses one that cannot exist', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'invoica-mailbox-'));
+    const box = fileMailbox(dir);
+    const error = await box.send({ ...email, to: 'accounts@studio.invalid' }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(EmailSendError);
+    expect((error as EmailSendError).retry).toBe(false);
+    expect(await readdir(dir)).toEqual([]);
+    await box.send(email);
+    expect(await readdir(dir)).toHaveLength(1);
+  });
+});
 
 describe('Resend', () => {
   it('posts the email to Resend with the key, the idempotency key and the PDF in base64', async () => {

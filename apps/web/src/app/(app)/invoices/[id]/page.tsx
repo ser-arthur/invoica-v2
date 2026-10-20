@@ -7,9 +7,11 @@ import {
   creditPosition,
   creditableLines,
   documentActivity,
+  emailDeliveries,
   getDocument,
   organisationEntitlements,
   reminderStatus,
+  type EmailDelivery,
 } from '@invoica/db';
 import { renderDocumentHtml } from '@invoica/documents';
 import {
@@ -57,6 +59,22 @@ const ACTIVITY: Record<string, string> = {
 
 const MINUS = String.fromCharCode(0x2212);
 
+/** What the page says about an email or reminder that has not gone (docs/specs/email-status.md). */
+function deliveryText(d: EmailDelivery): string {
+  if (d.kind === 'email') {
+    if (d.status === 'sending') return `Sending to ${d.to}.`;
+    if (d.status === 'retrying') {
+      return `Sending to ${d.to} is taking longer than usual. Invoica keeps trying for about two hours.`;
+    }
+    return `The email to ${d.to} could not be sent. Check the address, then send it again.`;
+  }
+  if (d.status === 'sending') return 'Sending a reminder.';
+  if (d.status === 'retrying') {
+    return 'A reminder is taking longer than usual to send. Invoica keeps trying for about two hours.';
+  }
+  return 'A reminder could not be sent. Check the client’s email address.';
+}
+
 const METHOD: Record<string, string> = {
   bank_transfer: 'Bank transfer',
   mobile_money: 'Mobile money',
@@ -84,6 +102,7 @@ export default async function InvoicePage({
     const creditable = isInvoice ? await creditableLines(tx, id) : [];
     const position = isInvoice ? await creditPosition(tx, detail.document) : null;
     const reminders = isInvoice ? await reminderStatus(tx, id, ws.today) : null;
+    const deliveries = isInvoice ? await emailDeliveries(tx, id) : [];
     const remindersInPlan = organisationEntitlements(ws.organisation, new Date()).reminders;
     return {
       detail,
@@ -92,12 +111,14 @@ export default async function InvoicePage({
       position,
       reminders,
       remindersInPlan,
+      deliveries,
       today: ws.today,
       timeZone: ws.organisation.timeZone,
     };
   });
   if (!data) notFound();
-  const { detail, activity, creditable, position, reminders, remindersInPlan, today, timeZone } = data;
+  const { detail, activity, creditable, position, reminders, remindersInPlan, deliveries, today, timeZone } =
+    data;
   const doc = detail.document;
   if (doc.lifecycle === 'draft') redirect(`/invoices/${id}/edit`);
   const snapshot = doc.snapshot as unknown as DocumentSnapshot;
@@ -181,6 +202,11 @@ export default async function InvoicePage({
           </FormMessage>
         </div>
       ) : null}
+      {deliveries.map((d, i) => (
+        <div key={`${d.kind}-${i}`} className="mb-6">
+          <FormMessage tone={d.status === 'failed' ? 'danger' : 'info'}>{deliveryText(d)}</FormMessage>
+        </div>
+      ))}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <DocumentFrame html={html} />
         <div className="flex flex-col gap-6">
