@@ -26,6 +26,7 @@ export async function loadEditorData(tx: Tx, ws: Workspace): Promise<Omit<Editor
   const nextNumber = await peekNextNumber(tx, 'invoice', org);
   return {
     today: ws.today,
+    keepScope: `${ws.actor.userId}:${ws.actor.organisationId}`,
     clients: clients.map(({ row, fields, archived }) => ({
       id: row.id,
       name: row.name,

@@ -9,7 +9,7 @@ import { Button } from './ui';
  * While `dirty`, closing or reloading the tab asks the browser's own question, and a link to another page of the app
  * asks first (docs/specs/unsaved-changes.md). Returns where a link would have gone, and what the dialog's buttons do.
  */
-export function useLeaveGuard(dirty: boolean) {
+export function useLeaveGuard(dirty: boolean, onLeave?: () => void) {
   const router = useRouter();
   const [leavingTo, setLeavingTo] = useState<string | null>(null);
   // Set when the person chose to leave, so the page goes without asking again.
@@ -48,6 +48,7 @@ export function useLeaveGuard(dirty: boolean) {
       const to = leavingTo;
       released.current = true;
       setLeavingTo(null);
+      onLeave?.();
       if (to) router.push(to);
     },
   };

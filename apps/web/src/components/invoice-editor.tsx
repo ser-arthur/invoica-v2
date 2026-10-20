@@ -41,6 +41,8 @@ import { requestKey } from '@/lib/request-key';
 import { ClientForm } from './client-form';
 import { Dialog } from './dialog';
 import { LeaveDialog, useLeaveGuard } from './leave-guard';
+import { keptAt, keptKey, readKept, removeKept, writeKept, type Kept } from '@/lib/kept-typing';
+import { useHydrated } from '@/lib/use-hydrated';
 import { DocumentFrame } from './document-frame';
 import {
   Button,
@@ -154,6 +156,8 @@ export interface EditorProps {
   /** The version of the draft as opened (`draftVersion`), sent with each save. */
   version?: string | null;
   today: string;
+  /** Whose typing this is (person and business), for what is kept on this device. */
+  keepScope: string;
   clients: EditorClient[];
   items: EditorItem[];
   taxCodes: EditorTaxCode[];
@@ -175,6 +179,10 @@ export interface EditorProps {
 }
 
 let keyCounter = 0;
+/** An editor state as text without its list keys, which differ between page loads. */
+const withoutKeys = (state: EditorState) =>
+  JSON.stringify(state, (k, v: unknown) => (k === 'key' ? undefined : v));
+
 export const newKey = () => `k${Date.now().toString(36)}${(keyCounter++).toString(36)}`;
 
 const STYLES: { value: LineStyle; label: string; hint: string }[] = [
@@ -394,8 +402,18 @@ export function InvoiceEditor(props: EditorProps) {
     today,
   ]);
 
-  // Closing the tab or following a link with changes not saved asks first.
-  const guard = useLeaveGuard(dirty);
+  // What is typed and not saved is kept on this device until it is saved (docs/specs/kept-on-this-device.md).
+  const keptHere = keptKey(props.keepScope, props.id);
+  const ready = useHydrated();
+  // A copy kept here from before, offered back once the page has started; one that matches the page is not offered.
+  const [offer, setOffer] = useState<Kept<EditorState> | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const kept = readKept<EditorState>(keptHere);
+    return kept && withoutKeys(kept.state) !== withoutKeys(props.initial) ? kept : null;
+  });
+
+  // Closing the tab or following a link with changes not saved asks first; leaving anyway drops the kept copy.
+  const guard = useLeaveGuard(dirty, () => removeKept(keptHere));
 
   const parsed = useMemo(() => parse(state, taxCodes, org), [state, taxCodes, org]);
   const deferred = useDeferredValue(parsed);
@@ -436,6 +454,12 @@ export function InvoiceEditor(props: EditorProps) {
     setState((s) => ({ ...s, sterlingRate: '' }));
     setErrors((e) => ({ ...e, sterlingRate: staleRateMessage(rateEnteredFor, rateFor) }));
   }, [rateFor, rateEnteredFor, state.sterlingRate]);
+
+  // Kept a moment after each change while it is not saved; not while an earlier copy is being offered.
+  useEffect(() => {
+    if (!dirty || offer) return;
+    writeKept(keptHere, { at: Date.now(), version: version ?? null, state, rateEnteredFor });
+  }, [dirty, offer, keptHere, version, state, rateEnteredFor]);
 
   const previewHtml = useMemo(() => {
     const totals =
@@ -634,6 +658,7 @@ export function InvoiceEditor(props: EditorProps) {
         return;
       }
       setDirty(false);
+      removeKept(keptHere);
       setErrors({});
       if (issue) {
         router.push(`/invoices/${result.data.id}?issued=1`);
@@ -687,6 +712,38 @@ export function InvoiceEditor(props: EditorProps) {
       </div>
 
       {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
+      {ready && offer ? (
+        <div className="flex flex-col gap-3 rounded-[12px] border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[14px]">
+            This device kept an invoice you were typing at {keptAt(offer.at)}, which was not saved.
+          </p>
+          <div className="flex shrink-0 gap-2">
+            <Button
+              type="button"
+              onClick={() => {
+                setState(offer.state);
+                setRateEnteredFor(offer.rateEnteredFor);
+                // Saved against the version it was typed against, so a change made elsewhere since is caught.
+                if (props.id) setVersion(offer.version);
+                setDirty(true);
+                setOffer(null);
+              }}
+            >
+              Bring it back
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                removeKept(keptHere);
+                setOffer(null);
+              }}
+            >
+              Discard it
+            </Button>
+          </div>
+        </div>
+      ) : null}
       {deleted ? (
         <div className="flex flex-wrap gap-2">
           <Button type="button" disabled={pending} onClick={() => save(false, false, true)}>
