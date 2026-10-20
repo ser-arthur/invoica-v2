@@ -76,7 +76,6 @@ jobs:
 
   e2e:
     # End-to-end tests at desktop and phone widths against the development server, on a fresh migrated database.
-    # The production server's sign-up rate limit refuses the many accounts the suite creates, so it is not used here.
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -125,3 +124,61 @@ jobs:
           path: |
             apps/web/test-results
             dev-server.log
+
+  e2e-production:
+    # The same end-to-end tests against the production server as the image runs it: the standalone build, its
+    # start-up check of the settings, production headers, cookies and rate limits.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://invoica_app:invoica_app@localhost:5432/invoica
+      DATABASE_OWNER_URL: postgres://invoica_owner:invoica_owner@localhost:5432/invoica
+      DATABASE_WORKER_URL: postgres://invoica_worker:invoica_worker@localhost:5432/invoica
+      BETTER_AUTH_SECRET: ci-only-not-a-secret-ci-only-not-a-secret
+      BETTER_AUTH_URL: http://localhost:3000
+      CRON_SECRET: ci-only-not-a-secret-ci-only-not-a-secret
+      FILE_STORAGE_DIR: ${{ github.workspace }}/.data/files
+      EMAIL_PROVIDER: file
+      EMAIL_FROM: Invoica <invoices@invoica.local>
+      MAILBOX_DIR: ${{ github.workspace }}/.data/mail
+      INVOICA_CLIENT_IP_HEADER: x-forwarded-for
+      E2E_BASE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @invoica/pdf exec playwright-core install --with-deps chromium
+      - run: pnpm --filter @invoica/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @invoica/db setup:dev
+        env:
+          DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+      - run: pnpm build
+      - name: Start the production server
+        run: |
+          cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
+          cd apps/web/.next/standalone
+          NODE_ENV=production PORT=3000 HOSTNAME=127.0.0.1 node apps/web/server.js > "$GITHUB_WORKSPACE/server.log" 2>&1 &
+          for i in $(seq 1 60); do curl -fs http://localhost:3000/api/health > /dev/null && exit 0; sleep 2; done
+          cat "$GITHUB_WORKSPACE/server.log"; exit 1
+      - run: pnpm test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-production-results
+          path: |
+            apps/web/test-results
+            server.log
