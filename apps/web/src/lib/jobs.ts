@@ -13,6 +13,7 @@ import {
 import { getDb, getWorkerDb } from './db';
 import { keptPdf } from './pdf';
 import { EMAIL_FROM, getEmailAdapter } from './email';
+import { senderFor } from './sender';
 
 function actorOf(job: ClaimedJob) {
   if (!job.requestedBy) throw new Error('Job has no requesting user.');
@@ -34,7 +35,7 @@ const handlers = {
     if (!state || state.lifecycle === 'void') return;
     const snapshot = state.snapshot as unknown as DocumentSnapshot;
     const sent = await getEmailAdapter().send({
-      from: EMAIL_FROM().replace(/^[^<]*</, `${snapshot.seller.name.replace(/[<>"]/g, '')} via Invoica <`),
+      from: senderFor(snapshot.seller.name, EMAIL_FROM()),
       replyTo: snapshot.seller.email,
       to: String(job.payload.to),
       subject: String(job.payload.subject),
@@ -82,7 +83,7 @@ const handlers = {
     const state = await withOrganisation(getDb(), actor, (tx) => documentPdfState(tx, documentId));
     const snapshot = state?.snapshot as unknown as DocumentSnapshot | undefined;
     const sent = await getEmailAdapter().send({
-      from: EMAIL_FROM().replace(/^[^<]*</, `${context.business.replace(/[<>"]/g, '')} via Invoica <`),
+      from: senderFor(context.business, EMAIL_FROM()),
       replyTo: snapshot?.seller.email ?? null,
       to: context.to,
       subject: email.subject,
