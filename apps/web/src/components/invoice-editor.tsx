@@ -540,11 +540,15 @@ export function InvoiceEditor(props: EditorProps) {
   ]);
 
   function addLine(from?: EditorItem) {
-    const key = newKey();
+    // A saved item goes on the last line while that line is still empty, so no blank line is left above it.
+    const last = state.lines.at(-1);
+    const fillLast =
+      !!from && !!last && !last.title.trim() && !last.unitPrice.trim() && !last.description.trim();
+    const key = fillLast ? last!.key : newKey();
     setOpenLine(key);
     update({
       lines: [
-        ...state.lines,
+        ...(fillLast ? state.lines.slice(0, -1) : state.lines),
         {
           key,
           title: from?.name ?? '',

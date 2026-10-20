@@ -195,6 +195,11 @@ test('a saved item keeps its figure on an invoice in another currency', async ({
 
   await page.goto('/invoices/new');
   await page.getByLabel('Bill to').selectOption({ label: 'Kyoto Prints KK' });
+  // The empty first line takes the item, so no blank line is left above it.
+  await page.getByLabel('Add a saved item').selectOption({ label: 'Location day' });
+  await expect(page.getByLabel('Line 1 price')).toHaveValue('500');
+  await expect(page.getByLabel('Line 2 price')).toHaveCount(0);
+  // A second item, with the first line filled, goes on a line of its own.
   await page.getByLabel('Add a saved item').selectOption({ label: 'Location day' });
   await expect(page.getByLabel('Line 2 price')).toHaveValue('500');
 });
