@@ -15,6 +15,15 @@ export function invalid(error: z.ZodError): ActionResult<never> {
 /** Turns an error into a message people can act on. Unknown errors are logged without their data. */
 export function failure(error: unknown): ActionResult<never> {
   if (error instanceof DomainError) return { ok: false, message: error.message };
+  // The session ended (signed out here or on another device): the page and what was typed stay as they are.
+  const digest = (error as { digest?: unknown } | null)?.digest;
+  if (typeof digest === 'string' && digest.startsWith('NEXT_REDIRECT;') && digest.includes(';/sign-in;')) {
+    return {
+      ok: false,
+      message:
+        'You have been signed out, so this was not saved. Sign in again in another tab, then come back here and try again.',
+    };
+  }
   if (error instanceof NotAMemberError) return { ok: false, message: error.message };
   const cause = (error as { cause?: { code?: string; message?: string } }).cause;
   if (cause?.code === 'P0001' && cause.message) return { ok: false, message: cause.message };
