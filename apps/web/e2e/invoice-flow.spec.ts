@@ -108,7 +108,11 @@ test('an invoice emailed to an address that cannot exist says so, stays issued, 
   page,
 }) => {
   await signUpAndOnboard(page, 'Bounce Office');
-  await addClient(page, 'Wrong Address Ltd', 'accounts@wrong-address.invalid');
+  await addClient(
+    page,
+    'Wrong Address Ltd',
+    'accountspayabledepartmentforinvoices@wrongaddressforthisclient.invalid',
+  );
   await page.goto('/invoices/new');
   await page.getByLabel('Bill to').selectOption({ label: 'Wrong Address Ltd' });
   await page.getByLabel('Line 1 description').fill('Survey');
@@ -121,21 +125,26 @@ test('an invoice emailed to an address that cannot exist says so, stays issued, 
 
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Send invoice' }).click();
-  await expect(page.getByText(/On its way to accounts@wrong-address.invalid/)).toBeVisible();
+  await expect(
+    page.getByText(/On its way to accountspayabledepartmentforinvoices@wrongaddressforthisclient\.invalid/),
+  ).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: 'Done' }).click();
   const refused = page.getByText(
-    'The email to accounts@wrong-address.invalid could not be sent. Check the address, then send it again.',
+    'The email to accountspayabledepartmentforinvoices@wrongaddressforthisclient.invalid could not be sent. Check the address, then send it again.',
   );
   await expect(async () => {
     await page.goto(url);
     await expect(refused).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 30_000 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Issued');
   await page.goto('/dashboard');
   const alert = page.getByRole('alert').filter({ hasText: 'An email could not be sent.' });
   await expect(alert).toContainText(
-    `${number}, Wrong Address Ltd: the invoice to accounts@wrong-address.invalid`,
+    `${number}, Wrong Address Ltd: the invoice to accountspayabledepartmentforinvoices@wrongaddressforthisclient.invalid`,
   );
+  // A long address wraps: nothing on the page scrolls sideways at a phone's width.
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await alert.getByRole('link', { name: number }).click();
   await page.waitForURL(url);
 

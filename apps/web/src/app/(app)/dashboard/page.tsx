@@ -229,7 +229,10 @@ function GettingStarted({ hasProfile, hasClient }: { hasProfile: boolean; hasCli
 /** Invoices still owed whose latest email or reminder could not be sent (docs/specs/email-status.md). */
 function Undelivered({ items }: { items: UndeliveredEmail[] }) {
   return (
-    <div role="alert" className="rounded-[14px] bg-danger-soft px-5 py-4 text-[14px] text-danger">
+    <div
+      role="alert"
+      className="rounded-[14px] bg-danger-soft px-5 py-4 text-[14px] text-danger [overflow-wrap:anywhere]"
+    >
       <p className="font-medium">
         {items.length === 1 ? 'An email could not be sent.' : `${items.length} emails could not be sent.`}{' '}
         Check the address, then send it again from the invoice.

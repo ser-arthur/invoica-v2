@@ -286,7 +286,7 @@ export function FormMessage({
     <div
       role={tone === 'danger' ? 'alert' : 'status'}
       className={cx(
-        'rounded-[10px] px-4 py-3 text-sm',
+        'rounded-[10px] px-4 py-3 text-sm [overflow-wrap:anywhere]',
         tone === 'danger' ? 'bg-danger-soft text-danger' : 'bg-info-soft text-info',
       )}
     >
