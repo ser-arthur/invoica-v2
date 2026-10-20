@@ -24,8 +24,10 @@ describe('failure', () => {
 
   it('says so when the person was signed out, and that nothing was saved', () => {
     const r = failure(thrown(() => redirect('/sign-in')));
+    // Marked, so the page that asked keeps what was typed and does not reload itself into the sign-in page.
     expect(r).toEqual({
       ok: false,
+      signedOut: true,
       message:
         'You have been signed out, so this was not saved. Sign in again in another tab, then come back here and try again.',
     });
