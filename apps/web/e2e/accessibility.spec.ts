@@ -129,3 +129,33 @@ test('open dialogs have no automated accessibility violations, in light and dark
   }
   expect(examined).toBe(4);
 });
+
+test('the leave dialog and the notice at the foot of the screen have no automated accessibility violations', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Notice Office', { vat: true });
+  await addClient(page, 'Thimble Lane Ltd');
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Thimble Lane Ltd' });
+  await page.getByLabel('Line 1 description').fill('Fitting');
+  await page.getByLabel('Line 1 price').fill('250');
+  await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Clients' }).click({
+    force: true,
+  });
+  await expect(page.getByRole('dialog', { name: 'Leave this invoice?' })).toBeVisible();
+  const leaving = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();
+  expect(leaving.violations.map((v) => `leave: ${v.id}`)).toEqual([]);
+  await page.getByRole('button', { name: 'Keep editing' }).click();
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\?issued=1/);
+  await page.context().setOffline(true);
+  await page.getByRole('button', { name: 'Mark as sent' }).click();
+  await expect(page.getByText(/could not be reached/)).toBeVisible();
+  await page.context().setOffline(false);
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
+    const notice = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();
+    expect(notice.violations.map((v) => `${theme} notice: ${v.id}`)).toEqual([]);
+  }
+});
