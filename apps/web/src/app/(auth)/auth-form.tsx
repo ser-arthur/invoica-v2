@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
-import { Button, Field, FormMessage, Input } from '@/components/ui';
+import { reachAuth } from '@/lib/reach';
+import { Button, Field, FormMessage, Input, inlineLinkClass } from '@/components/ui';
 
 /** Where the link in a confirmation email lands once it has signed the person in. */
 export const CONFIRMED_URL = '/confirm-email';
 
-const linkClass = 'font-medium text-brand underline-offset-4 hover:underline';
+const linkClass = inlineLinkClass;
 
 function messageFor(error: { status?: number; code?: string; message?: string }) {
   if (error.status === 401 || error.code === 'INVALID_EMAIL_OR_PASSWORD')
@@ -27,7 +28,7 @@ export function CheckEmail({ email }: { email: string }) {
 
   async function resend() {
     setState('sending');
-    const result = await authClient.sendVerificationEmail({ email, callbackURL: CONFIRMED_URL });
+    const result = await reachAuth(authClient.sendVerificationEmail({ email, callbackURL: CONFIRMED_URL }));
     if (result.error) {
       setError(messageFor(result.error));
       setState('error');
@@ -75,13 +76,15 @@ export function AuthForm({ mode, notice }: { mode: 'sign-in' | 'sign-up'; notice
     const password = String(form.get('password') ?? '');
     const result =
       mode === 'sign-up'
-        ? await authClient.signUp.email({
-            email,
-            password,
-            name: String(form.get('name') ?? '').trim() || email,
-            callbackURL: CONFIRMED_URL,
-          })
-        : await authClient.signIn.email({ email, password, callbackURL: CONFIRMED_URL });
+        ? await reachAuth(
+            authClient.signUp.email({
+              email,
+              password,
+              name: String(form.get('name') ?? '').trim() || email,
+              callbackURL: CONFIRMED_URL,
+            }),
+          )
+        : await reachAuth(authClient.signIn.email({ email, password, callbackURL: CONFIRMED_URL }));
     setPending(false);
     if (result.error) {
       setError(messageFor(result.error));

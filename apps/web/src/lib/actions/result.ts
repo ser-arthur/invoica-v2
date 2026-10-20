@@ -3,8 +3,10 @@ import { NotAMemberError } from '@invoica/db';
 import { fieldErrors } from '@invoica/schemas';
 import type { z } from 'zod';
 
+/** `unreachable` is set in the browser when the call never got an answer (`src/lib/reach.ts`). */
 export type ActionResult<T = undefined> =
-  { ok: true; data: T } | { ok: false; message: string; fieldErrors?: Record<string, string> };
+  | { ok: true; data: T }
+  | { ok: false; message: string; fieldErrors?: Record<string, string>; unreachable?: true };
 
 export function invalid(error: z.ZodError): ActionResult<never> {
   return { ok: false, message: 'Check the highlighted fields.', fieldErrors: fieldErrors(error) };

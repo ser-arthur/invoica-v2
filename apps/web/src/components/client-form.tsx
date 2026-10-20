@@ -7,6 +7,7 @@ import { SUPPORTED_CURRENCIES } from '@invoica/core';
 import { saveClientAction } from '@/lib/actions/clients';
 import { COUNTRIES } from '@/lib/countries';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
+import { reach } from '@/lib/reach';
 
 export interface ClientFormValues {
   name: string;
@@ -72,7 +73,7 @@ export function ClientForm({
       fields,
     };
     startTransition(async () => {
-      const result = await saveClientAction(id, input);
+      const result = await reach(saveClientAction(id, input));
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setMessage(result.message);

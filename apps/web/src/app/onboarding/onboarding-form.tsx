@@ -6,6 +6,7 @@ import { SUPPORTED_CURRENCIES } from '@invoica/core';
 import { Button, Checkbox, Field, FormMessage, Input, Select } from '@/components/ui';
 import { createOrganisationAction } from '@/lib/actions/onboarding';
 import { COUNTRIES, TIME_ZONES } from '@/lib/countries';
+import { reach } from '@/lib/reach';
 
 const BUSINESS_TYPES = [
   { value: 'sole_trader', label: 'Sole trader or freelancer' },
@@ -47,7 +48,7 @@ export function OnboardingForm() {
       taxNumber: registered ? String(form.get('taxNumber') ?? '') : null,
     };
     startTransition(async () => {
-      const result = await createOrganisationAction(input);
+      const result = await reach(createOrganisationAction(input));
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setMessage(result.message);

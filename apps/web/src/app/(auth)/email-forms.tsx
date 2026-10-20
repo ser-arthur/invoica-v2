@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
-import { Button, Field, FormMessage, Input } from '@/components/ui';
+import { reachAuth } from '@/lib/reach';
+import { Button, Field, FormMessage, Input, inlineLinkClass } from '@/components/ui';
 import { CONFIRMED_URL } from './auth-form';
 
-const linkClass = 'font-medium text-brand underline-offset-4 hover:underline';
+const linkClass = inlineLinkClass;
 
 function tooMany(error: { status?: number; message?: string }) {
   return error.status === 429
@@ -26,7 +27,7 @@ export function ForgotPasswordForm() {
     setError(null);
     setPending(true);
     const email = String(new FormData(event.currentTarget).get('email') ?? '').trim();
-    const result = await authClient.requestPasswordReset({ email, redirectTo: '/reset-password' });
+    const result = await reachAuth(authClient.requestPasswordReset({ email, redirectTo: '/reset-password' }));
     setPending(false);
     if (result.error) {
       setError(tooMany(result.error));
@@ -81,7 +82,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
       return;
     }
     setPending(true);
-    const result = await authClient.resetPassword({ newPassword, token });
+    const result = await reachAuth(authClient.resetPassword({ newPassword, token }));
     setPending(false);
     if (result.error) {
       if (result.error.code === 'INVALID_TOKEN') setExpired(true);
@@ -130,7 +131,7 @@ export function ResendConfirmationForm() {
     setError(null);
     setPending(true);
     const email = String(new FormData(event.currentTarget).get('email') ?? '').trim();
-    const result = await authClient.sendVerificationEmail({ email, callbackURL: CONFIRMED_URL });
+    const result = await reachAuth(authClient.sendVerificationEmail({ email, callbackURL: CONFIRMED_URL }));
     setPending(false);
     if (result.error) {
       setError(tooMany(result.error));

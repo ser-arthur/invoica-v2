@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useRef, useState, useTransition } from 'react';
 import { removeLogoAction, uploadLogoAction } from '@/lib/actions/logo';
 import { Button, FormMessage, Panel } from './ui';
+import { showNotice } from '@/lib/notice';
+import { reach } from '@/lib/reach';
 
 export function LogoUpload({ logoUrl, name }: { logoUrl: string | null; name: string }) {
   const router = useRouter();
@@ -17,7 +19,7 @@ export function LogoUpload({ logoUrl, name }: { logoUrl: string | null; name: st
     form.set('logo', file);
     setMessage(null);
     start(async () => {
-      const r = await uploadLogoAction(form);
+      const r = await reach(uploadLogoAction(form));
       if (!r.ok) return setMessage(r.message);
       router.refresh();
     });
@@ -71,7 +73,8 @@ export function LogoUpload({ logoUrl, name }: { logoUrl: string | null; name: st
                 disabled={pending}
                 onClick={() =>
                   start(async () => {
-                    await removeLogoAction();
+                    const r = await reach(removeLogoAction());
+                    if (!r.ok) return showNotice(r.message);
                     router.refresh();
                   })
                 }

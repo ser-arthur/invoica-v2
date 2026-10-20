@@ -36,7 +36,19 @@ import { requestKey } from '@/lib/request-key';
 import { ClientForm } from './client-form';
 import { Dialog } from './dialog';
 import { DocumentFrame } from './document-frame';
-import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea, cx } from './ui';
+import {
+  Button,
+  Checkbox,
+  Field,
+  FormMessage,
+  Input,
+  Panel,
+  Select,
+  Textarea,
+  cx,
+  inlineLinkClass,
+} from './ui';
+import { reach } from '@/lib/reach';
 
 export interface EditorClient {
   id: string;
@@ -522,7 +534,9 @@ export function InvoiceEditor(props: EditorProps) {
     }
     start(async () => {
       const input = docId ? parsed.input : { ...parsed.input, idempotencyKey: createKey };
-      const result = issue ? await saveAndIssueAction(docId, input) : await saveDraftAction(docId, input);
+      const result = issue
+        ? await reach(saveAndIssueAction(docId, input))
+        : await reach(saveDraftAction(docId, input));
       setConfirmIssue(false);
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
@@ -685,7 +699,7 @@ export function InvoiceEditor(props: EditorProps) {
                             href={`https://www.trade-tariff.service.gov.uk/exchange_rates/view/${Number(rateDate.slice(0, 4))}-${Number(rateDate.slice(5, 7))}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="font-medium text-brand underline-offset-4 hover:underline"
+                            className={inlineLinkClass}
                           >
                             {new Intl.DateTimeFormat('en-GB', {
                               month: 'long',

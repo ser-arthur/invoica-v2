@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { duplicateAction, markSentAction } from '@/lib/actions/documents';
 import { PaymentDialog } from './document-actions';
+import { showNotice } from '@/lib/notice';
+import { reach } from '@/lib/reach';
 
 const item =
   'flex min-h-11 w-full items-center rounded-lg px-3 text-left text-[14px] hover:bg-sunk disabled:opacity-50 sm:min-h-9';
@@ -94,7 +96,8 @@ export function RowActions({
                 onClick={() => {
                   setOpen(false);
                   start(async () => {
-                    await markSentAction(id);
+                    const r = await reach(markSentAction(id));
+                    if (!r.ok) return showNotice(r.message);
                     router.refresh();
                   });
                 }}
@@ -117,7 +120,7 @@ export function RowActions({
               disabled={pending}
               onClick={() =>
                 start(async () => {
-                  const r = await duplicateAction(id);
+                  const r = await reach(duplicateAction(id));
                   if (r.ok) router.push(`/invoices/${r.data.id}/edit`);
                 })
               }

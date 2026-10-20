@@ -6,6 +6,8 @@ import { Plus, X } from 'lucide-react';
 import { describeTaxCode, formatRate, parseRate, type TaxComponent, type TaxTreatment } from '@invoica/core';
 import { archiveTaxCodeAction, loadPresetAction, saveTaxCodeAction } from '@/lib/actions/settings';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, PanelHeading, Select } from './ui';
+import { showNotice } from '@/lib/notice';
+import { reach } from '@/lib/reach';
 
 export interface TaxCodeValue {
   id: string;
@@ -51,7 +53,9 @@ function Editor({ code, onDone }: { code: TaxCodeValue | null; onDone: () => voi
       components.push({ name: r.name, ratePpm, compound: r.compound });
     }
     start(async () => {
-      const result = await saveTaxCodeAction(code?.id ?? null, { label, treatment, components, isDefault });
+      const result = await reach(
+        saveTaxCodeAction(code?.id ?? null, { label, treatment, components, isDefault }),
+      );
       if (!result.ok) {
         setMessage(result.message);
         return;
@@ -181,7 +185,8 @@ export function TaxCodes({
                 disabled={pending}
                 onClick={() =>
                   start(async () => {
-                    await loadPresetAction(country);
+                    const r = await reach(loadPresetAction(country));
+                    if (!r.ok) return showNotice(r.message);
                     router.refresh();
                   })
                 }
@@ -238,7 +243,8 @@ export function TaxCodes({
                   disabled={pending}
                   onClick={() =>
                     start(async () => {
-                      await archiveTaxCodeAction(c.id);
+                      const r = await reach(archiveTaxCodeAction(c.id));
+                      if (!r.ok) return showNotice(r.message);
                       router.refresh();
                     })
                   }

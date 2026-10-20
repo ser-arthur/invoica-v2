@@ -37,6 +37,8 @@ import {
 } from '@/lib/actions/documents';
 import { requestKey } from '@/lib/request-key';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
+import { showNotice } from '@/lib/notice';
+import { reach } from '@/lib/reach';
 
 export { Dialog };
 
@@ -74,7 +76,7 @@ export function DeleteDraftButton({ id }: { id: string }) {
               disabled={pending}
               onClick={() =>
                 start(async () => {
-                  const r = await deleteDraftAction(id);
+                  const r = await reach(deleteDraftAction(id));
                   if (r.ok) {
                     router.push('/invoices');
                     router.refresh();
@@ -101,7 +103,8 @@ export function MarkSentButton({ id }: { id: string }) {
       disabled={pending}
       onClick={() =>
         start(async () => {
-          await markSentAction(id);
+          const r = await reach(markSentAction(id));
+          if (!r.ok) return showNotice(r.message);
           router.refresh();
         })
       }
@@ -144,15 +147,17 @@ export function PaymentDialog({
       return;
     }
     start(async () => {
-      const r = await recordPaymentAction({
-        documentId: id,
-        amount: minor,
-        paidOn,
-        method,
-        reference,
-        note: null,
-        idempotencyKey: key,
-      });
+      const r = await reach(
+        recordPaymentAction({
+          documentId: id,
+          amount: minor,
+          paidOn,
+          method,
+          reference,
+          note: null,
+          idempotencyKey: key,
+        }),
+      );
       if (!r.ok) {
         setMessage(r.message);
         return;
@@ -256,7 +261,7 @@ export function RemovePaymentButton({ paymentId, documentId }: { paymentId: stri
                 disabled={pending}
                 onClick={() =>
                   start(async () => {
-                    const r = await removePaymentAction(paymentId, documentId, reason);
+                    const r = await reach(removePaymentAction(paymentId, documentId, reason));
                     if (!r.ok) return setMessage(r.message);
                     setOpen(false);
                     router.refresh();
@@ -304,7 +309,7 @@ export function VoidButton({ id, number }: { id: string; number: string }) {
                 disabled={pending}
                 onClick={() =>
                   start(async () => {
-                    const r = await voidAction({ documentId: id, reason });
+                    const r = await reach(voidAction({ documentId: id, reason }));
                     if (!r.ok) return setMessage(r.fieldErrors?.reason ?? r.message);
                     setOpen(false);
                     router.refresh();
@@ -471,7 +476,7 @@ export function CreditNoteButton({
             }
           : { ...base, mode, amount: parseMoney(amount, currency) ?? 0 };
     start(async () => {
-      const r = await creditNoteAction(input);
+      const r = await reach(creditNoteAction(input));
       if (!r.ok) return setMessage(r.fieldErrors?.reason ?? r.message);
       setOpen(false);
       router.push(`/invoices/${r.data.id}`);
@@ -656,7 +661,7 @@ export function DuplicateButton({ id }: { id: string }) {
       disabled={pending}
       onClick={() =>
         start(async () => {
-          const r = await duplicateAction(id);
+          const r = await reach(duplicateAction(id));
           if (r.ok) router.push(`/invoices/${r.data.id}/edit`);
         })
       }
@@ -700,7 +705,9 @@ export function SendEmailButton({
   function submit() {
     setError(null);
     start(async () => {
-      const r = await sendDocumentAction({ documentId: id, to, subject, message, idempotencyKey: key });
+      const r = await reach(
+        sendDocumentAction({ documentId: id, to, subject, message, idempotencyKey: key }),
+      );
       if (!r.ok) return setError(r.fieldErrors ? Object.values(r.fieldErrors)[0]! : r.message);
       setDone(true);
       router.refresh();
@@ -776,6 +783,8 @@ export function ReminderControls({
 }) {
   const router = useRouter();
   const [message, setMessage] = useState<{ tone: 'danger' | 'info'; text: string } | null>(null);
+  // Kept until a reminder is on its way, so trying again after a lost answer sends one reminder.
+  const [sendKey, setSendKey] = useState(() => requestKey());
   const [pending, start] = useTransition();
   return (
     <div className="flex flex-col gap-3">
@@ -788,8 +797,9 @@ export function ReminderControls({
             disabled={pending}
             onClick={() =>
               start(async () => {
-                const r = await sendReminderNowAction(id, requestKey());
+                const r = await reach(sendReminderNowAction(id, sendKey));
                 if (!r.ok) return setMessage({ tone: 'danger', text: r.message });
+                setSendKey(requestKey());
                 setMessage({ tone: 'info', text: 'A reminder is on its way.' });
                 router.refresh();
               })
@@ -805,7 +815,7 @@ export function ReminderControls({
             disabled={pending}
             onClick={() =>
               start(async () => {
-                const r = await setRemindersPausedAction(id, !paused);
+                const r = await reach(setRemindersPausedAction(id, !paused));
                 if (!r.ok) return setMessage({ tone: 'danger', text: r.message });
                 setMessage(null);
                 router.refresh();

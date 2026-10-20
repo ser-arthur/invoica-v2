@@ -6,9 +6,11 @@ import { ORG_COOKIE, requireUser } from '../session';
 import { myOrganisations } from '@invoica/db';
 import { getDb } from '../db';
 import { env } from '../env';
+import type { ActionResult } from './result';
 
-export async function setThemeAction(theme: 'light' | 'dark' | 'system') {
-  if (!['light', 'dark', 'system'].includes(theme)) return;
+export async function setThemeAction(theme: 'light' | 'dark' | 'system'): Promise<ActionResult> {
+  if (!['light', 'dark', 'system'].includes(theme))
+    return { ok: false, message: 'Choose light, dark or system.' };
   (await cookies()).set('invoica_theme', theme, {
     path: '/',
     sameSite: 'lax',
@@ -17,6 +19,7 @@ export async function setThemeAction(theme: 'light' | 'dark' | 'system') {
     maxAge: 60 * 60 * 24 * 365,
   });
   revalidatePath('/', 'layout');
+  return { ok: true, data: undefined };
 }
 
 export async function switchOrganisationAction(id: string) {

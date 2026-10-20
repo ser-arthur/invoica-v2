@@ -5,6 +5,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { FileText, Home, Package, Plus, Settings, Users } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { setThemeAction } from '@/lib/actions/preferences';
+import { reach, reachAuth } from '@/lib/reach';
+import { showNotice } from '@/lib/notice';
+import { Notices } from './notices';
 import { ButtonLink, Wordmark, cx } from './ui';
 
 const NAV = [
@@ -33,7 +36,8 @@ export function AppShell({
   const router = useRouter();
 
   async function signOut() {
-    await authClient.signOut();
+    const r = await reachAuth(authClient.signOut());
+    if (r.error) return showNotice(r.error.message ?? 'Signing out did not work. Try again.');
     router.push('/sign-in');
     router.refresh();
   }
@@ -115,7 +119,10 @@ export function AppShell({
                       key={t}
                       type="button"
                       aria-pressed={theme === t}
-                      onClick={() => setThemeAction(t)}
+                      onClick={async () => {
+                        const r = await reach(setThemeAction(t));
+                        if (!r.ok) showNotice(r.message);
+                      }}
                       className={cx(
                         'h-8 rounded-lg text-[13px] capitalize',
                         theme === t ? 'bg-ink text-surface' : 'text-ink-soft hover:bg-sunk',
@@ -182,6 +189,7 @@ export function AppShell({
           )}
         </ul>
       </nav>
+      <Notices />
     </div>
   );
 }

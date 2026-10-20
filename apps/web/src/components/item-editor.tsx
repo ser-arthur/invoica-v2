@@ -5,6 +5,7 @@ import { useState, useTransition } from 'react';
 import { formatMoney, parseMoney, toDecimalString } from '@invoica/core';
 import { archiveItemAction, saveItemAction } from '@/lib/actions/items';
 import { Button, Field, FormMessage, Input, Select, Textarea } from './ui';
+import { reach } from '@/lib/reach';
 
 export interface ItemValue {
   id: string;
@@ -47,7 +48,7 @@ export function ItemEditor({
       taxCodeId: String(f.get('taxCodeId') ?? '') || null,
     };
     start(async () => {
-      const r = await saveItemAction(item?.id ?? null, input);
+      const r = await reach(saveItemAction(item?.id ?? null, input));
       if (!r.ok) {
         setErrors(r.fieldErrors ?? {});
         setMessage(r.message);
@@ -117,7 +118,8 @@ export function ItemEditor({
             disabled={pending}
             onClick={() =>
               start(async () => {
-                await archiveItemAction(item.id);
+                const r = await reach(archiveItemAction(item.id));
+                if (!r.ok) return setMessage(r.message);
                 router.refresh();
                 onDone();
               })

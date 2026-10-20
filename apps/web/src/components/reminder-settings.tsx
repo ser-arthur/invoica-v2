@@ -10,6 +10,7 @@ import {
 } from '@invoica/core';
 import { saveReminderSettingsAction } from '@/lib/actions/settings';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Textarea } from './ui';
+import { reach } from '@/lib/reach';
 
 const WHEN: Record<number, string> = {
   [-3]: '3 days before the due date',
@@ -58,11 +59,13 @@ export function ReminderSettings({
       ).map(({ kind }) => [kind, wording[kind]]),
     );
     start(async () => {
-      const r = await saveReminderSettingsAction({
-        remindersEnabled: enabled,
-        reminderOffsets: offsets,
-        reminderWording: own,
-      });
+      const r = await reach(
+        saveReminderSettingsAction({
+          remindersEnabled: enabled,
+          reminderOffsets: offsets,
+          reminderWording: own,
+        }),
+      );
       if (!r.ok) return setMessage({ tone: 'danger', text: r.message });
       setMessage({ tone: 'info', text: 'Reminder settings saved.' });
       router.refresh();

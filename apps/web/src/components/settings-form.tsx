@@ -8,6 +8,7 @@ import { COUNTRIES, TIME_ZONES } from '@/lib/countries';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
 import type { DocumentSnapshot } from '@invoica/core';
 import { TemplatePicker } from './template-picker';
+import { reach } from '@/lib/reach';
 
 export interface ProfileValues {
   name: string;
@@ -190,7 +191,9 @@ export function SettingsForm({
     setMessage(null);
     start(async () => {
       // A choice not offered for the country (after the country changed) becomes the country's usual one.
-      const r = await saveProfileAction({ ...v, taxLevel: rounding.taxLevel, rounding: rounding.rounding });
+      const r = await reach(
+        saveProfileAction({ ...v, taxLevel: rounding.taxLevel, rounding: rounding.rounding }),
+      );
       if (!r.ok) {
         setErrors(r.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: r.message });
