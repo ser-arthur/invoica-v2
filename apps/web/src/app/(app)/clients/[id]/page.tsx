@@ -114,7 +114,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                       href={`/invoices/${d.id}`}
                       className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-3.5 hover:bg-sunk sm:grid-cols-[1fr_9rem_7rem]"
                     >
-                      <div>
+                      <div className="min-w-0 [overflow-wrap:anywhere]">
                         <p className="font-medium">{d.number ?? 'Draft'}</p>
                         <p className="text-[13px] text-muted">
                           {d.title ?? (d.issueDate ? formatBusinessDate(d.issueDate) : 'Not issued yet')}

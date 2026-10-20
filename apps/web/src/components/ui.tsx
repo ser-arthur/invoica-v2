@@ -218,10 +218,12 @@ export function PageHeader({
             {back.label}
           </Link>
         ) : null}
-        <h1 className="font-display text-[26px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[30px]">
+        <h1 className="font-display text-[26px] leading-tight font-semibold tracking-[-0.02em] [overflow-wrap:anywhere] text-ink sm:text-[30px]">
           {title}
         </h1>
-        {description ? <p className="mt-1.5 max-w-[60ch] text-muted">{description}</p> : null}
+        {description ? (
+          <p className="mt-1.5 max-w-[60ch] [overflow-wrap:anywhere] text-muted">{description}</p>
+        ) : null}
       </div>
       {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}
     </div>

@@ -1140,7 +1140,7 @@ export function InvoiceEditor(props: EditorProps) {
                     const it = items.find((i) => i.id === e.target.value);
                     if (it) addLine(it);
                   }}
-                  className="h-8 w-auto text-[13px]"
+                  className="h-8 w-auto max-w-full min-w-0 text-[13px]"
                 >
                   <option value="">Add a saved item</option>
                   {items.map((i) => (

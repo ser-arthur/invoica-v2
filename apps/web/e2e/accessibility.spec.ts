@@ -65,12 +65,19 @@ test('no page scrolls sideways at phone widths, and nothing is cut off at the ed
   const clientPage = new URL(page.url()).pathname;
   await page.goto('/invoices/new');
   await page.getByLabel('Bill to').selectOption({ label: 'Aura Coffee Roasters and Bakery Limited' });
+  await page.fill('#e-title', 'Winterservicingforallroastingequipmentandgrindersacrosseverysite');
+  await page.fill('#e-ref', 'PO-AURA-2026-WINTER-SERVICING-ALL-SITES-0000123456789');
   await page.getByLabel('Line 1 description').fill('Roasting equipment servicing for the winter season');
   await page.getByLabel('Line 1 price').fill('1250');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
   await page.waitForURL(/\?issued=1/);
   const invoicePage = new URL(page.url()).pathname;
+  await page.goto('/items');
+  await page.fill('#i-name', 'Highperformanceespressomachinedescalingandmaintenanceservice');
+  await page.fill('#i-price', '95');
+  await page.getByRole('button', { name: 'Add item' }).click();
+  await expect(page.getByText('Highperformanceespressomachinedescalingandmaintenanceservice')).toBeVisible();
   const paths = [
     '/dashboard',
     '/invoices',

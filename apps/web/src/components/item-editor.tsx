@@ -179,7 +179,7 @@ export function ItemsList({
                   onClick={() => setEditing(it.id)}
                   className="flex w-full items-center justify-between gap-4 px-5 py-3.5 text-left hover:bg-sunk"
                 >
-                  <span className="min-w-0">
+                  <span className="min-w-0 [overflow-wrap:anywhere]">
                     <span className="block font-medium">{it.name}</span>
                     <span className="block truncate text-[13px] text-muted">
                       {it.description ?? label(it.taxCodeId)}
