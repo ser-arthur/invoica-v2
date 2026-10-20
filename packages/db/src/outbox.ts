@@ -146,3 +146,54 @@ export async function emailDeliveries(tx: Tx, documentId: string): Promise<Email
   }
   return out;
 }
+
+/** An invoice whose latest email or reminder could not be sent, for the dashboard. */
+export interface UndeliveredEmail {
+  documentId: string;
+  number: string;
+  clientName: string;
+  kind: 'email' | 'reminder';
+  to: string | null;
+}
+
+/**
+ * The invoices still owed on whose latest email, or latest reminder, could not be sent, newest first. One that was
+ * sent or queued again since is left out, as on the invoice page, and so is one paid, credited or void since.
+ */
+export async function undeliveredEmails(tx: Tx, limit = 10): Promise<UndeliveredEmail[]> {
+  const result = await tx.execute<{
+    document_id: string;
+    number: string;
+    client_name: string;
+    topic: keyof typeof DELIVERY_TOPICS;
+    to: string | null;
+  }>(sql`
+    select l.document_id, d.number, c.name as client_name, l.topic, l.payload ->> 'to' as to
+    from (
+      select distinct on (o.payload ->> 'documentId', o.topic)
+        (o.payload ->> 'documentId')::uuid as document_id, o.topic, o.status, o.payload, o.created_at
+      from outbox o
+      where o.topic in ('document.email', 'document.reminder')
+      order by o.payload ->> 'documentId', o.topic, o.created_at desc, o.id desc
+    ) l
+    join document d on d.id = l.document_id
+    join client c on c.id = d.client_id
+    where l.status = 'failed' and d.kind = 'invoice' and d.lifecycle in ('issued', 'sent')
+      and d.total
+        - coalesce((select sum(p.amount) from payment p where p.document_id = d.id and p.removed_at is null), 0)
+        + coalesce((select sum(r.amount) from refund r where r.document_id = d.id), 0)
+        - coalesce((
+            select sum(n.total) from document n
+            where n.credited_document_id = d.id and n.kind = 'credit_note' and n.lifecycle in ('issued', 'sent')
+          ), 0) > 0
+    order by l.created_at desc
+    limit ${limit}
+  `);
+  return result.rows.map((r) => ({
+    documentId: r.document_id,
+    number: r.number,
+    clientName: r.client_name,
+    kind: DELIVERY_TOPICS[r.topic],
+    to: DELIVERY_TOPICS[r.topic] === 'email' ? r.to : null,
+  }));
+}

@@ -7,7 +7,13 @@ import {
   sumMinor,
   type ReceivablesSummary,
 } from '@invoica/core';
-import { getDashboard, listClients, withOrganisation } from '@invoica/db';
+import {
+  getDashboard,
+  listClients,
+  undeliveredEmails,
+  withOrganisation,
+  type UndeliveredEmail,
+} from '@invoica/db';
 import { ButtonLink, Headline, Money, Panel, PanelHeading, StatePill, cx } from '@/components/ui';
 import { getDb } from '@/lib/db';
 import { requireWorkspace } from '@/lib/session';
@@ -220,12 +226,37 @@ function GettingStarted({ hasProfile, hasClient }: { hasProfile: boolean; hasCli
   );
 }
 
+/** Invoices still owed whose latest email or reminder could not be sent (docs/specs/email-status.md). */
+function Undelivered({ items }: { items: UndeliveredEmail[] }) {
+  return (
+    <div role="alert" className="rounded-[14px] bg-danger-soft px-5 py-4 text-[14px] text-danger">
+      <p className="font-medium">
+        {items.length === 1 ? 'An email could not be sent.' : `${items.length} emails could not be sent.`}{' '}
+        Check the address, then send it again from the invoice.
+      </p>
+      <ul className="mt-2 flex flex-col gap-1">
+        {items.map((u) => (
+          <li key={`${u.documentId}-${u.kind}`}>
+            <Link
+              href={`/invoices/${u.documentId}`}
+              className="font-medium underline underline-offset-4 hover:decoration-2"
+            >
+              {u.number}
+            </Link>
+            , {u.clientName}: {u.kind === 'reminder' ? 'a reminder' : `the invoice to ${u.to}`}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default async function DashboardPage() {
   const { actor, organisation, today } = await requireWorkspace();
   const base = organisation.baseCurrency;
-  const [dash, clients] = await withOrganisation(getDb(), actor, async (tx) => {
+  const [dash, clients, undelivered] = await withOrganisation(getDb(), actor, async (tx) => {
     const dashboard = await getDashboard(tx, today, base);
-    return [dashboard, await listClients(tx)] as const;
+    return [dashboard, await listClients(tx), await undeliveredEmails(tx)] as const;
   });
   const baseSummary = dash.receivables.find((r) => r.currency === base);
   const otherOwed = dash.receivables.filter((r) => r.currency !== base);
@@ -249,6 +280,8 @@ export default async function DashboardPage() {
           </p>
         </div>
       </div>
+
+      {undelivered.length > 0 ? <Undelivered items={undelivered} /> : null}
 
       {isNew ? (
         <GettingStarted hasProfile={!!organisation.addressLine1} hasClient={clients.length > 0} />

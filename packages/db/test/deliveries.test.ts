@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { drainOutbox, emailDeliveries, enqueue, type JobHandler } from '../src/outbox';
+import { drainOutbox, emailDeliveries, enqueue, undeliveredEmails, type JobHandler } from '../src/outbox';
 import { createTestDatabase, type TestDatabase } from './helpers';
-import { business, issued, type Business } from './business';
+import { recordPayment } from '../src/documents';
+import { business, issued, pay, type Business } from './business';
 
 /** docs/specs/email-status.md: what the invoice page says about emails and reminders that have not gone. */
 
@@ -99,5 +100,29 @@ describe('emails and reminders that have not gone', () => {
     await email(a, id, 'accounts@own.example', 'deliver-email-03');
     expect(await deliveries(other, id)).toEqual([]);
     expect(await deliveries(a, id)).toHaveLength(1);
+  });
+
+  it('the dashboard lists each invoice whose latest email or reminder could not be sent, and only its own', async () => {
+    const b = await business(t, 'Dashboard Delivery Office');
+    const other = await business(t, 'Other Dashboard Office');
+    const bad = await anInvoice(b);
+    const fine = await anInvoice(b);
+    const fixed = await anInvoice(b);
+    await email(b, bad, 'accounts@bad.example', 'dash-email-01');
+    await email(b, fine, 'accounts@fine.example', 'dash-email-02');
+    await email(b, fixed, 'accounts@bad.example', 'dash-email-03');
+    await drain(async (job) => {
+      if (job.payload.to === 'accounts@bad.example') throw refused;
+    });
+    await email(b, fixed, 'accounts@good.example', 'dash-email-04');
+    await drain(async () => undefined);
+    const listed = await b.run((tx) => undeliveredEmails(tx));
+    expect(listed.map((d) => [d.documentId, d.kind, d.to])).toEqual([[bad, 'email', 'accounts@bad.example']]);
+    expect(listed[0]!.number).toMatch(/^INV-\d+$/);
+    expect(listed[0]!.clientName).toBeTruthy();
+    expect(await other.run((tx) => undeliveredEmails(tx))).toEqual([]);
+    // Once it is paid, it needs no email.
+    await b.run((tx) => recordPayment(tx, b.actor, pay(bad, 12_000, 'dash-pay-0001')));
+    expect(await b.run((tx) => undeliveredEmails(tx))).toEqual([]);
   });
 });

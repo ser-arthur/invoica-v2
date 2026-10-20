@@ -11,6 +11,8 @@ On the invoice page, above the invoice:
 - When it could not be sent: "The email to accounts@client.example could not be sent. Check the address, then send it again." The invoice stays "Issued" (it is marked as sent only once an email goes).
 - The same for reminders: "Sending a reminder.", "A reminder is taking longer than usual to send. Invoica keeps trying for about two hours." and "A reminder could not be sent. Check the client's email address."
 
+On the dashboard, for each invoice still owed whose latest email or reminder could not be sent: "An email could not be sent. Check the address, then send it again from the invoice." with "INV-0004, Wrong Address Ltd: the invoice to accounts@wrong-address.invalid" linking to the invoice (or "a reminder"). It goes once an email to that invoice goes, or the invoice is paid, credited or void.
+
 ## Rules
 
 1. Every email or reminder for the invoice that is waiting or being tried again is shown.
@@ -20,6 +22,6 @@ On the invoice page, above the invoice:
 
 ## Acceptance criteria
 
-1. Rules 1 to 3: `packages/db/test/deliveries.test.ts`.
+1. Rules 1 to 3, and the dashboard's list: `packages/db/test/deliveries.test.ts`.
 2. Rule 4: `apps/web/src/lib/email-adapters.test.ts`.
-3. An invoice emailed to an address that cannot exist says so on its page, stays "Issued", and the message goes once the invoice is emailed to a good address (`apps/web/e2e/invoice-flow.spec.ts`).
+3. An invoice emailed to an address that cannot exist says so on its page and on the dashboard, stays "Issued", and both messages go once the invoice is emailed to a good address (`apps/web/e2e/invoice-flow.spec.ts`).

@@ -131,6 +131,13 @@ test('an invoice emailed to an address that cannot exist says so, stays issued, 
     await expect(refused).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 30_000 });
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Issued');
+  await page.goto('/dashboard');
+  const alert = page.getByRole('alert').filter({ hasText: 'An email could not be sent.' });
+  await expect(alert).toContainText(
+    `${number}, Wrong Address Ltd: the invoice to accounts@wrong-address.invalid`,
+  );
+  await alert.getByRole('link', { name: number }).click();
+  await page.waitForURL(url);
 
   const started = Date.now();
   await page.getByRole('button', { name: 'Send', exact: true }).click();
@@ -143,6 +150,8 @@ test('an invoice emailed to an address that cannot exist says so, stays issued, 
   }).toPass({ timeout: 30_000 });
   await expect(refused).toHaveCount(0);
   await expect(page.getByText(/^Sending to /)).toHaveCount(0);
+  await page.goto('/dashboard');
+  await expect(page.getByText('An email could not be sent.')).toHaveCount(0);
 });
 
 test('two payments recorded from the same page both count, and a credit note credits part of a line', async ({
