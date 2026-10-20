@@ -156,3 +156,47 @@ test('leaving an invoice with changes not saved asks first, from any link', asyn
   await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Clients' }).click();
   await page.waitForURL(/\/clients$/);
 });
+
+test('settings saved stay saved, and the next invoice follows them', async ({ page }) => {
+  await signUpAndOnboard(page, 'Settings Studio', { vat: true });
+  await addClient(page, 'Lantern Works Ltd');
+  await page.goto('/settings');
+  await page.fill('#s-ip', 'SS-');
+  await page.fill('#s-terms', '14');
+  await page.fill('#s-bn', 'Settings Studio Ltd');
+  await page.fill('#s-bank', 'Northern Bank');
+  await page.fill('#s-sc', '12-34-56');
+  await page.fill('#s-an', '12345678');
+  await page.fill('#s-notes', 'Thank you for your business.');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText(/Settings saved\./)).toBeVisible();
+
+  await page.reload();
+  for (const [id, value] of [
+    ['#s-ip', 'SS-'],
+    ['#s-terms', '14'],
+    ['#s-bank', 'Northern Bank'],
+    ['#s-sc', '12-34-56'],
+    ['#s-an', '12345678'],
+    ['#s-notes', 'Thank you for your business.'],
+  ] as const) {
+    await expect(page.locator(id), id).toHaveValue(value);
+  }
+
+  await page.goto('/invoices/new');
+  await page.getByLabel('Bill to').selectOption({ label: 'Lantern Works Ltd' });
+  await page.getByLabel('Line 1 description').fill('Lighting plan');
+  await page.getByLabel('Line 1 price').fill('900');
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+  const due = new Date(`${today}T12:00:00Z`);
+  due.setUTCDate(due.getUTCDate() + 14);
+  await expect(page.locator('#e-due')).toHaveValue(due.toISOString().slice(0, 10));
+  await page.getByRole('button', { name: 'Issue invoice' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
+  await page.waitForURL(/\?issued=1/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('SS-0001');
+  const doc = page.frameLocator('iframe').first();
+  await expect(doc.getByText('Northern Bank').first()).toBeVisible();
+  await expect(doc.getByText('12-34-56').first()).toBeVisible();
+  await expect(doc.getByText('Thank you for your business.').first()).toBeVisible();
+});
