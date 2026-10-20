@@ -210,8 +210,12 @@ export async function sendDocumentAction(input: unknown): Promise<ActionResult> 
   try {
     await inWorkspace(async (tx, ws) => {
       const detail = await getDocument(tx, documentId, ws.today);
-      if (!detail || detail.document.lifecycle === 'draft' || detail.document.lifecycle === 'void') {
-        throw new DomainError('send_wrong_state', 'Only issued invoices can be sent.');
+      if (!detail) throw new DomainError('document_not_found', 'This document does not exist.');
+      if (detail.document.lifecycle === 'void') {
+        throw new DomainError('send_wrong_state', 'This invoice is void, so it cannot be sent.');
+      }
+      if (detail.document.lifecycle === 'draft') {
+        throw new DomainError('send_wrong_state', 'Issue the invoice before sending it.');
       }
       await enqueue(
         tx,

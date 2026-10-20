@@ -313,7 +313,7 @@ describe('payments', () => {
       await failure(
         run((tx) => recordPayment(tx, actor, { ...p, documentId: draftId, idempotencyKey: 'draft-pay-01' })),
       ),
-    ).toMatch(/issued/);
+    ).toBe('Issue the invoice before recording a payment.');
     await run((tx) => issueDocument(tx, actor, draftId, NOW));
     const { id: payId } = await run((tx) =>
       recordPayment(tx, actor, { ...p, documentId: draftId, idempotencyKey: 'void-pay-01' }),

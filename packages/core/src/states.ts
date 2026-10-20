@@ -39,29 +39,46 @@ export function deriveState(args: {
   return lifecycle;
 }
 
-/** The lifecycle after an event, or a DomainError when the event is not allowed. */
-export function transition(lifecycle: Lifecycle, event: DocumentEvent, context: { paid: number }): Lifecycle {
+/**
+ * The lifecycle after an event, or a DomainError when the event is not allowed. Each refusal says what the person can
+ * do, as a page opened before a change made elsewhere meets it.
+ */
+export function transition(
+  lifecycle: Lifecycle,
+  event: DocumentEvent,
+  context: { paid: number; kind?: 'invoice' | 'credit_note' },
+): Lifecycle {
+  const noun = context.kind === 'credit_note' ? 'credit note' : 'invoice';
   switch (event) {
     case 'issue':
       if (lifecycle === 'draft') return 'issued';
-      break;
+      throw new DomainError(
+        'transition_invalid',
+        lifecycle === 'void'
+          ? `This ${noun} has already been issued, and is now void.`
+          : `This ${noun} has already been issued.`,
+      );
     case 'mark_sent':
       if (lifecycle === 'issued' || lifecycle === 'sent') return 'sent';
-      break;
+      throw new DomainError(
+        'transition_invalid',
+        lifecycle === 'void'
+          ? `This ${noun} is void, so it cannot be marked as sent.`
+          : `Issue the ${noun} before marking it as sent.`,
+      );
     case 'void':
       if ((lifecycle === 'issued' || lifecycle === 'sent') && context.paid === 0) return 'void';
-      if ((lifecycle === 'issued' || lifecycle === 'sent') && context.paid !== 0) {
+      if (lifecycle === 'issued' || lifecycle === 'sent') {
         throw new DomainError(
           'void_has_payments',
           'A document with payments recorded cannot be voided. Remove the payments or issue a credit note.',
         );
       }
-      break;
+      throw new DomainError(
+        'transition_invalid',
+        lifecycle === 'void' ? `This ${noun} is already void.` : 'A draft is not voided: delete it instead.',
+      );
   }
-  throw new DomainError(
-    'transition_invalid',
-    `Cannot ${event.replace('_', ' ')} a document that is ${lifecycle}.`,
-  );
 }
 
 /** Whether a payment of `amount` can be recorded against a document with this lifecycle and balance. */
@@ -70,7 +87,12 @@ export function checkPayment(lifecycle: Lifecycle, balance: number, amount: numb
     throw new DomainError('payment_not_positive', 'A payment must be more than zero.');
   }
   if (lifecycle !== 'issued' && lifecycle !== 'sent') {
-    throw new DomainError('payment_wrong_state', `Payments can only be recorded on issued documents.`);
+    throw new DomainError(
+      'payment_wrong_state',
+      lifecycle === 'void'
+        ? 'This invoice is void, so no payment can be recorded on it.'
+        : 'Issue the invoice before recording a payment.',
+    );
   }
   if (amount > balance) {
     throw new DomainError('payment_exceeds_balance', 'The payment is more than the balance due.');

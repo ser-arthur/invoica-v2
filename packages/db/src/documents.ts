@@ -611,7 +611,7 @@ export async function issueDocument(
   confirmed?: { total: number },
 ): Promise<{ number: string }> {
   const doc = await lockDocument(tx, id);
-  transition(doc.lifecycle, 'issue', { paid: 0 });
+  transition(doc.lifecycle, 'issue', { paid: 0, kind: doc.kind });
   const lines = await tx
     .select()
     .from(documentLine)
@@ -760,7 +760,7 @@ export async function markSent(
   channel = 'manual',
 ): Promise<void> {
   const doc = await lockDocument(tx, id);
-  const next = transition(doc.lifecycle, 'mark_sent', { paid: 0 });
+  const next = transition(doc.lifecycle, 'mark_sent', { paid: 0, kind: doc.kind });
   await tx
     .update(document)
     .set({ lifecycle: next, sentAt: doc.sentAt ?? now })
@@ -788,7 +788,7 @@ export async function voidDocument(
   if (applied.credited > 0) {
     throw new DomainError('void_has_credits', 'An invoice with credit notes cannot be voided.');
   }
-  transition(doc.lifecycle, 'void', { paid: applied.paid });
+  transition(doc.lifecycle, 'void', { paid: applied.paid, kind: doc.kind });
   await tx
     .update(document)
     .set({ lifecycle: 'void', voidedAt: now, voidReason: reason })
