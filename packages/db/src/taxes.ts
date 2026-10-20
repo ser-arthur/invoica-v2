@@ -90,19 +90,53 @@ export async function archiveTaxCode(tx: Tx, actor: Actor, id: string): Promise<
 
 /**
  * Gives the organisation every code of its country's preset: adds those it never had and brings back those it
- * archived. Codes it has edited stay as they are. Returns how many codes were added or brought back.
+ * archived. Codes in use that it has edited stay as they are. An archived code that was edited stays archived as it
+ * was, for the documents that used it, and the standard code is added afresh. Returns how many codes were added or
+ * brought back.
  */
 export async function loadPreset(tx: Tx, actor: Actor, country: string): Promise<number> {
   const preset = presetFor(country);
   if (!preset) return 0;
   const rows = await tx
-    .select({ id: taxCode.id, key: taxCode.presetKey, archivedAt: taxCode.archivedAt })
+    .select({
+      id: taxCode.id,
+      key: taxCode.presetKey,
+      archivedAt: taxCode.archivedAt,
+      treatment: taxCode.treatment,
+      components: taxCode.components,
+    })
     .from(taxCode);
-  const wanted = new Set(preset.codes.map((c) => c.key));
-  const archived = rows.filter((r) => r.key && wanted.has(r.key) && r.archivedAt);
-  const have = new Set(rows.map((r) => r.key));
+  const byKey = new Map(preset.codes.map((c) => [c.key, c]));
+  const standardAgain = (r: (typeof rows)[number]) => {
+    const c = byKey.get(r.key ?? '')!;
+    return (
+      r.treatment === c.treatment &&
+      r.components.length === c.components.length &&
+      r.components.every(
+        (x, i) =>
+          x.name === c.components[i]!.name &&
+          x.ratePpm === c.components[i]!.ratePpm &&
+          x.compound === c.components[i]!.compound,
+      )
+    );
+  };
+  const archivedOfPreset = rows.filter((r) => r.key && byKey.has(r.key) && r.archivedAt);
+  const archived = archivedOfPreset.filter(standardAgain);
+  const replaced = archivedOfPreset.filter((r) => !standardAgain(r));
+  const have = new Set(rows.filter((r) => !replaced.includes(r)).map((r) => r.key));
   const missing = preset.codes.filter((c) => !have.has(c.key));
   if (missing.length === 0 && archived.length === 0) return 0;
+  if (replaced.length > 0) {
+    await tx
+      .update(taxCode)
+      .set({ presetKey: null })
+      .where(
+        inArray(
+          taxCode.id,
+          replaced.map((r) => r.id),
+        ),
+      );
+  }
   if (missing.length > 0) {
     await tx.insert(taxCode).values(
       missing.map((c, i) => ({

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomBytes } from 'node:crypto';
-import { organisation } from '../src/schema';
+import { organisation, taxCode } from '../src/schema';
 import { authUser } from '../src/schema';
 import { createOrganisation } from '../src/organisations';
 import { archiveTaxCode, listTaxCodes, loadPreset, updateTaxCode } from '../src/taxes';
@@ -8,8 +8,8 @@ import { withOrganisation, type Actor } from '../src/tenancy';
 import { createTestDatabase, type TestDatabase } from './helpers';
 
 /**
- * Tax defaults (session 2, answer 14): prices exclude tax by default in every country; a country's standard codes
- * are added at onboarding and again from Settings, and stay editable.
+ * Tax defaults: prices exclude tax by default in every country; a country's standard codes are added at onboarding
+ * and again from Settings, and stay editable.
  */
 
 let t: TestDatabase;
@@ -81,6 +81,34 @@ describe('adding the standard codes again from Settings', () => {
     expect(after.find((c) => c.presetKey === 'uk_vat_reduced')?.id).toBe(reduced.id);
     expect(after.find((c) => c.presetKey === 'uk_vat_standard')?.label).toBe('Standard 20%');
     expect(after.filter((c) => c.presetKey === 'uk_vat_reduced')).toHaveLength(1);
+  });
+
+  it('a standard code that was edited and then archived comes back at the standard rate', async () => {
+    const actor = await onboard('GB', 'GBP', 'Europe/London');
+    const standard = (await run(actor, (tx) => listTaxCodes(tx))).find(
+      (c) => c.presetKey === 'uk_vat_standard',
+    )!;
+    await run(actor, (tx) =>
+      updateTaxCode(tx, actor, standard.id, {
+        label: 'Old rate 17.5%',
+        treatment: 'standard',
+        components: [{ name: 'VAT', ratePpm: 175_000, compound: false }],
+        isDefault: false,
+      }),
+    );
+    await run(actor, (tx) => archiveTaxCode(tx, actor, standard.id));
+    expect(await run(actor, (tx) => loadPreset(tx, actor, 'GB'))).toBe(1);
+    const all = await run(actor, (tx) => tx.select().from(taxCode));
+    const back = all.filter((c) => c.presetKey === 'uk_vat_standard');
+    expect(back).toHaveLength(1);
+    expect([back[0]!.archivedAt, back[0]!.components[0]!.ratePpm, back[0]!.id === standard.id]).toEqual([
+      null,
+      200_000,
+      false,
+    ]);
+    // The edited code stays archived as it was, for the documents that used it.
+    const old = all.find((c) => c.id === standard.id)!;
+    expect([old.label, old.presetKey, old.archivedAt !== null]).toEqual(['Old rate 17.5%', null, true]);
   });
 
   it('adds nothing when every standard code is there', async () => {
