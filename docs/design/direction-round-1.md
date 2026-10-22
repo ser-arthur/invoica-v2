@@ -44,3 +44,14 @@ Foundation; the website at desktop and phone width; the dashboard in light, dark
 ## Next
 
 Kobby's reaction, then: tokens and fonts in the app, the shell (bar, phone tab bar), dashboard, lists, invoice page, editor, settings, auth pages, then the landing page. Every screen keeps its tests; the accessibility checks run on both themes.
+
+## His reaction, 22 October evening
+
+The colour direction is right, and the dark mode carries the glassy feel he wanted. Two open points: the fonts, and the cubes, which read as decoration with no meaning.
+
+On the canvas, beside the foundation:
+
+- **Fonts, three pairings** with the same content: Sora and Poppins (the old app: Sora ExtraBold was the "invoiça." wordmark, Poppins set everything else); Sora and Onest (recommended: Sora for the wordmark, headlines and figures, Onest for tables and forms, narrower and with tabular figures); Archivo (round 1).
+- **Artefacts, three ideas** to replace the cubes: glass sheets (the invoice as layered tinted glass, for the website and dark mode); the route (the fine lines as the path an invoice travels from draft to paid, usable inside the app as real information); the cedilla (the ç's hook in the blend, for the wordmark, icon and largest moments). Recommended: all three, each with its own job.
+
+The marketing site keeps the old site's order (a promise, three proofs, a feature strip, phones, the free plan) and its best lines, rewritten; time tracking and the dollar price go; real invoices from the seven templates come in as the proof.
