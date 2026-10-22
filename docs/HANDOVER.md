@@ -54,7 +54,7 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
-22 October 2026, late evening: design direction, round 3, on the canvas's "Round 3" page (`docs/design/direction-round-3.md`): the guilloché pattern, three options for a mark (the seal recommended), the money bar on the dashboard, status labels and the invoice tracker, glass only with data, and the website on one grid at both widths. Later that evening he chose the name alone as the logo, dropped the coils and picked the turned page as the artefact; a study of the sheet is on the "Round 4" page, waiting for his reaction before the screens are redrawn. Earlier that evening: round 2, on the "Round 2" page (`docs/design/direction-round-2.md`), after the owner approved the colours and asked for meaning in place of the cubes. Earlier that day: design direction, round 1, on the design canvas for the owner's review (`docs/design/direction-round-1.md`; the artwork's generator is `docs/design/direction-1/iso.py`). No code changed; the app moves to it screen by screen once he says yes.
+22 October 2026, late evening: design direction, round 3, on the canvas's "Round 3" page (`docs/design/direction-round-3.md`): the guilloché pattern, three options for a mark (the seal recommended), the money bar on the dashboard, status labels and the invoice tracker, glass only with data, and the website on one grid at both widths. Later that evening he chose the name alone as the logo, dropped the coils and picked the turned page as the artefact; a study of the sheet is on the "Round 4" page. He then asked for the fold inside the wordmark: three versions are on the same page (the folded v recommended), waiting for his choice before the screens are redrawn. Earlier that evening: round 2, on the "Round 2" page (`docs/design/direction-round-2.md`), after the owner approved the colours and asked for meaning in place of the cubes. Earlier that day: design direction, round 1, on the design canvas for the owner's review (`docs/design/direction-round-1.md`; the artwork's generator is `docs/design/direction-1/iso.py`). No code changed; the app moves to it screen by screen once he says yes.
 
 Evening of 20 October 2026, after bundle 15:
 - A draft deleted in another tab can be saved again as a new draft from the editor still open on it (`docs/specs/issuing.md`, rule 8).
@@ -90,7 +90,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 2. When GitHub is linked: push the history as `start`, then pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
 3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
 4. Templates round 2 review (phase 3).
-5. Design direction round 4: the owner's reaction to the sheet study, then the screens redrawn with the sheet in place of the coils, then tokens, fonts, the mark and the pattern assets and the shell first, then each screen with its tests and the accessibility checks in both themes.
+5. Design direction round 4: the owner's choice of wordmark (A, B or C) and his reaction to the sheet study, then the screens redrawn with the new wordmark and the sheet in place of the coils, then tokens, fonts, the mark and the pattern assets and the shell first, then each screen with its tests and the accessibility checks in both themes.
 
 ## Open questions
 
