@@ -146,7 +146,17 @@ def draw_i(concept, x, ink, flat, dark):
     return parts, defs
 
 
-def wordmark(concept, height_px, ink=NIGHT, dark=False, flat=None, both=True, label='Invoica'):
+PLAIN_ADV, PLAIN_LSB, PLAIN_SW = 304, 64, 182
+
+
+def draw_plain_i(x, ink, dot):
+    """A plain i: a straight stem and a round dot, the second i beside a slip."""
+    x0 = x + PLAIN_LSB
+    return [f'<path d="{_poly([(0, 0), (0, H), (PLAIN_SW, H), (PLAIN_SW, 0)], x0)}" fill="{ink}"></path>',
+            f'<circle cx="{x0 + PLAIN_SW / 2:.1f}" cy="{ASC - 690}" r="88" fill="{dot}"></circle>']
+
+
+def wordmark(concept, height_px, ink=NIGHT, dark=False, flat=None, both=True, label='Invoica', second=None):
     flat = (height_px < 34) if flat is None else flat
     x, prev, parts, defs = 0, None, [], []
     seen = 0
@@ -155,13 +165,18 @@ def wordmark(concept, height_px, ink=NIGHT, dark=False, flat=None, both=True, la
             x += TRACK + KERN.get((prev, ch), 0)
         if ch == 'i':
             seen += 1
-            if both or seen == 1:
+            if seen == 2 and second:
+                dot = ink if second == 'ink' else ('#46DA80' if dark else '#37C66B')
+                parts += draw_plain_i(x, ink, dot)
+                x += PLAIN_ADV
+            elif both or seen == 1:
                 p, d = draw_i(concept, x, ink, flat, dark)
                 parts += p
                 defs += d
+                x += CONCEPTS[concept]['adv']
             else:
                 parts.append(f'<path d="{_glyph("i", x)}" fill="{ink}"></path>')
-            x += CONCEPTS[concept]['adv']
+                x += CONCEPTS[concept]['adv']
         else:
             parts.append(f'<path d="{_glyph(ch, x)}" fill="{ink}"></path>')
             x += ADV[ch]
