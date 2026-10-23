@@ -6,7 +6,7 @@ Date: 20 October 2026.
 
 ## Scope and commit
 
-This review covers commit `536abdd` ("test(e2e): tidy the reminders test types") on `main`, and within it the ten commits since review 7 (`git log 84c5dc0..536abdd`): `3f11a3f`, `012edd1`, `d46e141`, `8cbfbba`, `3b9cdb4`, `ab3e5a3`, `b1ef540`, `cf8868e`, `3d08a7f` and `536abdd`. In order of priority:
+This review covers commit `24da86c` ("test(e2e): tidy the reminders test types") on `main`, and within it the ten commits since review 7 (`git log 75d4128..24da86c`): `5c1efb4`, `82aa409`, `612db05`, `d6f76d1`, `8c456d7`, `549fadc`, `a0106f1`, `670d4fd`, `c022b73` and `24da86c`. In order of priority:
 
 1. refunds: migration `0013_refunds.sql`, `docs/specs/refunds.md`, `packages/core/src/credits.ts` (`refundFor`, `checkCredit`), `packages/db/src/documents.ts`, `packages/db/src/dashboard.ts`, the credit dialog in `apps/web/src/components/document-actions.tsx`, the invoice page and the export route;
 2. reminders: migration `0015_reminders.sql`, `docs/specs/reminders.md`, `packages/core/src/reminders.ts`, `packages/db/src/reminders.ts`, `apps/web/src/lib/jobs.ts` and `apps/web/src/app/api/jobs/drain/route.ts`;
@@ -15,18 +15,18 @@ This review covers commit `536abdd` ("test(e2e): tidy the reminders test types")
 5. email verification and password reset: `docs/specs/sign-in-by-email.md`, `apps/web/src/lib/auth.ts`, `auth-mail.ts`, `auth-emails.ts`, `apps/web/src/app/(auth)/*`, with Better Auth 1.7.10 as installed (`node_modules/better-auth/dist/api/routes/*.mjs`);
 6. the rest of the diff: the Resend adapter (`apps/web/src/lib/email-adapters.ts`), credit note wording in `view.ts`, `loadPreset` in `packages/db/src/taxes.ts`, copy, comments and the new tests.
 
-Every probe ran against an export of `536abdd` made with `git archive` at `../review/round8/pinned-536abdd`. As in earlier reviews, its `node_modules` folders hold links that point `@invoica/*` at the pinned packages (checked with `readlink -f` for every package that has them) and everything else at the repository's installed packages. The round's own `node_modules/@invoica` links were moved to the new export as well. No dependency changed between `b1ef540` and `536abdd`.
+Every probe ran against an export of `24da86c` made with `git archive` at `../review/round8/pinned-24da86c`. As in earlier reviews, its `node_modules` folders hold links that point `@invoica/*` at the pinned packages (checked with `readlink -f` for every package that has them) and everything else at the repository's installed packages. The round's own `node_modules/@invoica` links were moved to the new export as well. No dependency changed between `a0106f1` and `24da86c`.
 
-An earlier attempt at this review, pinned to `b1ef540`, was interrupted by a restart. Its probes and outputs are kept beside this report (`db-probe.*`, `auth/auth-probe.*`, `pinned/`). The files they cover (migration 0013, `credits.ts`, the refund parts of `documents.ts`, `dashboard.ts`, `outbox.ts` and every auth file) are unchanged between `b1ef540` and `536abdd`, and every probe I rely on here was run again against `536abdd` under a new name. Where the two runs differ it is because the code under test is newer (the worker may now run `app.due_reminders`) or the machine was busier (timings).
+An earlier attempt at this review, pinned to `a0106f1`, was interrupted by a restart. Its probes and outputs are kept beside this report (`db-probe.*`, `auth/auth-probe.*`, `pinned/`). The files they cover (migration 0013, `credits.ts`, the refund parts of `documents.ts`, `dashboard.ts`, `outbox.ts` and every auth file) are unchanged between `a0106f1` and `24da86c`, and every probe I rely on here was run again against `24da86c` under a new name. Where the two runs differ it is because the code under test is newer (the worker may now run `app.due_reminders`) or the machine was busier (timings).
 
-`HEAD` was `536abdd` throughout and the working tree was clean. Line numbers are for `536abdd`.
+`HEAD` was `24da86c` throughout and the working tree was clean. Line numbers are for `24da86c`.
 
 ## Tests run
 
 | Suite | Where | Result |
 | --- | --- | --- |
-| Core | `pinned-536abdd/packages/core` | 206 run, 206 passed, 0 failed, 0 skipped (20 files) |
-| Database | `pinned-536abdd/packages/db` | 128 run, 128 passed, 0 failed, 0 skipped (16 files) |
+| Core | `pinned-24da86c/packages/core` | 206 run, 206 passed, 0 failed, 0 skipped (20 files) |
+| Database | `pinned-24da86c/packages/db` | 128 run, 128 passed, 0 failed, 0 skipped (16 files) |
 | Documents, schemas, web unit | pinned | 28 passed (3 files); 4 passed (1 file); 37 passed (7 files) |
 | Types (`tsc --noEmit`) | pinned core, db, documents, schemas, web | clean, all five |
 | Copy rules (`scripts/copy-check.mjs`) | pinned | 270 files examined, 0 findings |
@@ -39,7 +39,7 @@ An earlier attempt at this review, pinned to `b1ef540`, was interrupted by a res
 How to rerun them, each from `../review/round8` with `TEST_DATABASE_ADMIN_URL=postgres://postgres@127.0.0.1:55432/postgres`:
 
 - `node node_modules/vitest/vitest.mjs run --root . --no-file-parallelism --testTimeout=1200000 --hookTimeout=300000 --reporter=verbose <name>`, with `refunds-probe` (about 75 seconds), `reminders-probe` (about three minutes), `sterling-probe`, `misc-probe` or `auth-probe-536` (about 100 seconds) as the name.
-- The pinned suites: in `pinned-536abdd/packages/<name>`, `node node_modules/vitest/vitest.mjs run`.
+- The pinned suites: in `pinned-24da86c/packages/<name>`, `node node_modules/vitest/vitest.mjs run`.
 
 The sign-in probes import the pinned `apps/web/src/lib/auth.ts` with its own `auth-mail.ts` and `auth-emails.ts`; only `server-only`, `next/server` (`after()` lets the work run on), `lib/db` (the test database as the app role) and `lib/email` (a recorder that can take a set time or fail) are replaced. I did not build or serve the app on port 3100. Every database probe creates and drops its own database through `createTestDatabase`; a hand-made database for exploring roles and time zones (`invoica_test_r8explore`) was dropped at the end, and no `invoica_test_` database was left. The `invoica`, `invoica_demo` and `invoica_audit` databases and the server on port 3000 were not touched. Some probes connect to their own test database as the superuser or the owner role: to read figures (`ledgerOf`) and privileges, to expire a reset link (A5), and to switch reminders off for the businesses of earlier probes (M7).
 
@@ -232,8 +232,8 @@ All in `../review/round8/`:
 - `misc-probe.test.ts` with `misc-probe.out` and `misc-probe.json`; `core/format-536.test.ts` with `core/format-536.out`;
 - `auth/auth-probe-536.test.ts` with `auth/auth-probe-536.out` and `auth/auth-probe-536.json`;
 - `scratch/make-db.mts` (creates the database used for exploring roles and time zones) and `scratch/intl-zones.txt` (the zones Node accepts);
-- `pinned-536abdd/` (an export of `536abdd` with `node_modules` links to the pinned packages), and `node_modules/` (links, now to `pinned-536abdd`);
-- from the interrupted attempt at `b1ef540`, kept as they were: `pinned/`, `db-probe.test.ts`, `db-probe.out`, `db-probe.json`, `auth/auth-probe.test.ts`, `auth/auth-probe.out`, `auth/auth-probe.json`, `core/format.test.ts`, `added-lines.txt`, `pinned-*.out` and `typecheck-*.out`.
+- `pinned-24da86c/` (an export of `24da86c` with `node_modules` links to the pinned packages), and `node_modules/` (links, now to `pinned-24da86c`);
+- from the interrupted attempt at `a0106f1`, kept as they were: `pinned/`, `db-probe.test.ts`, `db-probe.out`, `db-probe.json`, `auth/auth-probe.test.ts`, `auth/auth-probe.out`, `auth/auth-probe.json`, `core/format.test.ts`, `added-lines.txt`, `pinned-*.out` and `typecheck-*.out`.
 
 ---
 

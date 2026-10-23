@@ -6,40 +6,40 @@ Date: 19 October 2026.
 
 ## Scope and commit
 
-This review covers commit `f53f4d2` ("fix: credit notes worked out from a ledger by tax group (review 2)"), checked against its specification `docs/specs/credit-notes.md` and against the findings of review 2. In order of priority:
+This review covers commit `4babe14` ("fix: credit notes worked out from a ledger by tax group (review 2)"), checked against its specification `docs/specs/credit-notes.md` and against the findings of review 2. In order of priority:
 
 1. `packages/core/src/credits.ts` (`creditSource`, `creditState`, `planLineCredit`, `planAmountCredit`, `buildNote`, `checkCredit`) and `computeDocumentDetail` in `packages/core/src/totals.ts`;
 2. `packages/db/src/documents.ts` (`creditLedger`, `invoiceCreditSource`, `createCreditNote`, `lockRequestKey`) and the change to `packages/db/src/dashboard.ts`;
 3. `packages/db/migrations/0006_review_2_guards.sql`;
 4. the "Total before VAT/tax" change in `packages/documents/src/view.ts`, against regulation 15C(6) as summarised in `docs/specs/tax-uk.md` section 6.
 
-The report is pinned to **commit `f53f4d2`**. The repository kept moving while the review ran:
+The report is pinned to **commit `4babe14`**. The repository kept moving while the review ran:
 
-- commits `67acb8a` (quick actions on invoice rows) and `b3314a8` (blueprint and handover) landed;
+- commits `6b00380` (quick actions on invoice rows) and `03e228e` (blueprint and handover) landed;
 - uncommitted work on plans and entitlements appeared, touching `packages/core/src/snapshot.ts`, `packages/core/src/index.ts`, `packages/db/src/documents.ts` (two lines in `issueDocument` and `createCreditNote` that pass entitlements to the snapshot), `packages/db/src/snapshot.ts` and `packages/documents/src/render.ts`, with new `plans.ts` files.
 
-`git diff f53f4d2` shows no change to `credits.ts`, `totals.ts`, `tax.ts`, `money.ts`, the migrations, `dashboard.ts` or `view.ts`. To keep the results clean, every probe was rerun against an export of `f53f4d2` made with `git archive` at `../review/round3/pinned`. Its own `node_modules` links point `@invoica/*` at the pinned copies. The first runs, against the working tree, gave the same results.
+`git diff 4babe14` shows no change to `credits.ts`, `totals.ts`, `tax.ts`, `money.ts`, the migrations, `dashboard.ts` or `view.ts`. To keep the results clean, every probe was rerun against an export of `4babe14` made with `git archive` at `../review/round3/pinned`. Its own `node_modules` links point `@invoica/*` at the pinned copies. The first runs, against the working tree, gave the same results.
 
-Line numbers below are for `f53f4d2`.
+Line numbers below are for `4babe14`.
 
 ## Tests run
 
 | Suite | Where | Result |
 | --- | --- | --- |
-| `pnpm test:core` | repository, start of review (packages then identical to `f53f4d2`) | 152 run, 152 passed, 0 failed, 0 skipped |
+| `pnpm test:core` | repository, start of review (packages then identical to `4babe14`) | 152 run, 152 passed, 0 failed, 0 skipped |
 | `pnpm test:db` | repository, start of review | 59 run, 59 passed, 0 failed, 0 skipped |
-| Core property probe `core/ledger-props.test.ts` | pinned `f53f4d2` | 1 test: 5,729 random invoices, 12,348 credit notes, every invariant checked on every note |
+| Core property probe `core/ledger-props.test.ts` | pinned `4babe14` | 1 test: 5,729 random invoices, 12,348 credit notes, every invariant checked on every note |
 | Core targeted probes `core/targeted.test.ts` | pinned | 10 tests (T1 to T6), each asserting what it observed, plus the property test it imports; 12 passed across the two files |
 | Core criterion 1 probe `core/whole.test.ts` | pinned | 1 test: 19,050 random invoices credited whole |
 | Database probes `db-probe.test.ts` and `db-probe-2.test.ts` | pinned, fresh databases | 13 run, 13 passed; each asserts the behaviour it observed |
-| Legacy scripts `legacy/t2-legacy.ts`, `legacy/deposit.ts`, `legacy/old-invoice.ts` | pinned against `ffc037b` and `90596ba` | outputs saved beside each script |
+| Legacy scripts `legacy/t2-legacy.ts`, `legacy/deposit.ts`, `legacy/old-invoice.ts` | pinned against `e95f247` and `72a0c68` | outputs saved beside each script |
 
 How to rerun them:
 
 - Core: `cd ../review/round3/core && packages/core/node_modules/.bin/vitest run --root ../review/round3/core --no-cache --silent=false --reporter=verbose`.
 - Database: `cd ../review/round3 && TEST_DATABASE_ADMIN_URL=postgres://postgres@127.0.0.1:55432/postgres ./node_modules/.bin/vitest run --root ../review/round3 --no-cache --no-file-parallelism --testTimeout=600000 --hookTimeout=300000 --reporter=verbose --silent=false db-probe`.
 
-Each database run creates and drops its own databases through `createTestDatabase`. The `invoica` and `invoica_demo` databases were not touched. `round3/node_modules` is a symlink to `packages/db/node_modules`, as asked. `round3/core/node_modules` is a directory holding links to `vitest` and `fast-check` only, so Vitest writes nothing into the repository. The legacy credit notes in R3-2 were issued by the code at `ffc037b`, through review 2's pinned export.
+Each database run creates and drops its own databases through `createTestDatabase`. The `invoica` and `invoica_demo` databases were not touched. `round3/node_modules` is a symlink to `packages/db/node_modules`, as asked. `round3/core/node_modules` is a directory holding links to `vitest` and `fast-check` only, so Vitest writes nothing into the repository. The legacy credit notes in R3-2 were issued by the code at `e95f247`, through review 2's pinned export.
 
 ---
 
@@ -65,8 +65,8 @@ The review 2 findings it set out to fix are fixed.
 What remains:
 
 - **R3-M1 (medium).** After a part payment, an invoice priced excluding VAT often cannot be credited down to zero. Amount credits are now entered before VAT, so a note's total moves in steps of 1p or 2p and skips some balances. A penny or two can be left that no credit note can clear, and the invoice turns overdue for it.
-- **R3-L1 (low).** A note's tax is a share of its tax group's tax, not the tax on what it credits. Under VAT per line (the UK default), a whole line credited no longer credits the VAT that line was charged: £200.04 on a £1,000.00 line in one example, where the code at `ffc037b` gave £200.00. Some notes print tax a penny or more away from rate times the amount credited.
-- **R3-L2 (low).** Records from earlier versions are read wrongly or not at all. Amount credits issued before `f53f4d2` are counted in the wrong price basis, and invoices issued before `927685d` with rounding down cannot be credited. By reading, one such record makes the invoice page fail.
+- **R3-L1 (low).** A note's tax is a share of its tax group's tax, not the tax on what it credits. Under VAT per line (the UK default), a whole line credited no longer credits the VAT that line was charged: £200.04 on a £1,000.00 line in one example, where the code at `e95f247` gave £200.00. Some notes print tax a penny or more away from rate times the amount credited.
+- **R3-L2 (low).** Records from earlier versions are read wrongly or not at all. Amount credits issued before `4babe14` are counted in the wrong price basis, and invoices issued before `15a6c2d` with rounding down cannot be credited. By reading, one such record makes the invoice page fail.
 - **R3-L3 to R3-L6 (low).** Remaining holes in migration 0006; wording on printed credit notes; a negative "Invoiced this month"; a stale schema comment.
 
 ---
@@ -116,7 +116,7 @@ What remains:
   - **VAT per line (the UK default).** Each line's VAT is rounded on its own, so the VAT a line was charged is known exactly. A whole line credited no longer gets it back.
     - Example: ten lines of £0.03 (VAT 0.6p each, shown as 1p) and one line of £1,000.00 (VAT £200.00); invoice VAT £200.10.
     - Crediting the £1,000.00 line in full prints "VAT 20% £200.04".
-    - The planner at `ffc037b` gave £200.00 for the same credit, so this is a change for line credits, which review 2 found sound.
+    - The planner at `e95f247` gave £200.00 for the same credit, so this is a change for line credits, which review 2 found sound.
   - **How often, with ordinary prices.** 2 to 8 lines of £1.00 to £500.00, one to five units, all at 20%, each line credited whole: 501 of 19,526 credit notes (2.6%) credited a VAT 1p away from the VAT the line was charged. Credited whole, 563 of 19,050 random invoices stored per-line tax shares that differ from the invoice's own line tax. These shares are kept in the snapshot and the export, not printed.
   - **Ghana's default (per document, half up), prices including tax.**
     - Invoice: 3 × GH₵120.00 and 1 × GH₵99.99 at NHIL 2.5%, GETFund Levy 2.5% and VAT 15%.
@@ -146,20 +146,20 @@ What remains:
   - `packages/core/src/credits.ts:131-167`: `creditState` throws on an over-credited group.
   - `apps/web/src/app/(app)/invoices/[id]/page.tsx:91-92`: both are called for every issued invoice shown, outside any `try`, and the app has no `error.tsx`.
 - **What goes wrong:**
-  - **(a) Amount credits from before `f53f4d2`.** Code from `927685d` to `ffc037b` priced every amount credit including VAT. The ledger reads its gross figure as value before VAT. Take a £100.00 plus VAT £20.00 invoice with such a credit of £60.00 (£50.00 plus VAT £10.00):
+  - **(a) Amount credits from before `4babe14`.** Code from `15a6c2d` to `e95f247` priced every amount credit including VAT. The ledger reads its gross figure as value before VAT. Take a £100.00 plus VAT £20.00 invoice with such a credit of £60.00 (£50.00 plus VAT £10.00):
     - the ledger sees £40.00 left, not £50.00;
     - crediting it gives £40.00 plus VAT £8.00;
     - VAT credited is then £18.00 of £20.00, and £12.00 stays owing;
     - a further amount is refused ("more than is left to credit on this invoice") and so is any line ("more than is left to credit at Standard rate").
   - **(b) A whole-balance credit from the same versions.** A £120.00 amount credit makes `creditState` throw: "Earlier credit notes credit more than was invoiced."
-  - **(c) Invoices from before `927685d` with rounding down.** `creditSource` refuses them: "The invoice figures cannot be worked out again." Two examples:
+  - **(c) Invoices from before `15a6c2d` with rounding down.** `creditSource` refuses them: "The invoice figures cannot be worked out again." Two examples:
     - 53p at 20% plus 53p at 5%, VAT on the total rounded down: VAT then 12p, today 13p;
     - 1.5 × £33.33, VAT per line rounded down: total then £59.98, today £60.00.
   - **(d) Credit notes from before migration 0005 (by reading).** They have no `credited_line_id`, so their line credits count against the group's value but not against the line's quantity. The same line can then be credited again by quantity, within the group's value.
   - **Consequence of (b) and (c), by reading.** The invoice page would throw on render and show Next's default error page, where only the credit button should be hidden.
 - **How confirmed:**
-  - (a) and (b): run, probe `R3-2`, with the legacy notes issued by `ffc037b`'s `createCreditNote`. Output: `"ledgerReads":[{"index":null,...,"value":6000}],"valueLeftAsTheLedgerSeesIt":4000,"restNote":{"net":4000,"vat":800,"total":4800},"vatCredited":1800,"balance":1200,"state":"issued","furtherAmount":"credit_exceeds_invoice","furtherLine":"credit_exceeds_group"`, and `"creditStateThrows":"credit_source_mismatch: Earlier credit notes credit more than was invoiced."`.
-  - (c): run, `legacy/old-invoice.ts` against an export of `90596ba`.
+  - (a) and (b): run, probe `R3-2`, with the legacy notes issued by `e95f247`'s `createCreditNote`. Output: `"ledgerReads":[{"index":null,...,"value":6000}],"valueLeftAsTheLedgerSeesIt":4000,"restNote":{"net":4000,"vat":800,"total":4800},"vatCredited":1800,"balance":1200,"state":"issued","furtherAmount":"credit_exceeds_invoice","furtherLine":"credit_exceeds_group"`, and `"creditStateThrows":"credit_source_mismatch: Earlier credit notes credit more than was invoiced."`.
+  - (c): run, `legacy/old-invoice.ts` against an export of `72a0c68`.
   - (d) and the page: by reading. The seed issues no amount credits.
 - **Suggested fix:**
   - In `creditLedger`, read each note's own `pricesIncludeTax` and convert its lines to the invoice's basis: line net for an invoice priced excluding tax, net plus tax for one priced including it.
@@ -215,7 +215,7 @@ What remains:
 ### R3-L5. "Invoiced this month" can be negative
 
 - **Severity:** low
-- **Where:** `packages/db/src/dashboard.ts:77-82`; the dashboard prints it with `formatMoney` (`apps/web/src/app/(app)/dashboard/page.tsx:268` at `f53f4d2`).
+- **Where:** `packages/db/src/dashboard.ts:77-82`; the dashboard prints it with `formatMoney` (`apps/web/src/app/(app)/dashboard/page.tsx:268` at `4babe14`).
 - **What goes wrong:** take an invoice of £1,200.00 issued on 28 September and credited in full on 18 October. October shows "Invoiced this month −£1,200.00". This follows `docs/domain.md` ("less the totals of credit notes issued this month"), but the label reads as a gross figure.
 - **How confirmed:** run, probe `R3-6`: `{"invoicedThisMonth":[{"currency":"GBP","amount":-120000}]}`.
 - **Suggested fix:** decide whether the figure is net sales for the month, and label it so, or show credit notes beside it.
@@ -224,7 +224,7 @@ What remains:
 
 - **Severity:** low
 - **Where:** `packages/schemas/src/index.ts:292`: "an amount including tax".
-- **What goes wrong:** since `f53f4d2` the amount is in the invoice's price basis (spec, "What a credit note can credit", item 3).
+- **What goes wrong:** since `4babe14` the amount is in the invoice's price basis (spec, "What a credit note can credit", item 3).
 - **How confirmed:** by reading.
 - **Suggested fix:** reword the comment.
 
@@ -274,7 +274,7 @@ What remains:
 - Anything in a browser: the credit dialog and the invoice page. The page failure in R3-L2 and the dialog hint in R3-M1 are by reading.
 - `pnpm check` (format, copy rules, lint, types) and `pnpm build`; the PDF templates.
 - The `invoica` and `invoica_demo` databases, which were not touched, so whether they hold records affected by R3-L2 is unknown.
-- Commits `67acb8a` and `b3314a8`, and the uncommitted plans and entitlements work, which touches `issueDocument`, `createCreditNote` and the snapshot.
+- Commits `6b00380` and `03e228e`, and the uncommitted plans and entitlements work, which touches `issueDocument`, `createCreditNote` and the snapshot.
 - Ghana's statutory content for credit notes (no spec read); VAT in sterling on foreign-currency invoices; the JSON and CSV export of credit notes; performance.
 - Crediting an invoice paid in full (review 2's R2-L5), unchanged by design.
 
@@ -287,13 +287,13 @@ All in `../review/round3/`:
 - `core/ledger-props.test.ts`, `core/targeted.test.ts` and `core/whole.test.ts`, with outputs `core/core-pinned.out`, `core/whole.out`, `core/ledger-props.json`, `core/targeted.json` and `core/whole.json`;
 - `legacy/t2-legacy.ts`, `legacy/deposit.ts` and `legacy/old-invoice.ts`, with their `.out` files;
 - `baseline-core.out` and `baseline-db.out`;
-- `pinned/` (an export of `f53f4d2` with `node_modules` links to the pinned packages) and `legacy/90596ba/` (an export of `packages/core/src` at `90596ba`).
+- `pinned/` (an export of `4babe14` with `node_modules` links to the pinned packages) and `legacy/72a0c68/` (an export of `packages/core/src` at `72a0c68`).
 
 ---
 
 ## Resolution (builder, 19 October 2026)
 
-The ledger now works slot by slot: each line when tax is worked out per line, each tax code when it is worked out on the total. A slot's tax for what has been credited is the tax on that value alone, worked out with the invoice's rounding and never more than the slot showed; once the whole slot is credited it is exactly what the invoice showed. Each note takes that, less what earlier notes actually took. The spec (`docs/specs/credit-notes.md`) was revised first, with new acceptance criteria 9 to 12. Tests were written first. The eleven core tests in `packages/core/test/credits-review-3.test.ts` were run against the code at `d6bc0a9` and all failed; a twelfth, which checks each slot a note took from, was added after the change, as the earlier code kept no record per slot. The nine database tests in `packages/db/test/review-3.test.ts` were run after the core change and before the database and migration changes, and all failed. The property tests were then run at 6,000 cases each without a failure.
+The ledger now works slot by slot: each line when tax is worked out per line, each tax code when it is worked out on the total. A slot's tax for what has been credited is the tax on that value alone, worked out with the invoice's rounding and never more than the slot showed; once the whole slot is credited it is exactly what the invoice showed. Each note takes that, less what earlier notes actually took. The spec (`docs/specs/credit-notes.md`) was revised first, with new acceptance criteria 9 to 12. Tests were written first. The eleven core tests in `packages/core/test/credits-review-3.test.ts` were run against the code at `f7fa5f7` and all failed; a twelfth, which checks each slot a note took from, was added after the change, as the earlier code kept no record per slot. The nine database tests in `packages/db/test/review-3.test.ts` were run after the core change and before the database and migration changes, and all failed. The property tests were then run at 6,000 cases each without a failure.
 
 | Finding | Fix |
 | --- | --- |

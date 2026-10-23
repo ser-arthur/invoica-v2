@@ -6,16 +6,16 @@ Date: 19 October 2026.
 
 ## Scope and commit
 
-This review covers commit `b36db3e` (the current HEAD: "docs: review 5 with its resolution; blueprint and handover after phase 2m"). It is about the web layer and everything a signed-in or anonymous person can reach over HTTP, so the money calculations and the database guards covered by reviews 1 to 5 are taken as given and only re-checked where a request reaches them. In order of priority:
+This review covers commit `c802120` (the current HEAD: "docs: review 5 with its resolution; blueprint and handover after phase 2m"). It is about the web layer and everything a signed-in or anonymous person can reach over HTTP, so the money calculations and the database guards covered by reviews 1 to 5 are taken as given and only re-checked where a request reaches them. In order of priority:
 
 1. Authorisation on every server action in `apps/web/src/lib/actions/*.ts` and on the route handlers `files/[id]/route.ts`, `(app)/invoices/[id]/pdf/route.ts`, `(app)/settings/export/route.ts`, `api/jobs/drain/route.ts`, `doc-fonts/[file]/route.ts` and `api/auth/[...all]/route.ts`.
 2. Sessions and auth: `apps/web/src/lib/auth.ts`, `session.ts`, `workspace.ts`, the sign-in, sign-up and onboarding pages and actions.
 3. Input handling: schema validation, the logo upload, path traversal, HTML injection into the rendered document and the PDF, CSV injection in the export, and email header injection.
 4. Headers and framing (`apps/web/next.config.ts`), redirects, server-action exposure and error messages.
 
-The repository is at `b36db3e` with nothing later, so the pinned export and HEAD are the same tree. Every probe ran against an export of `b36db3e` made with `git archive` at `../review/round6/pinned`, built for production (`next build`) and served with `next start` on port 3100 against a fresh database. `node_modules` in the export are copies of the repository's installed packages with the same `@invoica/*` workspace links, so the pinned web app runs its own code against the pinned packages.
+The repository is at `c802120` with nothing later, so the pinned export and HEAD are the same tree. Every probe ran against an export of `c802120` made with `git archive` at `../review/round6/pinned`, built for production (`next build`) and served with `next start` on port 3100 against a fresh database. `node_modules` in the export are copies of the repository's installed packages with the same `@invoica/*` workspace links, so the pinned web app runs its own code against the pinned packages.
 
-Line numbers are for `b36db3e`.
+Line numbers are for `c802120`.
 
 ## What was run, and how to rerun it
 
@@ -170,7 +170,7 @@ What remains:
 All in `../review/round6/`:
 
 - `review-6.md` (this report);
-- `pinned/` (an export of `b36db3e` with copied `node_modules` and the production build);
+- `pinned/` (an export of `c802120` with copied `node_modules` and the production build);
 - `server.env`, `start-server.sh`, `build.out`, `server.log`;
 - `scripts/db-setup.mts` (provision and drop the review database);
 - `probes/lib.mts` (the HTTP and server-action client) and the probes `setup.mts`, `tenancy.mts`, `anon.mts`, `ratelimit.mts`, `auth.mts`, `inject.mts`, `misc.mts`, with their `.json` outputs and `tenancy.out`, `anon.out`, `ratelimit.out`, `inject-screen-slice.txt`;

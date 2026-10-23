@@ -8,7 +8,7 @@ This is the **v2 repository**: a re-architecture from scratch (decision 0001). T
 
 **Working end to end, locally:** sign up with email confirmation (the link asks for the account's password), password reset, onboarding, settings (business, logo, tax, rounding choices allowed for the country, numbering, brand colour, template with live previews, bank and mobile money, tax codes with the country's standard codes on a button, reminders, the rate method for VAT in sterling), clients, saved items, the invoice editor with live totals and preview, issuing with a gapless number and a frozen snapshot, the kept PDF in seven templates, sending by email through the outbox (Resend in production, a development mailbox locally), payments, credit notes of every kind with refunds when they go above the balance, VAT in sterling on UK VAT invoices in other currencies, reminders on a schedule and on demand, voiding, duplicating, quick actions, client pages, a dashboard that names who to chase first, data export, the trial and free plan behind `INVOICA_PLANS=enforced` (off: everyone has everything, which is the free version), a health check and a container image.
 
-**Checks (last full run, 20 October 2026, about 19:00, on `aa8e4d2`):**
+**Checks (last full run, 20 October 2026, about 19:00, on `11f8bb3`):**
 
 | Suite | Count | Result |
 | --- | --- | --- |

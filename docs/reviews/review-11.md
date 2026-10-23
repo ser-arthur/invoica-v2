@@ -6,7 +6,7 @@ Date: 20 October 2026.
 
 ## Scope and commit
 
-This review is pinned to commit `24c0132` ("docs: correct the times in the progress log") on `main`, and covers the 26 commits since `3e8cf25` (`git log 3e8cf25..24c0132`), which acted on review 10 and its Resolution section. In order of priority:
+This review is pinned to commit `281e54d` ("docs: correct the times in the progress log") on `main`, and covers the 26 commits since `0ca494e` (`git log 0ca494e..281e54d`), which acted on review 10 and its Resolution section. In order of priority:
 
 1. draft versions: `draftVersion`, the `version` and `overwrite` fields of the draft input, `updateDraft` in `packages/db/src/documents.ts`, the editor in `apps/web/src/components/invoice-editor.tsx`, `saveDraftAction` in `apps/web/src/lib/actions/documents.ts`, and rule 7 of `docs/specs/issuing.md`;
 2. the confirmed total at issue (`issueDocument(..., confirmed)`, `saveAndIssueAction`, the `issueConfirmation` schema) and the editor's `router.refresh()` after a refused save, with the cases where it is skipped;
@@ -16,7 +16,7 @@ This review is pinned to commit `24c0132` ("docs: correct the times in the progr
 6. `rescaleMinor` in `packages/core/src/money.ts`, `rescaleItems` in `packages/db/src/organisations.ts`, the new messages of `checkPayment` and of the state transitions in `packages/core/src/states.ts`;
 7. whether the tests added would fail with the fix taken out.
 
-Every probe ran against an export of `24c0132` made with `git archive` at `../review/round11/pinned`. Its `node_modules` folders hold links: `@invoica/*` to the export's own packages, everything else to the repository's installed packages (`scratch/link-modules.sh`, review 10's script). `readlink -f` on all sixteen `@invoica` links (eleven in the export, five in `../review/round11/node_modules/@invoica`) resolves inside `../review/round11/pinned/packages/` (`links-check.out`). Line numbers are for `24c0132`.
+Every probe ran against an export of `281e54d` made with `git archive` at `../review/round11/pinned`. Its `node_modules` folders hold links: `@invoica/*` to the export's own packages, everything else to the repository's installed packages (`scratch/link-modules.sh`, review 10's script). `readlink -f` on all sixteen `@invoica` links (eleven in the export, five in `../review/round11/node_modules/@invoica`) resolves inside `../review/round11/pinned/packages/` (`links-check.out`). Line numbers are for `281e54d`.
 
 As asked, the app was not built or served and no browser test ran: another session needed the memory. Where a finding rests on what the editor does in the browser, the editor's part is by reading, and the server's part was run with the editor's own expressions reproduced in the probe.
 
@@ -82,7 +82,7 @@ R10-M1 is still open on `main` (`apps/web/src/lib/auth.ts:51`, `autoSignInAfterV
 
 ### R11-L3. A refused save that refreshes the page can replace the editor with "not found" and lose what was typed
 
-- **Severity:** low (a regression of the range: at `3e8cf25` a refused save or issue left the page alone; `5b21189` added the refresh for a refused issue and `69eae16` for every refused save)
+- **Severity:** low (a regression of the range: at `0ca494e` a refused save or issue left the page alone; `a28470c` added the refresh for a refused issue and `83cb496` for every refused save)
 - **Where:** `apps/web/src/components/invoice-editor.tsx:626-627` refreshes after every refusal except unreachable, signed out and `document_not_draft`. A draft missing from the current business answers `document_not_found` (`packages/db/src/documents.ts:526`); the refreshed edit page finds nothing and calls `notFound()` (`apps/web/src/app/(app)/invoices/[id]/edit/page.tsx:25` and `:34`), which replaces the editor and its state. The business a request works in comes from a cookie (`apps/web/src/lib/session.ts:44-45`), so choosing another business in another tab moves this tab's saves there. `apps/web/src/lib/reach.ts:22` answers "Invoica has been updated" with no `unreachable` flag, so that refusal refreshes too.
 - **What goes wrong:**
   - **Another business chosen in another tab.** An accountant with two businesses edits a long draft for the first, and in another tab switches to the second. Back in the editor they press "Save draft": "This document does not exist.", then the page becomes the not-found page and everything typed since the last save is gone. This is an in-app navigation, so neither the browser's leave warning nor the editor's leave dialog appears.
@@ -163,7 +163,7 @@ All in `../review/round11/`:
 - `reminders11-probe.test.ts` with `reminders11-probe.out` and `reminders11-probe.json`;
 - `tzdiff-check.mjs` with `tzdiff-check.out` and `tzdiff-check.json`;
 - `scratch/link-modules.sh`, `scratch/run-suites.sh`;
-- `pinned/` (an export of `24c0132` with `node_modules` links to its own packages) and `node_modules/` (links to `pinned/` and to the repository's installed packages).
+- `pinned/` (an export of `281e54d` with `node_modules` links to its own packages) and `node_modules/` (links to `pinned/` and to the repository's installed packages).
 
 ## Resolution (builder, 20 October 2026)
 

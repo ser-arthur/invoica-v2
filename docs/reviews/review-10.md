@@ -6,16 +6,16 @@ Date: 20 October 2026.
 
 ## Scope and commit
 
-This review is pinned to commit `3e8cf25` ("docs: blueprint date") on `main`, and covers the 28 commits since `38774cf` (`git log 38774cf..3e8cf25`), which acted on review 9 and its Resolution section and on earlier testing. It also covers the branch `fix/confirm-then-sign-in`, one commit (`b51996c`) on top of `fa565e7`, the last commit on `main` before the three documentation commits that end the range. In order of priority:
+This review is pinned to commit `0ca494e` ("docs: blueprint date") on `main`, and covers the 28 commits since `b240171` (`git log b240171..0ca494e`), which acted on review 9 and its Resolution section and on earlier testing. It also covers the branch `fix/confirm-then-sign-in`, one commit (`b51996c`) on top of `73f9ee2`, the last commit on `main` before the three documentation commits that end the range. In order of priority:
 
 1. whether each finding of review 9 is fixed, and whether each fix broke something near it: the balance-mode credit note (R9-M1), `taxPointOf` and `supplyDateOf` and the period refines (R9-M2), `keptRateFor` and the `sterlingRateFor` the editor sends (R9-L2), migration `0022_reminder_dates_in_the_app.sql` and `queueDueReminders` (R9-L1), and the smaller fixes (R9-L3 to R9-L7), among them migration `0023_money_not_dated_later.sql`, the ignore files, the migration image, `docs/deploy.md` and the two CI jobs;
 2. money and tenancy wherever the range touched refunds, credit notes, payments, VAT in sterling and reminders;
 3. real-world use: pages kept open across a change elsewhere, retries after lost answers, time zones and dates;
 4. the tests added, and whether they would fail with the fix taken out.
 
-Every probe ran against an export of `3e8cf25` made with `git archive` at `../review/round10/pinned`, and the branch's probes against an export of `b51996c` at `../review/round10/branch`. Each export's `node_modules` folders hold links: `@invoica/*` to that export's own packages, everything else to the repository's installed packages (`scratch/link-modules.sh`). `readlink -f` on all eleven `@invoica` links in each export, and the five in `../review/round10/node_modules/@invoica`, resolves inside the export it belongs to (`links-check.out`). The range changes no dependency. For the production build the pinned export then got a hard-linked copy of the repository's package store in `node_modules/.pnpm` and the repository's own relative links in place of the links to the repository (`scratch/prepare-build.sh`); the `@invoica/*` links were left as they were and were checked again afterwards.
+Every probe ran against an export of `0ca494e` made with `git archive` at `../review/round10/pinned`, and the branch's probes against an export of `b51996c` at `../review/round10/branch`. Each export's `node_modules` folders hold links: `@invoica/*` to that export's own packages, everything else to the repository's installed packages (`scratch/link-modules.sh`). `readlink -f` on all eleven `@invoica` links in each export, and the five in `../review/round10/node_modules/@invoica`, resolves inside the export it belongs to (`links-check.out`). The range changes no dependency. For the production build the pinned export then got a hard-linked copy of the repository's package store in `node_modules/.pnpm` and the repository's own relative links in place of the links to the repository (`scratch/prepare-build.sh`); the `@invoica/*` links were left as they were and were checked again afterwards.
 
-Two probes import code of `38774cf` from review 9's export (`../review/round9/pinned`): the reminder scan of that version, to see what an app from before migration 0022 does against the migrated database, and two of the builder's new tests run against the old code. Line numbers are for `3e8cf25`, or for `b51996c` where a finding says "on the branch". I changed nothing in the repository; another session went on working in it during the review, which is why every check here ran against the exports.
+Two probes import code of `b240171` from review 9's export (`../review/round9/pinned`): the reminder scan of that version, to see what an app from before migration 0022 does against the migrated database, and two of the builder's new tests run against the old code. Line numbers are for `0ca494e`, or for `b51996c` where a finding says "on the branch". I changed nothing in the repository; another session went on working in it during the review, which is why every check here ran against the exports.
 
 ## Tests run
 
@@ -30,11 +30,11 @@ Two probes import code of `38774cf` from review 9's export (`../review/round9/pi
 | Copy rules (`scripts/copy-check.mjs`) | pinned | 308 files examined, 0 findings |
 | Credit note, dated-later and role probes `guards10-probe.test.ts` | pinned, fresh database | 8 run, 8 passed |
 | VAT in sterling probes `sterling10-probe.test.ts` | pinned, fresh database | 5 run, 5 passed |
-| Reminder and time zone probes `reminders10-probe.test.ts` | pinned (and the scan of `38774cf`), three fresh databases | 4 run, 4 passed; 1,417 hourly scans, 119,028 comparisons with `dueReminder` |
+| Reminder and time zone probes `reminders10-probe.test.ts` | pinned (and the scan of `b240171`), three fresh databases | 4 run, 4 passed; 1,417 hourly scans, 119,028 comparisons with `dueReminder` |
 | Retry probes `retry10-probe.test.ts` | pinned, fresh database | 3 run, 3 passed |
 | Sign-in probes `auth10-main.test.ts`, `auth10-branch.test.ts` | each export's `auth.ts` on a fresh database, through `auth.handler` | 2 run, 2 passed; 2 run, 2 passed |
 | Smaller probes `misc10-probe.test.ts` | pinned | 3 run, 3 passed; a property of `retypeForCurrency` over 20,000 runs |
-| The builder's R9-M2 tests against `38774cf` `tests10-probe.test.ts` | code of `38774cf` on a database migrated to `3e8cf25` | 2 run, 2 passed |
+| The builder's R9-M2 tests against `b240171` `tests10-probe.test.ts` | code of `b240171` on a database migrated to `0ca494e` | 2 run, 2 passed |
 | Due date probe `dates10-probe.test.ts` | pinned, fresh database | 1 run, 1 passed |
 | Migration image, emulated | `scratch/migrate-image/app`: only what `FROM deps` and the three `COPY` lines hold | `migrate-image-check.out`: 23 migrations applied as an unprivileged user, then none |
 | Ignore files and `sslmode` | `ignore-check.out`, `sslmode-check.out` | see "Checked and found sound" |
@@ -142,9 +142,9 @@ What does not:
 ### R10-L6. An app from before migration 0022 sends reminders early against the migrated database
 
 - **Severity:** low (nothing is deployed yet; it needs the previous image running after the migration, which the guide gives as the way back)
-- **Where:** migration 0022 changes what `app.due_reminders` returns in place: `offset_days` may now be an offset whose day is tomorrow by the database's date, or the day before the invoice was issued (`0022_reminder_dates_in_the_app.sql:69-75`). The app of `38774cf` queues `row.offset_days` as it comes (`packages/db/src/reminders.ts:49-50` at `38774cf`). `docs/deploy.md:88` says the previous version keeps working against the new database, and "To go back, start the previous image".
+- **Where:** migration 0022 changes what `app.due_reminders` returns in place: `offset_days` may now be an offset whose day is tomorrow by the database's date, or the day before the invoice was issued (`0022_reminder_dates_in_the_app.sql:69-75`). The app of `b240171` queues `row.offset_days` as it comes (`packages/db/src/reminders.ts:49-50` at `b240171`). `docs/deploy.md:88` says the previous version keeps working against the new database, and "To go back, start the previous image".
 - **What goes wrong:** with the new scan and the previous app, a London invoice issued on 6 November and due on 10 November gets its "due today" reminder on 9 November and its "seven days late" one on 16 November, a day early each, and its "three days before" one on 6 November for the 7th. An invoice issued on 8 November, due on the 10th, gets a "three days before" reminder on the day it is issued, which rule 10 forbids. Each early reminder takes its offset's key, so the one on the right day never goes. This happens between running the migration image and restarting the app (the scheduler calls every five minutes), and for as long as a previous image runs after a rollback.
-- **How confirmed:** run, `reminders10-probe.json`, `"oldAppNewScan"`: with `38774cf`, `"0": "queued 2026-11-09T00:30:00.000Z (London 2026-11-09); its day 2026-11-10"` and, for the invoice issued on the 8th, `"-3": "queued 2026-11-08T10:30:00.000Z (London 2026-11-08); its day 2026-11-07"`; with `3e8cf25` on the same database, each on its day and no `-3` for that invoice.
+- **How confirmed:** run, `reminders10-probe.json`, `"oldAppNewScan"`: with `b240171`, `"0": "queued 2026-11-09T00:30:00.000Z (London 2026-11-09); its day 2026-11-10"` and, for the invoice issued on the 8th, `"-3": "queued 2026-11-08T10:30:00.000Z (London 2026-11-08); its day 2026-11-07"`; with `0ca494e` on the same database, each on its day and no `-3` for that invoice.
 - **Suggested fix:** keep the old function's contract and add the new scan as a new function (`app.reminder_candidates`), granted to the worker, so a previous app still gets what it expects; and say in the guide which migrations a previous image cannot run against.
 
 ### R10-L7. Retries and messages
@@ -160,8 +160,8 @@ What does not:
 ### R10-L8. Tests that claim more than they check, and CI jobs that have not run
 
 - **Severity:** low
-- **(a) The hourly reminder test needs the two time zone readings to differ (run).** `packages/db/test/reminders.test.ts:287` ("in every zone, at every hour, the scan queues what the app's own date says is due") fails with the fix taken out here, at three of its 363 checks (121 hours, three invoices: two in Casablanca from 29 October 23:30 UTC, one in Vancouver at 07:30 UTC on 2 November), because this machine's PostgreSQL and Node read those zones an hour apart (`reminders10-probe.json`, `"hourlyTestReverted"`, with the scan of 0016 and the app of `38774cf`). Where the two readings agree, as they may in CI, it passes either way. A test of `queueDueReminders` with a scan stub that returns a candidate a day out would check the app's choice on any machine.
-- **(b) The November-for-October test passes at `38774cf` too (run).** `packages/db/test/sterling.test.ts:245`, "an invoice dated in November for October takes October's rate, as the editor asks", gives both dates of the period, which the old rule already handled; every value it asserts is the same with the code of `38774cf` (`tests10-probe.json`, `"novemberForOctober": {…, "passesAt38774cf": true}`). It does not check what the editor asks. The test after it ("a draft kept with one date of its period is refused at issue") does fail at `38774cf`, on its message.
+- **(a) The hourly reminder test needs the two time zone readings to differ (run).** `packages/db/test/reminders.test.ts:287` ("in every zone, at every hour, the scan queues what the app's own date says is due") fails with the fix taken out here, at three of its 363 checks (121 hours, three invoices: two in Casablanca from 29 October 23:30 UTC, one in Vancouver at 07:30 UTC on 2 November), because this machine's PostgreSQL and Node read those zones an hour apart (`reminders10-probe.json`, `"hourlyTestReverted"`, with the scan of 0016 and the app of `b240171`). Where the two readings agree, as they may in CI, it passes either way. A test of `queueDueReminders` with a scan stub that returns a candidate a day out would check the app's choice on any machine.
+- **(b) The November-for-October test passes at `b240171` too (run).** `packages/db/test/sterling.test.ts:245`, "an invoice dated in November for October takes October's rate, as the editor asks", gives both dates of the period, which the old rule already handled; every value it asserts is the same with the code of `b240171` (`tests10-probe.json`, `"novemberForOctober": {…, "passesAtb240171": true}`). It does not check what the editor asks. The test after it ("a draft kept with one date of its period is refused at issue") does fail at `b240171`, on its message.
 - **(c) CI (read).** The handover says CI has never run on GitHub, so the new `image` and `e2e-production` jobs have not run anywhere; the migration part of `image` was emulated here (see "Checked and found sound"), and the end-to-end suite was not run against a production server in this review.
 
 ---
@@ -191,7 +191,7 @@ What does not:
 - Building or running the container images (no Docker daemon); Resend, Cloudflare and a provider's certificates.
 - The branch over HTTP.
 - The production build and server, and with them the browser probes in `http10-probe.mjs` (see "Tests run").
-- The four commits on `main` after `3e8cf25` (`5b21189` to `dc305e1`), made while this review ran, and the uncommitted migration `0024_reminder_scan_window.sql` in the working tree. By its subject, `5b21189` ("issuing checks the total the person confirmed") may touch R10-L2; none of them was read or run here.
+- The four commits on `main` after `0ca494e` (`a28470c` to `07d551e`), made while this review ran, and the uncommitted migration `0024_reminder_scan_window.sql` in the working tree. By its subject, `a28470c` ("issuing checks the total the person confirmed") may touch R10-L2; none of them was read or run here.
 - Whether HMRC's rules and the market-rate method are what the specs say (as in review 9, the findings above are about the code agreeing with itself).
 - Load: with its margin the scan offers invoices that have nothing due (a day early by the database's date, or with an earlier offset skipped by the issue-day rule): 1,932 such offers in the 1,417 hourly scans here, each one short transaction as the owner. The scheduler scans every five minutes; not measured at scale.
 
@@ -210,7 +210,7 @@ All in `../review/round10/`:
 - `migrate-image-check.out` and `scratch/migrate-image/` (the emulated migration image), `ignore-check.out` and `scratch/ignore-check/`, `sslmode-check.out`;
 - `http10-probe.mjs` (written for the production server and not run) and `build.out`; `scratch/http/` (empty);
 - `scratch/link-modules.sh`, `scratch/run-suites.sh`, `scratch/prepare-build.sh`, `scratch/build-when-free.sh`, `scratch/make-http-db.mts`, `scratch/serve.sh`;
-- `pinned/` (an export of `3e8cf25`, with a hard-linked copy of the repository's package store in `node_modules/.pnpm`) and `branch/` (an export of `b51996c`), each with `node_modules` links to its own packages, and `node_modules/` (links to `pinned/`).
+- `pinned/` (an export of `0ca494e`, with a hard-linked copy of the repository's package store in `node_modules/.pnpm`) and `branch/` (an export of `b51996c`), each with `node_modules` links to its own packages, and `node_modules/` (links to `pinned/`).
 
 ## Resolution (builder, 20 October 2026)
 
@@ -220,7 +220,7 @@ Each fix began with a test that failed before the change, except where the table
 | --- | --- |
 | R10-M1 | Approved and built on 20 October 2026: the branch is merged and the confirmation page asks for the account's password (R9-M4), so the owner's click confirms nothing for someone who signed up with their address. |
 | R10-L1 | A refused save or issue now fetches the page's data again (`router.refresh()`), so today, the rate method, the time zone, the tax codes and the next number are the server's; what was typed stays, the rate is cleared with the reason, and the rate typed again is saved. End-to-end: the way rates are chosen changed in another tab. |
-| R10-L2 | Fixed in `5b21189`: issuing carries the total the person confirmed, and another total is refused with the new figure ("The total changed while this was open: it is now £110.00, with the tax rates and settings as they are now. Check it and issue again."); the editor then shows the new total to confirm (`docs/specs/issuing.md`). |
+| R10-L2 | Fixed in `a28470c`: issuing carries the total the person confirmed, and another total is refused with the new figure ("The total changed while this was open: it is now £110.00, with the tax rates and settings as they are now. Check it and issue again."); the editor then shows the new total to confirm (`docs/specs/issuing.md`). |
 | R10-L3 | A saved item's price is written in the business's currency and retyped for the invoice's (`retypeForCurrency`): £500.00 is "500" on a yen invoice and "500.000" in dinars. |
 | R10-L4 | A due date that follows the payment terms is no longer sent with a save, so a draft prepared ahead takes its due date from the day it is issued; a date set by hand is kept as before. |
 | R10-L5 | Sign-in emails greet no one by name (sign-in rule 7). |

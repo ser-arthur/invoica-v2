@@ -6,24 +6,24 @@ Date: 19 October 2026.
 
 ## Scope and commit
 
-This review covers commit `c886cbb` ("fix: credit notes worked out slot by slot, everything still owed credits the balance exactly (review 3)"). It was checked against `docs/specs/credit-notes.md` (criteria 1 to 12), decision `0009-credit-ledger-by-slot.md`, `docs/specs/plans.md` and the resolution of review 3 (`docs/reviews/review-3.md`, at `085fc26`). In order of priority:
+This review covers commit `7b5c735` ("fix: credit notes worked out slot by slot, everything still owed credits the balance exactly (review 3)"). It was checked against `docs/specs/credit-notes.md` (criteria 1 to 12), decision `0009-credit-ledger-by-slot.md`, `docs/specs/plans.md` and the resolution of review 3 (`docs/reviews/review-3.md`, at `7cce00a`). In order of priority:
 
 1. `packages/core/src/credits.ts` (`creditSource`, `checkSlots`, `creditSlots`, `creditSourceOf`, `creditState`, `slotTaxAt`, `buildNote` with `cut` and `settles`, `planLineCredit`, `planAmountCredit`, `amountLimit`, `largestWithin`, `planBalanceCredit`, `checkCredit`) and `computeDocumentDetail` in `packages/core/src/totals.ts`;
 2. `packages/db/src/documents.ts` (`issueDocument`, `creditLedger`, `creditPosition`, `createCreditNote` including mode `balance`, the amount-credit line titles) and `packages/db/migrations/0007_review_3_guards.sql`;
 3. the trial and the free plan: `packages/core/src/plans.ts`, `packages/db/src/plans.ts`, `applyEntitlements` in `packages/core/src/snapshot.ts`, the client limit in `packages/db/src/clients.ts`;
 4. by reading only: `apps/web/src/components/document-actions.tsx`, `apps/web/src/app/(app)/invoices/[id]/page.tsx`, `apps/web/src/app/(app)/dashboard/page.tsx`, `apps/web/src/lib/actions/documents.ts`.
 
-Every probe ran against an export of `c886cbb` made with `git archive` at `../review/round4/pinned`. Its `node_modules` folders hold links that point `@invoica/*` at the pinned packages and everything else at the repository's installed packages.
+Every probe ran against an export of `7b5c735` made with `git archive` at `../review/round4/pinned`. Its `node_modules` folders hold links that point `@invoica/*` at the pinned packages and everything else at the repository's installed packages.
 
-The repository moved during the review: nine commits landed, up to `ef7f173`. `git diff c886cbb ef7f173` shows no change to `credits.ts`, `totals.ts`, `tax.ts`, `plans.ts`, `snapshot.ts`, the migrations, `clients.ts`, the invoice page or the server actions. `document-actions.tsx` changed the credit preview's layout and moved the dialog into its own component. `documents.ts` added a `credits` field to document summaries. The findings below therefore apply to `ef7f173` too, by reading.
+The repository moved during the review: nine commits landed, up to `ccc1fe8`. `git diff 7b5c735 ccc1fe8` shows no change to `credits.ts`, `totals.ts`, `tax.ts`, `plans.ts`, `snapshot.ts`, the migrations, `clients.ts`, the invoice page or the server actions. `document-actions.tsx` changed the credit preview's layout and moved the dialog into its own component. `documents.ts` added a `credits` field to document summaries. The findings below therefore apply to `ccc1fe8` too, by reading.
 
-Line numbers are for `c886cbb`.
+Line numbers are for `7b5c735`.
 
 ## Tests run
 
 | Suite | Where | Result |
 | --- | --- | --- |
-| `pnpm test:core` | repository, start of review (packages identical to `c886cbb`) | 168 run, 168 passed, 0 failed, 0 skipped (14 files) |
+| `pnpm test:core` | repository, start of review (packages identical to `7b5c735`) | 168 run, 168 passed, 0 failed, 0 skipped (14 files) |
 | `pnpm test:db` | repository, start of review | 71 run, 71 passed, 0 failed, 0 skipped (7 files) |
 | Pinned core suite | `pinned/packages/core` | 168 run, 168 passed |
 | Core property probe `core/ledger-props.test.ts` | pinned | 2 tests: 7,384 invoices credited whole (14,903 whole-line notes); 18,742 invoices with random sequences, 25,744 credit notes |
@@ -35,7 +35,7 @@ How to rerun them:
 - Core: `cd ../review/round4/core && node node_modules/vitest/vitest.mjs run --root ../review/round4/core --testTimeout=1800000 --reporter=verbose`.
 - Database: `cd ../review/round4 && TEST_DATABASE_ADMIN_URL=postgres://postgres@127.0.0.1:55432/postgres node node_modules/vitest/vitest.mjs run --root ../review/round4 --no-file-parallelism --testTimeout=600000 --hookTimeout=300000 --reporter=verbose db-probe`.
 
-`round4/node_modules` and `round4/core/node_modules` are real folders of links, so Vitest's cache goes into the review folder. The repository's own `.vite` result files were last written at 03:47 to 03:48 by the builder's run before commit `ef7f173`. Each database run creates and drops its own databases through `createTestDatabase`; the seed probe makes a second one. The `invoica` and `invoica_demo` databases were not touched.
+`round4/node_modules` and `round4/core/node_modules` are real folders of links, so Vitest's cache goes into the review folder. The repository's own `.vite` result files were last written at 03:47 to 03:48 by the builder's run before commit `ccc1fe8`. Each database run creates and drops its own databases through `createTestDatabase`; the seed probe makes a second one. The `invoica` and `invoica_demo` databases were not touched.
 
 ---
 
@@ -325,7 +325,7 @@ What remains:
 
 - Anything in a browser: the credit dialog, the invoice page and the dashboard. The dialog behaviour in R4-M1 and the editor behaviour in R4-L6 are by reading.
 - `pnpm check`, `pnpm build`, the end-to-end suite and the PDF templates.
-- The commits after `c886cbb`, beyond the `git diff` noted under "Scope and commit". This includes VAT in sterling (`sterling.ts`), which is new there.
+- The commits after `7b5c735`, beyond the `git diff` noted under "Scope and commit". This includes VAT in sterling (`sterling.ts`), which is new there.
 - The `invoica` and `invoica_demo` databases, which were not touched.
 - Tax wording beyond the concerns listed; Ghana's statutory content for credit notes; the JSON and CSV export of credit notes.
 - Billing and subscriptions, which are not built.
@@ -338,7 +338,7 @@ All in `../review/round4/`:
 - `baseline-core.out` and `baseline-db.out`;
 - `db-probe.test.ts`, with outputs `db-probe.out` and `db-probe.json`;
 - `core/model.ts` (fixtures and an independent driver), `core/ledger-props.test.ts` and `core/targeted.test.ts`, with outputs `core/ledger-props.out`, `core/ledger-props.json`, `core/targeted.out` and `core/targeted.json`;
-- `pinned/` (an export of `c886cbb` with `node_modules` links to the pinned packages), `node_modules/` and `core/node_modules/` (folders of links).
+- `pinned/` (an export of `7b5c735` with `node_modules` links to the pinned packages), `node_modules/` and `core/node_modules/` (folders of links).
 
 ---
 

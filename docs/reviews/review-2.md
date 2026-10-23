@@ -6,13 +6,13 @@ Date: 19 October 2026.
 
 ## Scope and commit reviewed
 
-This review covers commit `927685d` ("fix: the first independent review's findings on credit notes, payments and guards") and commit `ffc037b` ("an ordinary invoice fits on one page in every template"). It checks each fix claimed in the "Resolution" section of `docs/reviews/review-1.md` and looks for new defects, with most attention on money.
+This review covers commit `15a6c2d` ("fix: the first independent review's findings on credit notes, payments and guards") and commit `e95f247` ("an ordinary invoice fits on one page in every template"). It checks each fix claimed in the "Resolution" section of `docs/reviews/review-1.md` and looks for new defects, with most attention on money.
 
-The report is pinned to **commit `ffc037b`**. The repository kept moving while the review ran: commits `ec1c527`, `69d5a1e`, `4865924`, `e1c4140` and `a0dadce` landed, and the working tree had uncommitted changes. `git diff ffc037b` shows that none of them touch `packages/core/src` (except a new `chaseOrder` function in `receivables.ts`), `packages/db`, `packages/schemas/src`, `apps/web/src/components/document-actions.tsx`, `apps/web/src/app/(app)/invoices/[id]/` or `apps/web/src/lib`. Every probe ran against a clean export of `ffc037b` made with `git archive` at `../review/round2/pinned`. That export has its own `node_modules` links, so `@invoica/core`, `@invoica/schemas` and `@invoica/documents` resolve to the pinned copies, not to the working tree.
+The report is pinned to **commit `e95f247`**. The repository kept moving while the review ran: commits `8f6093a`, `424d4b6`, `737405f`, `f55a850` and `7a10687` landed, and the working tree had uncommitted changes. `git diff e95f247` shows that none of them touch `packages/core/src` (except a new `chaseOrder` function in `receivables.ts`), `packages/db`, `packages/schemas/src`, `apps/web/src/components/document-actions.tsx`, `apps/web/src/app/(app)/invoices/[id]/` or `apps/web/src/lib`. Every probe ran against a clean export of `e95f247` made with `git archive` at `../review/round2/pinned`. That export has its own `node_modules` links, so `@invoica/core`, `@invoica/schemas` and `@invoica/documents` resolve to the pinned copies, not to the working tree.
 
-`ffc037b` changes only template spacing in `packages/documents/src/templates` and adds a one-page PDF test. I read the diff: it contains no money logic. Layout was not checked.
+`e95f247` changes only template spacing in `packages/documents/src/templates` and adds a one-page PDF test. I read the diff: it contains no money logic. Layout was not checked.
 
-Line numbers below are for `ffc037b`.
+Line numbers below are for `e95f247`.
 
 ## Tests run
 
@@ -20,8 +20,8 @@ Line numbers below are for `ffc037b`.
 | --- | --- | --- |
 | `pnpm test:core` | repository working tree, start of review | 152 run, 152 passed, 0 failed, 0 skipped (two uncommitted `receivables` tests included) |
 | `pnpm test:db` | repository working tree, start of review | 51 run, 51 passed, 0 failed, 0 skipped |
-| core tests (`vitest run`) | pinned `ffc037b` | 150 run, 150 passed, matching the resolution's count |
-| database tests (`vitest run`) | pinned `ffc037b` | 51 run, 51 passed |
+| core tests (`vitest run`) | pinned `e95f247` | 150 run, 150 passed, matching the resolution's count |
+| database tests (`vitest run`) | pinned `e95f247` | 51 run, 51 passed |
 | Review probes, database | `../review/round2/db-probe.test.ts` | 13 run, 13 passed. Each probe asserts the behaviour it observed: 10 confirm a problem, 3 confirm sound behaviour |
 | Review probes, core | `core-probe.ts`, `core-probe-2.ts` to `core-probe-6.ts`, `core-probe-5b.ts` | Each output is saved beside its script as a `.out` file |
 
@@ -157,7 +157,7 @@ The new defects come from the two ways of crediting, and from rounding down:
   - `packages/core/src/credits.ts:208-217`: `pricesIncludeTax: true` for every amount credit.
   - `packages/db/src/documents.ts:801`: stored on the credit note.
   - `packages/documents/src/view.ts:162-178`: the only figure before tax is the "Total before VAT" row, printed only when there are discounts and prices exclude tax.
-- **What goes wrong:** before `927685d`, an amount credit followed the invoice's own setting ("An amount, plus VAT 20%" in `document-actions.tsx` at `8e23ff5`). Now every amount credit note is priced including VAT.
+- **What goes wrong:** before `15a6c2d`, an amount credit followed the invoice's own setting ("An amount, plus VAT 20%" in `document-actions.tsx` at `47e90f9`). Now every amount credit note is priced including VAT.
 
   Take a £300.00 credit on a UK invoice priced excluding VAT (£500.00 at 20%, £200.00 zero-rated). The credit note prints:
   - Credit against INV-0001, 1, £225.00, 20%, £225.00
@@ -267,7 +267,7 @@ The new defects come from the two ways of crediting, and from rounding down:
 - Anything in a browser: the dialogs, focus behaviour and the Playwright suite were not run. Statements about the client components are from reading.
 - `pnpm check` (format, copy rules, lint, types) and `pnpm build`.
 - The seed script and the demo data. By reading, credit notes issued before migration 0005 have no `credited_line_id`, so their line credits are not counted per line after the migration (the balance cap still applies). Not run against existing data.
-- The commits after `ffc037b`, beyond confirming that they do not touch the files reviewed.
+- The commits after `e95f247`, beyond confirming that they do not touch the files reviewed.
 - The email change ("a document voided after its email was queued is not sent"), the settings form, and the editor's filtering of tax codes for unregistered businesses.
 - Statutory credit note content for Ghana (no spec read); VAT in sterling on foreign-currency invoices; performance.
 
@@ -276,7 +276,7 @@ The new defects come from the two ways of crediting, and from rounding down:
 - `../review/round2/review-2.md` (this report)
 - `../review/round2/db-probe.test.ts` and its output `../review/round2/db-probe.out`
 - `../review/round2/core-probe.ts`, `core-probe-2.ts`, `core-probe-3.ts`, `core-probe-4.ts`, `core-probe-5.ts`, `core-probe-5b.ts`, `core-probe-6.ts`, `view-shim.ts`, with outputs `core-probe.out`, `core-probe-2.out`, `core-probe-3.out`, `core-probe-4.out`, `core-probe-5.out`, `core-probe-5b.out`, `core-probe-6.out`, all in `../review/round2/`
-- `../review/round2/pinned/` (a clean export of commit `ffc037b`, with `node_modules` links to the repository's installed packages and to the pinned workspace packages)
+- `../review/round2/pinned/` (a clean export of commit `e95f247`, with `node_modules` links to the repository's installed packages and to the pinned workspace packages)
 
 ---
 

@@ -6,7 +6,7 @@ Date: 20 October 2026.
 
 ## Scope
 
-Every commit after `4c5a66a` up to `14bd444`:
+Every commit after `e21e75e` up to `aca029f`:
 
 - records changed elsewhere (`packages/db/src/versions.ts`, `apps/web/src/lib/follow-untouched.ts` and the settings, client, item and tax code forms; `docs/specs/changes-elsewhere.md`);
 - a password reset confirming the address;

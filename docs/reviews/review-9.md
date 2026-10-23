@@ -6,7 +6,7 @@ Date: 20 October 2026.
 
 ## Scope and commit
 
-This review is pinned to commit `38774cf` ("docs: blueprint and handover after the night's testing and review 8") on `main`, and covers the 23 commits since review 8 (`git log 536abdd..38774cf`), which acted on review 8 and its Resolution section and added tests, a health check, a start-up settings check, a container image and a deployment guide. It also covers the branch `fix/confirm-then-sign-in`, one commit (`487d471`) on top of `38774cf`. In order of priority:
+This review is pinned to commit `b240171` ("docs: blueprint and handover after the night's testing and review 8") on `main`, and covers the 23 commits since review 8 (`git log 24da86c..b240171`), which acted on review 8 and its Resolution section and added tests, a health check, a start-up settings check, a container image and a deployment guide. It also covers the branch `fix/confirm-then-sign-in`, one commit (`487d471`) on top of `b240171`. In order of priority:
 
 1. refund confirmation: `refundInput.amount` (`packages/schemas/src/index.ts:332-342`), `createCreditNote` (`packages/db/src/documents.ts:976-1259`) and the credit dialog (`CreditNoteButton`, `apps/web/src/components/document-actions.tsx:342-669`);
 2. migrations `0016_reminder_scan.sql` to `0019_sterling_rate_for.sql`, the seed script, the export and onboarding;
@@ -17,9 +17,9 @@ This review is pinned to commit `38774cf` ("docs: blueprint and handover after t
 7. production readiness: `config-check.ts`, `start-check.ts`, `instrumentation.ts`, `/api/health`, `Dockerfile`, `deploy/compose.yaml`, `docs/deploy.md` and `next.config.ts`;
 8. the tests added this round.
 
-Every probe ran against an export of `38774cf` made with `git archive` at `../review/round9/pinned`, and the branch's probes against an export of `487d471` at `../review/round9/branch`. As in review 8, each export's `node_modules` folders hold links: `@invoica/*` to that export's own packages, everything else to the repository's installed packages. `readlink -f` on all eleven `@invoica` links in each export, and the five in `../review/round9/node_modules/@invoica`, resolves inside the export it belongs to. The only dependency change in the range is `fast-check` 4.10.2 added to `packages/db` as a development dependency, which the repository already had installed.
+Every probe ran against an export of `b240171` made with `git archive` at `../review/round9/pinned`, and the branch's probes against an export of `487d471` at `../review/round9/branch`. As in review 8, each export's `node_modules` folders hold links: `@invoica/*` to that export's own packages, everything else to the repository's installed packages. `readlink -f` on all eleven `@invoica` links in each export, and the five in `../review/round9/node_modules/@invoica`, resolves inside the export it belongs to. The only dependency change in the range is `fast-check` 4.10.2 added to `packages/db` as a development dependency, which the repository already had installed.
 
-Line numbers are for `38774cf`, or for `487d471` where a finding says "on the branch". I changed nothing in the repository. The builder went on working in it during the review (by the end `main` had moved past `38774cf` and the working tree had an uncommitted change), which is why every check here ran against the exports.
+Line numbers are for `b240171`, or for `487d471` where a finding says "on the branch". I changed nothing in the repository. The builder went on working in it during the review (by the end `main` had moved past `b240171` and the working tree had an uncommitted change), which is why every check here ran against the exports.
 
 ## Tests run
 
@@ -177,8 +177,8 @@ What does not:
 
 - **Severity:** low (the figure is on screen before it is confirmed; a payment can be removed)
 - **Where:** `packages/core/src/money.ts:140-142`, used for line prices, discounts and deposits in the editor, item prices, payment amounts and credit amounts (`apps/web/src/components/invoice-editor.tsx:216`, `:257`, `:264`, `item-editor.tsx:38`, `document-actions.tsx:144`, `:436`, `:487`).
-- **What goes wrong:** zeros past a currency's places are now dropped, so "1.500" in euros is €1.50, "2.000" is €2.00 and "1.250" is €1.25; at 536abdd each was refused. In Germany, the Netherlands and France, all offered at sign-up, "1.500" is how one thousand five hundred is written. A payment typed so is recorded as €1.50 without a word.
-- **How confirmed:** run, `sterling9-probe.json`, `"S5": {"EUR": {"1.500": {"now": 150, "at536abdd": null}, "2.000": {"now": 200, "at536abdd": null}, "1.250": {"now": 125, "at536abdd": null}}}` (536abdd's `parseMoney` from `../round8/pinned-536abdd`). Over HTTP (H5): "1.500" typed in "Record payment" on a £2,000.00 invoice was recorded as £1.50, and the invoice read "Part paid".
+- **What goes wrong:** zeros past a currency's places are now dropped, so "1.500" in euros is €1.50, "2.000" is €2.00 and "1.250" is €1.25; at 24da86c each was refused. In Germany, the Netherlands and France, all offered at sign-up, "1.500" is how one thousand five hundred is written. A payment typed so is recorded as €1.50 without a word.
+- **How confirmed:** run, `sterling9-probe.json`, `"S5": {"EUR": {"1.500": {"now": 150, "at24da86c": null}, "2.000": {"now": 200, "at24da86c": null}, "1.250": {"now": 125, "at24da86c": null}}}` (24da86c's `parseMoney` from `../round8/pinned-24da86c`). Over HTTP (H5): "1.500" typed in "Record payment" on a £2,000.00 invoice was recorded as £1.50, and the invoice read "Part paid".
 - **Suggested fix:** accept extra zeros only up to the currency's places plus one or two where they cannot be a thousands group (for two-place currencies, refuse exactly three digits after the point), or refuse them for currencies with two places and accept them only for those with none.
 
 ### R9-L5. Names in sign-in emails and the sign-up name rule
@@ -237,7 +237,7 @@ What does not:
 ## Not checked
 
 - The branch over HTTP: its two pages were read, and its Better Auth configuration was run through the handler.
-- The 12 commits made on `main` after `38774cf` while this review ran (`add7ca5` to `d4f7c38`). By their subjects, several touch R9-M3 and R9-L3 (`b6c67eb`, `062cf1b`, `abf0885`, `c27bdc3`, `31ff0ad` for repeated requests, `add7ca5` for an action after signing out); none of them was read or run here.
+- The 12 commits made on `main` after `b240171` while this review ran (`7108d63` to `897d15b`). By their subjects, several touch R9-M3 and R9-L3 (`a4f37e5`, `26646c2`, `3fcb6a2`, `3f630ba`, `d3e5658` for repeated requests, `7108d63` for an action after signing out); none of them was read or run here.
 - The end-to-end suite, `pnpm check` as a whole (format and lint), and the PDF package's tests.
 - Building or running the container images: no Docker daemon runs on this machine. Resend, Cloudflare and a managed database provider's certificates.
 - Whether HMRC's rules make the period's end or the issue date the tax point when a period has only one date (R9-M2 is about the two rules disagreeing).
@@ -257,7 +257,7 @@ All in `../review/round9/`:
 - `misc9-probe.test.ts` with `misc9-probe.out` and `misc9-probe.json`;
 - `deploy-check.out`, `sslmode-check.out`, and `scratch/deploy-check/` (the copies of `.gitignore`, `.dockerignore` and the compose file, with placeholder settings, that they used);
 - `http9-probe.mjs` with `http9-probe.out` and `http9-probe.json`, `http9-server.log`, `start-check.out`, `drain-scan-fails.out` and `build.out`; `scratch/make-http-db.mts`, `scratch/serve.sh` and `scratch/build-when-free.sh` (the database, the server and the guarded build), and `scratch/http/` (the server's mailbox and files);
-- `pinned/` (an export of `38774cf`, with its build in `apps/web/.next` and a hard-linked copy of the repository's package store in `node_modules/.pnpm`) and `branch/` (an export of `487d471`), each with `node_modules` links to its own packages, and `node_modules/` (links to `pinned/`).
+- `pinned/` (an export of `b240171`, with its build in `apps/web/.next` and a hard-linked copy of the repository's package store in `node_modules/.pnpm`) and `branch/` (an export of `487d471`), each with `node_modules` links to its own packages, and `node_modules/` (links to `pinned/`).
 
 ## Resolution (builder, 20 October 2026)
 
