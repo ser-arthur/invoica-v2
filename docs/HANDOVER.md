@@ -44,10 +44,10 @@ The v2 repository is delivered as a **git bundle in a numbered zip** (`invoica-r
 To set up the first time:
 
 ```
-unzip invoica-repo-18.zip -d ~/Downloads/invoica-repo-18
-git clone ~/Downloads/invoica-repo-18/invoica.bundle invoica
+unzip invoica-repo-19.zip -d ~/Downloads/invoica-repo-19
+git clone ~/Downloads/invoica-repo-19/invoica.bundle invoica
 cd invoica
-sh ~/Downloads/invoica-repo-18/verify.sh
+sh ~/Downloads/invoica-repo-19/verify.sh
 ```
 
 To take a later bundle into an existing clone: `git pull ~/Downloads/invoica-repo-NN/invoica.bundle main`.
@@ -66,6 +66,7 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 - Sign in and sign up (`app/(auth)/layout.tsx`): a Night panel with the crease and three facts beside the form on wide screens; the app's tokens are set to the site's light palette inside these pages. Wording and behaviour unchanged.
 - Motion (`site.module.css`, "Motion"; `components/site/tilt.tsx`): the hero once on load; cards lean towards a mouse pointer; pieces drift with the scroll; a route line through the steps fills lime to teal; the template fan opens on hover or, on touch screens, as it scrolls in; the stamps press on; the footer logo rises. Nothing is ever hidden by it, it stops for reduced motion, and the end-to-end tests run with reduced motion so they measure the page at rest.
 - Templates: "Try it with your business" redraws the invoice in front with the visitor's name, colour and layout, in the browser, with the documents package (`components/site/template-demo.tsx`).
+- Checks: 668 unit and database tests pass; format, copy rules, lint, types and the build pass; the full end-to-end suite against the production build ran 206 tests: 141 passed, 65 skipped by design, 0 failed. The site's own checks (and the public pages' accessibility check) run with reduced motion, so they measure the page at rest; the app's checks run as before. Every new check failed against bundle 18 first.
 
 23 October 2026, about 05:30, `feat/website`, after the owner looked at bundle 17 locally:
 - Hero: the fold runs from the top right corner of the screen, under the header's hairline, down past the left edge, always through the same point of the headline (`components/site/fold.ts`, read by the styles and by `e2e/website.spec.ts`, which checks at eight widths that it crosses the headline and clears everything else). Words past it are grey. One-sentence statement; the notes became two facts with green labels.
