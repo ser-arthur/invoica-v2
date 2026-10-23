@@ -54,6 +54,14 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+23 October 2026, early morning, branch `feat/website` (from `chore/design-direction-1`): the website, built from round 5 and the owner's notes on it (`docs/specs/website.md`).
+- The logo is in the app (decision 0012): `components/logo.tsx` with path data from `docs/design/direction-5/logo-svg.py`; `Wordmark` draws it, so the app bar, sign-in, onboarding and the not-found page all carry it. New `icon.svg`, `favicon.ico` and `apple-icon.png`, the slip i on Night.
+- The home page is rebuilt (`app/page.tsx`, `components/site/`): the crease headline (a lime to teal line; past it the words turn green), folded slabs charting an example studio's money in, the app on a tilted sheet with its corner turned, five numbered steps on tinted panels, the owed card drawn as in the app, three real invoices in different layouts, light and dark phones, and the details as line items on an invoice whose tear-off slip is the sign-up. The copy tells one story: look established from the first invoice, then follow every invoice until it is paid.
+- The slip's email arrives filled in on the sign-up form (`lib/prefill-email.ts`); anything that is not one plausible address is ignored.
+- Pictures of the app on the page are WebP captures of the round 5 canvas, under `components/site/images/`, made by `docs/design/direction-5/site-shots.js` and `site-images.py` from the canvas's files.
+- Pricing on the page follows decision 0005: 30 days of everything with no card, then up to three clients free.
+- Local setup today: Postgres had lost its databases. Recreated with a local superuser `root` (peer and password login) as the admin connection, since `postgres` has no password here; `.env.local` points at `localhost:5432/invoica`.
+
 22 October 2026, late evening: design direction, round 3, on the canvas's "Round 3" page (`docs/design/direction-round-3.md`): the guilloché pattern, three options for a mark (the seal recommended), the money bar on the dashboard, status labels and the invoice tracker, glass only with data, and the website on one grid at both widths. Later that evening he chose the name alone as the logo, dropped the coils and picked the turned page as the artefact; a study of the sheet is on the "Round 4" page. He then asked for the fold inside the wordmark: after he found the first drawing weak, the folded v was redrawn from his reference as exact vector (board "The folded v"). He then asked to explore the i as the document: four versions on the board "The i as a document" (the page in flight recommended), He chose D, the slip, on the first i only with the second dot dark. Round 5 (`docs/design/direction-round-5.md`, page "Round 5") redraws the website and every app screen with it: the crease, folded slabs that chart money in, the details as an invoice with a tear-off slip, and the sheet in place of the coils. Earlier that evening: round 2, on the "Round 2" page (`docs/design/direction-round-2.md`), after the owner approved the colours and asked for meaning in place of the cubes. Earlier that day: design direction, round 1, on the design canvas for the owner's review (`docs/design/direction-round-1.md`; the artwork's generator is `docs/design/direction-1/iso.py`). No code changed; the app moves to it screen by screen once he says yes.
 
 Evening of 20 October 2026, after bundle 15:
@@ -90,7 +98,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 2. When GitHub is linked: push the history as `start`, then pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
 3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
 4. Templates round 2 review (phase 3).
-5. Design direction round 5: the owner's reaction, then the build: tokens and fonts in `globals.css`, the logo and icon as SVG components, the sheet, crease and slab as shared components, then each screen with its tests and the accessibility checks in both themes.
+5. The website on `feat/website`: the owner's review of the page itself (screenshots with bundle 17), then a pull request once GitHub is linked. Then the app screens in the round 5 look: tokens and fonts in `globals.css`, the sheet and slab as shared pieces, each screen with its tests and the accessibility checks in both themes. The home page shows the app as drawn on the round 5 canvas, so it runs ahead of the app until those screens are built.
 
 ## Open questions
 
@@ -111,3 +119,4 @@ The list is kept in `docs/BLUEPRINT.md`, "Open questions" (7 items).
 | 0009 | Credit notes worked out slot by slot | Proposed, built |
 | 0010 | Hosting | Proposed |
 | 0011 | The reminder scan when an older image runs | Accepted |
+| 0012 | The logo | Accepted |

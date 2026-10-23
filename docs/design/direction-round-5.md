@@ -31,3 +31,13 @@ The website at desktop and phone width; the dashboard light, dark and on a phone
 ## Next
 
 His reaction, then the build: tokens and fonts in `globals.css`, the logo and icon as SVG components, the sheet, crease and slab as shared components, then each screen with its tests and the accessibility checks in both themes, and the landing page.
+
+## His notes of 23 October, and the website as built
+
+- The faint file icons on the owed card meant nothing beside a card that already has its corner turned. Gone everywhere. The sheet stays only where it is a real page: the logo, the owed card's corner, the tilted sheet under the app and the invoice that holds the details.
+- The steps were bland. Each now has a large numeral, shaded from leaf green to teal down the page; status pills beside them were tried and dropped, since each heading already says what happens.
+- The crease: the two lines closer together, the main line a lime to teal gradient. Past it the words were tried in silver and dropped on his word; they now turn green in one sweep from leaf green to teal, the colours of the slabs.
+- White cards on white panels: each step's panel is tinted, from lime at the first step to teal at the fourth, and the owed card is dark. The phones show the app light and dark side by side.
+- The copy tells one story: a business management tool that makes a new business look established from its first invoice, then follows every invoice until it is paid.
+- Built on the branch `feat/website` (`docs/specs/website.md`). The logo is decision 0012.
+

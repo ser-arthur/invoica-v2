@@ -17,7 +17,7 @@ Last updated: 20 October 2026, about 11:00 (session 2 of the build, through the 
 
 Invoica v2: a re-architecture from scratch (decision 0001) that keeps the old app's intent. v1 leads with "look established from day one": correct invoices that look exactly as intended on screen, on paper and as a PDF, however long they are (0003, 0005). Then getting paid on time, then easy tracking of invoices, clients and money.
 
-**Style direction for the app (Kobby, 18 October 2026):** build on the old app's look, sleeker and more modern. **Light mode first, with a dark mode option.** The old app's DNA kept: the "invoiça." wordmark with its cedilla and full stop, the emerald accent (hue about 145), top navigation on desktop, a bottom tab bar with a central "new" button on phones, status pills, figures up front on the dashboard. Visual work goes through the design skills (frontend design, design system, design critique, accessibility review) before it is called done.
+**Style direction for the app (Kobby, 18 October 2026):** build on the old app's look, sleeker and more modern. **Light mode first, with a dark mode option.** The old app's DNA kept: the "invoiça." wordmark with its cedilla and full stop (replaced on 22 October by the logo in decision 0012), the emerald accent (hue about 145), top navigation on desktop, a bottom tab bar with a central "new" button on phones, status pills, figures up front on the dashboard. Visual work goes through the design skills (frontend design, design system, design critique, accessibility review) before it is called done.
 
 **Invoice templates:** round 1 (six mocks) was judged too old-school. Kobby wants templates that feel bespoke, different and unique. To iterate later (phase 3).
 
@@ -67,6 +67,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 2z6 | After bundle 15: deleted drafts saved again, copies priced now, typing kept on this device, dates past midnight, the full journey test, review 12 and its fixes | Done |
 | 2x | Billing for the plans, then the plans turned on | Waits for the billing provider; the free version comes first (owner, 20 October) |
 | 2y | Plan limits enforced by the database; the deferred number counter check (review 7, R7-L1) | After 2x |
+| D1 | Design round 5 on the website: the logo everywhere and as the icon (decision 0012), the home page rebuilt with its story (`docs/specs/website.md`), the sign-up form filled in from the home page | Built on `feat/website`; waiting for Kobby's review |
 | 3 | Invoice templates round 2: four new templates (Ledger, Poster, Letter, Ticket) beside Signature, Studio and Counsel; template picker with live previews of your own details; landing page built around real invoices | Built; waiting for Kobby's review on the design canvas |
 | 4 | Getting paid: payment links | After v1 |
 | 5 | Cash flow and dashboards beyond v1 | After v1 |
@@ -122,6 +123,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **22 Oct, about 23:20.** He asked to explore the i as the document. Board "The i as a document", first on the "Round 4" page (`docs/design/direction-4/i_document.py`), with the v back to Sora's own: A, the dot as a small green page with its corner turned, tipped forward as if on its way (recommended); B, the same page standing square; C, stem and square dot of one width so the whole i is a slip with its corner turned; D, a wide stem with its corner turned under a round dot. Each large, on dark, in the top bar, at 18 pixels and as the icon, then A in use. Nothing in the app changed.
 - **22 Oct, about 23:30.** He chose D, the slip, and asked whether it belongs on one i or both. Board "The slip: one i or two", first on the "Round 4" page: the first i only with the second dot dark (recommended, so the colour sits in one place and that i is the app icon), the first i only with both dots green, and both i's. Nothing in the app changed.
 - **22 Oct, about 23:40 to midnight.** He chose the slip on the first i with the second dot dark, and asked what else would make the site and app look intentional. Design direction, round 5 (`docs/design/direction-round-5.md`), page "Round 5": the crease (a diagonal fold across the hero headline, "paid." past it in green), folded slabs charting money in at the foot of the hero and on the dashboard, the details as line items on an invoice with a tear-off slip for sign-up, a ledger margin of invoice numbers, the sheet in place of the coils everywhere, and every app screen with the new logo. Generators in `docs/design/direction-5/`. Nothing in the app changed.
+- **23 Oct, about 03:00 to 04:30.** His notes on round 5: the file icons on the owed card meant nothing (removed; the sheet stays only where it is a real page: the owed card's corner, the tilted sheet, the invoice holding the details, the logo); the step sections were bland (each now has a large numeral shaded lime to teal down the page); the crease lines closer, the line a gradient; white cards on white panels needed telling apart (each step's panel is tinted, lime to teal); the copy should tell a story about a business management tool that makes a business look established from the start. Then: build the website. Branch `feat/website`: the spec (`docs/specs/website.md`) and its tests first (the e2e spec failed 6 of 8 against the old page; the email prefill unit test failed on the missing module), then the logo as a component and the icons (decision 0012), the new home page (`apps/web/src/components/site/`), and the sign-up form filled in from the home page's tear-off slip. Tried and dropped on his word: a silver finish past the crease (now a green to teal sweep) and status pills beside each step (the heading already says it). The pricing on the page follows decision 0005 (30 days free, then three clients free), where the round 5 board had said "early access".
 
 ## Decisions in force
 
@@ -138,6 +140,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 0009 | Credit notes worked out slot by slot | Proposed; built |
 | 0010 | Hosting | Proposed: Cloudflare in front, one small server, managed Postgres |
 | 0011 | The reminder scan when an older image runs | Accepted: a second scan function for the worker (migration 0026) |
+| 0012 | The logo | Accepted: the name, its first i a slip with the corner turned |
 
 ## Choices made during the build (reversible, flagged for Kobby)
 
