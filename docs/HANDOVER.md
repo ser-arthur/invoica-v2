@@ -56,6 +56,17 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+23 October 2026, about 12:30, `feat/website` (the owner's notes on bundle 19, and his answers on launch):
+- Decision 0013: the founding offer is off the pricing page (made in the app at the end of the trial, with billing); the question on Ghana and Nigeria stays, in the present tense. Built for launch: the site goes live only with billing.
+- Not-found page (`app/not-found.tsx`, `docs/specs/not-found-page.md`): any address with no page answers 404 in the site's look, with an envelope stamped "Return to sender, address not known"; each planned page (`components/site/planned-pages.ts`, linked from the footer through `links.ts`) answers 404 with its own notice, stamped "Coming soon". The proxy passes the address to the page in `x-invoica-path`; the address is never shown. A unit test fails if a planned page and a built page share an address.
+- Public pages (home, pricing, not-found) use `isSignedIn()`, which treats a failed lookup as signed out, so the site shows even when the database cannot be reached. Signed in, the site header leads to the dashboard.
+- Hero: on load the two sides of the headline come in from opposite directions, each cut along the crease, and meet as the crease draws; the closing comma's tip is no longer cut off by its finish (lines padded on the right too); the grey past the crease is lighter (#838A94 to #6F7682; the lightest stop stays at 3:1 on Mist).
+- Phones: at rest slightly fanned; as the band scrolls in they come from either side, turned, and settle together, then part a little as it leaves (one timeline on the pair); with a mouse, the phone under the pointer comes to the front.
+- Footer: the large logo is a solid block with depth, lit from above (`components/site/footer-mark.tsx`, from the logo's own shapes), and rises on its container's timeline so it is fully risen at the end of the page.
+- Checks: 675 unit and database tests run, 675 passed, 0 failed, 0 skipped (core 249, schemas 6, documents 28, PDF 64, database 234, web unit 94); format, copy rules, lint, types and the production build pass. The new end-to-end checks failed against bundle 19 first; the site, pricing, not-found and public accessibility checks pass at both widths. The full suite against the production build was still running when bundle 20 was made; its result goes in the next bundle.
+- The site runs with no database reachable (checked with a production build pointed at a closed port): home, pricing, sign-in, sign-up and the not-found pages all show; only actions that need the database fail.
+- Not changed: the old app at `invoica-io.vercel.app` (repository `ser-arthur/invoica`). The owner asked to push v2 to main to show it there; held, because that address serves the live old app. Options sent: a separate Vercel project for v2 (recommended), replacing the old app only if nobody uses it, or a temporary link from his Mac.
+
 23 October 2026, about 07:30, `feat/website`, worked through while the owner slept (his notes on bundle 18):
 - Hero: the shorter crease is back (`components/site/crease.tsx`, geometry in `fold.ts`, checked at eight widths); past it the words fade to slate grey (#838A94 to #5A6170, the lightest stop 3:1 on Mist). The heading is clipped to the near side so no dark edge shows around the grey letters.
 - Step numerals no longer lose their tops: anything with a gradient clipped to its text is padded past its line box.
@@ -120,7 +131,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 2. When GitHub is linked: push the history as `start`, then pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
 3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
 4. Templates round 2 review (phase 3).
-5. The website on `feat/website`: the owner's review of the page itself (screenshots with bundle 17), then a pull request once GitHub is linked. Then the app screens in the round 5 look: tokens and fonts in `globals.css`, the sheet and slab as shared pieces, each screen with its tests and the accessibility checks in both themes. The home page shows the app as drawn on the round 5 canvas, so it runs ahead of the app until those screens are built.
+5. The website on `feat/website`: the owner's review (bundle 20), then a pull request once GitHub is linked; the owner's choice of where to show v2 before launch (a separate Vercel project recommended; the old app's address is not touched without his say). Then the app screens in the round 5 look: tokens and fonts in `globals.css`, the sheet and slab as shared pieces, each screen with its tests and the accessibility checks in both themes. The home page shows the app as drawn on the round 5 canvas, so it runs ahead of the app until those screens are built.
 
 ## Open questions
 
@@ -142,3 +153,4 @@ The list is kept in `docs/BLUEPRINT.md`, "Open questions" (7 items).
 | 0010 | Hosting | Proposed |
 | 0011 | The reminder scan when an older image runs | Accepted |
 | 0012 | The logo | Accepted |
+| 0013 | Where the launch offers show | Accepted |
