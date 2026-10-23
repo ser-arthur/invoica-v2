@@ -17,10 +17,12 @@ const FOIL: [number, string][] = [
 const EDGE = 16;
 
 /**
- * The foil shows above this line only, so it lights the tops of the letters and the dots and never the
- * upward edges inside the o, the c, the v and the a.
+ * The foil shows on the tops of the letters and the dots only, never the upward edges inside the o, the c, the v and
+ * the a. It is whole down to FULL, where the flat tops end, then fades out by GONE, so the edge round the o, the c,
+ * the a and the n's shoulder tapers away instead of stopping at a line.
  */
-const TOPS = 330;
+const FULL = 250;
+const GONE = 330;
 
 /**
  * The footer's large logo (option E on the design canvas's "Footer logo" page): the letters dark, with a thin
@@ -35,6 +37,7 @@ export function FooterMark() {
   const sheen = `mark-sheen-${id}`;
   const fold = `mark-fold-${id}`;
   const tops = `mark-tops-${id}`;
+  const topsFade = `mark-tops-fade-${id}`;
   const letters = `mark-letters-${id}`;
   return (
     <svg viewBox="-10 -150 3760 1010" aria-hidden="true" focusable="false">
@@ -54,15 +57,19 @@ export function FooterMark() {
           <stop offset="0.5" stopColor="#46DA80" />
           <stop offset="1" stopColor="#2FB866" />
         </linearGradient>
-        <clipPath id={tops}>
-          <rect x="-10" y="-150" width="3760" height={TOPS + 150} />
-        </clipPath>
+        <linearGradient id={topsFade} gradientUnits="userSpaceOnUse" x1="0" y1={FULL} x2="0" y2={GONE}>
+          <stop offset="0" stopColor="#FFFFFF" />
+          <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+        </linearGradient>
+        <mask id={tops} maskUnits="userSpaceOnUse" x="-10" y="-150" width="3760" height="1010">
+          <rect x="-10" y="-150" width="3760" height="1010" fill={`url(#${topsFade})`} />
+        </mask>
         <clipPath id={letters}>
           <path d={LOGO_INK} />
           <circle {...LOGO_INK_DOT} />
         </clipPath>
       </defs>
-      <g clipPath={`url(#${tops})`}>
+      <g mask={`url(#${tops})`}>
         <g transform={`translate(0 ${-EDGE})`}>
           <path d={LOGO_INK} fill={`url(#${foil})`} opacity="0.22" />
           <circle {...LOGO_INK_DOT} fill={`url(#${foil})`} opacity="0.22" />
