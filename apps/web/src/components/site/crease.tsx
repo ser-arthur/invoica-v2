@@ -6,6 +6,25 @@ import s from './site.module.css';
 const FADE = 0.16;
 
 /**
+ * The crease line's colours along its length, from its foot to its top: lime to teal, or a silver that catches the
+ * light twice along its length, for a ground where the words past the fold are already green.
+ */
+const FINISHES = {
+  green: [
+    [FADE, '#CFF26A'],
+    [0.5, '#37C66B'],
+    [1 - FADE, '#138C86'],
+  ],
+  silver: [
+    [FADE, '#7E8A90'],
+    [0.36, '#E8EDEF'],
+    [0.52, '#9DA9AE'],
+    [0.7, '#F5F8F9'],
+    [1 - FADE, '#8A969B'],
+  ],
+} as const;
+
+/**
  * A headline crossed by one diagonal fold. The headline is set twice: the heading itself, and a copy
  * clipped to the far side of the fold that takes a different finish. The fold is drawn as a gradient
  * line with a hairline beside it, square to it so the two end together, both fading out at their ends.
@@ -24,6 +43,7 @@ export function Crease({
   gap = 0.6,
   span = CREASE.span,
   dark = false,
+  line = 'green',
 }: {
   lines: string[];
   as?: 'h1' | 'h2' | 'p';
@@ -36,8 +56,13 @@ export function Crease({
   span?: [number, number];
   /** On a dark ground the hairline beside the crease is light. */
   dark?: boolean;
+  /** The crease line's finish. */
+  line?: keyof typeof FINISHES;
 }) {
   const id = useId().replace(/[^a-zA-Z0-9-]/g, '');
+  const stops = FINISHES[line];
+  const [first] = stops;
+  const last = stops[stops.length - 1] ?? first;
   const height = 100 + 2 * extend;
   // where the fold crosses a given height, in per cent of the headline box (0 is its top, 100 its foot)
   const at = (y: number) => xTop + (xBottom - xTop) * ((extend + y) / height);
@@ -77,11 +102,11 @@ export function Crease({
       >
         <defs>
           <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={x(t1)} y1={y(t1)} x2={x(t0)} y2={y(t0)}>
-            <stop offset="0" stopColor="#CFF26A" stopOpacity="0" />
-            <stop offset={FADE} stopColor="#CFF26A" />
-            <stop offset="0.5" stopColor="#37C66B" />
-            <stop offset={1 - FADE} stopColor="#138C86" />
-            <stop offset="1" stopColor="#138C86" stopOpacity="0" />
+            <stop offset="0" stopColor={first[1]} stopOpacity="0" />
+            {stops.map(([offset, colour]) => (
+              <stop key={offset} offset={offset} stopColor={colour} />
+            ))}
+            <stop offset="1" stopColor={last[1]} stopOpacity="0" />
           </linearGradient>
           <linearGradient
             id={`${id}h`}

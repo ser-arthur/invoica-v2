@@ -56,6 +56,8 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+23 October 2026, about 14:40, `feat/website`: on the sign-in and sign-up panel the crease line is silver (a `line` finish on `Crease`, `green` by default), so it stands apart from the green words past it; the home page keeps the green line. 677 unit and database tests pass; format, copy rules, lint, types and the build pass; the site, motion, accessibility and sign-in end-to-end specs against the production build ran 62: 44 passed, 18 skipped by design, 0 failed.
+
 23 October 2026, about 13:55 to 14:30, `feat/website`:
 - Sign in and sign up: the Night panel is half the page and the headline fills its width at any width (container query units in `app/(auth)/auth.module.css`); the facts grow a little with it.
 - Footer logo: the foil edge is drawn faint, and lit; the lit edge wipes in from the i to the a as the footer comes into view, a glint at its front; with a mouse the glint then follows the pointer (`components/site/footer-light.tsx`) and drifts back when it leaves.
