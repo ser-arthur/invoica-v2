@@ -136,6 +136,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **23 Oct, about 22:30.** The owner found the sign-in headline a little too big now; the Night panel now takes five twelfths of the page instead of half, and the headline scales with it. Bundle 25.
 
+- **23 Oct, about 22:30 to 23:10.** The owner asked for the sign-in panel's light without its hard edges and rings; five ways went on the canvas, then softer, and he chose C softer (each glow fading to nothing, under a fine grain). The switch between sign-in and sign-up now eases the arriving form in. The footer logo's foil edge tapers away down the curves instead of stopping at a line. Bundle 26.
+
 ## Decisions in force
 
 | Record | Title | Status |
