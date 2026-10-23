@@ -62,6 +62,7 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 - Phones on a full-width lime band with slanted edges, drawn as modern phones (metal edge, bezel, camera cut-out, side keys) over new captures with a status bar and home indicator; the greeting on those screens is lighter than the logo, which the app's own dashboard should follow when it is rebuilt.
 - Footer on Night: link columns with the planned pages (`/about`, `/contact`, `/help`, `/help/getting-started`, `/privacy`, `/terms`, `/cookies`, which open the not-found page until they exist), and the logo set large at the foot.
 - The page is now one component per section under `components/site/`.
+- Checks: 668 unit and database tests pass; format, copy rules, lint, types and the build pass; the full end-to-end suite against the production build ran 188 tests: 124 passed, 64 skipped by design (one width only), 0 failed. The last change (the hero stacking below 1180 pixels) came after that run; the fold test passed on it at all eight widths.
 
 23 October 2026, early morning, branch `feat/website` (from `chore/design-direction-1`): the website, built from round 5 and the owner's notes on it (`docs/specs/website.md`).
 - The logo is in the app (decision 0012): `components/logo.tsx` with path data from `docs/design/direction-5/logo-svg.py`; `Wordmark` draws it, so the app bar, sign-in, onboarding and the not-found page all carry it. New `icon.svg`, `favicon.ico` and `apple-icon.png`, the slip i on Night.
