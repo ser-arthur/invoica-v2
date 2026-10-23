@@ -65,8 +65,12 @@ async function dueDate(page: Page) {
   return (await row.textContent())!.trim();
 }
 
-/** The development server's CRON_SECRET, from `.env.local`, which the host's scheduler would send. */
+/**
+ * The server's CRON_SECRET, which the host's scheduler would send: from the environment for a production run, else the
+ * development server's `.env.local`.
+ */
 function cronSecret() {
+  if (process.env.CRON_SECRET) return process.env.CRON_SECRET;
   try {
     return /^CRON_SECRET=(.+)$/m.exec(readFileSync(join(process.cwd(), '.env.local'), 'utf8'))?.[1]?.trim();
   } catch {
@@ -76,7 +80,7 @@ function cronSecret() {
 
 test('the scheduled drain sends the reminder due today, once', async ({ page, request }) => {
   const secret = cronSecret();
-  test.skip(!secret, 'Needs CRON_SECRET in .env.local.');
+  test.skip(!secret, 'Needs CRON_SECRET.');
   await signUpAndOnboard(page, 'Scheduled Reminder Works', { vat: true });
   const client = `scheduled${Date.now()}@client.example`;
   await addClient(page, 'Heron Wharf Ltd', client);
