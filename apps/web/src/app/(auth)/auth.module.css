@@ -26,7 +26,8 @@
   --logo-fold-c: #1f9c57;
   --label: #0e6b3a;
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) minmax(0, 1fr);
+  /* The Night panel takes five twelfths of the page, a little under half; its headline scales with it. */
+  grid-template-columns: minmax(420px, 5fr) minmax(0, 7fr);
   min-height: 100dvh;
   background: var(--canvas);
   color: var(--ink);

@@ -44,4 +44,4 @@ The public home page at `/`, for people who have not signed in. It presents Invo
 
 ## Sign in and sign up
 
-The pages under `app/(auth)` share the site's look: on wide screens a Night panel on the left half with the crease (its line silver here, so it stands apart from the green words past it), the headline set to fill the panel's width, and three facts about an account, and the form on the right in the site's light palette, whatever theme the visitor chose; on phones the form alone under the logo. Their wording and behaviour are unchanged (`docs/specs/sign-in-by-email.md`).
+The pages under `app/(auth)` share the site's look: on wide screens a Night panel on the left, five twelfths of the page, with the crease (its line silver here, so it stands apart from the green words past it), the headline set to fill the panel's width, and three facts about an account, and the form on the right in the site's light palette, whatever theme the visitor chose; on phones the form alone under the logo. Their wording and behaviour are unchanged (`docs/specs/sign-in-by-email.md`).
