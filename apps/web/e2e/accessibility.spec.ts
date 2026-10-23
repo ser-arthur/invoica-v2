@@ -17,6 +17,7 @@ test('public pages have no automated accessibility violations', async ({ page })
     '/reset-password?error=INVALID_TOKEN',
     '/confirm-email',
     '/no-such-page',
+    '/about',
   ]) {
     await page.goto(path);
     const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();

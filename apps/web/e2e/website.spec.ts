@@ -84,10 +84,11 @@ test('the crease crosses the headline and nothing else in the hero, at every wid
     ];
     for (const other of others) {
       const b = (await other.boundingBox())!;
+      const name = await other.textContent();
       for (let x = Math.max(b.x, to.x); x <= Math.min(b.x + b.width, from.x); x += 2) {
         const y = yAt(x);
         const clear = y < b.y - 8 || y > b.y + b.height + 8;
-        expect(clear, `${await other.textContent()} at ${width} pixels`).toBe(true);
+        expect(clear, `${name} at ${width} pixels`).toBe(true);
       }
     }
     const h = (await heading.boundingBox())!;

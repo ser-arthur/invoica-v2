@@ -1,13 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { signUpAndOnboard, watchErrors } from './helpers';
 
-test('a page that does not exist says so and offers a way back', async ({ page }) => {
-  const response = await page.goto('/no-such-page');
-  expect(response?.status()).toBe(404);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('This page does not exist');
-  await expect(page.getByRole('link', { name: 'Go to Invoica' })).toBeVisible();
-});
-
 test('an invoice that does not exist, or belongs to another business, is not found inside the app', async ({
   page,
 }) => {

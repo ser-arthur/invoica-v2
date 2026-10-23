@@ -43,6 +43,15 @@ test('the trial is stated before the plans', async ({ page }) => {
   await expect(page.getByText(/no card/i).first()).toBeVisible();
 });
 
+test('the founding offer is not on the public page; local prices are', async ({ page }) => {
+  await page.goto('/pricing');
+  // Decision 0013: the founding offer is made in the app at the end of the trial, not here.
+  // Answers folded away in the questions count too, so the text is read whether shown or not.
+  expect(await page.locator('main').textContent()).not.toMatch(/founding|first 200|£5 a month/i);
+  await page.getByText('Do plans cost less in Ghana and Nigeria?').click();
+  await expect(page.getByText(/cedis or naira/)).toBeVisible();
+});
+
 test('every way to start leads to sign-up', async ({ page }) => {
   await page.goto('/pricing');
   const starts = page.getByRole('link', { name: /^Start/ });
