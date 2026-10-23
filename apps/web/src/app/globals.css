@@ -9,13 +9,6 @@
  * Contrast: ink, muted and brand all pass 4.5:1 on canvas and surface in both themes.
  */
 :root {
-  /*
-   * A fine grain for dark grounds lit by a gradient. Browsers draw a faint colour on a dark ground in visible steps,
-   * one shade apart, and most do not smooth them; this noise of black and white pixels at 1% moves each pixel by
-   * about one shade either way, which breaks up the steps and is too fine to see. Drawn by the browser from a few
-   * hundred bytes of SVG; layered over the gradients, tiled at 160 by 160 pixels.
-   */
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='discrete' tableValues='0 1'/%3E%3CfeFuncG type='discrete' tableValues='0 1'/%3E%3CfeFuncB type='discrete' tableValues='0 1'/%3E%3CfeFuncA type='table' tableValues='1 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url%28%23g%29' opacity='0.01'/%3E%3C/svg%3E");
   --canvas: #f3f6f4;
   --surface: #ffffff;
   --surface-sunk: #ebf0ed;

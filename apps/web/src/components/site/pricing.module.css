@@ -193,26 +193,7 @@
 /* Pro: the plan the trial gives, on Night with its corner turned. */
 .pro {
   background: var(--night);
-  /* Lit from the top left, easing out to nothing under the fine grain, so no edge or band shows. */
-  background-image:
-    var(--grain),
-    radial-gradient(
-      68% 60% at 0% 0%,
-      rgb(55 198 107 / 0.19) 0%,
-      rgb(55 198 107 / 0.151) 10%,
-      rgb(55 198 107 / 0.116) 20%,
-      rgb(55 198 107 / 0.087) 30%,
-      rgb(55 198 107 / 0.062) 40%,
-      rgb(55 198 107 / 0.041) 50%,
-      rgb(55 198 107 / 0.025) 60%,
-      rgb(55 198 107 / 0.013) 70%,
-      rgb(55 198 107 / 0.006) 80%,
-      rgb(55 198 107 / 0.001) 90%,
-      rgb(55 198 107 / 0) 100%
-    );
-  background-size:
-    160px 160px,
-    auto;
+  background-image: radial-gradient(70% 60% at 0% 0%, rgb(55 198 107 / 0.2), transparent 70%);
   color: #ffffff;
   clip-path: polygon(0 0, calc(100% - var(--f)) 0, 100% var(--f), 100% 100%, 0 100%);
 }
