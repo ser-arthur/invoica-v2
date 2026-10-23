@@ -47,13 +47,16 @@ const STEPS = [
 export function Steps() {
   return (
     <div id="how">
-      <div className={`${s.wrap} ${s.grid} ${s.howIntro}`}>
-        <h2 className={`${s.display} ${s.h2} ${s.howIntroHeading}`}>
-          <span className={s.keep}>How an invoice</span> <span className={s.keep}>gets paid.</span>
-        </h2>
-        <p className={s.lead}>
-          Every invoice takes the same five steps. Invoica does the paperwork at each one, so you always know
-          where an invoice stands and what happens next.
+      <div className={`${s.wrap} ${s.grid} ${s.sectionIntro} ${s.howIntro}`}>
+        <div className={s.introHeading}>
+          <span className={s.label}>How it works</span>
+          <h2 className={`${s.display} ${s.h2}`}>
+            <span className={s.keep}>From the first line</span> <span className={s.keep}>to paid.</span>
+          </h2>
+        </div>
+        <p className={`${s.lead} ${s.introLead}`}>
+          Every invoice follows the same five steps. Invoica handles the paperwork at each one, so you always
+          know where an invoice stands and what happens next.
         </p>
       </div>
       <ol style={{ margin: 0, padding: 0, listStyle: 'none' }}>
@@ -78,7 +81,7 @@ export function Steps() {
         ))}
         <li className={`${s.wrap} ${s.step}`}>
           <div className={`${s.grid} ${s.paidHead}`}>
-            <div className={s.howIntroHeading}>
+            <div className={s.introHeading}>
               <Marker n={5} name="Get paid" colours={['#0F7F7A', '#0E6B3A']} />
               <h3 className={`${s.display} ${s.stepHeading}`}>
                 <span className={s.keep}>Always know</span>{' '}

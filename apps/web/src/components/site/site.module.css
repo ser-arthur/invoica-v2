@@ -15,6 +15,7 @@
   --green: #37c66b;
   --mint: #6ce4a2;
   --teal: #138c86;
+  --label: #0e6b3a;
   --logo-accent: #37c66b;
   --logo-fold-a: #7fd35a;
   --logo-fold-b: #37c66b;
@@ -117,6 +118,10 @@
 
 /* Header */
 
+.headerBar {
+  border-bottom: 1px solid var(--rule);
+}
+
 .header {
   display: flex;
   align-items: center;
@@ -142,6 +147,7 @@
 .nav a,
 .signIn {
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .account {
@@ -166,149 +172,160 @@
 /* Hero */
 
 .hero {
+  --hs: clamp(54px, 8.4vw, 124px);
+  --gutter: 48px;
+  --pad: calc(var(--hs) * 1.44);
+  /*
+   * The fold (fold.ts sets --fold-x, --fold-y, --fold-reach and --fold-half): from the top right corner of
+   * the screen through one point of the headline; four times that distance again lands well past the left
+   * edge. Percentages here are of the hero's full width.
+   */
+  --cx: min(100%, 50% + var(--fold-reach));
+  --ax: calc(max(var(--gutter), 50% - var(--fold-half)) + var(--hs) * var(--fold-x));
+  --ay: calc(var(--pad) + var(--hs) * var(--fold-y));
+  --bx: calc(var(--ax) * 4 - var(--cx) * 3);
+  --by: calc(var(--ay) * 4);
   position: relative;
 }
 
-.ledger {
-  position: absolute;
-  top: 120px;
-  bottom: 120px;
-  left: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-}
-
-.ledger span {
-  display: block;
-  transform: rotate(-90deg);
-  white-space: nowrap;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  color: var(--quiet);
-  font-variant-numeric: tabular-nums;
-}
-
-.notes {
-  padding-top: 28px;
-}
-
-.note {
-  margin: 0;
-  max-width: 22em;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--text);
-}
-
-.note strong {
-  display: block;
-  color: var(--night);
-  font-weight: 600;
-}
-
-.noteOne {
-  grid-column: 7 / span 3;
-}
-
-.noteTwo {
-  grid-column: 10 / span 3;
-}
-
-.heroMain {
-  align-items: end;
-  margin-top: clamp(28px, 5vw, 64px);
-}
-
-.heroHeadline {
-  grid-column: 1 / span 8;
-}
-
-.heroSide {
-  grid-column: 9 / span 4;
-  padding-bottom: 10px;
-}
-
-.statement {
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(19px, 1.7vw, 23px);
-  line-height: 1.32;
-  letter-spacing: -0.02em;
-  text-wrap: pretty;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 18px;
-  margin-top: 26px;
-}
-
-/* The crease: one diagonal fold across a headline */
-
-.crease {
+.heroTop {
   position: relative;
-  display: inline-block;
+  overflow: clip;
 }
 
-.creaseText {
+.heroGrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 24px;
+  padding-top: var(--pad);
+}
+
+.heroHead {
   display: flex;
   flex-direction: column;
+  grid-column: 1 / span 8;
+  grid-row: 1;
   margin: 0;
   padding-bottom: 0.2em;
 }
 
 /*
- * Each line is padded past its tight line box and pulled back by the same amount (flex items, so the
- * margins add up), so a finish clipped to the text reaches the tops of capitals and the tails of descenders.
+ * Each line is padded past its tight line box and pulled back by the same amount (flex items, so the margins
+ * add up), so a finish clipped to the text reaches the tops of capitals and the tails of descenders.
  */
-.creaseText > span {
+.heroHead > span {
   display: block;
   margin: -0.18em 0 -0.24em;
   padding: 0.18em 0 0.24em;
 }
 
-.creasePast {
-  position: absolute;
-  inset: 0;
-}
-
-.creaseLine {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  overflow: visible;
-  pointer-events: none;
-}
-
 .heroType {
-  font-size: clamp(54px, 8.4vw, 124px);
+  font-size: var(--hs);
   line-height: 0.94;
   letter-spacing: -0.05em;
   white-space: nowrap;
   color: var(--night);
 }
 
-/*
- * Past the crease the words turn green: one sweep from leaf green to teal across the whole headline,
- * the colours of the slabs below, with a soft light along the top of each line. Every stop passes 3:1 on Mist.
- */
-.green {
-  background-image: linear-gradient(118deg, #3f9b2a 0%, #199a55 38%, #13976f 62%, #0e7a74 100%);
+/* Past the fold the words are grey: mostly flat, a slight sweep across the headline and a soft light along each line. */
+.grey {
+  background-image: linear-gradient(118deg, #56686a 0%, #6e807d 55%, #7a8c89 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-.green > span {
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.12) 8%, rgb(255 255 255 / 0) 46%);
+.grey > span {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.14) 8%, rgb(255 255 255 / 0) 46%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+.heroFacts {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  grid-column: 9 / span 4;
+  grid-row: 1;
+  align-self: end;
+  padding-bottom: calc(var(--hs) * 0.24);
+}
+
+.fact {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.label + .h2,
+.label + h2 {
+  margin-top: 10px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 6px;
+  font: 700 12px/1.2 var(--font-sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+
+.heroStatement {
+  grid-column: 1 / span 7;
+  grid-row: 2;
+  margin: calc(var(--hs) * 0.3 + 24px) 0 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(22px, 2vw, 28px);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  grid-column: 9 / span 4;
+  grid-row: 2;
+  align-self: end;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.heroPast {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  clip-path: polygon(var(--cx) 0, 100% 0, 100% var(--by), var(--bx) var(--by));
+}
+
+.heroLine,
+.heroHairline {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.heroLine {
+  background: linear-gradient(90deg, #cff26a 0%, #37c66b 50%, #138c86 100%);
+  clip-path: polygon(var(--cx) 0, var(--bx) var(--by), var(--bx) calc(var(--by) + 3px), var(--cx) 3px);
+}
+
+.heroHairline {
+  background: rgb(9 25 28 / 0.4);
+  clip-path: polygon(
+    calc(var(--cx) + 9px) 0,
+    calc(var(--bx) + 9px) var(--by),
+    calc(var(--bx) + 9px) calc(var(--by) + 1px),
+    calc(var(--cx) + 9px) 1px
+  );
 }
 
 /* Money in, as folded slabs */
@@ -431,21 +448,73 @@
   filter: blur(26px);
 }
 
-/* How one invoice gets paid */
+/* Section openings: a green label, a leading heading, and a short paragraph beside it */
 
-.howIntro {
-  padding-top: 96px;
+.sectionIntro {
+  align-items: end;
+}
+
+.introHeading {
+  grid-column: 1 / span 6;
+}
+
+.introHeading .label {
+  margin-bottom: 14px;
+}
+
+.introLead {
+  grid-column: 7 / span 6;
+  align-self: end;
+  margin: 0;
+}
+
+/* Why Invoica */
+
+.pillars {
+  padding-top: 112px;
   padding-bottom: 24px;
 }
 
-.howIntro .lead {
-  grid-column: 7 / span 6;
-  margin: 0;
-  align-self: end;
+.pillarList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px 48px;
+  margin: 64px 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.howIntroHeading {
-  grid-column: 1 / span 6;
+.pillar {
+  display: flex;
+  flex-direction: column;
+}
+
+.pillarRule {
+  display: block;
+  height: 4px;
+  margin-bottom: 22px;
+  border-radius: 2px;
+}
+
+.pillarHeading {
+  margin: 4px 0 0;
+  font-size: 30px;
+  line-height: 1.08;
+}
+
+.pillarBody {
+  margin: 14px 0 0;
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: var(--text);
+  text-wrap: pretty;
+}
+
+/* How one invoice gets paid */
+
+.howIntro {
+  padding-top: 112px;
+  padding-bottom: 24px;
 }
 
 .step {
@@ -843,21 +912,18 @@
   transform: rotate(5deg);
 }
 
-/* Phones */
+/* Phones: a band of lime across the whole page, its edges parallel to the hero's fold */
 
-.phones {
-  padding: 24px;
+/* The ground behind the band's slanted edges matches the sections above (white) and below (Mist). */
+.phonesGround {
+  background: linear-gradient(180deg, #ffffff 50%, var(--mist) 50%);
 }
 
-.phonesPanel {
-  position: relative;
-  overflow: hidden;
-  border-radius: 36px;
-  background: var(--night);
-  background-image:
-    radial-gradient(50% 70% at 78% 40%, rgb(55 198 107 / 0.22), transparent 70%),
-    radial-gradient(40% 60% at 10% 100%, rgb(19 140 134 / 0.26), transparent 70%);
-  color: #ffffff;
+.phonesBand {
+  --slant: 72px;
+  padding: calc(104px + var(--slant)) 0 calc(96px + var(--slant));
+  background: var(--lime);
+  clip-path: polygon(0 var(--slant), 100% 0, 100% calc(100% - var(--slant)), 0 100%);
 }
 
 .phonesGrid {
@@ -868,57 +934,113 @@
   grid-column: 1 / span 5;
 }
 
-.phonesText .lead {
-  color: rgb(255 255 255 / 0.76);
+.phonesText .lead + .lead {
+  margin-top: 12px;
 }
 
 .phonePair {
   position: relative;
   grid-column: 6 / span 7;
-  height: 680px;
+  height: 640px;
 }
 
-.phone {
+/* A modern phone, drawn in code and sized by --w: metal edge, bezel, screen, camera cut-out and side keys. */
+.device {
+  --w: 290px;
   position: absolute;
-  top: 10px;
-  width: 300px;
-  padding: 10px;
+  top: 0;
+  width: var(--w);
+  padding: calc(var(--w) * 0.012);
   box-sizing: border-box;
-  border-radius: 50px;
-  background: rgb(255 255 255 / 0.08);
+  border-radius: calc(var(--w) * 0.19);
+  background: linear-gradient(
+    140deg,
+    #8b9599 0%,
+    #3c4447 18%,
+    #a3acb0 42%,
+    #3a4245 64%,
+    #7d878b 86%,
+    #4a5356 100%
+  );
   box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.22),
-    0 50px 90px -40px rgb(0 0 0 / 0.8);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+    0 0 0 0.5px rgb(0 0 0 / 0.5),
+    0 60px 90px -45px rgb(9 25 28 / 0.6),
+    0 24px 40px -24px rgb(9 25 28 / 0.4);
 }
 
-.phone img {
+.deviceBezel {
+  padding: calc(var(--w) * 0.03);
+  border-radius: calc(var(--w) * 0.178);
+  background: #040506;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
+.deviceScreen {
+  position: relative;
+  overflow: hidden;
+  border-radius: calc(var(--w) * 0.15);
+  background: #000000;
+}
+
+.deviceScreen img {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 40px;
+}
+
+.deviceIsland {
+  position: absolute;
+  top: calc(var(--w) * 0.026);
+  left: 50%;
+  width: calc(var(--w) * 0.29);
+  height: calc(var(--w) * 0.086);
+  border-radius: 999px;
+  background: #000000;
+  transform: translateX(-50%);
+}
+
+.deviceKey {
+  position: absolute;
+  width: calc(var(--w) * 0.012);
+  border-radius: 2px;
+  background: linear-gradient(90deg, #5d676b, #a3acb0 50%, #4a5356);
+}
+
+.keyAction,
+.keyUp,
+.keyDown {
+  left: calc(var(--w) * -0.01);
+}
+
+.keyAction {
+  top: 17%;
+  height: 4.5%;
+}
+
+.keyUp {
+  top: 24.5%;
+  height: 8%;
+}
+
+.keyDown {
+  top: 34%;
+  height: 8%;
+}
+
+.keyPower {
+  top: 27%;
+  right: calc(var(--w) * -0.01);
+  height: 12.5%;
 }
 
 .phoneLight {
-  left: calc(50% - 300px);
-  transform: rotate(-4deg);
+  left: calc(50% - 288px);
 }
 
 .phoneDark {
-  top: 70px;
-  left: calc(50% - 10px);
-  transform: rotate(4deg);
-}
-
-.phoneTag {
-  position: absolute;
-  bottom: -38px;
-  left: 0;
-  right: 0;
-  font-size: 13px;
-  color: rgb(255 255 255 / 0.7);
-  text-align: center;
+  z-index: 2;
+  top: 64px;
+  left: calc(50% - 12px);
 }
 
 /* The details, itemised, and the tear-off slip */
@@ -1169,34 +1291,126 @@
   font-weight: 600;
 }
 
-/* Footer */
+/* Footer: Night across the whole page, the link columns, and the logo set large and sinking into the foot */
 
 .footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px 32px;
-  padding-top: 40px;
-  padding-bottom: 48px;
-  font-size: 14px;
-  color: var(--quiet);
+  --logo-accent: #46da80;
+  --logo-fold-a: #cff26a;
+  --logo-fold-b: #46da80;
+  --logo-fold-c: #2fb866;
+  margin-top: 96px;
+  overflow: hidden;
+  background: var(--night);
+  color: rgb(255 255 255 / 0.74);
+  font-size: 15px;
 }
 
-.footerLogo {
+.site .footer a {
+  color: rgb(255 255 255 / 0.82);
+  text-decoration: none;
+}
+
+.site .footer a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.site .footer :focus-visible {
+  outline-color: var(--lime);
+}
+
+.footerTop {
+  padding-top: 88px;
+  padding-bottom: 56px;
+}
+
+.footerBrand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  grid-column: 1 / span 4;
+}
+
+.site .footer .footerLogo {
   display: inline-flex;
-  font-size: 28px;
+  font-size: 40px;
+  color: #ffffff;
+}
+
+.footerLine {
+  margin: 18px 0 26px;
+  max-width: 16em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.site .footer .limeButton {
+  background: var(--lime);
   color: var(--night);
 }
 
-.footerLinks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
+.site .footer .limeButton:hover {
+  background: #dcf78f;
+  color: var(--night);
+  text-decoration: none;
 }
 
-.footer p {
+.footerNav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 32px 24px;
+  grid-column: 6 / span 7;
+}
+
+.footerTitle {
+  margin: 0 0 16px;
+  font: 700 12px/1.2 var(--font-sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+
+.footerNav ul {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.footerBase {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding-top: 22px;
+  padding-bottom: 22px;
+  border-top: 1px solid rgb(255 255 255 / 0.12);
+  font-size: 14px;
+}
+
+.footerBase p {
+  margin: 0;
+}
+
+/* The logo as wide as the page, cut off part way down its letters, as if sinking into the foot of the page. */
+.footerMark {
+  height: calc((min(100vw, 1280px) - 2 * var(--gutter, 48px)) / 4.27 * 0.6);
+  margin-top: 24px;
+  overflow: hidden;
+  color: #19363a;
+}
+
+.footerMark svg {
+  display: block;
+  width: 100%;
+  height: auto !important;
 }
 
 /* Narrower screens */
@@ -1209,19 +1423,52 @@
     top: -300px;
     transform: scale(0.48) rotateX(55deg) rotateZ(-20deg);
   }
+  .device {
+    --w: 250px;
+  }
   .phoneLight {
-    left: calc(50% - 280px);
+    left: calc(50% - 248px);
+  }
+  .phoneDark {
+    top: 54px;
+    left: calc(50% - 10px);
+  }
+  .phonePair {
+    height: 580px;
   }
 }
 
 @media (max-width: 960px) {
-  .notes {
+  .nav {
     display: none;
   }
-  .heroHeadline,
-  .heroSide,
-  .howIntroHeading,
-  .howIntro .lead,
+  .heroHead,
+  .heroFacts,
+  .heroStatement,
+  .heroActions {
+    grid-column: 1 / -1;
+  }
+  .heroStatement {
+    grid-row: 2;
+    max-width: 22em;
+    margin-top: 28px;
+  }
+  .heroActions {
+    grid-row: 3;
+    align-self: start;
+    margin-top: 24px;
+  }
+  .heroFacts {
+    flex-direction: row;
+    grid-row: 4;
+    margin-top: 40px;
+    padding-bottom: 0;
+  }
+  .fact {
+    flex: 1 1 0;
+  }
+  .introHeading,
+  .introLead,
   .stepText,
   .stepVisual,
   .paidHead .lead,
@@ -1235,6 +1482,10 @@
   }
   .detailsText {
     position: static;
+  }
+  .footerBrand,
+  .footerNav {
+    grid-column: 1 / -1;
   }
 }
 
@@ -1254,11 +1505,19 @@
     padding: 0 14px;
     font-size: 14px;
   }
-  .ledger {
-    display: none;
+  .hero {
+    --hs: 13vw;
+    --gutter: 20px;
+    --pad: calc(var(--hs) * 0.8);
   }
-  .heroType {
-    font-size: 13vw;
+  .heroStatement {
+    margin-top: 52px;
+  }
+  .heroFacts {
+    gap: 16px;
+  }
+  .fact {
+    font-size: 14px;
   }
   .slabs {
     height: 180px;
@@ -1289,9 +1548,18 @@
   .lead {
     font-size: 17px;
   }
-  .howIntro {
+  .howIntro,
+  .pillars {
     padding-top: 64px;
     padding-bottom: 8px;
+  }
+  .pillarList {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 36px;
+    margin-top: 40px;
+  }
+  .pillarHeading {
+    font-size: 26px;
   }
   .step {
     padding-top: 36px;
@@ -1339,29 +1607,35 @@
     width: 684px;
     transform: scale(0.48);
   }
-  .phones {
-    padding: 12px;
-  }
-  .phonesPanel {
-    border-radius: 28px;
+  .phonesBand {
+    --slant: 36px;
+    padding: calc(64px + var(--slant)) 0 calc(56px + var(--slant));
   }
   .phonePair {
     height: 420px;
   }
-  .phone {
-    width: 168px;
-    padding: 6px;
-    border-radius: 30px;
+  .footer {
+    margin-top: 64px;
   }
-  .phone img {
-    border-radius: 25px;
+  .footerTop {
+    padding-top: 64px;
+    padding-bottom: 40px;
+  }
+  .footerNav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .footerMark {
+    --gutter: 20px;
+  }
+  .device {
+    --w: 168px;
   }
   .phoneLight {
-    left: calc(50% - 160px);
+    left: calc(50% - 164px);
   }
   .phoneDark {
-    top: 44px;
-    left: calc(50% - 8px);
+    top: 38px;
+    left: calc(50% - 4px);
   }
   .details {
     padding-top: 64px;

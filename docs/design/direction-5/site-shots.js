@@ -1,5 +1,5 @@
 // Captures the round 5 app boards from the design canvas for the website, at twice the pixel density.
-// Usage: node site-shots.js <canvas folder with project/ and assets/> <output folder>; then site-images.py.
+// Usage: python3 phone-boards.py <canvas>/project, then node site-shots.js <canvas folder with project/ and assets/> <output folder>, then site-images.py.
 const { chromium } = require('playwright');
 const http = require('http'); const fs = require('fs'); const path = require('path');
 const dir = process.argv[2], out = process.argv[3];
@@ -16,8 +16,8 @@ const srv = http.createServer((req, res) => {
   const ff=(fam,file,w)=>`@font-face{font-family:'${fam}';font-weight:${w};src:url(http://localhost:${port}/nm/${file}) format('woff2');}`;
   const css=[ff('Sora','@fontsource-variable/sora/files/sora-latin-wght-normal.woff2','100 800'),ff('Onest','@fontsource-variable/onest/files/onest-latin-wght-normal.woff2','100 900')].join('\n');
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-  const shoot = async (file, w, h, jobs) => {
-    const p = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 2 });
+  const shoot = async (file, w, h, jobs, scale = 2) => {
+    const p = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: scale });
     await p.route('https://fonts.googleapis.com/**', r => r.fulfill({ contentType: 'text/css', body: css }));
     await p.goto(`http://localhost:${port}/${file}`); await p.waitForTimeout(1200);
     for (const [name, sel] of jobs) {
@@ -31,7 +31,7 @@ const srv = http.createServer((req, res) => {
   await shoot('R5Invoice.dc.html', 1440, 900, [['invoice.png', null], ['invoice-paper.png', 'article[aria-label="The invoice as the client received it"]']]);
   await shoot('R5DashboardDark.dc.html', 1440, 900, [['dashboard-dark.png', null]]);
   await shoot('R5Dashboard.dc.html', 1440, 900, [['dashboard.png', null], ['chasing.png', 'section#chasing']]);
-  await shoot('R5DashboardPhone.dc.html', 390, 844, [['phone.png', null]]);
-  await shoot('R5DashboardPhoneDark.dc.html', 390, 844, [['phone-dark.png', null]]);
+  await shoot('PhoneShot.dc.html', 393, 852, [['phone.png', null]], 3);
+  await shoot('PhoneShotDark.dc.html', 393, 852, [['phone-dark.png', null]], 3);
   await b.close(); srv.close();
 });

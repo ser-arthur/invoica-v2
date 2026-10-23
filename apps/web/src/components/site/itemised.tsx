@@ -50,8 +50,9 @@ export function Itemised() {
     <section id="pricing" className={`${s.wrap} ${s.details}`} aria-labelledby="itemised-heading">
       <div className={`${s.grid} ${s.detailsGrid}`}>
         <div className={s.detailsText}>
+          <span className={s.label}>Pricing</span>
           <h2 id="itemised-heading" className={`${s.display} ${s.h2}`}>
-            Everything a growing business needs, itemised.
+            Everything you need, itemised.
           </h2>
           <p className={s.lead}>
             Every account comes with all of it. Your first 30 days cost nothing and need no card. After that,

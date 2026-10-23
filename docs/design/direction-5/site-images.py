@@ -9,7 +9,7 @@ SRC = sys.argv[1]
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'apps', 'web', 'src', 'components', 'site', 'images')
 JOBS = [('editor.png', 'sheet-editor', 1120, 0), ('invoice.png', 'sheet-invoice', 1120, 0), ('dashboard-dark.png', 'sheet-dashboard', 1120, 0),
         ('editor-lines.png', 'write-lines', 940, 44), ('editor-preview.png', 'write-preview', 640, 52), ('invoice-paper.png', 'issue-paper', 680, 8),
-        ('chasing.png', 'remind-chasing', 1120, 44), ('phone.png', 'phone-light', 600, 0), ('phone-dark.png', 'phone-dark', 600, 0)]
+        ('chasing.png', 'remind-chasing', 1120, 44), ('phone.png', 'phone-light', 840, 0), ('phone-dark.png', 'phone-dark', 840, 0)]
 
 
 def rounded(im, r):
@@ -25,5 +25,5 @@ for src, name, width, radius in JOBS:
     im = rounded(im, radius) if radius else im.convert('RGB')
     if im.width > width:
         im = im.resize((width, round(im.height * width / im.width)), Image.LANCZOS)
-    im.save(os.path.join(OUT, name + '.webp'), quality=84, method=6)
+    im.save(os.path.join(OUT, name + '.webp'), quality=86 if name.startswith('phone') else 84, method=6)
     print(name, im.size)

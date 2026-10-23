@@ -41,3 +41,12 @@ His reaction, then the build: tokens and fonts in `globals.css`, the logo and ic
 - The copy tells one story: a business management tool that makes a new business look established from its first invoice, then follows every invoice until it is paid.
 - Built on the branch `feat/website` (`docs/specs/website.md`). The logo is decision 0012.
 
+## His second look, 23 October, about 04:25
+
+- Past the fold the words are grey, mostly flat, with only a slight sweep and a soft light along each line. Green and silver were both tried and dropped.
+- The fold runs the full width of the screen, from the top right corner just under the header, down past the left edge, and nothing but the headline is crossed.
+- The statement beside a big headline is one or two lines at most; the facts sit apart from it with small green labels, so neither drowns the other.
+- Before the steps, the page says what Invoica does for a business, the way the old site did: a small green label, a leading heading and a short paragraph for each of identity, financial clarity and client management.
+- No big rounded dark card with a thin margin, and no second dark green glow after the dashboard card: the phones sit on a lime band across the whole page. Phones are drawn as believable modern devices, with a status bar.
+- On the app's phone screens the greeting is lighter than the logo, so the two do not compete.
+- The footer has its own character: Night, the planned links, and the logo set large and cut off at the foot.
