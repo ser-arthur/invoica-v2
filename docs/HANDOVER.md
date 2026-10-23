@@ -128,7 +128,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 ## Next steps
 
 1. When the owner has the domain and approves decision 0010: follow `docs/deploy.md`.
-2. When GitHub is linked: push the history as `start`, then pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
+2. GitHub: on 23 October the owner chose to put v2 in its own private repository, `ser-arthur/invoica-v2`, cloned from bundle 20 into `~/Downloads/_DEV/invoica-v2` with `feat/website` as its `main`, and to show the site from its own Vercel project (root `apps/web`, no database: the site shows, account actions fail). The old repository and `invoica-io.vercel.app` stay untouched. CI (`.github/workflows/ci.yml`) runs there for the first time on that push. When this session is linked to GitHub: pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
 3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
 4. Templates round 2 review (phase 3).
 5. The website on `feat/website`: the owner's review (bundle 20), then a pull request once GitHub is linked; the owner's choice of where to show v2 before launch (a separate Vercel project recommended; the old app's address is not touched without his say). Then the app screens in the round 5 look: tokens and fonts in `globals.css`, the sheet and slab as shared pieces, each screen with its tests and the accessibility checks in both themes. The home page shows the app as drawn on the round 5 canvas, so it runs ahead of the app until those screens are built.
