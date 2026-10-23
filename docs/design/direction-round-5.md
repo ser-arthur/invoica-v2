@@ -50,3 +50,13 @@ His reaction, then the build: tokens and fonts in `globals.css`, the logo and ic
 - No big rounded dark card with a thin margin, and no second dark green glow after the dashboard card: the phones sit on a lime band across the whole page. Phones are drawn as believable modern devices, with a status bar.
 - On the app's phone screens the greeting is lighter than the logo, so the two do not compete.
 - The footer has its own character: Night, the planned links, and the logo set large and cut off at the foot.
+
+## His third look, 23 October, about 05:25
+
+- The full-width fold was too much; the shorter crease across the headline stays. Past it the words fade to a slate grey taken from his reference (a light grey deepening to slate), so the fade from Night reads clearly.
+- The large logo at the foot of the page is the footer's logo; a second one at the top competed with it.
+- The 30 days free needs a pull of its own: on the itemised invoice it is a rubber stamp, as a paid invoice is stamped.
+- Pricing has its own page for the plans.
+- The header stays put while the page scrolls under it.
+- Motion should be consistent and intentional and never hide content while scrolling, above all on phones; cards may move with the pointer on desktop and with the scroll on phones.
+

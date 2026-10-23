@@ -56,6 +56,17 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+23 October 2026, about 07:30, `feat/website`, worked through while the owner slept (his notes on bundle 18):
+- Hero: the shorter crease is back (`components/site/crease.tsx`, geometry in `fold.ts`, checked at eight widths); past it the words fade to slate grey (#838A94 to #5A6170, the lightest stop 3:1 on Mist). The heading is clipped to the near side so no dark edge shows around the grey letters.
+- Step numerals no longer lose their tops: anything with a gradient clipped to its text is padded past its line box.
+- Header: stays at the top on a frosted ground; on narrow screens its links fold into a menu (a disclosure, no script needed).
+- Footer: its top logo is gone; the large logo at the foot is the only one.
+- What you get: the itemised invoice is stamped "Free for 30 days, no card needed" and links to the new pricing page.
+- `/pricing` (`components/site/pricing.tsx`, `plans.ts`, `docs/specs/pricing-page.md`): the trial first, Free, Pro and Studio from decision 0005 with a monthly and yearly switch that works without script, what every plan includes, questions, and payment links, several businesses and people marked coming soon. It describes the plans at launch; today plans are not enforced and billing is not built.
+- Sign in and sign up (`app/(auth)/layout.tsx`): a Night panel with the crease and three facts beside the form on wide screens; the app's tokens are set to the site's light palette inside these pages. Wording and behaviour unchanged.
+- Motion (`site.module.css`, "Motion"; `components/site/tilt.tsx`): the hero once on load; cards lean towards a mouse pointer; pieces drift with the scroll; a route line through the steps fills lime to teal; the template fan opens on hover or, on touch screens, as it scrolls in; the stamps press on; the footer logo rises. Nothing is ever hidden by it, it stops for reduced motion, and the end-to-end tests run with reduced motion so they measure the page at rest.
+- Templates: "Try it with your business" redraws the invoice in front with the visitor's name, colour and layout, in the browser, with the documents package (`components/site/template-demo.tsx`).
+
 23 October 2026, about 05:30, `feat/website`, after the owner looked at bundle 17 locally:
 - Hero: the fold runs from the top right corner of the screen, under the header's hairline, down past the left edge, always through the same point of the headline (`components/site/fold.ts`, read by the styles and by `e2e/website.spec.ts`, which checks at eight widths that it crosses the headline and clears everything else). Words past it are grey. One-sentence statement; the notes became two facts with green labels.
 - New "Why Invoica" section (`components/site/pillars.tsx`): your identity, financial clarity, client management. The steps open with "How it works" in the same manner.
