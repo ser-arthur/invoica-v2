@@ -56,6 +56,11 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+23 October 2026, about 13:00 to 13:50, `feat/website`:
+- Footer logo: option E from the canvas's "Footer logo" page (`docs/design/direction-6/footer-marks.py` draws all six): dark letters with a thin holographic edge where their tops catch the light, never inside the o, c, v or a; a sheen runs along the edge as the footer comes into view and comes to rest over the o; the letters fade into the foot of the page part way down, a little higher than on the canvas, at the owner's word (`components/site/footer-mark.tsx`).
+- Hero and sign-in crease: the hairline beside the line is now square to it (`hairlineShift` in `fold.ts`, with a unit test), so the two end together; before, it was moved sideways and each line ran past the other at one end. Both now fade out at their ends.
+- Checks: 677 unit and database tests pass (web unit 96); format, copy rules, lint, types and the build pass; the site, not-found, pricing and accessibility end-to-end specs against the production build ran 58: 52 passed, 6 skipped by design, 0 failed.
+
 23 October 2026, about 12:30, `feat/website` (the owner's notes on bundle 19, and his answers on launch):
 - Decision 0013: the founding offer is off the pricing page (made in the app at the end of the trial, with billing); the question on Ghana and Nigeria stays, in the present tense. Built for launch: the site goes live only with billing.
 - Not-found page (`app/not-found.tsx`, `docs/specs/not-found-page.md`): any address with no page answers 404 in the site's look, with an envelope stamped "Return to sender, address not known"; each planned page (`components/site/planned-pages.ts`, linked from the footer through `links.ts`) answers 404 with its own notice, stamped "Coming soon". The proxy passes the address to the page in `x-invoica-path`; the address is never shown. A unit test fails if a planned page and a built page share an address.
