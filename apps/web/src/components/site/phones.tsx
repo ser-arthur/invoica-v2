@@ -2,6 +2,7 @@ import Image, { type StaticImageData } from 'next/image';
 import phoneDark from './images/phone-dark.webp';
 import phoneLight from './images/phone-light.webp';
 import s from './site.module.css';
+import { Tilt } from './tilt';
 
 /** The app on a phone, light and dark, on a band of lime whose edges run parallel to the hero's fold. */
 export function Phones() {
@@ -20,10 +21,10 @@ export function Phones() {
             </p>
             <p className={s.lead}>Light or dark, it is the same Invoica on your phone as on your desk.</p>
           </div>
-          <div className={s.phonePair} aria-hidden="true">
-            <Device src={phoneLight} className={s.phoneLight} />
-            <Device src={phoneDark} className={s.phoneDark} />
-          </div>
+          <Tilt className={s.phonePair} max={6} aria-hidden="true">
+            <Device src={phoneLight} className={`${s.phoneLight} ${s.driftSlow}`} />
+            <Device src={phoneDark} className={`${s.phoneDark} ${s.driftFast}`} />
+          </Tilt>
         </div>
       </div>
     </section>

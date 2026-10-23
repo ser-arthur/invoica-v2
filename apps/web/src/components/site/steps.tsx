@@ -4,10 +4,12 @@ import remindChasing from './images/remind-chasing.webp';
 import writeLines from './images/write-lines.webp';
 import writePreview from './images/write-preview.webp';
 import s from './site.module.css';
+import { Tilt } from './tilt';
 
 /**
  * How one invoice gets paid, in five steps. Each step has a numeral shaded along the page's lime to teal
- * scale and a picture on a tinted panel, so the white cards on it stand clear.
+ * scale and a picture on a tinted panel, so the white cards on it stand clear. A line runs down the margin
+ * through all five, the invoice's route, filling from lime to teal as the page scrolls past.
  */
 const STEPS = [
   {
@@ -59,43 +61,48 @@ export function Steps() {
           know where an invoice stands and what happens next.
         </p>
       </div>
-      <ol style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-        {STEPS.map((step, i) => (
-          <li key={step.name} className={`${s.wrap} ${s.grid} ${s.step}`}>
-            <div className={s.stepText}>
-              <Marker n={i + 1} name={step.name} colours={step.numeral} />
-              <h3 className={`${s.display} ${s.stepHeading}`}>
-                <span className={s.keep}>{step.heading[0]}</span>{' '}
-                <span className={s.keep}>{step.heading[1]}</span>
-              </h3>
-              <p className={s.lead}>{step.body}</p>
+      <div className={s.journey}>
+        <span className={s.journeyTrack} aria-hidden="true">
+          <span className={s.journeyFill} />
+        </span>
+        <ol style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+          {STEPS.map((step, i) => (
+            <li key={step.name} className={`${s.wrap} ${s.grid} ${s.step}`}>
+              <div className={s.stepText}>
+                <Marker n={i + 1} name={step.name} colours={step.numeral} />
+                <h3 className={`${s.display} ${s.stepHeading}`}>
+                  <span className={s.keep}>{step.heading[0]}</span>{' '}
+                  <span className={s.keep}>{step.heading[1]}</span>
+                </h3>
+                <p className={s.lead}>{step.body}</p>
+              </div>
+              <Tilt
+                className={`${s.stepVisual} ${s.stage}`}
+                style={{ background: step.tint }}
+                aria-hidden="true"
+              >
+                <div className={s.stageInner}>{step.visual}</div>
+              </Tilt>
+            </li>
+          ))}
+          <li className={`${s.wrap} ${s.step}`}>
+            <div className={`${s.grid} ${s.paidHead}`}>
+              <div className={s.introHeading}>
+                <Marker n={5} name="Get paid" colours={['#0F7F7A', '#0E6B3A']} />
+                <h3 className={`${s.display} ${s.stepHeading}`}>
+                  <span className={s.keep}>Always know</span>{' '}
+                  <span className={s.keep}>where your money is.</span>
+                </h3>
+              </div>
+              <p className={s.lead}>
+                Record payments in full or in parts as they come in. Your dashboard shows what you are owed,
+                what is late and what has arrived this month, with no spreadsheet to keep.
+              </p>
             </div>
-            <div
-              className={`${s.stepVisual} ${s.stage}`}
-              style={{ background: step.tint }}
-              aria-hidden="true"
-            >
-              <div className={s.stageInner}>{step.visual}</div>
-            </div>
+            <OwedCard />
           </li>
-        ))}
-        <li className={`${s.wrap} ${s.step}`}>
-          <div className={`${s.grid} ${s.paidHead}`}>
-            <div className={s.introHeading}>
-              <Marker n={5} name="Get paid" colours={['#0F7F7A', '#0E6B3A']} />
-              <h3 className={`${s.display} ${s.stepHeading}`}>
-                <span className={s.keep}>Always know</span>{' '}
-                <span className={s.keep}>where your money is.</span>
-              </h3>
-            </div>
-            <p className={s.lead}>
-              Record payments in full or in parts as they come in. Your dashboard shows what you are owed,
-              what is late and what has arrived this month, with no spreadsheet to keep.
-            </p>
-          </div>
-          <OwedCard />
-        </li>
-      </ol>
+        </ol>
+      </div>
     </div>
   );
 }
@@ -122,7 +129,7 @@ function WriteVisual() {
         src={writePreview}
         alt=""
         unoptimized
-        className={s.lift}
+        className={`${s.lift} ${s.driftSlow}`}
         style={{
           position: 'absolute',
           right: 40,
@@ -137,7 +144,7 @@ function WriteVisual() {
         src={writeLines}
         alt=""
         unoptimized
-        className={s.lift}
+        className={`${s.lift} ${s.driftFast}`}
         style={{ position: 'absolute', left: 40, top: 72, width: 470, height: 'auto', borderRadius: 22 }}
       />
     </>
@@ -168,7 +175,7 @@ function IssueVisual() {
         src={issuePaper}
         alt=""
         unoptimized
-        className={s.lift}
+        className={`${s.lift} ${s.driftSlow}`}
         style={{
           position: 'absolute',
           left: 56,
@@ -180,7 +187,7 @@ function IssueVisual() {
         }}
       />
       <div
-        className={`${s.card} ${s.lift} ${s.figures}`}
+        className={`${s.card} ${s.lift} ${s.driftFast} ${s.figures}`}
         style={{ right: 40, bottom: 56, width: 392, padding: '20px 22px' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -260,7 +267,7 @@ function SendVisual() {
         src={issuePaper}
         alt=""
         unoptimized
-        className={s.lift}
+        className={`${s.lift} ${s.driftSlow}`}
         style={{
           position: 'absolute',
           right: 48,
@@ -271,7 +278,10 @@ function SendVisual() {
           transform: 'rotate(6deg)',
         }}
       />
-      <div className={`${s.card} ${s.lift}`} style={{ left: 48, top: 52, width: 470, overflow: 'hidden' }}>
+      <div
+        className={`${s.card} ${s.lift} ${s.driftFast}`}
+        style={{ left: 48, top: 52, width: 470, overflow: 'hidden' }}
+      >
         <div className={s.mailHead}>
           <span className={s.quiet}>From</span>
           <strong>Linden &amp; Rowe Studio</strong>
@@ -308,11 +318,11 @@ function RemindVisual() {
         src={remindChasing}
         alt=""
         unoptimized
-        className={s.lift}
+        className={`${s.lift} ${s.driftSlow}`}
         style={{ position: 'absolute', left: 40, top: 96, width: 560, height: 'auto', borderRadius: 22 }}
       />
       <div
-        className={`${s.card} ${s.lift}`}
+        className={`${s.card} ${s.lift} ${s.driftFast}`}
         style={{ right: 40, top: 302, width: 390, padding: '20px 22px' }}
       >
         <div className={s.reminderMeta}>Sent on its own, Sunday 09:00</div>
@@ -330,8 +340,9 @@ function RemindVisual() {
 function OwedCard() {
   return (
     <figure style={{ margin: 0 }}>
-      <div
+      <Tilt
         className={`${s.owed} ${s.figures}`}
+        max={3}
         role="img"
         aria-label="An example dashboard: £6,420.00 owed across 5 invoices, £4,180.00 not due yet and £2,240.00 overdue, with £8,950.00 paid in the last 30 days."
       >
@@ -379,7 +390,7 @@ function OwedCard() {
             </div>
           </div>
         </div>
-      </div>
+      </Tilt>
       <figcaption className={s.caption}>An example studio&rsquo;s dashboard</figcaption>
     </figure>
   );

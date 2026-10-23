@@ -1,25 +1,20 @@
 /**
- * Where the hero's fold runs. It starts at the top right corner of the screen (or `reach` pixels right of
- * centre on very wide screens) and passes through one point of the headline, given in headline sizes from
- * the headline's top left corner: the middle line, just before "way". The page's styles and the tests both
- * read these numbers.
+ * The crease across a headline, in per cent of the headline's own box: where the line meets the top and the
+ * foot of a drawing box that runs `extend` per cent of the headline's height above and below it, and the part
+ * of its width the line is drawn across. The page and the tests both read these numbers.
  */
-export const FOLD = { anchorX: 3.59, anchorY: 1.41, reach: 900, halfContent: 592 } as const;
+export const CREASE = { xTop: 121, xBottom: -18, extend: 14, span: [-3, 112] as [number, number] };
 
-/** The fold as a line across the hero: its height below the hero's top edge at any distance from the left. */
-export function foldLine({
-  width,
-  hs,
-  pad,
-  gutter,
-}: {
-  width: number;
-  hs: number;
-  pad: number;
-  gutter: number;
-}) {
-  const cx = Math.min(width, width / 2 + FOLD.reach);
-  const ax = Math.max(gutter, width / 2 - FOLD.halfContent) + hs * FOLD.anchorX;
-  const ay = pad + hs * FOLD.anchorY;
-  return { yAt: (x: number) => (ay * (cx - x)) / (cx - ax) };
+type Box = { x: number; y: number; width: number; height: number };
+
+/** The drawn segment of the crease, in the same units as the box it is given. */
+export function creaseSegment(box: Box, crease: typeof CREASE = CREASE) {
+  const { xTop, xBottom, extend, span } = crease;
+  const top = box.y - (box.height * extend) / 100;
+  const foot = box.y + box.height * (1 + extend / 100);
+  const xAt = (t: number) => box.x + (box.width * (xTop + (xBottom - xTop) * t)) / 100;
+  const yAt = (t: number) => top + (foot - top) * t;
+  const t0 = Math.max(0, (xTop - span[1]) / (xTop - xBottom));
+  const t1 = Math.min(1, (xTop - span[0]) / (xTop - xBottom));
+  return { from: { x: xAt(t0), y: yAt(t0) }, to: { x: xAt(t1), y: yAt(t1) } };
 }

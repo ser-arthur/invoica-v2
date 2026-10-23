@@ -7,10 +7,10 @@ const COLUMNS = [
   {
     title: 'Product',
     links: [
-      { label: 'Why Invoica', href: '#why' },
-      { label: 'How it works', href: '#how' },
-      { label: 'Templates', href: '#templates' },
-      { label: 'Pricing', href: '#pricing' },
+      { label: 'Why Invoica', href: '/#why' },
+      { label: 'How it works', href: '/#how' },
+      { label: 'Templates', href: '/#templates' },
+      { label: 'Pricing', href: '/pricing' },
     ],
   },
   {
@@ -43,9 +43,6 @@ export function SiteFooter() {
     <footer className={s.footer}>
       <div className={`${s.wrap} ${s.grid} ${s.footerTop}`}>
         <div className={s.footerBrand}>
-          <Link href="/" className={s.footerLogo}>
-            <Logo shaded />
-          </Link>
           <p className={s.footerLine}>The business side of your business, in order.</p>
           <Link href="/sign-up" className={`${s.button} ${s.limeButton}`}>
             Create free account

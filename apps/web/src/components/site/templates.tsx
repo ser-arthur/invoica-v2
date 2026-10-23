@@ -1,15 +1,11 @@
 import { renderDocumentHtml, sampleSnapshot } from '@invoica/documents';
-import { Paper } from '@/components/paper';
 import s from './site.module.css';
+import { TemplateDemo } from './template-demo';
 
 const fontUrl = (f: string) => `/doc-fonts/${f}`;
 
-/** Three real invoices in different layouts, rendered by the documents package. */
+/** Three real invoices in different layouts, the one in front redrawn with the visitor's own name and colour. */
 export function Templates() {
-  const studio = renderDocumentHtml(
-    sampleSnapshot({ template: 'studio', seller: { name: 'Northlight Studio', brandColour: '#d9480f' } }),
-    { fontUrl },
-  );
   const counsel = renderDocumentHtml(
     sampleSnapshot({
       template: 'counsel',
@@ -40,17 +36,7 @@ export function Templates() {
             invoice after that carries the same look, so your clients come to know it as yours.
           </p>
         </div>
-        <div
-          className={s.fan}
-          role="img"
-          aria-label="Three example invoices in different layouts: Studio, Counsel and Letter"
-        >
-          <div className={s.fanInner}>
-            <Paper html={studio} width={240} title="Studio layout" className={s.fanLeft} />
-            <Paper html={counsel} width={240} title="Counsel layout" className={s.fanMiddle} />
-            <Paper html={letter} width={240} title="Letter layout" className={s.fanRight} />
-          </div>
-        </div>
+        <TemplateDemo left={counsel} right={letter} />
       </div>
     </section>
   );

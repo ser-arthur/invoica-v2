@@ -118,8 +118,111 @@
 
 /* Header */
 
+/* The header stays at the top; the page scrolls under it, softened by a frosted ground. */
 .headerBar {
-  border-bottom: 1px solid var(--rule);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid rgb(201 210 207 / 0.8);
+  background: rgb(236 239 237 / 0.82);
+  -webkit-backdrop-filter: saturate(150%) blur(14px);
+  backdrop-filter: saturate(150%) blur(14px);
+}
+
+/* On narrow screens the header's links fold into a menu: a disclosure, so it works without the page's script. */
+.menu {
+  position: relative;
+  display: none;
+}
+
+.menuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-left: 4px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--rule);
+  background: #ffffff;
+  cursor: pointer;
+  list-style: none;
+}
+
+.menuButton::-webkit-details-marker {
+  display: none;
+}
+
+.menuIcon,
+.menuIcon::before {
+  display: block;
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--night);
+  transition: transform 220ms ease;
+}
+
+.menuIcon {
+  position: relative;
+  transform: translateY(-3px);
+}
+
+.menuIcon::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+}
+
+.menu[open] .menuIcon {
+  transform: translateY(0) rotate(45deg);
+}
+
+.menu[open] .menuIcon::before {
+  top: 0;
+  transform: rotate(-90deg);
+}
+
+.menuPanel {
+  position: absolute;
+  top: 52px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  padding: 8px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgb(9 25 28 / 0.08),
+    0 24px 48px -24px rgb(9 25 28 / 0.4);
+}
+
+.site .menuPanel a {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site .menuPanel a:hover {
+  background: var(--mist);
+  color: var(--night);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Anchored sections stop below the header. */
+.site [id] {
+  scroll-margin-top: 96px;
 }
 
 .header {
@@ -173,50 +276,57 @@
 
 .hero {
   --hs: clamp(54px, 8.4vw, 124px);
-  --gutter: 48px;
-  --pad: calc(var(--hs) * 1.44);
-  /*
-   * The fold (fold.ts sets --fold-x, --fold-y, --fold-reach and --fold-half): from the top right corner of
-   * the screen through one point of the headline; four times that distance again lands well past the left
-   * edge. Percentages here are of the hero's full width.
-   */
-  --cx: min(100%, 50% + var(--fold-reach));
-  --ax: calc(max(var(--gutter), 50% - var(--fold-half)) + var(--hs) * var(--fold-x));
-  --ay: calc(var(--pad) + var(--hs) * var(--fold-y));
-  --bx: calc(var(--ax) * 4 - var(--cx) * 3);
-  --by: calc(var(--ay) * 4);
   position: relative;
-}
-
-.heroTop {
-  position: relative;
-  overflow: clip;
 }
 
 .heroGrid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   column-gap: 24px;
-  padding-top: var(--pad);
+  padding-top: max(72px, calc(var(--hs) * 0.8));
 }
 
 .heroHead {
-  display: flex;
-  flex-direction: column;
   grid-column: 1 / span 8;
   grid-row: 1;
+}
+
+/* The crease: one diagonal fold across a headline (components/site/crease.tsx, geometry in fold.ts) */
+
+.crease {
+  position: relative;
+  display: inline-block;
+}
+
+.creaseText {
+  display: flex;
+  flex-direction: column;
   margin: 0;
   padding-bottom: 0.2em;
 }
 
 /*
- * Each line is padded past its tight line box and pulled back by the same amount (flex items, so the margins
- * add up), so a finish clipped to the text reaches the tops of capitals and the tails of descenders.
+ * Each line is padded past its tight line box and pulled back by the same amount (flex items, so the
+ * margins add up), so a finish clipped to the text reaches the tops of capitals and the tails of descenders.
  */
-.heroHead > span {
+.creaseText > span {
   display: block;
   margin: -0.18em 0 -0.24em;
   padding: 0.18em 0 0.24em;
+}
+
+.creasePast {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.creaseLine {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  overflow: visible;
+  pointer-events: none;
 }
 
 .heroType {
@@ -227,16 +337,17 @@
   color: var(--night);
 }
 
-/* Past the fold the words are grey: mostly flat, a slight sweep across the headline and a soft light along each line. */
-.grey {
-  background-image: linear-gradient(118deg, #56686a 0%, #6e807d 55%, #7a8c89 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
+/*
+ * Past the crease the words fade to slate: light grey where the fade begins, deepening across the line,
+ * mostly flat. The lightest stop keeps 3:1 on Mist.
+ */
+.slate {
   color: transparent;
 }
 
-.grey > span {
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.14) 8%, rgb(255 255 255 / 0) 46%);
+/* Clipped on each line, so a line can move on its own (the load animation) and keep its finish. */
+.slate > span {
+  background-image: linear-gradient(90deg, #838a94 0%, #737a86 45%, #5a6170 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -293,39 +404,6 @@
   grid-column: 9 / span 4;
   grid-row: 2;
   align-self: end;
-}
-
-.hidden {
-  visibility: hidden;
-}
-
-.heroPast {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  clip-path: polygon(var(--cx) 0, 100% 0, 100% var(--by), var(--bx) var(--by));
-}
-
-.heroLine,
-.heroHairline {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.heroLine {
-  background: linear-gradient(90deg, #cff26a 0%, #37c66b 50%, #138c86 100%);
-  clip-path: polygon(var(--cx) 0, var(--bx) var(--by), var(--bx) calc(var(--by) + 3px), var(--cx) 3px);
-}
-
-.heroHairline {
-  background: rgb(9 25 28 / 0.4);
-  clip-path: polygon(
-    calc(var(--cx) + 9px) 0,
-    calc(var(--bx) + 9px) var(--by),
-    calc(var(--bx) + 9px) calc(var(--by) + 1px),
-    calc(var(--cx) + 9px) 1px
-  );
 }
 
 /* Money in, as folded slabs */
@@ -401,6 +479,8 @@
 
 .plane {
   --f: 300px;
+  --plane-x: 0px;
+  --plane-scale: 0.66;
   position: absolute;
   top: -262px;
   left: 50%;
@@ -408,7 +488,8 @@
   height: 1150px;
   margin-left: -1000px;
   transform-origin: 50% 50%;
-  transform: scale(0.66) rotateX(55deg) rotateZ(-20deg);
+  transform: translateX(var(--plane-x)) scale(var(--plane-scale)) rotateX(var(--plane-tilt, 55deg))
+    rotateZ(var(--plane-turn, -20deg));
   transform-style: preserve-3d;
   border-radius: 44px;
   background: #ffffff;
@@ -542,6 +623,9 @@
   font-weight: 800;
   font-size: 76px;
   line-height: 0.78;
+  /* padded past the tight line box and pulled back, so the finish clipped to the text reaches the whole figure */
+  padding: 0.14em 0.06em 0.08em;
+  margin: -0.14em -0.06em -0.08em;
   letter-spacing: -0.05em;
   -webkit-background-clip: text;
   background-clip: text;
@@ -872,11 +956,121 @@
 
 .templatesText {
   grid-column: 1 / span 5;
+  grid-row: 1;
+}
+
+/* Try it with your business: a name, a colour and a layout, and the invoice in front redraws. */
+.demo {
+  grid-column: 1 / span 5;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 20px;
+  background: var(--mist);
+}
+
+.demoTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.demoField {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.demoField .field {
+  background: #ffffff;
+}
+
+.demoSet {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.demoSet legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.swatches,
+.layouts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.swatch {
+  position: relative;
+  display: block;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.35);
+  cursor: pointer;
+}
+
+.swatch input,
+.layoutPill input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.swatch:has(input:checked) {
+  box-shadow:
+    0 0 0 3px var(--mist),
+    0 0 0 5px var(--night);
+}
+
+.swatch:has(input:focus-visible),
+.layoutPill:has(input:focus-visible) {
+  outline: 2px solid var(--night);
+  outline-offset: 3px;
+}
+
+.layoutPill {
+  position: relative;
+}
+
+.layoutPill span {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px var(--rule);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.layoutPill input:checked + span {
+  background: var(--night);
+  color: #ffffff;
+  box-shadow: none;
 }
 
 .fan {
   position: relative;
   grid-column: 6 / span 7;
+  grid-row: 1 / span 2;
+  align-self: center;
   height: 470px;
 }
 
@@ -896,20 +1090,20 @@
 .fanLeft {
   top: 72px;
   left: 10px;
-  transform: rotate(-6deg);
+  rotate: -6deg;
 }
 
 .fanMiddle {
-  top: 40px;
+  top: 30px;
   left: 50%;
   z-index: 2;
-  margin-left: -120px;
+  margin-left: -130px;
 }
 
 .fanRight {
   top: 84px;
   right: 12px;
-  transform: rotate(5deg);
+  rotate: 5deg;
 }
 
 /* Phones: a band of lime across the whole page, its edges parallel to the hero's fold */
@@ -1169,12 +1363,64 @@
   font-size: 16px;
 }
 
+/* The foot of the bill: a stamp on the left, the totals on the right */
+.billFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 22px;
+}
+
+/* A rubber stamp, the way a paid invoice is stamped: green ink, a double rule, set at an angle. */
+.stamp {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 0 0 8px;
+  padding: 10px 22px 12px;
+  border: 5px double #16723f;
+  border-radius: 12px;
+  color: #16723f;
+  text-align: center;
+  text-transform: uppercase;
+  transform: rotate(-8deg);
+}
+
+.stampBig {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+
+.stampSmall {
+  margin-top: 2px;
+  font: 800 15px/1.2 var(--font-display);
+  letter-spacing: 0.16em;
+}
+
+.stampTiny {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1.5px solid currentColor;
+  font: 700 11px/1.2 var(--font-sans);
+  letter-spacing: 0.16em;
+}
+
+.moreLink {
+  display: inline-block;
+  margin-top: 18px;
+}
+
 .totals {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   row-gap: 8px;
-  max-width: 320px;
-  margin: 22px 0 0 auto;
+  flex: 0 1 320px;
+  margin: 0 0 0 auto;
   font-size: 15px;
 }
 
@@ -1205,6 +1451,13 @@
   font-size: 13.5px;
   color: var(--quiet);
   text-align: right;
+}
+
+.site .billNote a {
+  margin-left: 6px;
+  color: var(--night);
+  font-weight: 600;
+  text-underline-offset: 3px;
 }
 
 .cut {
@@ -1332,14 +1585,8 @@
   grid-column: 1 / span 4;
 }
 
-.site .footer .footerLogo {
-  display: inline-flex;
-  font-size: 40px;
-  color: #ffffff;
-}
-
 .footerLine {
-  margin: 18px 0 26px;
+  margin: 0 0 26px;
   max-width: 16em;
   font-family: var(--font-display);
   font-weight: 700;
@@ -1413,6 +1660,309 @@
   height: auto !important;
 }
 
+/*
+ * Motion. One easing for all of it. The hero moves once, on load; everything else answers the pointer or the
+ * scroll, and never hides anything: content is in place whether or not the motion runs. All of it stops when
+ * the visitor asks for less motion, and scroll-linked motion only runs where browsers support it.
+ */
+
+@property --plane-tilt {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 55deg;
+}
+
+@property --plane-turn {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: -20deg;
+}
+
+.site {
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Cards that lean towards the pointer (tilt.tsx sets --rx and --ry). */
+.tilt {
+  transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 700ms var(--ease);
+}
+
+.tilt[data-tilting] {
+  transition-duration: 160ms;
+}
+
+/* The route through the steps: a line down the margin, filled lime to teal. */
+.journey {
+  position: relative;
+}
+
+.journeyTrack {
+  position: absolute;
+  top: 80px;
+  bottom: 80px;
+  left: calc(max(48px, 50% - 592px) - 30px);
+  width: 3px;
+  border-radius: 2px;
+  background: rgb(9 25 28 / 0.08);
+}
+
+.journeyFill {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #cff26a, #37c66b 45%, #138c86);
+  transform-origin: top;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Load: the headline rises line by line, the crease draws across, the slabs grow, the rest settles in. */
+  .heroHead .creaseText > span {
+    animation: rise 760ms var(--ease) both;
+  }
+  .heroHead .creaseText > span:nth-child(2) {
+    animation-delay: 90ms;
+  }
+  .heroHead .creaseText > span:nth-child(3) {
+    animation-delay: 180ms;
+  }
+  .heroHead .creaseLine {
+    animation: draw 900ms var(--ease) 380ms both;
+  }
+  .heroFacts,
+  .heroStatement,
+  .heroActions {
+    animation: settle 700ms var(--ease) 520ms both;
+  }
+  .slab {
+    transform-origin: bottom;
+    animation: grow 820ms var(--ease) both;
+  }
+  .slab:nth-child(1) {
+    animation-delay: 420ms;
+  }
+  .slab:nth-child(2) {
+    animation-delay: 490ms;
+  }
+  .slab:nth-child(3) {
+    animation-delay: 560ms;
+  }
+  .slab:nth-child(4) {
+    animation-delay: 630ms;
+  }
+  .slab:nth-child(5) {
+    animation-delay: 700ms;
+  }
+  .slab:nth-child(6) {
+    animation-delay: 770ms;
+  }
+
+  /* With a mouse: the template fan opens, the slabs lift, buttons rise a little. */
+  @media (hover: hover) and (pointer: fine) {
+    .fanLeft,
+    .fanMiddle,
+    .fanRight {
+      transition:
+        rotate 600ms var(--ease),
+        translate 600ms var(--ease);
+    }
+    .fan:hover .fanLeft {
+      rotate: -11deg;
+      translate: -36px 8px;
+    }
+    .fan:hover .fanMiddle {
+      translate: 0 -14px;
+    }
+    .fan:hover .fanRight {
+      rotate: 10deg;
+      translate: 36px 10px;
+    }
+    .slab {
+      transition: translate 400ms var(--ease);
+    }
+    .slab:hover {
+      translate: 0 -8px;
+    }
+    .button {
+      transition:
+        translate 300ms var(--ease),
+        background-color 200ms ease;
+    }
+    .button:hover {
+      translate: 0 -1px;
+    }
+  }
+
+  @supports (animation-timeline: view()) {
+    /* Pieces inside a panel drift at two speeds as it passes, so the cards in front feel nearer. */
+    .driftSlow,
+    .driftFast {
+      animation: drift linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+    .driftSlow {
+      --drift: 14px;
+    }
+    .driftFast {
+      --drift: 36px;
+    }
+
+    /* The tilted sheet turns a little as it passes. */
+    .plane {
+      animation: turn linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+
+    /* The route fills as the steps go by. */
+    .journeyFill {
+      animation: fill linear both;
+      animation-timeline: view();
+      animation-range: contain 0% contain 100%;
+    }
+
+    /* The stamp presses onto the invoice as it arrives. */
+    .stamp {
+      animation: press linear both;
+      animation-timeline: view();
+      animation-range: entry 20% cover 45%;
+    }
+
+    /* The large logo rises out of the foot of the page. */
+    .footerMark svg {
+      animation: surface linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+
+    /* The header gains a shadow once the page moves under it. */
+    .headerBar {
+      animation: lift linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 120px;
+    }
+
+    /* On touch screens the template fan opens as it scrolls into view. */
+    @media (hover: none) {
+      .fanLeft,
+      .fanRight {
+        animation: open linear both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 50%;
+      }
+      .fanLeft {
+        --open-turn: -11deg;
+        --open-x: -36px;
+      }
+      .fanRight {
+        --open-turn: 10deg;
+        --open-x: 36px;
+      }
+    }
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.32em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes draw {
+  from {
+    clip-path: inset(-30% 120% -30% -30%);
+  }
+  to {
+    clip-path: inset(-30% -30% -30% -30%);
+  }
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes grow {
+  from {
+    transform: scaleY(0.04);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes drift {
+  from {
+    translate: 0 var(--drift);
+  }
+  to {
+    translate: 0 calc(var(--drift) * -1);
+  }
+}
+
+@keyframes turn {
+  from {
+    --plane-tilt: 58deg;
+    --plane-turn: -23deg;
+  }
+  to {
+    --plane-tilt: 51deg;
+    --plane-turn: -17deg;
+  }
+}
+
+@keyframes fill {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes press {
+  from {
+    scale: 1.15;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+@keyframes surface {
+  from {
+    translate: 0 40%;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes lift {
+  to {
+    box-shadow: 0 10px 30px -18px rgb(9 25 28 / 0.35);
+  }
+}
+
+@keyframes open {
+  to {
+    rotate: var(--open-turn);
+    translate: var(--open-x) 8px;
+  }
+}
+
 /* Narrower screens */
 
 /* Below 1180 pixels the hero's statement, buttons and facts sit under the headline. */
@@ -1451,7 +2001,7 @@
   }
   .plane {
     top: -300px;
-    transform: scale(0.48) rotateX(55deg) rotateZ(-20deg);
+    --plane-scale: 0.48;
   }
   .device {
     --w: 250px;
@@ -1472,12 +2022,22 @@
   .nav {
     display: none;
   }
+  .fan {
+    grid-row: 2;
+  }
+  .demo {
+    grid-row: 3;
+  }
+  .menu {
+    display: block;
+  }
   .introHeading,
   .introLead,
   .stepText,
   .stepVisual,
   .paidHead .lead,
   .templatesText,
+  .demo,
   .fan,
   .phonesText,
   .phonePair,
@@ -1512,11 +2072,21 @@
   }
   .hero {
     --hs: 13vw;
-    --gutter: 20px;
-    --pad: calc(var(--hs) * 0.8);
+  }
+  .heroGrid {
+    padding-top: 44px;
   }
   .heroStatement {
-    margin-top: 52px;
+    margin-top: 28px;
+  }
+  .journeyTrack {
+    display: none;
+  }
+  .stampBig {
+    font-size: 32px;
+  }
+  .stamp {
+    margin-left: 4px;
   }
   .heroFacts {
     gap: 16px;
@@ -1589,7 +2159,8 @@
   }
   .plane {
     top: -430px;
-    transform: translateX(-36px) scale(0.25) rotateX(55deg) rotateZ(-20deg);
+    --plane-x: -36px;
+    --plane-scale: 0.25;
   }
   .owed {
     --f: 56px;

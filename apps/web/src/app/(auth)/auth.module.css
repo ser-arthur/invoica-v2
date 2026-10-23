@@ -1,0 +1,160 @@
+/*
+ * The sign-in and sign-up pages. The app's tokens are set to the site's light palette inside this page, so
+ * the shared form components (Field, Input, Button) take the site's look whatever theme the visitor chose.
+ */
+.auth {
+  --canvas: #ecefed;
+  --surface: #ffffff;
+  --surface-sunk: #e3e9e7;
+  --ink: #09191c;
+  --ink-soft: #2f403d;
+  --muted: #56676a;
+  --line: #d6dddb;
+  --line-strong: #b9c5c1;
+  --brand: #09191c;
+  --brand-hover: #17302f;
+  --brand-ink: #ffffff;
+  --brand-soft: #dcf5e6;
+  --brand-bright: #37c66b;
+  --danger: #a8281e;
+  --danger-soft: #fbe5e2;
+  --info: #2b5a86;
+  --info-soft: #e4edf6;
+  --logo-accent: #37c66b;
+  --logo-fold-a: #7fd35a;
+  --logo-fold-b: #37c66b;
+  --logo-fold-c: #1f9c57;
+  --label: #0e6b3a;
+  display: grid;
+  grid-template-columns: minmax(420px, 5fr) 7fr;
+  min-height: 100dvh;
+  background: var(--canvas);
+  color: var(--ink);
+  color-scheme: light;
+}
+
+/* The Night panel: a sheet with its corner turned, the crease, and what an account brings. */
+.panel {
+  --f: 64px;
+  --logo-accent: #46da80;
+  --logo-fold-a: #cff26a;
+  --logo-fold-b: #46da80;
+  --logo-fold-c: #2fb866;
+  --label: #6ce4a2;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding: 36px 48px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #09191c;
+  background-image:
+    radial-gradient(70% 50% at 0% 0%, rgb(55 198 107 / 0.22), transparent 70%),
+    radial-gradient(60% 50% at 100% 100%, rgb(19 140 134 / 0.25), transparent 70%);
+  color: rgb(255 255 255 / 0.78);
+  clip-path: polygon(0 0, calc(100% - var(--f)) 0, 100% var(--f), 100% 100%, 0 100%);
+}
+
+.flap {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--f);
+  height: var(--f);
+  border-bottom-left-radius: 10px;
+  background: linear-gradient(to bottom left, #e4fa9c, #46da80 50%, #2fb3a6);
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.panelLogo {
+  align-self: flex-start;
+  font-size: 34px;
+  color: #ffffff;
+}
+
+.panelBody {
+  margin: auto 0;
+}
+
+.panelType {
+  font-size: clamp(40px, 4.4vw, 68px);
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+  color: #ffffff;
+}
+
+.mint {
+  color: transparent;
+}
+
+.mint > span {
+  background-image: linear-gradient(90deg, #cff26a 0%, #6ce4a2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin: 44px 0 0;
+  padding: 0;
+  max-width: 26em;
+  list-style: none;
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+
+.panelFoot {
+  margin: 0;
+  font-size: 13px;
+  color: rgb(255 255 255 / 0.6);
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobileHeader {
+  display: none;
+}
+
+.formArea {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px 64px;
+}
+
+.formBox {
+  width: 100%;
+  max-width: 400px;
+}
+
+@media (max-width: 960px) {
+  .auth {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .panel {
+    display: none;
+  }
+  .mobileHeader {
+    display: block;
+    padding: 20px;
+  }
+  .mobileLogo {
+    display: inline-flex;
+    font-size: 30px;
+    color: var(--ink);
+  }
+  .formArea {
+    align-items: flex-start;
+    padding: 24px 20px 64px;
+  }
+}

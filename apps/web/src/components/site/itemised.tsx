@@ -1,5 +1,6 @@
 import { Logo } from '@/components/logo';
 import s from './site.module.css';
+import { Tilt } from './tilt';
 
 const LINES = [
   {
@@ -42,15 +43,15 @@ function Scissors() {
 }
 
 /**
- * The rest of the product as line items on an invoice, each at £0.00 during the free trial,
- * and the sign-up as the invoice's tear-off slip.
+ * The rest of the product as line items on an invoice, each at £0.00 during the free trial, stamped
+ * "Free for 30 days" the way a paid invoice is stamped, and the sign-up as the invoice's tear-off slip.
  */
 export function Itemised() {
   return (
     <section id="pricing" className={`${s.wrap} ${s.details}`} aria-labelledby="itemised-heading">
       <div className={`${s.grid} ${s.detailsGrid}`}>
         <div className={s.detailsText}>
-          <span className={s.label}>Pricing</span>
+          <span className={s.label}>What you get</span>
           <h2 id="itemised-heading" className={`${s.display} ${s.h2}`}>
             Everything you need, itemised.
           </h2>
@@ -58,9 +59,12 @@ export function Itemised() {
             Every account comes with all of it. Your first 30 days cost nothing and need no card. After that,
             up to three clients stay free.
           </p>
+          <a href="/pricing" className={`${s.textLink} ${s.moreLink}`}>
+            Compare plans and prices
+          </a>
         </div>
         <div className={s.detailsBill}>
-          <div className={s.billShadow}>
+          <Tilt className={s.billShadow} max={3}>
             <div className={s.bill}>
               <span className={s.billFlap} aria-hidden="true" />
               <div className={s.billBody}>
@@ -90,13 +94,22 @@ export function Itemised() {
                     </li>
                   ))}
                 </ul>
-                <dl className={`${s.totals} ${s.figures}`}>
-                  <dt className={s.quiet}>Subtotal</dt>
-                  <dd>£0.00</dd>
-                  <dt className={s.totalDue}>Total due</dt>
-                  <dd className={`${s.display} ${s.totalAmount}`}>£0.00</dd>
-                </dl>
-                <p className={s.billNote}>For your first 30 days.</p>
+                <div className={s.billFoot}>
+                  <p className={s.stamp}>
+                    <span className={s.stampBig}>Free</span>
+                    <span className={s.stampSmall}>for 30 days</span>
+                    <span className={s.stampTiny}>No card needed</span>
+                  </p>
+                  <dl className={`${s.totals} ${s.figures}`}>
+                    <dt className={s.quiet}>Subtotal</dt>
+                    <dd>£0.00</dd>
+                    <dt className={s.totalDue}>Total due</dt>
+                    <dd className={`${s.display} ${s.totalAmount}`}>£0.00</dd>
+                  </dl>
+                </div>
+                <p className={s.billNote}>
+                  For your first 30 days. <a href="/pricing">See every plan</a>
+                </p>
               </div>
               <div className={s.cut} aria-hidden="true">
                 <Scissors />
@@ -136,7 +149,7 @@ export function Itemised() {
                 </dl>
               </div>
             </div>
-          </div>
+          </Tilt>
         </div>
       </div>
     </section>

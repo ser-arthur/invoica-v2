@@ -1,0 +1,502 @@
+/* The pricing page. Colours come from the site's palette on .site (site.module.css). */
+
+.pricing {
+  padding-bottom: 24px;
+}
+
+.intro {
+  padding-top: 88px;
+  padding-bottom: 40px;
+}
+
+.title {
+  margin: 10px 0 0;
+  max-width: 14em;
+  font-size: clamp(44px, 6vw, 76px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+/* The trial: a lime slip with its corner turned and a stamp, before any plan. */
+.trial {
+  --f: 56px;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 28px 40px;
+  padding: 36px 48px;
+  border-radius: 20px;
+  background: var(--lime);
+  clip-path: polygon(0 0, calc(100% - var(--f)) 0, 100% var(--f), 100% 100%, 0 100%);
+}
+
+.trial::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--f);
+  height: var(--f);
+  border-bottom-left-radius: 10px;
+  background: linear-gradient(to bottom left, #e4fa9c, #46da80 50%, #2fb3a6);
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.trialStamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 10px 18px 12px;
+  border: 5px double #16723f;
+  border-radius: 12px;
+  color: #16723f;
+  text-transform: uppercase;
+  transform: rotate(-7deg);
+}
+
+.trialStamp span:first-child {
+  font: 800 52px/0.9 var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.trialStamp span:last-child {
+  margin-top: 4px;
+  font: 800 13px/1.2 var(--font-display);
+  letter-spacing: 0.16em;
+}
+
+.trialHeading {
+  margin: 0;
+  font-size: clamp(24px, 2.4vw, 32px);
+  line-height: 1.12;
+}
+
+.trialText p {
+  margin: 10px 0 0;
+  max-width: 40em;
+  font-size: 16.5px;
+  line-height: 1.55;
+  color: #2a3a2c;
+}
+
+.trialButton {
+  margin-right: 24px;
+}
+
+/* The plans */
+
+.plansSection {
+  padding-top: 72px;
+}
+
+/* Monthly or yearly: two radio buttons styled as one switch. The prices follow with :has, so no script is needed. */
+.switch {
+  display: inline-flex;
+  gap: 4px;
+  margin: 0 0 28px;
+  padding: 4px;
+  border: 0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.switchLegend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.switch label {
+  position: relative;
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.switch label > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.switch em {
+  font-style: normal;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--label);
+}
+
+.switch input:checked + span {
+  background: var(--night);
+  color: #ffffff;
+}
+
+.switch input:checked + span em {
+  color: var(--lime);
+}
+
+.switch input:focus-visible + span {
+  outline: 2px solid var(--night);
+  outline-offset: 2px;
+}
+
+.yearly {
+  display: none;
+}
+
+.pricing:has(input[value='yearly']:checked) .yearly {
+  display: inline;
+}
+
+.pricing:has(input[value='yearly']:checked) .monthly {
+  display: none;
+}
+
+.planGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 24px;
+}
+
+.plan {
+  --f: 52px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 34px 32px 36px;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgb(9 25 28 / 0.06),
+    0 24px 48px -32px rgb(9 25 28 / 0.35);
+}
+
+/* Pro: the plan the trial gives, on Night with its corner turned. */
+.pro {
+  background: var(--night);
+  background-image: radial-gradient(70% 60% at 0% 0%, rgb(55 198 107 / 0.2), transparent 70%);
+  color: #ffffff;
+  clip-path: polygon(0 0, calc(100% - var(--f)) 0, 100% var(--f), 100% 100%, 0 100%);
+}
+
+.flap {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--f);
+  height: var(--f);
+  border-bottom-left-radius: 8px;
+  background: linear-gradient(to bottom left, #e4fa9c, #46da80 50%, #2fb3a6);
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.tag {
+  align-self: flex-start;
+  margin-bottom: 14px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--night);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.planName {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.forWhom {
+  margin: 6px 0 0;
+  font-size: 15.5px;
+  color: var(--text);
+}
+
+.pro .forWhom {
+  color: rgb(255 255 255 / 0.74);
+}
+
+.price {
+  min-height: 64px;
+  margin: 24px 0 0;
+  font-size: 15px;
+  color: var(--quiet);
+}
+
+.price b {
+  margin-right: 4px;
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--night);
+}
+
+.pro .price {
+  color: rgb(255 255 255 / 0.72);
+}
+
+.pro .price b {
+  color: #ffffff;
+}
+
+.planButton {
+  width: 100%;
+  margin-top: 22px;
+}
+
+.pro .planButton.limeButton {
+  background: var(--lime);
+  color: var(--night);
+}
+
+.pro .planButton.limeButton:hover {
+  background: #dcf78f;
+  color: var(--night);
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 28px 0 0;
+  padding: 24px 0 0;
+  border-top: 1px solid var(--hair);
+  list-style: none;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.pro .features {
+  border-top-color: rgb(255 255 255 / 0.14);
+}
+
+.features li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.tick {
+  margin-top: 1px;
+  color: #16723f;
+}
+
+.pro .tick {
+  color: var(--lime);
+}
+
+.soon {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #e3e9e7;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pro .soon {
+  background: rgb(255 255 255 / 0.12);
+  color: rgb(255 255 255 / 0.85);
+}
+
+/* On every plan */
+
+.every {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 32px 24px;
+  padding-top: 112px;
+}
+
+.everyHead {
+  grid-column: 1 / span 5;
+}
+
+.everyList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 32px;
+  grid-column: 7 / span 6;
+  align-self: end;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.everyList li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 12px;
+}
+
+/* Questions */
+
+.faq {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 32px 24px;
+  padding-top: 112px;
+}
+
+.faqHead {
+  grid-column: 1 / span 5;
+}
+
+.faqList {
+  grid-column: 7 / span 6;
+  border-top: 1px solid var(--rule);
+}
+
+.question {
+  border-bottom: 1px solid var(--rule);
+}
+
+.question summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 0;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.question summary::-webkit-details-marker {
+  display: none;
+}
+
+.question summary::after {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid var(--night);
+  border-bottom: 2px solid var(--night);
+  transform: rotate(45deg) translate(-3px, -3px);
+  transition: transform 220ms ease;
+}
+
+.question[open] summary::after {
+  transform: rotate(225deg) translate(-3px, -3px);
+}
+
+.question p {
+  margin: 0;
+  padding: 0 0 22px;
+  max-width: 36em;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+/* Closing */
+
+.closing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 112px;
+  padding-top: 56px;
+  border-top: 1px solid var(--rule);
+}
+
+@media (max-width: 1100px) {
+  .planGrid {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 560px;
+  }
+  .trial {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .trialButton {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 960px) {
+  .everyHead,
+  .everyList,
+  .faqHead,
+  .faqList {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .intro {
+    padding-top: 56px;
+  }
+  .trial {
+    --f: 40px;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 28px 22px;
+  }
+  .trialStamp {
+    justify-self: start;
+  }
+  .plansSection {
+    padding-top: 48px;
+  }
+  .plan {
+    padding: 28px 22px 30px;
+  }
+  .everyList {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .every,
+  .faq {
+    padding-top: 72px;
+  }
+  .closing {
+    margin-top: 72px;
+  }
+}
+
+/* The stamp presses on as the trial comes into view, without ever hiding it. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .trialStamp {
+      animation: press linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 40%;
+    }
+  }
+}
+
+@keyframes press {
+  from {
+    scale: 1.15;
+  }
+  to {
+    scale: 1;
+  }
+}
