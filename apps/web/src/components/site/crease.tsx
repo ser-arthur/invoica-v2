@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { CREASE, hairlineShift } from './fold';
+import { CREASE, farSide, hairlineShift, TONE_FRAME } from './fold';
 import s from './site.module.css';
 
 /** How much of each end of the lines fades out, as a part of their length. */
@@ -44,6 +44,7 @@ export function Crease({
   span = CREASE.span,
   dark = false,
   line = 'green',
+  tone,
 }: {
   lines: string[];
   as?: 'h1' | 'h2' | 'p';
@@ -58,6 +59,11 @@ export function Crease({
   dark?: boolean;
   /** The crease line's finish. */
   line?: keyof typeof FINISHES;
+  /**
+   * A flat colour for everything past the fold, carried across whatever the headline sits in (which clips it), as if
+   * the page were folded there. Drawn behind the headline.
+   */
+  tone?: string;
 }) {
   const id = useId().replace(/[^a-zA-Z0-9-]/g, '');
   const stops = FINISHES[line];
@@ -83,6 +89,23 @@ export function Crease({
   const words = lines.map((line, i) => <span key={i}>{line}</span>);
   return (
     <div className={s.crease}>
+      {tone ? (
+        <span
+          aria-hidden="true"
+          data-fold-tone=""
+          className={s.creaseTone}
+          style={{
+            left: `${TONE_FRAME.left}%`,
+            top: `${TONE_FRAME.top}%`,
+            width: `${TONE_FRAME.width}%`,
+            height: `${TONE_FRAME.height}%`,
+            backgroundColor: tone,
+            clipPath: `polygon(${farSide({ xTop, xBottom, extend, span })
+              .map(([px, py]) => `${px.toFixed(3)}% ${py.toFixed(3)}%`)
+              .join(', ')})`,
+          }}
+        />
+      ) : null}
       <Tag className={`${s.creaseText} ${s.display} ${typeClass}`} style={{ clipPath: near }}>
         {interleave(words)}
       </Tag>

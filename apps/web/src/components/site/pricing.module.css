@@ -193,7 +193,6 @@
 /* Pro: the plan the trial gives, on Night with its corner turned. */
 .pro {
   background: var(--night);
-  background-image: radial-gradient(70% 60% at 0% 0%, rgb(55 198 107 / 0.2), transparent 70%);
   color: #ffffff;
   clip-path: polygon(0 0, calc(100% - var(--f)) 0, 100% var(--f), 100% 100%, 0 100%);
 }

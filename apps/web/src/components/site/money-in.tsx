@@ -10,7 +10,8 @@ const MONTHS = [
   { short: 'Oct', long: 'October so far', amount: 7610, shown: '£7,610', from: '#3CC0AE', to: '#138C86' },
 ];
 
-/** Money in as folded slabs: each bar a sheet folded along its right edge, lime to teal across the year. */
+/** Money in as folded slabs: each bar a sheet folded along its right edge, its front and its side in two flat
+ * shades, lime to teal across the year. */
 export function MoneyIn() {
   const top = Math.max(...MONTHS.map((m) => m.amount));
   const label = `Money in at an example studio by month: ${MONTHS.map((m) => `${m.long} ${m.shown}`).join(', ')}.`;
@@ -19,10 +20,7 @@ export function MoneyIn() {
       <div className={s.slabs} aria-hidden="true">
         {MONTHS.map((m) => (
           <div key={m.short} className={s.slab} style={{ height: `${((m.amount / top) * 100).toFixed(1)}%` }}>
-            <span
-              className={s.slabFront}
-              style={{ background: `linear-gradient(180deg, ${m.from}, ${m.to})` }}
-            >
+            <span className={s.slabFront} style={{ background: m.from }}>
               <span className={s.slabMonth}>{m.short === 'Oct' ? 'Oct so far' : m.short}</span>
               <span className={`${s.slabValue} ${s.figures}`}>{m.shown}</span>
             </span>

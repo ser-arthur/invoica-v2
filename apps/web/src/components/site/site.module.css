@@ -298,6 +298,13 @@
   display: inline-block;
 }
 
+/* The far side of the fold in a flat tone (Crease's `tone`), behind the headline and anything else beside it. */
+.creaseTone {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+
 .creaseText {
   display: flex;
   flex-direction: column;
@@ -624,13 +631,7 @@
   font-weight: 800;
   font-size: 76px;
   line-height: 0.78;
-  /* padded past the tight line box and pulled back, so the finish clipped to the text reaches the whole figure */
-  padding: 0.14em 0.06em 0.08em;
-  margin: -0.14em -0.06em -0.08em;
   letter-spacing: -0.05em;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
   font-variant-numeric: tabular-nums;
 }
 
@@ -678,6 +679,105 @@
   color: var(--quiet);
 }
 
+/*
+ * On phones a step shows one piece of the app at a size that can be read, in place of its picture, which would
+ * have to shrink to under half its size (see the 760 pixel rules below).
+ */
+.piece {
+  display: none;
+}
+
+.pieceCard {
+  box-sizing: border-box;
+  border-radius: 16px;
+  padding: 18px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgb(9 25 28 / 0.06),
+    0 12px 28px -16px rgb(9 25 28 / 0.32);
+  color: var(--night);
+  font-size: 15px;
+}
+
+.pieceMail {
+  padding: 0;
+  overflow: hidden;
+}
+
+.piece .pdfTag {
+  font-size: 12px;
+}
+
+.pieceLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--quiet);
+}
+
+.pieceField {
+  margin-top: 8px;
+  padding: 11px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.pieceActive {
+  padding: 10px 11px;
+  border: 2px solid var(--green);
+  box-shadow: 0 0 0 4px rgb(55 198 107 / 0.16);
+}
+
+.pieceRow {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.pieceAmount {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.piecePill {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--mist);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.pieceSums {
+  margin-top: 14px;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.pieceSums > div {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.pieceSums > .pieceTotal {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hair);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--night);
+}
+
 .route {
   position: relative;
   display: grid;
@@ -694,7 +794,7 @@
   right: 12.5%;
   left: 12.5%;
   height: 3px;
-  background: linear-gradient(90deg, var(--lime) 0, var(--green) 33.3%, #d6dddb 33.3%);
+  background: linear-gradient(90deg, var(--green) 0 33.3%, #d6dddb 33.3%);
 }
 
 .routeStop {
@@ -819,7 +919,6 @@
   padding: clamp(24px, 3vw, 40px);
   border-radius: 28px;
   background: var(--night);
-  background-image: radial-gradient(60% 120% at 0% 0%, rgb(55 198 107 / 0.22), transparent 60%);
   color: #ffffff;
   clip-path: polygon(0 0, calc(100% - var(--f)) 0, 100% var(--f), 100% 100%, 0 100%);
 }
@@ -895,7 +994,7 @@
 }
 
 .barDue {
-  background: linear-gradient(90deg, var(--lime), var(--mint));
+  background: var(--lime);
 }
 
 .barLate {
@@ -2280,12 +2379,15 @@
     font-size: 60px;
   }
   .stage {
-    height: 272px;
+    height: auto;
+    padding: 20px 16px;
     border-radius: 22px;
   }
   .stageInner {
-    width: 684px;
-    transform: scale(0.48);
+    display: none;
+  }
+  .piece {
+    display: block;
   }
   .stage3d {
     height: 300px;
@@ -2316,13 +2418,27 @@
     width: 684px;
     transform: scale(0.48);
   }
+  /* On phones: one phone, upright, rising from the foot of a flat lime block that crops it. */
   .phonesBand {
-    --slant: 36px;
-    padding: calc(64px + var(--slant)) 0 calc(56px + var(--slant));
+    padding: 64px 0 0;
+    overflow: clip;
+    clip-path: none;
   }
   .phonePair {
-    --spread: 0.45;
-    height: 420px;
+    height: 400px;
+  }
+  .device {
+    --w: 270px;
+  }
+  .phoneLight {
+    top: 28px;
+    left: 50%;
+    translate: -50% 0;
+    rotate: 0deg;
+    animation: none;
+  }
+  .phoneDark {
+    display: none;
   }
   .footer {
     margin-top: 64px;
@@ -2336,16 +2452,6 @@
   }
   .footerMark {
     --gutter: 20px;
-  }
-  .device {
-    --w: 168px;
-  }
-  .phoneLight {
-    left: calc(50% - 164px);
-  }
-  .phoneDark {
-    top: 38px;
-    left: calc(50% - 4px);
   }
   .details {
     padding-top: 64px;

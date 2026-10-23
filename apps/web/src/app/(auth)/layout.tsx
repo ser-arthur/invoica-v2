@@ -7,7 +7,7 @@ import a from './auth.module.css';
 /**
  * Sign in, sign up and the email pages: the form on the right in the site's light palette, and on wide
  * screens a Night panel on the left with the crease and what an account brings. The crease is silver here, so it
- * stands apart from the green words past it.
+ * stands apart from the green words past it, and the panel past it is a shade lighter, as if folded there.
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -25,6 +25,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             pastClass={a.mint}
             dark
             line="silver"
+            tone="#0F2427"
           />
           <ul className={a.facts}>
             <li>
