@@ -56,6 +56,13 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+23 October 2026, about 05:30, `feat/website`, after the owner looked at bundle 17 locally:
+- Hero: the fold runs from the top right corner of the screen, under the header's hairline, down past the left edge, always through the same point of the headline (`components/site/fold.ts`, read by the styles and by `e2e/website.spec.ts`, which checks at eight widths that it crosses the headline and clears everything else). Words past it are grey. One-sentence statement; the notes became two facts with green labels.
+- New "Why Invoica" section (`components/site/pillars.tsx`): your identity, financial clarity, client management. The steps open with "How it works" in the same manner.
+- Phones on a full-width lime band with slanted edges, drawn as modern phones (metal edge, bezel, camera cut-out, side keys) over new captures with a status bar and home indicator; the greeting on those screens is lighter than the logo, which the app's own dashboard should follow when it is rebuilt.
+- Footer on Night: link columns with the planned pages (`/about`, `/contact`, `/help`, `/help/getting-started`, `/privacy`, `/terms`, `/cookies`, which open the not-found page until they exist), and the logo set large at the foot.
+- The page is now one component per section under `components/site/`.
+
 23 October 2026, early morning, branch `feat/website` (from `chore/design-direction-1`): the website, built from round 5 and the owner's notes on it (`docs/specs/website.md`).
 - The logo is in the app (decision 0012): `components/logo.tsx` with path data from `docs/design/direction-5/logo-svg.py`; `Wordmark` draws it, so the app bar, sign-in, onboarding and the not-found page all carry it. New `icon.svg`, `favicon.ico` and `apple-icon.png`, the slip i on Night.
 - The home page is rebuilt (`app/page.tsx`, `components/site/`): the crease headline (a lime to teal line; past it the words turn green), folded slabs charting an example studio's money in, the app on a tilted sheet with its corner turned, five numbered steps on tinted panels, the owed card drawn as in the app, three real invoices in different layouts, light and dark phones, and the details as line items on an invoice whose tear-off slip is the sign-up. The copy tells one story: look established from the first invoice, then follow every invoice until it is paid.
