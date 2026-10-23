@@ -59,7 +59,15 @@ export function CheckEmail({ email }: { email: string }) {
   );
 }
 
-export function AuthForm({ mode, notice }: { mode: 'sign-in' | 'sign-up'; notice?: string }) {
+export function AuthForm({
+  mode,
+  notice,
+  defaultEmail,
+}: {
+  mode: 'sign-in' | 'sign-up';
+  notice?: string;
+  defaultEmail?: string;
+}) {
   const router = useRouter();
   const ready = useHydrated();
   const [error, setError] = useState<string | null>(null);
@@ -118,7 +126,14 @@ export function AuthForm({ mode, notice }: { mode: 'sign-in' | 'sign-up'; notice
         </Field>
       ) : null}
       <Field label="Email" htmlFor="email">
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          defaultValue={defaultEmail}
+          required
+        />
       </Field>
       <Field
         label="Password"
