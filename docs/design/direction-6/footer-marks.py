@@ -30,8 +30,12 @@ FOLD_LINE = (294.0, 248.0, 154.0, 388.0)
 VIEW = (-10, -150, 3760, 1010)
 WIDTH = 1184
 CROP = 0.644
+CROP_FADE = 0.9
 HEIGHT = round(WIDTH * VIEW[3] / VIEW[2])
 VISIBLE = round(HEIGHT * CROP)
+VISIBLE_FADE = round(HEIGHT * CROP_FADE)
+FADE = ('.fade{-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 50%,transparent 97%);'
+        'mask-image:linear-gradient(to bottom,#000 0%,#000 50%,transparent 97%)}')
 
 
 def mix(a, b, t):
@@ -174,7 +178,7 @@ COLUMNS = [('Product', ['Why Invoica', 'How it works', 'Templates', 'Pricing']),
            ('Legal', ['Privacy', 'Terms', 'Cookies'])]
 
 
-def body(stem, mark):
+def body(stem, mark, fade=False):
     nav = ''.join(f'<div><h2>{t}</h2><ul>' + ''.join(f'<li><a href="#">{l}</a></li>' for l in links) + '</ul></div>'
                   for t, links in COLUMNS)
     vb = ' '.join(str(v) for v in VIEW)
@@ -182,14 +186,16 @@ def body(stem, mark):
             f'<div class="top"><div class="brand"><p class="line">The business side of your business, in order.</p>'
             f'<a class="btn" href="#">Create free account</a></div><nav class="nav" aria-label="Footer">{nav}</nav></div>'
             f'<div class="base"><p>&#169; 2026 Invoica</p><p>Made for freelancers, studios and small firms.</p></div>'
-            f'<div class="mark" style="height:{VISIBLE}px"><svg viewBox="{vb}" width="{WIDTH}" height="{HEIGHT}" '
+            f'<div class="mark{" fade" if fade else ""}" style="height:{VISIBLE_FADE if fade else VISIBLE}px">'
+            f'<svg viewBox="{vb}" width="{WIDTH}" height="{HEIGHT}" '
             f'aria-hidden="true">{mark(stem.lower())}</svg></div></footer>')
 
 
 BOARD_H = 88 + 56 + 54 + 26 + 60 + 160 + 68 + 24 + VISIBLE
+BOARD_H_FADE = BOARD_H - VISIBLE + VISIBLE_FADE
 
 
-def board(stem, title, mark):
+def board(stem, title, mark, fade=False):
     return f"""<!doctype html>
 <html lang="en-GB">
 <head>
@@ -203,11 +209,12 @@ def board(stem, title, mark):
 {FONTS}
 <style>
 {STYLE}
+{FADE}
 </style>
 </helmet>
-{body(stem, mark)}
+{body(stem, mark, fade)}
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{{"$preview":{{"width":1440,"height":{BOARD_H}}}}}'>
+<script type="text/x-dc" data-dc-script data-props='{{"$preview":{{"width":1440,"height":{BOARD_H_FADE if fade else BOARD_H}}}}}'>
 class Component extends DCLogic {{
   renderVals() {{
     return {{}};
@@ -219,9 +226,9 @@ class Component extends DCLogic {{
 """
 
 
-def preview(stem, title, mark):
+def preview(stem, title, mark, fade=False):
     return (f'<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><title>{title}</title>{FONTS}'
-            f'<style>{STYLE}</style></head><body>{body(stem, mark)}</body></html>')
+            f'<style>{STYLE}{FADE}</style></head><body>{body(stem, mark, fade)}</body></html>')
 
 
 if __name__ == '__main__':
@@ -231,4 +238,7 @@ if __name__ == '__main__':
     for stem, title, mark in OPTIONS:
         open(os.path.join(out, 'project', f'{stem}.dc.html'), 'w').write(board(stem, title, mark))
         open(os.path.join(out, 'preview', f'{stem}.html'), 'w').write(preview(stem, title, mark))
-    print('board height', BOARD_H, 'mark', WIDTH, 'x', HEIGHT, 'visible', VISIBLE)
+        fstem = stem.replace('Footer', 'FooterFade')
+        open(os.path.join(out, 'project', f'{fstem}.dc.html'), 'w').write(board(fstem, title + ', fading', mark, True))
+        open(os.path.join(out, 'preview', f'{fstem}.html'), 'w').write(preview(fstem, title, mark, True))
+    print('board height', BOARD_H, BOARD_H_FADE, 'mark', WIDTH, 'x', HEIGHT, 'visible', VISIBLE, VISIBLE_FADE)
