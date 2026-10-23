@@ -1,5 +1,5 @@
 // Captures the round 5 app boards from the design canvas for the website, at twice the pixel density.
-// Usage: python3 phone-boards.py <canvas>/project, then node site-shots.js <canvas folder with project/ and assets/> <output folder>, then site-images.py.
+// Usage: python3 soften-glows.py <canvas>/project, python3 phone-boards.py <canvas>/project, then node site-shots.js <canvas folder with project/ and assets/> <output folder>, then site-images.py.
 const { chromium } = require('playwright');
 const http = require('http'); const fs = require('fs'); const path = require('path');
 const dir = process.argv[2], out = process.argv[3];

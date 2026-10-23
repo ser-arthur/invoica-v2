@@ -819,7 +819,26 @@
   padding: clamp(24px, 3vw, 40px);
   border-radius: 28px;
   background: var(--night);
-  background-image: radial-gradient(60% 120% at 0% 0%, rgb(55 198 107 / 0.22), transparent 60%);
+  /* Lit from the top left, easing out to nothing under the fine grain, so no edge or band shows. */
+  background-image:
+    var(--grain),
+    radial-gradient(
+      50% 100% at 0% 0%,
+      rgb(55 198 107 / 0.2) 0%,
+      rgb(55 198 107 / 0.159) 10%,
+      rgb(55 198 107 / 0.122) 20%,
+      rgb(55 198 107 / 0.091) 30%,
+      rgb(55 198 107 / 0.065) 40%,
+      rgb(55 198 107 / 0.044) 50%,
+      rgb(55 198 107 / 0.027) 60%,
+      rgb(55 198 107 / 0.014) 70%,
+      rgb(55 198 107 / 0.006) 80%,
+      rgb(55 198 107 / 0.001) 90%,
+      rgb(55 198 107 / 0) 100%
+    );
+  background-size:
+    160px 160px,
+    auto;
   color: #ffffff;
   clip-path: polygon(0 0, calc(100% - var(--f)) 0, 100% var(--f), 100% 100%, 0 100%);
 }
