@@ -142,6 +142,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **23 Oct, about 23:45.** The stronger grain made it worse on the owner's Mac; reverted to bundle 26's gradients, keeping the calmer form. Bundle 28.
 
+- **24 Oct, about 00:00 to 01:30.** The owner asked how apps like Wise show themselves on phones; after a look at Wise, Mercury, Ramp and Monzo Business, the canvas page "Mobile views" set ours beside a calmer version, and he agreed: no gradients on dark grounds (the sign-in panel folded in two flat tones along the crease, flat cards, flat pictures), flat numerals and chart bars, and on phones one readable piece of the app per step and one upright phone. Bundle 29.
+
 ## Decisions in force
 
 | Record | Title | Status |

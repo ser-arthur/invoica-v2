@@ -56,6 +56,12 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+24 October 2026, about 00:00 to 01:30, `feat/website`: the owner agreed the direction on the canvas page "Mobile views" (after a look at Wise, Mercury, Ramp and Monzo Business on phones: flat colour, the product at a size that can be read, one idea per block):
+- No gradients on dark grounds (`docs/specs/website.md`, rule 11). The sign-in panel is flat Night and the far side of the crease one shade lighter (#0F2427), as if folded there: `Crease` takes a `tone`, drawn behind the headline in a frame far larger than it and clipped by the panel, its edge on the crease line (`farSide` and `TONE_FRAME` in `fold.ts`, with unit tests). The owed card and the Pro card are flat; the owed bar flat lime. The pictures of the phones and of the dark dashboard are captured again with their glows taken off (`docs/design/direction-5/flatten-glows.py`, run before `phone-boards.py`). The footer is unchanged.
+- Step numerals are one flat colour each, stepping lime to teal; the money-in slabs have a flat front and a flat side.
+- On phones (760 pixels and below) each step shows one piece of the app at a readable size instead of its picture scaled to under half: the line being typed with VAT and total, the issued invoice's card and route, the email, the reminder. The issue, email and reminder cards share their markup with the desktop pictures. The phones section shows one upright phone rising from the foot of a flat lime block, which crops it; wider screens keep the two fanned phones.
+- Checks: 680 unit and database tests run, 680 passed, 0 failed, 0 skipped (web unit 99); format, copy rules, lint and types pass; against the production build the flat, website, motion, accessibility, not-found, pricing and sign-in specs ran 96: 71 passed, 25 skipped by design, 0 failed. The four new end-to-end tests and two new unit tests failed against bundle 28 first. Bundle 29.
+
 23 October 2026, about 23:45, `feat/website`: on the owner's Mac the stronger grain of bundle 27 showed as texture and the rings stayed (its display conversion steps the colours again after the grain), so it is reverted: the gradients, the owed and Pro cards and the pictures are as in bundle 26. The calmer sign-in form stays. Next: a better way, or no gradient at all on these dark grounds, to be shown on the canvas with the review of the mobile views. Bundle 28.
 
 23 October 2026, about 23:10 to 23:40, `feat/website`, the owner's notes on bundle 26:
