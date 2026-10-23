@@ -1653,12 +1653,16 @@
   margin: 0;
 }
 
-/* The logo as wide as the page, cut off part way down its letters, as if sinking into the foot of the page. */
-/* The large logo with its depth (footer-mark.tsx), cut off at the foot of the page a little below the x-height. */
+/*
+ * The large logo (footer-mark.tsx) as wide as the page, its letters fading into the foot of the page part way
+ * down, so it sinks into the page with no hard edge.
+ */
 .footerMark {
-  height: calc((min(100vw, 1280px) - 2 * var(--gutter, 48px)) / 3.979 * 0.634);
+  height: calc((min(100vw, 1280px) - 2 * var(--gutter, 48px)) / 3.723 * 0.87);
   margin-top: 24px;
   overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 48%, transparent 95%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 48%, transparent 95%);
   view-timeline: --mark;
 }
 
@@ -1866,9 +1870,17 @@
       animation-range: entry 20% cover 45%;
     }
 
-    /* The large logo rises out of the foot of the page, fully risen once the page reaches its end. */
+    /*
+     * The large logo rises out of the foot of the page, fully risen once the page reaches its end, and the light
+     * runs along its foil edge as it does, coming to rest over the o.
+     */
     .footerMark svg {
       animation: surface linear both;
+      animation-timeline: --mark;
+      animation-range: entry 0% entry 100%;
+    }
+    .footerSheen {
+      animation: sheen linear both;
       animation-timeline: --mark;
       animation-range: entry 0% entry 100%;
     }
@@ -2028,6 +2040,15 @@
 @keyframes surface {
   from {
     translate: 0 40%;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes sheen {
+  from {
+    translate: -2600px 0;
   }
   to {
     translate: 0 0;

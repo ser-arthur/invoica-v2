@@ -1,71 +1,85 @@
 import { useId } from 'react';
 import { LOGO_ACCENT_DOT, LOGO_FOLD, LOGO_FOLD_LINE, LOGO_INK, LOGO_INK_DOT } from '@/components/logo-shapes';
+import s from './site.module.css';
 
-/** How many layers make the depth, and how far each sits behind the one in front, in the logo's units. */
-const LAYERS = 20;
-const STEP = { x: 2.2, y: -3.3 };
+/** The foil's colours, lime through aqua and lilac and back. */
+const FOIL: [number, string][] = [
+  [0, '#CFF26A'],
+  [0.16, '#8EE8B4'],
+  [0.33, '#79D3D6'],
+  [0.5, '#9DB0EE'],
+  [0.66, '#D3B5EE'],
+  [0.82, '#94E6C4'],
+  [1, '#CFF26A'],
+];
 
-/** The colour a fraction t of the way from a to b, both #rrggbb. */
-function mix(a: string, b: string, t: number) {
-  const channel = (hex: string, i: number) => parseInt(hex.slice(1 + 2 * i, 3 + 2 * i), 16);
-  return `#${[0, 1, 2]
-    .map((i) => {
-      const value = channel(a, i) + (channel(b, i) - channel(a, i)) * t;
-      return Math.trunc(value + 0.5)
-        .toString(16)
-        .padStart(2, '0');
-    })
-    .join('')}`;
-}
+/** How far the foil sits above the letters, in the logo's units: the width of the edge that catches the light. */
+const EDGE = 16;
 
 /**
- * The footer's large logo, drawn as a solid block standing at the foot of the page: the letters' faces, and
- * behind them their depth, lit from above, so the tops of the letters catch the light and fall into shadow
- * further back. Drawn from the logo's own shapes (decision 0012); decoration only, hidden from assistive
- * technology.
+ * The foil shows above this line only, so it lights the tops of the letters and the dots and never the
+ * upward edges inside the o, the c, the v and the a.
+ */
+const TOPS = 330;
+
+/**
+ * The footer's large logo (option E on the design canvas's "Footer logo" page): the letters dark, with a thin
+ * holographic edge where their tops catch the light, and a sheen that passes along that edge as the footer comes
+ * into view. Drawn from the logo's own shapes (decision 0012); decoration only, hidden from assistive technology.
  */
 export function FooterMark() {
   const id = useId().replace(/[^a-zA-Z0-9-]/g, '');
-  const ink = `mark-ink-${id}`;
-  const accent = `mark-accent-${id}`;
-  const face = `mark-face-${id}`;
+  const foil = `mark-foil-${id}`;
+  const sheen = `mark-sheen-${id}`;
   const fold = `mark-fold-${id}`;
-  const layers = Array.from({ length: LAYERS }, (_, i) => LAYERS - i);
+  const tops = `mark-tops-${id}`;
+  const letters = `mark-letters-${id}`;
   return (
-    <svg viewBox="-10 -100 3740 940" aria-hidden="true" focusable="false">
+    <svg viewBox="-10 -150 3760 1010" aria-hidden="true" focusable="false">
       <defs>
-        <g id={ink}>
-          <path d={LOGO_INK} />
-          <circle {...LOGO_INK_DOT} />
-        </g>
-        <g id={accent}>
-          <path d={LOGO_FOLD} />
-          <circle {...LOGO_ACCENT_DOT} />
-        </g>
-        <linearGradient id={face} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#21474b" />
-          <stop offset="0.55" stopColor="#173538" />
+        <linearGradient id={foil} gradientUnits="userSpaceOnUse" x1="-200" y1="-300" x2="3900" y2="900">
+          {FOIL.map(([offset, colour]) => (
+            <stop key={offset} offset={offset} stopColor={colour} />
+          ))}
+        </linearGradient>
+        <linearGradient id={sheen} gradientUnits="userSpaceOnUse" x1="1350" y1="0" x2="2050" y2="420">
+          <stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
+          <stop offset="0.5" stopColor="#FFFFFF" stopOpacity="0.8" />
+          <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
         <linearGradient id={fold} gradientUnits="userSpaceOnUse" {...LOGO_FOLD_LINE}>
-          <stop offset="0" stopColor="#7fd35a" />
-          <stop offset="0.5" stopColor="#37c66b" />
-          <stop offset="1" stopColor="#1f9c57" />
+          <stop offset="0" stopColor="#CFF26A" />
+          <stop offset="0.5" stopColor="#46DA80" />
+          <stop offset="1" stopColor="#2FB866" />
         </linearGradient>
+        <clipPath id={tops}>
+          <rect x="-10" y="-150" width="3760" height={TOPS + 150} />
+        </clipPath>
+        <clipPath id={letters}>
+          <path d={LOGO_INK} />
+          <circle {...LOGO_INK_DOT} />
+        </clipPath>
       </defs>
-      {layers.map((k) => {
-        // 0 at the face, 1 at the back
-        const t = (k - 1) / (LAYERS - 1);
-        const shift = `translate(${(STEP.x * k).toFixed(1)} ${(STEP.y * k).toFixed(1)})`;
-        return (
-          <g key={k} transform={shift}>
-            <use href={`#${ink}`} fill={mix('#3a6d6e', '#0c2023', t)} />
-            <use href={`#${accent}`} fill={mix('#2fae62', '#0b3a23', t)} />
+      <g clipPath={`url(#${tops})`}>
+        <g transform={`translate(0 ${-EDGE})`}>
+          <path d={LOGO_INK} fill={`url(#${foil})`} />
+          <circle {...LOGO_INK_DOT} fill={`url(#${foil})`} />
+          <g clipPath={`url(#${letters})`}>
+            <rect
+              className={s.footerSheen}
+              x="900"
+              y="-150"
+              width="1600"
+              height="1010"
+              fill={`url(#${sheen})`}
+            />
           </g>
-        );
-      })}
-      <use href={`#${ink}`} fill={`url(#${face})`} />
+        </g>
+      </g>
+      <path d={LOGO_INK} fill="#15302F" />
+      <circle {...LOGO_INK_DOT} fill="#15302F" />
       <path d={LOGO_FOLD} fill={`url(#${fold})`} />
-      <circle {...LOGO_ACCENT_DOT} fill="#46da80" />
+      <circle {...LOGO_ACCENT_DOT} fill="#46DA80" />
     </svg>
   );
 }

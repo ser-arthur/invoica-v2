@@ -1,11 +1,14 @@
 import { useId } from 'react';
-import { CREASE } from './fold';
+import { CREASE, hairlineShift } from './fold';
 import s from './site.module.css';
+
+/** How much of each end of the lines fades out, as a part of their length. */
+const FADE = 0.16;
 
 /**
  * A headline crossed by one diagonal fold. The headline is set twice: the heading itself, and a copy
  * clipped to the far side of the fold that takes a different finish. The fold is drawn as a gradient
- * line with a hairline beside it.
+ * line with a hairline beside it, square to it so the two end together, both fading out at their ends.
  *
  * xTop and xBottom are where the fold meets the top and the bottom of the drawing box, as a percentage
  * of the headline's width. The box runs `extend` per cent of the headline's height above and below it.
@@ -47,6 +50,11 @@ export function Crease({
   const t1 = Math.min(1, (xTop - span[0]) / (xTop - xBottom));
   const x = (t: number, shift = 0) => (xTop + shift + (xBottom - xTop) * t).toFixed(2);
   const y = (t: number) => (100 * t).toFixed(2);
+  // the hairline: the same stretch of the fold, moved across by `gap` and square to it
+  const shift = hairlineShift(gap, { xTop, xBottom, extend, span });
+  const h0 = t0 + shift;
+  const h1 = t1 + shift;
+  const hair = dark ? 'rgb(255 255 255 / 0.45)' : 'rgb(9 25 28 / 0.4)';
   const words = lines.map((line, i) => <span key={i}>{line}</span>);
   return (
     <div className={s.crease}>
@@ -69,17 +77,32 @@ export function Crease({
       >
         <defs>
           <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={x(t1)} y1={y(t1)} x2={x(t0)} y2={y(t0)}>
-            <stop offset="0" stopColor="#CFF26A" />
+            <stop offset="0" stopColor="#CFF26A" stopOpacity="0" />
+            <stop offset={FADE} stopColor="#CFF26A" />
             <stop offset="0.5" stopColor="#37C66B" />
-            <stop offset="1" stopColor="#138C86" />
+            <stop offset={1 - FADE} stopColor="#138C86" />
+            <stop offset="1" stopColor="#138C86" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient
+            id={`${id}h`}
+            gradientUnits="userSpaceOnUse"
+            x1={x(h1, gap)}
+            y1={y(h1)}
+            x2={x(h0, gap)}
+            y2={y(h0)}
+          >
+            <stop offset="0" stopColor={hair} stopOpacity="0" />
+            <stop offset={FADE} stopColor={hair} />
+            <stop offset={1 - FADE} stopColor={hair} />
+            <stop offset="1" stopColor={hair} stopOpacity="0" />
           </linearGradient>
         </defs>
         <line
-          x1={x(t0, gap)}
-          y1={y(t0)}
-          x2={x(t1, gap)}
-          y2={y(t1)}
-          stroke={dark ? 'rgb(255 255 255 / 0.45)' : 'rgb(9 25 28 / 0.4)'}
+          x1={x(h0, gap)}
+          y1={y(h0)}
+          x2={x(h1, gap)}
+          y2={y(h1)}
+          stroke={`url(#${id}h)`}
           strokeWidth="1"
           vectorEffect="non-scaling-stroke"
         />
@@ -90,7 +113,6 @@ export function Crease({
           y2={y(t1)}
           stroke={`url(#${id})`}
           strokeWidth="3"
-          strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
         />
       </svg>
