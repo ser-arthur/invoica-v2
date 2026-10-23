@@ -56,6 +56,12 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+23 October 2026, about 13:55 to 14:30, `feat/website`:
+- Sign in and sign up: the Night panel is half the page and the headline fills its width at any width (container query units in `app/(auth)/auth.module.css`); the facts grow a little with it.
+- Footer logo: the foil edge is drawn faint, and lit; the lit edge wipes in from the i to the a as the footer comes into view, a glint at its front; with a mouse the glint then follows the pointer (`components/site/footer-light.tsx`) and drifts back when it leaves.
+- Found while building it: scroll-linked motion inside a container with `overflow: hidden` followed that container's scroll, which never moves, so the tilted sheet's turn, the step pictures' drift and the footer's rise had been frozen. Those containers now clip with `overflow: clip`; `e2e/motion.spec.ts` checks every scroll-linked animation on the public pages follows the page's scroll (it failed before the change).
+- Commit authorship: every commit carried the wrong name and email, so GitHub credited another account and Vercel blocked a deploy. The whole history now carries the owner's own identity, Kobby S. Arthur <kobbyarthur95@gmail.com> (code, messages and dates unchanged; commit ids changed, and the ids quoted in these docs were updated to match), and the repository is set to commit as him.
+
 23 October 2026, about 13:00 to 13:50, `feat/website`:
 - Footer logo: option E from the canvas's "Footer logo" page (`docs/design/direction-6/footer-marks.py` draws all six): dark letters with a thin holographic edge where their tops catch the light, never inside the o, c, v or a; a sheen runs along the edge as the footer comes into view and comes to rest over the o; the letters fade into the foot of the page part way down, a little higher than on the canvas, at the owner's word (`components/site/footer-mark.tsx`).
 - Hero and sign-in crease: the hairline beside the line is now square to it (`hairlineShift` in `fold.ts`, with a unit test), so the two end together; before, it was moved sideways and each line ran past the other at one end. Both now fade out at their ends.
