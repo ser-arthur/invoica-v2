@@ -8,6 +8,7 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 test('public pages have no automated accessibility violations', async ({ page }) => {
   for (const path of [
     '/',
+    '/pricing',
     '/sign-in',
     '/sign-up',
     '/forgot-password',

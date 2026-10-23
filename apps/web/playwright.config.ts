@@ -13,6 +13,8 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
     launchOptions: { executablePath },
     trace: 'retain-on-failure',
+    // Checks measure the page at rest: the site's motion stops for visitors who ask for less of it.
+    contextOptions: { reducedMotion: 'reduce' },
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1360, height: 900 } } },

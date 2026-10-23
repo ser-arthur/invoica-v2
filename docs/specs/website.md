@@ -4,15 +4,15 @@ The public home page at `/`, for people who have not signed in. It presents Invo
 
 ## What a visitor sees
 
-1. **Header.** The logo (decision 0012), links to why Invoica, how it works, templates and pricing, "Sign in" and "Create free account", above a hairline that runs the width of the screen.
-2. **Hero.** The headline "Every invoice, all the way to paid." crossed by one fold: a lime to teal line from the top right corner of the screen, just under the header's hairline, down past the left edge. Past the fold the words are grey, mostly flat. Beside the headline, two facts with green labels (for new businesses; free for 30 days). Below it, a one-sentence statement and the main button. Then folded slabs charting an example studio's money in by month.
+1. **Header.** The logo (decision 0012), links to why Invoica, how it works, templates and the pricing page, "Sign in" and "Create free account", above a hairline that runs the width of the screen. It stays at the top while the page scrolls under it, on a frosted ground. On narrow screens the links fold into a menu.
+2. **Hero.** The headline "Every invoice, all the way to paid." crossed by one crease drawn across the headline, a lime to teal line with a hairline beside it. Past the crease the words fade to slate grey, light where the fade begins and deepening across the line. Beside the headline, two facts with green labels (for new businesses; free for 30 days). Below it, a one-sentence statement and the main button. Then folded slabs charting an example studio's money in by month. On load, once, the lines rise, the crease draws across and the slabs grow.
 3. **The app.** A large tilted sheet with three screens of the app standing on it, its corner turned.
 4. **Why Invoica.** What Invoica does for a business, in the old site's manner: a green label, a leading heading and a short paragraph for each of your identity, financial clarity and client management.
-5. **How it works.** Five steps: write, issue, send, remind, get paid. Each has a large numeral shaded from lime green to teal down the page, and a picture on a panel tinted the same way, so the white cards on it stand clear. The last step shows the dashboard's owed card, drawn as it is in the app.
-6. **Templates.** Three real invoices in different templates, rendered by the documents package.
+5. **How it works.** Five steps: write, issue, send, remind, get paid. Each has a large numeral shaded from lime green to teal down the page, and a picture on a panel tinted the same way, so the white cards on it stand clear. A line runs down the margin through all five, the invoice's route, filling from lime to teal as the page scrolls past. The last step shows the dashboard's owed card, drawn as it is in the app.
+6. **Templates.** Three real invoices in different templates, rendered by the documents package, and "Try it with your business": a name, a colour and a layout, and the invoice in front redraws itself with them, rendered by the same code as real invoices. Nothing typed there is sent anywhere.
 7. **On your phone.** A band of lime across the whole page, its edges parallel to the fold, with the dashboard on two phones, light and dark, drawn as modern phones with a status bar.
-8. **Pricing.** The rest of the product as line items on an invoice, each at £0.00 for the first 30 days (decision 0005), with a total, and a tear-off slip below a dotted line holding the sign-up.
-9. **Footer.** Night across the whole page: the logo, one line, "Create free account", link columns for the product, the company, help and legal pages, and the logo again set large and cut off at the foot of the page.
+8. **What you get.** The rest of the product as line items on an invoice, each at £0.00 for the first 30 days (decision 0005), stamped "Free for 30 days, no card needed" the way a paid invoice is stamped, with links to the pricing page (`docs/specs/pricing-page.md`), and a tear-off slip below a dotted line holding the sign-up.
+9. **Footer.** Night across the whole page: one line, "Create free account", link columns for the product, the company, help and legal pages, and the logo set large and cut off at the foot of the page, rising as it comes into view. The large logo is the footer's only logo.
 
 ## Rules
 
@@ -20,11 +20,12 @@ The public home page at `/`, for people who have not signed in. It presents Invo
 2. Every "Create your free account" and "Create free account" leads to `/sign-up`; "Sign in" leads to `/sign-in`.
 3. The slip's email goes to the sign-up form, filled in. A value that is not a plausible email address (empty, longer than 254 characters, containing spaces, or without one `@` and a dot after it) is ignored and the field is left empty.
 4. The page never scrolls sideways, down to 360 pixels wide.
-5. The fold crosses the headline and nothing else in the hero: the statement, the buttons and the facts stay clear of it by at least 8 pixels at every width. It always passes through one point of the headline (`components/site/fold.ts`), so the words split the same way at every width.
+5. The crease crosses the headline and nothing else in the hero: the statement, the buttons and the facts stay clear of it by at least 8 pixels at every width. Its geometry is given relative to the headline (`components/site/fold.ts`), so the words split the same way at every width.
 6. Drawings that carry no information (the fold, the turned corners, the sheet behind the screens, the phone frames, the large logo in the footer) are hidden from assistive technology. The money-in chart has a text alternative naming each month and amount. The headline is read once.
 7. Example data on the page is invented for the example and labelled as an example where it could be taken for a customer's.
 8. Footer links to pages not built yet go to their planned addresses: `/about`, `/contact`, `/help`, `/help/getting-started`, `/privacy`, `/terms` and `/cookies`. Until each page exists, its link opens the not-found page.
-9. The page passes the automated accessibility checks.
+9. Motion is one load sequence in the hero, cards that lean towards the pointer on screens with a mouse, and movement tied to scrolling (pieces drifting at two speeds, the route filling, the stamp pressing on, the template fan opening on touch screens, the footer logo rising). None of it hides content: everything is in place whether or not the motion runs. All of it stops for visitors who ask for less motion.
+10. The page passes the automated accessibility checks.
 
 ## Acceptance criteria
 
@@ -34,6 +35,13 @@ The public home page at `/`, for people who have not signed in. It presents Invo
 4. At 390 and 360 pixels wide the page is no wider than the screen (same file).
 5. The money-in chart is announced with every month and amount (same file).
 6. Signed in, `/` opens the dashboard (same file).
-7. At 1920, 1440, 1180, 1024, 961, 800, 390 and 360 pixels wide the fold crosses the headline and clears the statement, both buttons and the facts by more than 8 pixels (same file).
-8. The footer links to each planned page, to sign in and to sign-up (same file).
-9. `/` has no automated accessibility violations (`apps/web/e2e/accessibility.spec.ts`).
+7. At 1920, 1440, 1180, 1024, 961, 800, 390 and 360 pixels wide the crease crosses the headline and clears the statement, both buttons and the facts by more than 8 pixels (same file).
+8. The footer links to each planned page, to the pricing page, to sign in and to sign-up (same file).
+9. Scrolled well down the page, the header is still at the top of the screen (same file).
+10. The itemised invoice says the first 30 days are free and links to the pricing page, as does the header, through its menu on phones (same file).
+11. Typing a name and choosing a colour and a layout in the template demo redraws the invoice in front with them (`apps/web/e2e/website.spec.ts`).
+12. `/` has no automated accessibility violations (`apps/web/e2e/accessibility.spec.ts`).
+
+## Sign in and sign up
+
+The pages under `app/(auth)` share the site's look: on wide screens a Night panel on the left with the crease, the headline and three facts about an account, and the form on the right in the site's light palette, whatever theme the visitor chose; on phones the form alone under the logo. Their wording and behaviour are unchanged (`docs/specs/sign-in-by-email.md`).

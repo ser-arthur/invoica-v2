@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { foldLine } from '../src/components/site/fold';
+import { creaseSegment } from '../src/components/site/fold';
 import { signUpAndOnboard } from './helpers';
 
 // docs/specs/website.md
@@ -59,37 +59,19 @@ test('signed in, the home page opens the dashboard', async ({ page }, info) => {
   await page.waitForURL('**/dashboard');
 });
 
-test('the fold crosses the headline and nothing else in the hero, at every width', async ({ page }, info) => {
+test('the crease crosses the headline and nothing else in the hero, at every width', async ({
+  page,
+}, info) => {
   test.skip(info.project.name !== 'desktop', 'The widths are set in the test.');
   for (const width of [1920, 1440, 1180, 1024, 961, 800, 390, 360]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     const heading = page.getByRole('heading', { level: 1 });
-    const hero = heading.locator('xpath=..');
-    const measure = await heading.evaluate((h1) => {
-      const grid = h1.parentElement!;
-      const top = grid.parentElement!.getBoundingClientRect();
-      const style = getComputedStyle(grid);
-      return {
-        width: top.width,
-        hs: Number(getComputedStyle(h1).fontSize.replace('px', '')),
-        pad: Number(style.paddingTop.replace('px', '')),
-        gutter: Number(style.paddingLeft.replace('px', '')),
-        left: top.left,
-        top: top.top,
-      };
-    });
-    const fold = foldLine(measure);
-    const corners = async (box: { x: number; y: number; width: number; height: number } | null) => {
-      expect(box).not.toBeNull();
-      const b = box!;
-      return [
-        [b.x, b.y],
-        [b.x + b.width, b.y],
-        [b.x, b.y + b.height],
-        [b.x + b.width, b.y + b.height],
-      ].map(([x, y]) => y! - measure.top - fold.yAt(x! - measure.left));
-    };
+    const box = await heading.locator('xpath=..').boundingBox();
+    expect(box).not.toBeNull();
+    const { from, to } = creaseSegment(box!);
+    const yAt = (x: number) => from.y + ((to.y - from.y) * (x - from.x)) / (to.x - from.x);
+    const hero = page.locator('main section').first();
     const others = [
       hero.getByText('Look established from day one'),
       hero.getByRole('link', { name: 'Create your free account' }),
@@ -98,13 +80,18 @@ test('the fold crosses the headline and nothing else in the hero, at every width
       hero.getByText('No card needed'),
     ];
     for (const other of others) {
-      for (const below of await corners(await other.boundingBox())) {
-        expect(below, `${await other.textContent()} at ${width} pixels`).toBeGreaterThan(8);
+      const b = (await other.boundingBox())!;
+      for (let x = Math.max(b.x, to.x); x <= Math.min(b.x + b.width, from.x); x += 2) {
+        const y = yAt(x);
+        const clear = y < b.y - 8 || y > b.y + b.height + 8;
+        expect(clear, `${await other.textContent()} at ${width} pixels`).toBe(true);
       }
     }
-    const headline = await corners(await heading.boundingBox());
-    expect(Math.min(...headline), `the headline at ${width} pixels`).toBeLessThan(0);
-    expect(Math.max(...headline), `the headline at ${width} pixels`).toBeGreaterThan(0);
+    const h = (await heading.boundingBox())!;
+    const crosses = [h.x + h.width * 0.3, h.x + h.width * 0.6].some(
+      (x) => yAt(x) > h.y && yAt(x) < h.y + h.height,
+    );
+    expect(crosses, `the headline at ${width} pixels`).toBe(true);
   }
 });
 
@@ -119,10 +106,46 @@ test('the footer carries the planned pages and the ways in', async ({ page }) =>
     ['Privacy', '/privacy'],
     ['Terms', '/terms'],
     ['Cookies', '/cookies'],
+    ['Pricing', '/pricing'],
     ['Sign in', '/sign-in'],
     ['Create free account', '/sign-up'],
   ];
   for (const [name, href] of planned) {
     await expect(footer.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);
   }
+});
+
+test('the header stays in view while the page scrolls under it', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => window.scrollTo(0, 2400));
+  const banner = page.getByRole('banner');
+  const box = (await banner.boundingBox())!;
+  expect(box.y).toBe(0);
+  await expect(banner.getByRole('link', { name: 'Create free account' })).toBeInViewport();
+});
+
+test('the itemised invoice says the first 30 days are free, and leads to the plans', async ({ page }) => {
+  await page.goto('/');
+  const section = page.locator('#pricing');
+  await expect(section.getByText('Free', { exact: true })).toBeVisible();
+  await expect(section.getByText('for 30 days', { exact: true })).toBeVisible();
+  await expect(section.getByRole('link', { name: 'Compare plans and prices' })).toHaveAttribute(
+    'href',
+    '/pricing',
+  );
+  const banner = page.getByRole('banner');
+  const menu = banner.locator('summary');
+  if (await menu.isVisible()) await menu.click();
+  await expect(banner.getByRole('link', { name: 'Pricing' })).toHaveAttribute('href', '/pricing');
+});
+
+test('the template demo redraws the invoice with the name, colour and layout chosen', async ({ page }) => {
+  await page.goto('/');
+  const section = page.locator('#templates');
+  await section.getByLabel('Business name').fill('Fernhill Joinery');
+  await section.getByRole('radio', { name: 'Navy' }).check();
+  await section.getByRole('radio', { name: 'Ledger' }).check();
+  const preview = section.locator('iframe[title="Ledger layout"]');
+  await expect(preview).toHaveAttribute('srcdoc', /Fernhill Joinery/);
+  await expect(preview).toHaveAttribute('srcdoc', /#1d3c5a/i);
 });
