@@ -24,8 +24,10 @@ const TOPS = 330;
 
 /**
  * The footer's large logo (option E on the design canvas's "Footer logo" page): the letters dark, with a thin
- * holographic edge where their tops catch the light, and a sheen that passes along that edge as the footer comes
- * into view. Drawn from the logo's own shapes (decision 0012); decoration only, hidden from assistive technology.
+ * holographic edge where their tops catch the light. The edge is drawn twice: faint, and lit, the lit one wiping in
+ * from the left as the footer comes into view with a glint at its front (site.module.css, "Motion"); with a mouse
+ * the glint then follows the pointer (FooterLight). Drawn from the logo's own shapes (decision 0012); decoration
+ * only, hidden from assistive technology.
  */
 export function FooterMark() {
   const id = useId().replace(/[^a-zA-Z0-9-]/g, '');
@@ -62,17 +64,28 @@ export function FooterMark() {
       </defs>
       <g clipPath={`url(#${tops})`}>
         <g transform={`translate(0 ${-EDGE})`}>
-          <path d={LOGO_INK} fill={`url(#${foil})`} />
-          <circle {...LOGO_INK_DOT} fill={`url(#${foil})`} />
+          <path d={LOGO_INK} fill={`url(#${foil})`} opacity="0.22" />
+          <circle {...LOGO_INK_DOT} fill={`url(#${foil})`} opacity="0.22" />
           <g clipPath={`url(#${letters})`}>
             <rect
-              className={s.footerSheen}
-              x="900"
+              className={s.footerLight}
+              x="-10"
               y="-150"
-              width="1600"
+              width="3760"
               height="1010"
-              fill={`url(#${sheen})`}
+              fill={`url(#${foil})`}
             />
+            <g className={s.footerGlint}>
+              <rect
+                className={s.footerSheen}
+                data-sheen=""
+                x="900"
+                y="-150"
+                width="1600"
+                height="1010"
+                fill={`url(#${sheen})`}
+              />
+            </g>
           </g>
         </g>
       </g>

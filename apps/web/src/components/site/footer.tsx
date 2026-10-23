@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { FooterLight } from './footer-light';
 import { FooterMark } from './footer-mark';
 import { FOOTER_COLUMNS } from './links';
 import s from './site.module.css';
@@ -35,9 +36,9 @@ export function SiteFooter() {
           <p>Made for freelancers, studios and small firms.</p>
         </div>
       </div>
-      <div className={`${s.wrap} ${s.footerMark}`}>
+      <FooterLight className={`${s.wrap} ${s.footerMark}`}>
         <FooterMark />
-      </div>
+      </FooterLight>
     </footer>
   );
 }
