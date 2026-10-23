@@ -132,6 +132,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **23 Oct, about 12:30 to 13:50.** The owner set up `ser-arthur/invoica-v2` and a Vercel preview with no database (the old app untouched); the first deploy stopped on the start-up check until the settings were added. Six ways to draw the footer logo went on the canvas (page "Footer logo"), then the same six fading into the foot of the page; he chose E, the foil edge, fading, with a little more hidden. He noticed the crease's two lines ended at different points and had hard ends: the hairline is now square to the line and both fade out. Bundle 21.
 
+- **23 Oct, about 16:30 to 22:00.** The owner moved the preview to a new Vercel project linked to `ser-arthur/invoica-v2` (root `apps/web`); it deploys from `main` and is live at `invoica-v2.vercel.app`. CI ran on GitHub for the first time: the image job passed, three failed. Each was run here from a clean copy with CI's settings and fixed: the type check now writes Next's type files first, which a fresh checkout lacks; CI's cron secret is letters only, as the production start-up check requires; the check job installs the PDF tools its tests use; the scheduled reminder test reads the cron secret from the environment. The development-server suite took 87 minutes on GitHub and fails there when a test acts before a page's script has started, so it runs only when started by hand; the production-server suite runs the same tests on every push. A random run of the R5-L1 property test found a credit it refuses with compound taxes (open, see `HANDOVER.md`). Bundle 24.
+
 ## Decisions in force
 
 | Record | Title | Status |
@@ -200,10 +202,11 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 1. Hosting: approve decision 0010 (`docs/deploy.md` is the runbook for it).
 2. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
 3. The domain to buy, then the sending subdomain for Resend.
-4. The GitHub repository's owner and name, and the email address to author commits with (GitHub's private noreply address, if preferred).
+4. Answered 23 October: the repository is `ser-arthur/invoica-v2`, and commits are authored as Kobby S. Arthur <kobbyarthur95@gmail.com>.
 5. Which invoice templates ship in v1. All seven are on the design canvas, page "Round 2, built".
 6. Approve or change 0003, 0006 and 0007.
 7. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
+8. Approve a plan for the R5-L1 four-taxes refusal (`HANDOVER.md`, "Open finding"): how a credit note that settles a balance shares its tax across the components when one would go below zero.
 
 ## Files a new chat needs
 
