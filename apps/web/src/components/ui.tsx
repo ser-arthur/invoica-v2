@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ComponentProps, ReactNode } from 'react';
 import { formatMoney, STATE_LABELS, type DocumentState } from '@invoica/core';
+import { Logo } from './logo';
 
 export function cx(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join(' ');
@@ -45,15 +46,9 @@ export function ButtonLink({
   return <Link className={buttonClass(variant, size, className)} {...props} />;
 }
 
+/** The logo, sized by font size like the word it replaced. */
 export function Wordmark({ className }: { className?: string }) {
-  return (
-    <span
-      className={cx('font-display font-bold tracking-[-0.03em] text-ink', className)}
-      aria-label="Invoica"
-    >
-      invoiça<span className="text-brand-bright">.</span>
-    </span>
-  );
+  return <Logo className={cx('text-ink', className)} />;
 }
 
 export function Field({
