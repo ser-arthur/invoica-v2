@@ -7,7 +7,7 @@
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start --port 3000",
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "next typegen && tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests=false",
     "test:e2e": "playwright test",
     "seed": "tsx --env-file-if-exists=.env.local scripts/seed.ts"
