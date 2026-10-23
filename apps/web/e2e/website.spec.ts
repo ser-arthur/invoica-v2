@@ -4,6 +4,9 @@ import { signUpAndOnboard } from './helpers';
 
 // docs/specs/website.md
 
+// The site's checks measure the page at rest: its motion stops for visitors who ask for less of it.
+test.use({ contextOptions: { reducedMotion: 'reduce' } });
+
 test('the home page leads with one headline, and every way in goes to sign-up or sign-in', async ({
   page,
 }) => {

@@ -6,6 +6,8 @@ import { linkIn, waitForEmail } from './mailbox';
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 test('public pages have no automated accessibility violations', async ({ page }) => {
+  // The public pages are checked at rest, after their motion, as visitors who ask for less motion see them.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   for (const path of [
     '/',
     '/pricing',

@@ -41,11 +41,10 @@
   --logo-fold-b: #46da80;
   --logo-fold-c: #2fb866;
   --label: #6ce4a2;
-  position: sticky;
-  top: 0;
+  position: relative;
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  min-height: 100dvh;
   padding: 36px 48px;
   box-sizing: border-box;
   overflow: hidden;

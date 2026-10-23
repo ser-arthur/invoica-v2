@@ -2,6 +2,9 @@ import { expect, test } from '@playwright/test';
 
 // docs/specs/pricing-page.md
 
+// The site's checks measure the page at rest: its motion stops for visitors who ask for less of it.
+test.use({ contextOptions: { reducedMotion: 'reduce' } });
+
 test('the pricing page shows the three plans with their monthly prices', async ({ page }) => {
   await page.goto('/pricing');
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
