@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   check:
@@ -78,6 +79,10 @@ jobs:
 
   e2e:
     # End-to-end tests at desktop and phone widths against the development server, on a fresh migrated database.
+    # Run by hand only (Actions, CI, "Run workflow"): the development server builds each page the first time it is
+    # opened, so on GitHub's machines this takes well over an hour, and a test that acts before a page's script has
+    # started fails for that reason alone. e2e-production runs the same tests against what is deployed on every push.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     services:
       postgres:
