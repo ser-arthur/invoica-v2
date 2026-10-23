@@ -44,10 +44,10 @@ The v2 repository is delivered as a **git bundle in a numbered zip** (`invoica-r
 To set up the first time:
 
 ```
-unzip invoica-repo-17.zip -d ~/Downloads/invoica-repo-17
-git clone ~/Downloads/invoica-repo-17/invoica.bundle invoica
+unzip invoica-repo-18.zip -d ~/Downloads/invoica-repo-18
+git clone ~/Downloads/invoica-repo-18/invoica.bundle invoica
 cd invoica
-sh ~/Downloads/invoica-repo-17/verify.sh
+sh ~/Downloads/invoica-repo-18/verify.sh
 ```
 
 To take a later bundle into an existing clone: `git pull ~/Downloads/invoica-repo-NN/invoica.bundle main`.
