@@ -134,6 +134,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **23 Oct, about 16:30 to 22:00.** The owner moved the preview to a new Vercel project linked to `ser-arthur/invoica-v2` (root `apps/web`); it deploys from `main` and is live at `invoica-v2.vercel.app`. CI ran on GitHub for the first time: the image job passed, three failed. Each was run here from a clean copy with CI's settings and fixed: the type check now writes Next's type files first, which a fresh checkout lacks; CI's cron secret is letters only, as the production start-up check requires; the check job installs the PDF tools its tests use; the scheduled reminder test reads the cron secret from the environment. The development-server suite took 87 minutes on GitHub and fails there when a test acts before a page's script has started, so it runs only when started by hand; the production-server suite runs the same tests on every push. A random run of the R5-L1 property test found a credit it refuses with compound taxes (open, see `HANDOVER.md`). Bundle 24.
 
+- **23 Oct, about 22:30.** The owner found the sign-in headline a little too big now; the Night panel now takes five twelfths of the page instead of half, and the headline scales with it. Bundle 25.
+
 ## Decisions in force
 
 | Record | Title | Status |

@@ -56,6 +56,8 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+23 October 2026, about 22:30, `feat/website`: at the owner's word the sign-in and sign-up headline was a little too big, so the Night panel takes five twelfths of the page instead of half (`app/(auth)/auth.module.css`); the headline still fills it, so it is about a fifth smaller at common widths, and the form has more room. Checks: format, copy rules and lint pass; the website spec at both widths (17 passed, 3 skipped by design), the public pages' accessibility check and the motion check pass against the development server. Bundle 25.
+
 23 October 2026, about 16:30 to 22:00, `feat/website`: the preview moved to a new Vercel project linked to `ser-arthur/invoica-v2` (root `apps/web`, framework Next.js, settings for a site with no database); it deploys from `main` and is live at `invoica-v2.vercel.app`. CI then ran on GitHub for the first time: the image job passed and three failed. Each was run here from a clean copy of the commit with CI's settings (no local files, time zone UTC):
 - `check`: a fresh checkout has no `next-env.d.ts`, so the type check could not read the site's image imports. The web app's `typecheck` now runs `next typegen` first. The PDF tests read files with poppler (`pdfinfo`, `pdffonts`, `pdftotext`, `pdftoppm`), which the job now installs.
 - `e2e-production`: the server stopped at its start-up check because CI's `CRON_SECRET` had hyphens (it takes letters and digits only, at least 32). Now letters only.
