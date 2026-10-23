@@ -9,8 +9,11 @@ const LINKS = [
   { label: 'Pricing', href: '/pricing' },
 ];
 
-/** The site's header: it stays at the top while the page scrolls under it. On narrow screens the links fold into a menu. */
-export function SiteHeader() {
+/**
+ * The site's header: it stays at the top while the page scrolls under it. On narrow screens the links fold into a menu.
+ * Signed in, the way in is the dashboard.
+ */
+export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <div className={s.headerBar}>
       <header className={`${s.wrap} ${s.header}`}>
@@ -25,12 +28,20 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className={s.account}>
-          <Link href="/sign-in" className={s.signIn}>
-            Sign in
-          </Link>
-          <Link href="/sign-up" className={`${s.button} ${s.headerButton}`}>
-            Create free account
-          </Link>
+          {signedIn ? (
+            <Link href="/dashboard" className={`${s.button} ${s.headerButton}`}>
+              Your dashboard
+            </Link>
+          ) : (
+            <>
+              <Link href="/sign-in" className={s.signIn}>
+                Sign in
+              </Link>
+              <Link href="/sign-up" className={`${s.button} ${s.headerButton}`}>
+                Create free account
+              </Link>
+            </>
+          )}
           <details className={s.menu}>
             <summary className={s.menuButton}>
               <span className={s.menuIcon} aria-hidden="true" />
@@ -42,7 +53,7 @@ export function SiteHeader() {
                   {link.label}
                 </Link>
               ))}
-              <Link href="/sign-in">Sign in</Link>
+              {signedIn ? null : <Link href="/sign-in">Sign in</Link>}
             </nav>
           </details>
         </div>

@@ -307,12 +307,13 @@
 
 /*
  * Each line is padded past its tight line box and pulled back by the same amount (flex items, so the
- * margins add up), so a finish clipped to the text reaches the tops of capitals and the tails of descenders.
+ * margins add up), so a finish clipped to the text reaches the tops of capitals, the tails of descenders
+ * and the tip of a closing comma.
  */
 .creaseText > span {
   display: block;
-  margin: -0.18em 0 -0.24em;
-  padding: 0.18em 0 0.24em;
+  margin: -0.18em -0.16em -0.24em 0;
+  padding: 0.18em 0.16em 0.24em 0;
 }
 
 .creasePast {
@@ -338,8 +339,8 @@
 }
 
 /*
- * Past the crease the words fade to slate: light grey where the fade begins, deepening across the line,
- * mostly flat. The lightest stop keeps 3:1 on Mist.
+ * Past the crease the words fade to slate: light grey where the fade begins, deepening a little across the
+ * line, mostly flat. The lightest stop is as light as large text can be and still keep 3:1 on Mist.
  */
 .slate {
   color: transparent;
@@ -347,7 +348,7 @@
 
 /* Clipped on each line, so a line can move on its own (the load animation) and keep its finish. */
 .slate > span {
-  background-image: linear-gradient(90deg, #838a94 0%, #737a86 45%, #5a6170 100%);
+  background-image: linear-gradient(90deg, #838a94 0%, #7e858f 45%, #6f7682 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1132,10 +1133,13 @@
   margin-top: 12px;
 }
 
+/* The pair is the timeline both phones move on as it scrolls by; --spread scales how far they travel. */
 .phonePair {
+  --spread: 1;
   position: relative;
   grid-column: 6 / span 7;
   height: 640px;
+  view-timeline: --phones;
 }
 
 /* A modern phone, drawn in code and sized by --w: metal edge, bezel, screen, camera cut-out and side keys. */
@@ -1227,14 +1231,17 @@
   height: 12.5%;
 }
 
+/* At rest the two phones lie slightly fanned, the dark one in front. */
 .phoneLight {
   left: calc(50% - 288px);
+  rotate: -4deg;
 }
 
 .phoneDark {
   z-index: 2;
   top: 64px;
   left: calc(50% - 12px);
+  rotate: 3deg;
 }
 
 /* The details, itemised, and the tear-off slip */
@@ -1647,11 +1654,12 @@
 }
 
 /* The logo as wide as the page, cut off part way down its letters, as if sinking into the foot of the page. */
+/* The large logo with its depth (footer-mark.tsx), cut off at the foot of the page a little below the x-height. */
 .footerMark {
-  height: calc((min(100vw, 1280px) - 2 * var(--gutter, 48px)) / 4.27 * 0.6);
+  height: calc((min(100vw, 1280px) - 2 * var(--gutter, 48px)) / 3.979 * 0.634);
   margin-top: 24px;
   overflow: hidden;
-  color: #19363a;
+  view-timeline: --mark;
 }
 
 .footerMark svg {
@@ -1716,18 +1724,18 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* Load: the headline rises line by line, the crease draws across, the slabs grow, the rest settles in. */
-  .heroHead .creaseText > span {
-    animation: rise 760ms var(--ease) both;
+  /*
+   * Load: the headline's two sides come in from opposite directions as two pieces, each cut along the crease,
+   * and close the gap between them; the crease draws across as they meet, the slabs grow and the rest settles in.
+   */
+  .heroHead .creaseText {
+    animation: slideNear 1150ms var(--ease) both;
   }
-  .heroHead .creaseText > span:nth-child(2) {
-    animation-delay: 90ms;
-  }
-  .heroHead .creaseText > span:nth-child(3) {
-    animation-delay: 180ms;
+  .heroHead .creasePast {
+    animation-name: slideFar;
   }
   .heroHead .creaseLine {
-    animation: draw 900ms var(--ease) 380ms both;
+    animation: draw 900ms var(--ease) 560ms both;
   }
   .heroFacts,
   .heroStatement,
@@ -1780,6 +1788,20 @@
     .slab {
       transition: translate 400ms var(--ease);
     }
+    /* The phone under the pointer is picked up: it comes to the front and lifts towards you. */
+    .phonePair .device {
+      transition:
+        scale 500ms var(--ease),
+        box-shadow 500ms var(--ease);
+    }
+    .phonePair .device:hover {
+      z-index: 3;
+      scale: 1.035;
+      box-shadow:
+        0 0 0 0.5px rgb(0 0 0 / 0.5),
+        0 80px 110px -50px rgb(9 25 28 / 0.65),
+        0 30px 50px -26px rgb(9 25 28 / 0.45);
+    }
     .slab:hover {
       translate: 0 -8px;
     }
@@ -1808,6 +1830,21 @@
       --drift: 36px;
     }
 
+    /*
+     * The phones come in from either side, turned, and are set down together as the band arrives; as it
+     * leaves they part a little, the light one rising and the dark one sinking.
+     */
+    .phoneLight {
+      animation: phoneLight linear both;
+      animation-timeline: --phones;
+      animation-range: cover;
+    }
+    .phoneDark {
+      animation: phoneDark linear both;
+      animation-timeline: --phones;
+      animation-range: cover;
+    }
+
     /* The tilted sheet turns a little as it passes. */
     .plane {
       animation: turn linear both;
@@ -1829,10 +1866,10 @@
       animation-range: entry 20% cover 45%;
     }
 
-    /* The large logo rises out of the foot of the page. */
+    /* The large logo rises out of the foot of the page, fully risen once the page reaches its end. */
     .footerMark svg {
       animation: surface linear both;
-      animation-timeline: view();
+      animation-timeline: --mark;
       animation-range: entry 0% entry 100%;
     }
 
@@ -1863,10 +1900,27 @@
   }
 }
 
-@keyframes rise {
+@keyframes slideNear {
   from {
     opacity: 0;
-    transform: translateY(0.32em);
+    transform: translateX(-0.45em);
+  }
+  35% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slideFar {
+  from {
+    opacity: 0;
+    transform: translateX(0.45em);
+  }
+  35% {
+    opacity: 1;
   }
   to {
     opacity: 1;
@@ -1909,6 +1963,36 @@
   }
   to {
     translate: 0 calc(var(--drift) * -1);
+  }
+}
+
+@keyframes phoneLight {
+  from {
+    translate: calc(var(--spread) * -64px) calc(var(--spread) * 90px);
+    rotate: -13deg;
+  }
+  45% {
+    translate: 0 0;
+    rotate: -4deg;
+  }
+  to {
+    translate: 0 calc(var(--spread) * -22px);
+    rotate: -3deg;
+  }
+}
+
+@keyframes phoneDark {
+  from {
+    translate: calc(var(--spread) * 72px) calc(var(--spread) * 150px);
+    rotate: 12deg;
+  }
+  45% {
+    translate: 0 0;
+    rotate: 3deg;
+  }
+  to {
+    translate: 0 calc(var(--spread) * 26px);
+    rotate: 2deg;
   }
 }
 
@@ -2188,6 +2272,7 @@
     padding: calc(64px + var(--slant)) 0 calc(56px + var(--slant));
   }
   .phonePair {
+    --spread: 0.45;
     height: 420px;
   }
   .footer {

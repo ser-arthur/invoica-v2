@@ -1,26 +1,55 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ButtonLink, PaperMark, Wordmark } from '@/components/ui';
+import { headers } from 'next/headers';
+import { Envelope } from '@/components/site/envelope';
+import { SiteFooter } from '@/components/site/footer';
+import { SiteHeader } from '@/components/site/header';
+import n from '@/components/site/not-found.module.css';
+import { plannedPage } from '@/components/site/planned-pages';
+import s from '@/components/site/site.module.css';
+import { PATH_HEADER } from '@/lib/request-path';
+import { isSignedIn } from '@/lib/session';
 
-export default function NotFound() {
+export const metadata: Metadata = { title: 'Page not found' };
+
+/**
+ * Any address with no page (docs/specs/not-found-page.md), answered with status 404. A planned page not written yet
+ * gets its own notice; any other address gets one message. The address itself is never shown.
+ */
+export default async function NotFound() {
+  const planned = plannedPage((await headers()).get(PATH_HEADER));
+  const signedIn = await isSignedIn();
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="px-5 py-5 sm:px-8">
-        <Link href="/" aria-label="Invoica home">
-          <Wordmark className="text-2xl" />
-        </Link>
-      </header>
-      <main id="main" className="flex flex-1 items-start justify-center px-5 pt-10 pb-16 sm:pt-24">
-        <div className="flex max-w-[420px] flex-col items-start gap-3">
-          <PaperMark />
-          <h1 className="font-display text-[26px] leading-tight font-semibold tracking-[-0.02em] text-ink">
-            This page does not exist
+    <div className={s.site}>
+      <SiteHeader signedIn={signedIn} />
+      <main id="main" className={`${s.wrap} ${n.lost}`}>
+        <div>
+          <span className={s.label}>{planned ? 'Coming soon' : 'Error 404'}</span>
+          <h1 className={`${s.display} ${n.title}`}>
+            {planned?.heading ?? 'There is no page at this address.'}
           </h1>
-          <p className="text-muted">The link may be mistyped or out of date.</p>
-          <ButtonLink href="/" className="mt-2">
-            Go to Invoica
-          </ButtonLink>
+          <p className={s.lead}>
+            {planned
+              ? `${planned.about} Until it is ready, carry on from here.`
+              : 'The link may be mistyped or out of date. Check the address, or carry on from here.'}
+          </p>
+          <div className={n.ways}>
+            <Link href={signedIn ? '/dashboard' : '/'} className={s.button}>
+              {signedIn ? 'Go to your dashboard' : 'Go to the home page'}
+            </Link>
+            <Link href="/pricing" className={s.textLink}>
+              See plans and prices
+            </Link>
+            {signedIn ? null : (
+              <Link href="/sign-in" className={s.textLink}>
+                Sign in
+              </Link>
+            )}
+          </div>
         </div>
+        <Envelope kind={planned ? 'planned' : 'unknown'} />
       </main>
+      <SiteFooter />
     </div>
   );
 }

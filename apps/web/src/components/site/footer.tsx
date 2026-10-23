@@ -1,43 +1,9 @@
 import Link from 'next/link';
-import { Logo } from '@/components/logo';
+import { FooterMark } from './footer-mark';
+import { FOOTER_COLUMNS } from './links';
 import s from './site.module.css';
 
-/** Links to pages that are planned but not built yet go to their future addresses; plain links, so nothing is fetched ahead. */
-const COLUMNS = [
-  {
-    title: 'Product',
-    links: [
-      { label: 'Why Invoica', href: '/#why' },
-      { label: 'How it works', href: '/#how' },
-      { label: 'Templates', href: '/#templates' },
-      { label: 'Pricing', href: '/pricing' },
-    ],
-  },
-  {
-    title: 'Company',
-    links: [
-      { label: 'About', href: '/about' },
-      { label: 'Contact', href: '/contact' },
-    ],
-  },
-  {
-    title: 'Help',
-    links: [
-      { label: 'Help centre', href: '/help' },
-      { label: 'Getting started', href: '/help/getting-started' },
-      { label: 'Sign in', href: '/sign-in' },
-    ],
-  },
-  {
-    title: 'Legal',
-    links: [
-      { label: 'Privacy', href: '/privacy' },
-      { label: 'Terms', href: '/terms' },
-      { label: 'Cookies', href: '/cookies' },
-    ],
-  },
-];
-
+/** Plain links, so nothing is fetched ahead, including the planned pages that are not written yet. */
 export function SiteFooter() {
   return (
     <footer className={s.footer}>
@@ -49,7 +15,7 @@ export function SiteFooter() {
           </Link>
         </div>
         <nav className={s.footerNav} aria-label="Footer">
-          {COLUMNS.map((column) => (
+          {FOOTER_COLUMNS.map((column) => (
             <div key={column.title}>
               <h2 className={s.footerTitle}>{column.title}</h2>
               <ul>
@@ -69,8 +35,8 @@ export function SiteFooter() {
           <p>Made for freelancers, studios and small firms.</p>
         </div>
       </div>
-      <div className={`${s.wrap} ${s.footerMark}`} aria-hidden="true">
-        <Logo shaded label="" />
+      <div className={`${s.wrap} ${s.footerMark}`}>
+        <FooterMark />
       </div>
     </footer>
   );

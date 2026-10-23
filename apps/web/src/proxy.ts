@@ -1,11 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { actionOriginAllowed } from './lib/request-guards';
+import { PATH_HEADER } from './lib/request-path';
 
 /**
  * Sets a Content-Security-Policy with a fresh nonce on every page. Next.js puts the nonce on its own scripts; the one
  * inline script of the app (the theme switch in the root layout) reads it from the `x-nonce` request header. Scripts
  * from anywhere else, plugins, other sites framing the app and forms posting elsewhere are refused, and so is a server
- * action that does not come from the app's own origin.
+ * action that does not come from the app's own origin. The address asked for goes to the page in its own header, which
+ * the not-found page reads.
  */
 export function proxy(request: NextRequest) {
   // A server action is accepted only from the app's own origin, so a request without one is refused too.
@@ -30,6 +32,7 @@ export function proxy(request: NextRequest) {
   ].join('; ');
   const headers = new Headers(request.headers);
   headers.set('x-nonce', nonce);
+  headers.set(PATH_HEADER, request.nextUrl.pathname);
   headers.set('Content-Security-Policy', policy);
   const response = NextResponse.next({ request: { headers } });
   response.headers.set('Content-Security-Policy', policy);

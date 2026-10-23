@@ -22,8 +22,8 @@ export function Phones() {
             <p className={s.lead}>Light or dark, it is the same Invoica on your phone as on your desk.</p>
           </div>
           <Tilt className={s.phonePair} max={6} aria-hidden="true">
-            <Device src={phoneLight} className={`${s.phoneLight} ${s.driftSlow}`} />
-            <Device src={phoneDark} className={`${s.phoneDark} ${s.driftFast}`} />
+            <Device src={phoneLight} className={s.phoneLight} />
+            <Device src={phoneDark} className={s.phoneDark} />
           </Tilt>
         </div>
       </div>

@@ -21,6 +21,18 @@ export const getUser = cache(async () => {
   return session?.user ?? null;
 });
 
+/**
+ * Whether the visitor is signed in, for the public pages. A lookup that fails (the database out of reach, say)
+ * counts as signed out, so the website still shows.
+ */
+export async function isSignedIn() {
+  try {
+    return Boolean(await getUser());
+  } catch {
+    return false;
+  }
+}
+
 export async function requireUser() {
   const user = await getUser();
   if (!user) redirect('/sign-in');

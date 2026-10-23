@@ -26,12 +26,8 @@ const QUESTIONS = [
     a: 'No. Invoica takes nothing from the money your clients pay you.',
   },
   {
-    q: 'Is there a price for Ghana and Nigeria?',
-    a: 'Yes. Plans there will be priced lower and charged in cedis and naira.',
-  },
-  {
-    q: 'Is there an offer for early customers?',
-    a: 'The first 200 businesses to subscribe to Pro pay £5 a month for as long as they stay subscribed, whatever the price becomes later.',
+    q: 'Do plans cost less in Ghana and Nigeria?',
+    a: 'Yes. In Ghana and Nigeria plans cost less, and you pay in cedis or naira.',
   },
 ];
 

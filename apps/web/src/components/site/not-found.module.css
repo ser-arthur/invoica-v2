@@ -1,0 +1,224 @@
+/* The not-found page. Colours come from the site's palette on .site (site.module.css). */
+
+.lost {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  align-items: center;
+  gap: 56px 72px;
+  padding-top: 104px;
+  padding-bottom: 120px;
+}
+
+.title {
+  margin: 10px 0 0;
+  max-width: 11em;
+  font-size: clamp(40px, 5.2vw, 68px);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.ways {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 26px;
+  margin-top: 36px;
+}
+
+/* The envelope: an airmail edge in lime and teal around a white face. */
+
+.letter {
+  justify-self: end;
+  width: 100%;
+  max-width: 520px;
+}
+
+.envelope {
+  aspect-ratio: 1.6;
+  padding: 11px;
+  border-radius: 18px;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--lime) 0 16px,
+    #ffffff 16px 26px,
+    var(--teal) 26px 42px,
+    #ffffff 42px 52px
+  );
+  box-shadow:
+    0 1px 2px rgb(9 25 28 / 0.08),
+    0 34px 60px -36px rgb(9 25 28 / 0.45);
+  transform: rotate(2deg);
+}
+
+.face {
+  position: relative;
+  container-type: inline-size;
+  height: 100%;
+  border-radius: 9px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.face i {
+  display: block;
+  height: 9px;
+  border-radius: 5px;
+  background: var(--hair);
+}
+
+.from {
+  position: absolute;
+  top: 9%;
+  left: 6%;
+  display: grid;
+  gap: 7px;
+  width: 26%;
+}
+
+.from i:last-child {
+  width: 70%;
+}
+
+/* Invoica's stamp: the app icon on lime stamp paper with a perforated edge. */
+.postage {
+  position: absolute;
+  top: 8%;
+  right: 5%;
+  width: 15%;
+  aspect-ratio: 0.84;
+  filter: drop-shadow(0 1px 1.5px rgb(9 25 28 / 0.3));
+}
+
+.postage > span {
+  display: block;
+  height: 100%;
+  padding: 5px;
+  background: var(--lime);
+  -webkit-mask:
+    radial-gradient(circle, transparent 2.3px, #000 2.7px) -4px -4px / 8px 8px,
+    linear-gradient(#000 0 0) content-box;
+  mask:
+    radial-gradient(circle, transparent 2.3px, #000 2.7px) -4px -4px / 8px 8px,
+    linear-gradient(#000 0 0) content-box;
+}
+
+.postage > span::before {
+  content: '';
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: #09191c url('/icon.svg') center / cover no-repeat;
+}
+
+.postmark {
+  position: absolute;
+  top: 7%;
+  right: 13%;
+  width: 34%;
+  color: rgb(9 25 28 / 0.32);
+  transform: rotate(-6deg);
+}
+
+.to {
+  position: absolute;
+  top: 63%;
+  left: 32%;
+  display: grid;
+  gap: 10px;
+  width: 44%;
+}
+
+.to i:nth-child(1) {
+  width: 78%;
+  background: var(--rule);
+}
+
+.to i:nth-child(3) {
+  width: 86%;
+}
+
+.to i:nth-child(4) {
+  width: 52%;
+}
+
+/* The rubber stamp, as on the home page's invoice: a double rule, set at an angle, slate for a wrong address. */
+.stamp {
+  position: absolute;
+  left: 43%;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.6cqi 3.2cqi 2cqi;
+  border: 1cqi double #5a6170;
+  border-radius: 2.4cqi;
+  color: #5a6170;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  translate: -50% -50%;
+  rotate: -10deg;
+  mix-blend-mode: multiply;
+}
+
+/* A planned page: green ink, as for good news. */
+.soon {
+  border-color: #16723f;
+  color: #16723f;
+}
+
+.stampBig {
+  font: 800 5.2cqi / 1 var(--font-display);
+  letter-spacing: 0.03em;
+}
+
+.stampSmall {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1.5px solid currentColor;
+  font: 700 max(9px, 1.8cqi) / 1.2 var(--font-sans);
+  letter-spacing: 0.18em;
+}
+
+@media (max-width: 960px) {
+  .lost {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 64px;
+    padding-bottom: 96px;
+  }
+  .letter {
+    justify-self: start;
+    max-width: 460px;
+  }
+}
+
+@media (max-width: 760px) {
+  .lost {
+    padding-top: 44px;
+    padding-bottom: 72px;
+  }
+  .ways {
+    margin-top: 28px;
+  }
+  .envelope {
+    padding: 8px;
+    border-radius: 14px;
+    transform: rotate(1.5deg);
+  }
+}
+
+/* The stamp presses on once, as the page opens. It is in place throughout. */
+@media (prefers-reduced-motion: no-preference) {
+  .stamp {
+    animation: press 560ms 240ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  }
+}
+
+@keyframes press {
+  from {
+    scale: 1.18;
+  }
+  to {
+    scale: 1;
+  }
+}
