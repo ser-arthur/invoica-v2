@@ -1415,6 +1415,36 @@
 
 /* Narrower screens */
 
+/* Below 1180 pixels the hero's statement, buttons and facts sit under the headline. */
+@media (max-width: 1180px) {
+  .heroHead,
+  .heroFacts,
+  .heroStatement,
+  .heroActions {
+    grid-column: 1 / -1;
+  }
+  .heroStatement {
+    grid-row: 2;
+    max-width: 22em;
+    margin-top: 28px;
+  }
+  .heroActions {
+    grid-row: 3;
+    align-self: start;
+    margin-top: 24px;
+  }
+  .heroFacts {
+    flex-direction: row;
+    grid-row: 4;
+    max-width: 760px;
+    margin-top: 40px;
+    padding-bottom: 0;
+  }
+  .fact {
+    flex: 1 1 0;
+  }
+}
+
 @media (max-width: 1100px) {
   .stage3d {
     height: 520px;
@@ -1441,31 +1471,6 @@
 @media (max-width: 960px) {
   .nav {
     display: none;
-  }
-  .heroHead,
-  .heroFacts,
-  .heroStatement,
-  .heroActions {
-    grid-column: 1 / -1;
-  }
-  .heroStatement {
-    grid-row: 2;
-    max-width: 22em;
-    margin-top: 28px;
-  }
-  .heroActions {
-    grid-row: 3;
-    align-self: start;
-    margin-top: 24px;
-  }
-  .heroFacts {
-    flex-direction: row;
-    grid-row: 4;
-    margin-top: 40px;
-    padding-bottom: 0;
-  }
-  .fact {
-    flex: 1 1 0;
   }
   .introHeading,
   .introLead,
