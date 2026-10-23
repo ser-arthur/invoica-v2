@@ -30,6 +30,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @invoica/pdf exec playwright-core install --with-deps chromium
+      # The PDF tests read the rendered files with poppler's pdfinfo, pdffonts, pdftotext and pdftoppm.
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - run: pnpm format:check
       - run: pnpm copy:check
       - run: pnpm lint
@@ -146,7 +148,7 @@ jobs:
       DATABASE_WORKER_URL: postgres://invoica_worker:invoica_worker@localhost:5432/invoica
       BETTER_AUTH_SECRET: ci-only-not-a-secret-ci-only-not-a-secret
       BETTER_AUTH_URL: http://localhost:3000
-      CRON_SECRET: ci-only-not-a-secret-ci-only-not-a-secret
+      CRON_SECRET: cionlynotasecretcionlynotasecret
       FILE_STORAGE_DIR: ${{ github.workspace }}/.data/files
       EMAIL_PROVIDER: file
       EMAIL_FROM: Invoica <invoices@invoica.local>
