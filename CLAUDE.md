@@ -38,6 +38,7 @@ A business tool for client management, invoicing, cash flow and dashboards, ship
 - Explore, then plan, then code. For anything bigger than a small fix, the plan is approved before code is written.
 - Small changes, one concern per branch: `feat/...`, `fix/...`, `chore/...`.
 - Commit messages: a short subject (72 characters at most) saying what changed, and a body of a few lines only when the reason is not obvious. No co-author or session lines, and no mention of the AI assistant in commits, pull requests or code comments.
+- Every commit is authored and committed as the owner, Kobby S. Arthur <kobbyarthur95@gmail.com> (GitHub `ser-arthur`), whichever account the work runs under. Check `git config user.name` and `git config user.email` before the first commit of a session.
 - Deliver the way `docs/HANDOVER.md` says. Never push to main, merge your own pull request or force-push.
 - Tests first for any calculation, rule or state change. A new test must fail before the change that makes it pass.
 - Before calling anything done, run the full CI command and report the counts: run, passed, failed, skipped. A check that examined nothing has failed.
