@@ -21,7 +21,9 @@ This is the **v2 repository**: a re-architecture from scratch (decision 0001). T
 | End to end, desktop and phone, against the production build run from a copy elsewhere with production settings, including a business's first weeks in one go (`e2e/full-journey.spec.ts`) | 174 | 113 passed, 61 skipped by design (one width only), 0 failed |
 | Format, copy rules, lint, typecheck, production build | | pass |
 
-664 unit and database tests run, 664 passed, 0 failed, 0 skipped. The journeys suite runs 40 random journeys by default; `JOURNEY_RUNS=1000` ran clean this morning and `JOURNEY_RUNS=600` again this evening.
+664 unit and database tests run, 664 passed, 0 failed, 0 skipped.
+
+**23 October, about 04:00, on `feat/website`:** 668 unit and database tests run, 668 passed, 0 failed, 0 skipped (core 249, schemas 6, documents 28, PDF 64, database 234, web unit 87); format, copy rules, lint, typecheck and the production build pass. The website spec passed against the development server at both widths. The accessibility spec found one thing on the home page (the ledger numbers' contrast), now fixed, and its desktop tests pass against the production build; the full end-to-end suite against the production build (184 tests) was still running when bundle 17 was made, and its result goes in the next entry. The journeys suite runs 40 random journeys by default; `JOURNEY_RUNS=1000` ran clean this morning and `JOURNEY_RUNS=600` again this evening.
 
 **Running the end-to-end suite.** Against the development server: `pnpm dev`, then `E2E_BASE_URL=http://localhost:3000 pnpm test:e2e`. Against a production build: `pnpm build`, start `apps/web/.next/standalone/apps/web/server.js` with `NODE_ENV=production`, `BETTER_AUTH_URL=http://localhost:3100`, `EMAIL_PROVIDER=file`, `MAILBOX_DIR`, `FILE_STORAGE_DIR`, `CRON_SECRET` and `INVOICA_CLIENT_IP_HEADER=x-forwarded-for` (the suite gives each sign-up its own address in that header, so the sign-up limit holds), then run the suite with `E2E_BASE_URL=http://localhost:3100`, the same `MAILBOX_DIR` and the same `CRON_SECRET` (its value, without quotes: the drain tests send it). If the development server reloads a page over and over after a change to `next.config.ts`, stop it, delete `apps/web/.next/dev` and start it again. Editing files while the suite runs against the development server makes tests fail at random; run it against a production build to keep working meanwhile.
 
@@ -42,10 +44,10 @@ The v2 repository is delivered as a **git bundle in a numbered zip** (`invoica-r
 To set up the first time:
 
 ```
-unzip invoica-repo-16.zip -d ~/Downloads/invoica-repo-16
-git clone ~/Downloads/invoica-repo-16/invoica.bundle invoica
+unzip invoica-repo-17.zip -d ~/Downloads/invoica-repo-17
+git clone ~/Downloads/invoica-repo-17/invoica.bundle invoica
 cd invoica
-sh ~/Downloads/invoica-repo-16/verify.sh
+sh ~/Downloads/invoica-repo-17/verify.sh
 ```
 
 To take a later bundle into an existing clone: `git pull ~/Downloads/invoica-repo-NN/invoica.bundle main`.
