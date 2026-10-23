@@ -140,6 +140,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **23 Oct, about 23:10 to 23:40.** Rings still showed on the owner's Mac: the grain is now strong enough to break up the steps (1% black and white noise, about one shade per pixel), on the sign-in panel, the owed and Pro cards and the pictures of the app; the footer stays as it was. The sign-in form fades in once, as one, at a fixed height. Bundle 27.
 
+- **23 Oct, about 23:45.** The stronger grain made it worse on the owner's Mac; reverted to bundle 26's gradients, keeping the calmer form. Bundle 28.
+
 ## Decisions in force
 
 | Record | Title | Status |
