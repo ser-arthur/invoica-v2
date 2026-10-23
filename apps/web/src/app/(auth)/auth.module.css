@@ -53,12 +53,12 @@
   overflow: hidden;
   /*
    * The light: green from the top left and teal from the bottom right, each easing out to nothing so no edge shows,
-   * under a fine grain that breaks up the bands a faint colour on a dark ground would otherwise show. The grain is
-   * noise drawn by the browser from a few hundred bytes of SVG, at 7% and blended so it only nudges the shade.
+   * under the fine grain (`--grain`, globals.css) that breaks up the bands a faint colour on a dark ground would
+   * otherwise show.
    */
   background: #09191c;
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.07'/%3E%3C/svg%3E"),
+    var(--grain),
     radial-gradient(
       84% 62% at 0% 0%,
       rgb(55 198 107 / 0.143) 0%,
@@ -91,7 +91,6 @@
     160px 160px,
     auto,
     auto;
-  background-blend-mode: overlay, normal, normal;
   color: rgb(255 255 255 / 0.78);
   clip-path: polygon(0 0, calc(100% - var(--f)) 0, 100% var(--f), 100% 100%, 0 100%);
 }
@@ -165,12 +164,16 @@
   display: none;
 }
 
+/*
+ * The form sits at the same height on every one of these pages, a little above the middle, so its heading stays in
+ * place when the visitor moves between them, however long each form is.
+ */
 .formArea {
   display: flex;
   flex: 1;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 48px 24px 64px;
+  padding: clamp(48px, 22vh, 240px) 24px 64px;
 }
 
 .formBox {
@@ -179,35 +182,23 @@
 }
 
 /*
- * A form arriving: when the visitor moves between these pages, or a form gives way to "Check your email", its parts
- * ease in from a little below, a moment apart, top to bottom. Nothing waits on it: the parts are in place and usable
- * throughout, and it stops for visitors who ask for less motion.
+ * A form arriving: when the visitor moves between these pages, or a form gives way to "Check your email", the form
+ * fades in as one, rising a few pixels and settling slowly. The motion is on the template's wrapper (template.tsx),
+ * which stays put while the router swaps in the page it loads after the one it fetched ahead, so it plays once,
+ * without restarting. Nothing waits on it: the form is in place and usable throughout, and it stops for visitors who
+ * ask for less motion.
  */
 @media (prefers-reduced-motion: no-preference) {
-  .enter > * > * {
-    animation: arrive 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-  .enter > * > :nth-child(2) {
-    animation-delay: 40ms;
-  }
-  .enter > * > :nth-child(3) {
-    animation-delay: 80ms;
-  }
-  .enter > * > :nth-child(4) {
-    animation-delay: 120ms;
-  }
-  .enter > * > :nth-child(5) {
-    animation-delay: 160ms;
-  }
-  .enter > * > :nth-child(n + 6) {
-    animation-delay: 200ms;
+  .enter,
+  .arrive {
+    animation: arrive 560ms cubic-bezier(0.33, 1, 0.68, 1) both;
   }
 }
 
 @keyframes arrive {
   from {
     opacity: 0;
-    translate: 0 10px;
+    translate: 0 6px;
   }
 }
 

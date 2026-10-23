@@ -7,6 +7,7 @@ import { authClient } from '@/lib/auth-client';
 import { reachAuth } from '@/lib/reach';
 import { useHydrated } from '@/lib/use-hydrated';
 import { Button, Field, FormMessage, Input, inlineLinkClass } from '@/components/ui';
+import a from './auth.module.css';
 
 const linkClass = inlineLinkClass;
 
@@ -36,7 +37,7 @@ export function CheckEmail({ email }: { email: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className={`flex flex-col gap-5 ${a.arrive}`}>
       <div>
         <h1 className="font-display text-[28px] leading-tight font-semibold tracking-[-0.02em]">
           Check your email
