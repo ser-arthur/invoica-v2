@@ -144,6 +144,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **24 Oct, about 00:00 to 01:30.** The owner asked how apps like Wise show themselves on phones; after a look at Wise, Mercury, Ramp and Monzo Business, the canvas page "Mobile views" set ours beside a calmer version, and he agreed: no gradients on dark grounds (the sign-in panel folded in two flat tones along the crease, flat cards, flat pictures), flat numerals and chart bars, and on phones one readable piece of the app per step and one upright phone. Bundle 29.
 
+- **24 Oct, about 01:00 to 02:30, while the owner slept.** He asked for a wider range of invoice templates, a more creative line down How it works and other ways to show the app than the tilted slab. Proposal in `docs/design/round-6-templates.md` and on three new canvas pages: ten new templates from playful to grounded (Sticker, Riso, Marquee, Atelier, Mark, Grid, Trade, Statement, Practice, Heritage), five lines and five ways to show the app, each with a recommendation. Nothing in the product changed. Bundle 30.
+
 ## Decisions in force
 
 | Record | Title | Status |
@@ -213,7 +215,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 2. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
 3. The domain to buy, then the sending subdomain for Resend.
 4. Answered 23 October: the repository is `ser-arthur/invoica-v2`, and commits are authored as Kobby S. Arthur <kobbyarthur95@gmail.com>.
-5. Which invoice templates ship in v1. All seven are on the design canvas, page "Round 2, built".
+5. Which invoice templates ship in v1: the round 6 range is proposed in `docs/design/round-6-templates.md` (canvas page "Invoice templates"), with five more decisions at its end (the line, the app below the hero, retiring four templates, the Scottish and Northern Irish registration wording, static fonts for PDFs).
 6. Approve or change 0003, 0006 and 0007.
 7. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
 8. Approve a plan for the R5-L1 four-taxes refusal (`HANDOVER.md`, "Open finding"): how a credit note that settles a balance shares its tax across the components when one would go below zero.
