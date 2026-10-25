@@ -57,6 +57,13 @@ async function overflowing(snapshot: DocumentSnapshot): Promise<string[]> {
         const r = el.getBoundingClientRect();
         if (r.width > 0 && r.right > width + 0.5) out.push((el.textContent ?? '').trim().slice(0, 50));
       }
+      // Text set along a curve is cut where the curve ends: it must fit the curve's length.
+      for (const tp of document.querySelectorAll('textPath')) {
+        const text = tp.closest('text') as SVGTextElement | null;
+        const path = document.querySelector(tp.getAttribute('href') ?? '') as SVGPathElement | null;
+        if (text && path && text.getComputedTextLength() > path.getTotalLength() + 0.5)
+          out.push(`${(tp.textContent ?? '').slice(0, 50)} runs past its curve`);
+      }
       return out;
     }, A4_WIDTH);
   } finally {

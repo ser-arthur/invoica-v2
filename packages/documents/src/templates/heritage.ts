@@ -12,11 +12,64 @@ ${logo ? `<image href="${esc(logo)}" x="46" y="46" width="108" height="108"/>` :
 </svg>`;
 }
 
-/** The name set on a shallow arch, as on a bottle label, sized to its length. */
+/** Cormorant SC Bold's advance widths in ems, for the capitals, figures and marks a name usually has. */
+const ARCH_WIDTHS: Record<string, number> = {
+  A: 0.716,
+  B: 0.595,
+  C: 0.669,
+  D: 0.705,
+  E: 0.552,
+  F: 0.522,
+  G: 0.719,
+  H: 0.764,
+  I: 0.342,
+  J: 0.339,
+  K: 0.655,
+  L: 0.545,
+  M: 0.857,
+  N: 0.735,
+  O: 0.766,
+  P: 0.553,
+  Q: 0.766,
+  R: 0.698,
+  S: 0.515,
+  T: 0.643,
+  U: 0.703,
+  V: 0.66,
+  W: 0.911,
+  X: 0.647,
+  Y: 0.619,
+  Z: 0.605,
+  '0': 0.547,
+  '1': 0.344,
+  '2': 0.449,
+  '3': 0.444,
+  '4': 0.48,
+  '5': 0.433,
+  '6': 0.501,
+  '7': 0.476,
+  '8': 0.571,
+  '9': 0.501,
+  ' ': 0.234,
+  '&': 0.552,
+  "'": 0.15,
+  '-': 0.282,
+  '.': 0.207,
+  ',': 0.222,
+  '\u2019': 0.186,
+};
+/** The arch's tracking, in ems. */
+const ARCH_TRACK = 0.16;
+/** How long the arch is, in its drawing's units, less a little at each end. */
+const ARCH_LENGTH = 300;
+
+/** The name set on a shallow arch, as on a bottle label, sized so all of it fits along the arch. */
 function arch(name: string, colour: string): string {
-  const size = Math.min(31, 470 / Math.max(name.length, 1));
+  const caps = name.toUpperCase();
+  const ems = [...caps].reduce((sum, ch) => sum + (ARCH_WIDTHS[ch] ?? 0.8) + ARCH_TRACK, 0);
+  const size = Math.min(31, ARCH_LENGTH / Math.max(ems, 0.01));
   return `<svg class="arch" viewBox="0 0 320 84" aria-hidden="true"><defs><path id="arc" d="M 16 80 Q 160 -14 304 80"/></defs>
-<text fill="${colour}" font-family="Cormorant SC" font-weight="700" font-size="${size.toFixed(1)}" letter-spacing="${(size * 0.16).toFixed(1)}" text-anchor="middle"><textPath href="#arc" startOffset="50%">${esc(name.toUpperCase())}</textPath></text></svg>`;
+<text fill="${colour}" font-family="Cormorant SC" font-weight="700" font-size="${size.toFixed(1)}" letter-spacing="${(size * ARCH_TRACK).toFixed(1)}" text-anchor="middle"><textPath href="#arc" startOffset="50%">${esc(caps)}</textPath></text></svg>`;
 }
 
 /** A quarter circle for one corner of the inner rule, curving in towards the page, as on a printed label. */
