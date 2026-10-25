@@ -17,6 +17,7 @@ import { mark } from './templates/mark';
 import { billboard } from './templates/billboard';
 import { grid } from './templates/grid';
 import { trade } from './templates/trade';
+import { statement } from './templates/statement';
 import { buildView } from './view';
 
 export const TEMPLATES = {
@@ -36,6 +37,7 @@ export const TEMPLATES = {
   billboard,
   grid,
   trade,
+  statement,
 } as const;
 export type TemplateId = keyof typeof TEMPLATES;
 
