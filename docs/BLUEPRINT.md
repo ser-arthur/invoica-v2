@@ -155,6 +155,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **25 Oct, about 15:40 to 18:00.** The new range built into the product on `feat/invoice-templates`: twelve templates, the picker with filters by kind of business and by feel, the second colour and the logo's ground in Settings and in each snapshot, four templates retired from the picker (issued documents keep them). 831 unit, database and PDF tests and 232 end-to-end tests run, none failed (72 skipped by design). A design pass on Signature, Letter and Ticket proposed on the canvas. Bundle 34.
 
+- **25 Oct, about 17:05 to 18:00.** The owner's choices on the three kept templates, built: Signature's second pass (the amount due first, on a slip with its corner turned), Letter as it was with the number and signed name larger, Ticket's second pass (a till roll on grey with a stub to pay from, the band inside the paper's margins). 833 unit, database and PDF tests and 232 end-to-end tests run, none failed (72 skipped by design). Bundle 35.
+
 ## Decisions in force
 
 | Record | Title | Status |
@@ -224,7 +226,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 2. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
 3. The domain to buy, then the sending subdomain for Resend.
 4. Answered 23 October: the repository is `ser-arthur/invoica-v2`, and commits are authored as Kobby S. Arthur <kobbyarthur95@gmail.com>.
-5. Answered 25 October: the invoice templates for v1 are the fifteen in `docs/specs/invoice-templates.md`, built on `feat/invoice-templates`. Left: the design pass on Signature, Letter and Ticket, proposed on the canvas page "Signature, Letter and Ticket" (`docs/design/round-8-kept-templates.md`, three questions at its end), and static fonts for PDFs.
+5. Answered 25 October: the invoice templates for v1 are the fifteen in `docs/specs/invoice-templates.md`, built on `feat/invoice-templates`. The design pass on Signature, Letter and Ticket was answered and built the same evening. Left: real-looking sample details in the picker, and static fonts for PDFs.
 6. Approve or change 0003, 0006 and 0007.
 7. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
 8. Approve a plan for the R5-L1 four-taxes refusal (`HANDOVER.md`, "Open finding"): how a credit note that settles a balance shares its tax across the components when one would go below zero.

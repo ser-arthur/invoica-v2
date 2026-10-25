@@ -56,6 +56,16 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+25 October 2026, about 17:05 to 18:00, `feat/invoice-templates`, the owner's choices on the design pass for the three kept templates (`docs/specs/invoice-templates.md`, "Signature, Letter and Ticket"):
+- Signature is the second pass: the amount due first, on a slip of the business's colour with its corner turned, one row of facts, the parties, the lines, how to pay beside the totals. Shown on the canvas in indigo.
+- Letter keeps its layout, with the invoice and its number and the name under "With thanks" set larger. It keeps speaking in the first person.
+- Ticket is the second pass: a till roll on a grey page, the amount due on a band of the shop's colour inside the paper's margins, and a stub to pay from after a perforation. The totals, the band and the stub stay on one page together.
+- Tests first for the two new rules (Signature's amount before the parties and lines; Ticket's stub), both failing before. Their approved images were renewed for these three only; the other sixteen are unchanged.
+- They change in place: no invoice has been issued with them outside development. A document issued before keeps its snapshot and kept PDF; only its view on screen takes the new look.
+- The canvas page "Signature, Letter and Ticket" shows each as it was beside it as built.
+- Checks: 833 unit, database and PDF tests run, 833 passed, 0 failed, 0 skipped (core 257, schemas 7, documents 40, PDF 191, database 239, web unit 99); format, copy rules, lint, types and the production build pass. The end-to-end suite against the production build, run from a copy elsewhere with production settings, ran 232: 160 passed, 72 skipped by design (one width only), 0 failed.
+- Bundle 35. The owner's commands for bundle 34 failed (run from the repository folder, the zip's path was relative; pnpm not installed on his Mac): the delivery notes now use full paths and `git switch -C`, and say how to turn on pnpm.
+
 25 October 2026, about 15:40 to 18:00, `feat/invoice-templates` (from `feat/website`), the owner's go-ahead to build: the new range is in the product, per `docs/specs/invoice-templates.md`.
 - Twelve new templates, one commit each with its approved images: Sticker, Riso, Marquee, Atelier, Bloom, Mark, Billboard, Grid, Trade, Statement, Practice and Heritage (round 3, plain). The picker and the editor offer fifteen: Signature first, the twelve, then Letter and Ticket. Studio, Counsel, Ledger and Poster left both; every document issued in one still renders unchanged against its approved images, and a draft or a setting still on one keeps it and says so.
 - The picker filters by kind of business (six kinds) and by feel (playful, in between, grounded).
@@ -194,7 +204,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 1. When the owner has the domain and approves decision 0010: follow `docs/deploy.md`.
 2. GitHub: on 23 October the owner chose to put v2 in its own private repository, `ser-arthur/invoica-v2`, cloned from bundle 20 into `~/Downloads/_DEV/invoica-v2` with `feat/website` as its `main`, and to show the site from its own Vercel project (root `apps/web`, no database: the site shows, account actions fail). The old repository and `invoica-io.vercel.app` stay untouched. CI (`.github/workflows/ci.yml`) runs there for the first time on that push. When this session is linked to GitHub: pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
 3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
-4. Templates: the owner's answer on the design pass for Signature, Letter and Ticket (canvas page "Signature, Letter and Ticket", `docs/design/round-8-kept-templates.md`); then build it as the twelve were, with real-looking sample details in the picker (account, company and VAT numbers that fail their check digits). Later: static fonts for PDFs, and the website's templates section.
+4. Templates: real-looking sample details in the picker (account, company and VAT numbers that fail their check digits). Later: static fonts for PDFs, and the website's templates section.
 5. The website on `feat/website`: the owner's review (bundle 20), then a pull request once GitHub is linked; the owner's choice of where to show v2 before launch (a separate Vercel project recommended; the old app's address is not touched without his say). Then the app screens in the round 5 look: tokens and fonts in `globals.css`, the sheet and slab as shared pieces, each screen with its tests and the accessibility checks in both themes. The home page shows the app as drawn on the round 5 canvas, so it runs ahead of the app until those screens are built.
 
 ## Open questions
