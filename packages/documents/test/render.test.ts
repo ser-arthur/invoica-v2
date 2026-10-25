@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { buildView, renderDocumentHtml, lineTaxLabel, TEMPLATE_LIST, TEMPLATES } from '../src/index';
+import {
+  buildView,
+  BUSINESS_KINDS,
+  renderDocumentHtml,
+  lineTaxLabel,
+  RETIRED_TEMPLATES,
+  TEMPLATE_LIST,
+  TEMPLATES,
+} from '../src/index';
 import { FIXTURES } from './fixtures';
 
 const fontUrl = (f: string) => `/fonts/${f}`;
@@ -121,5 +129,45 @@ describe('rendering', () => {
     expect(html).toContain('class="void-mark"');
     expect(html).toContain('>VOID<');
     expect(renderDocumentHtml(FIXTURES.ukVat!, { fontUrl })).not.toContain('class="void-mark"');
+  });
+});
+
+describe('the template list (docs/specs/invoice-templates.md)', () => {
+  it('offers the fifteen in order, Signature first', () => {
+    expect(TEMPLATE_LIST.map((t) => t.id)).toEqual([
+      'signature',
+      'sticker',
+      'riso',
+      'marquee',
+      'atelier',
+      'bloom',
+      'mark',
+      'billboard',
+      'grid',
+      'trade',
+      'statement',
+      'practice',
+      'heritage',
+      'letter',
+      'ticket',
+    ]);
+  });
+
+  it('names the four retired, and the offered and retired together are every template', () => {
+    expect(RETIRED_TEMPLATES.map((t) => t.name)).toEqual(['Studio', 'Counsel', 'Ledger', 'Poster']);
+    const ids = [...TEMPLATE_LIST, ...RETIRED_TEMPLATES].map((t) => t.id).sort();
+    expect(ids).toEqual(Object.keys(TEMPLATES).sort());
+  });
+
+  it('gives every offered template a feel and at least one kind of business, and every kind a template', () => {
+    for (const t of TEMPLATE_LIST) {
+      expect(['playful', 'in between', 'grounded']).toContain(t.feel);
+      expect(t.kinds.length, t.id).toBeGreaterThan(0);
+    }
+    for (const k of BUSINESS_KINDS)
+      expect(
+        TEMPLATE_LIST.some((t) => t.kinds.includes(k.id)),
+        k.id,
+      ).toBe(true);
   });
 });

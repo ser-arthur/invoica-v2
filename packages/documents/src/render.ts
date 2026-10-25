@@ -49,6 +49,14 @@ export const TEMPLATES = {
 } as const;
 export type TemplateId = keyof typeof TEMPLATES;
 
+/** The four that have left the picker, by name, for a draft or a setting still on one of them. */
+export const RETIRED_TEMPLATES: { id: TemplateId; name: string }[] = [
+  { id: 'studio', name: 'Studio' },
+  { id: 'counsel', name: 'Counsel' },
+  { id: 'ledger', name: 'Ledger' },
+  { id: 'poster', name: 'Poster' },
+];
+
 /** How a template feels, for the picker's filter. */
 export type TemplateFeel = 'playful' | 'in between' | 'grounded';
 /** The kinds of business the picker filters by. */
