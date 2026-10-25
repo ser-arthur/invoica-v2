@@ -35,7 +35,7 @@ import {
   type TaxLevel,
   type RoundingMode,
 } from '@invoica/core';
-import { renderDocumentHtml, TEMPLATE_LIST } from '@invoica/documents';
+import { renderDocumentHtml, RETIRED_TEMPLATES, TEMPLATE_LIST } from '@invoica/documents';
 import { saveAndIssueAction, saveDraftAction } from '@/lib/actions/documents';
 import { requestKey } from '@/lib/request-key';
 import { ClientForm } from './client-form';
@@ -1492,6 +1492,11 @@ export function InvoiceEditor(props: EditorProps) {
                   {TEMPLATE_LIST.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name}: {t.description}
+                    </option>
+                  ))}
+                  {RETIRED_TEMPLATES.filter((t) => t.id === state.template).map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}: retired, kept for this draft
                     </option>
                   ))}
                 </Select>
