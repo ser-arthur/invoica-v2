@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { closePdfRenderer, renderPdf } from '../src/index';
@@ -9,6 +9,13 @@ import { FIXTURES } from '../../documents/test/fixtures';
 
 /** Every template a document can be in: those offered and those retired from the picker. */
 const ALL = Object.keys(TEMPLATES);
+/** Two made-up logos, one four times as wide as it is tall and one square. */
+const LOGOS = Object.fromEntries(
+  ['wide', 'square'].map((shape) => [
+    shape,
+    `data:image/png;base64,${readFileSync(join(import.meta.dirname, 'logos', `${shape}.png`)).toString('base64')}`,
+  ]),
+);
 
 const executablePath = process.env.CHROMIUM_PATH || undefined;
 const dir = mkdtempSync(join(tmpdir(), 'invoica-pdf-'));
@@ -43,6 +50,24 @@ describe('PDF of record', () => {
         writeFileSync(path, bytes);
         const pages = Number(/Pages:\s+(\d+)/.exec(execFileSync('pdfinfo', [path]).toString())![1]);
         expect(pages, name).toBe(1);
+      }
+    },
+  );
+
+  it.each(ALL)(
+    'fits the same invoices on one page with a wide logo and with a square one, with %s',
+    async (template) => {
+      for (const [shape, logo] of Object.entries(LOGOS)) {
+        for (const name of ['ukVat', 'freelancerAmounts', 'ghana'] as const) {
+          const bytes = await renderPdf(
+            { ...FIXTURES[name]!, template },
+            { executablePath, logoDataUrl: logo },
+          );
+          const path = join(dir, `logo-${template}-${shape}-${name}.pdf`);
+          writeFileSync(path, bytes);
+          const pages = Number(/Pages:\s+(\d+)/.exec(execFileSync('pdfinfo', [path]).toString())![1]);
+          expect(pages, `${shape} ${name}`).toBe(1);
+        }
       }
     },
   );

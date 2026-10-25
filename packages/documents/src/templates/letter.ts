@@ -13,6 +13,10 @@ body{font-family:'Newsreader',serif;font-size:10.6pt;line-height:1.5;color:#2220
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12mm;margin-bottom:10mm}
 .from .name{font-size:20pt;font-style:italic;font-weight:500;letter-spacing:-.01em;color:${v.brandColour};line-height:1.1}
 .from img{max-height:16mm;max-width:70mm;display:block}
+.top.logo{margin-bottom:6mm}
+.top.logo .from img{max-height:13mm}
+.top.logo+.to{margin-bottom:5mm}
+.top.logo~.sign,.top.logo~.pay,.top.logo~.small{margin-top:4mm}
 .from .addr{font-size:9.4pt;color:#5d5850;margin-top:2mm}
 .meta{text-align:right;font-size:9.6pt;color:#5d5850;min-width:0;overflow-wrap:anywhere}
 .meta strong{color:#22201c;font-weight:600}
@@ -60,7 +64,7 @@ table.lines td+td,table.lines th+th{padding-left:4mm}
       .join('');
     const isCredit = v.kind === 'credit_note';
     return `
-<header class="top">
+<header class="top${logo ? ' logo' : ''}">
   <div class="from">${logo ? `<img src="${esc(logo)}" alt="${esc(v.seller.name)}">` : `<div class="name">${esc(v.seller.name)}</div>`}<div class="addr">${lines([...v.seller.addressLines, ...v.seller.contactLines])}</div></div>
   <div class="meta"><strong>${esc(v.heading)} ${esc(v.number)}</strong><br>${v.dates.map((d) => `${esc(d.label)} ${esc(d.value)}`).join('<br>')}</div>
 </header>
