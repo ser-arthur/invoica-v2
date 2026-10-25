@@ -14,3 +14,4 @@ export * from './credits';
 export * from './plans';
 export * from './sterling';
 export * from './reminders';
+export * from './colours';
