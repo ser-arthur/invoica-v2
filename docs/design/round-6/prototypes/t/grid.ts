@@ -4,7 +4,7 @@ import type { ProtoTemplate } from '../lib';
 
 /**
  * Grid: for architects, design studios and photographers. Everything placed on six columns, the number set wide
- * across the top, and the amount due in one framed cell of the brand colour.
+ * across the top, and the amount due in a block of the brand colour under a black strip, like a drawing's title block.
  */
 export const grid: ProtoTemplate = {
   id: 'grid',
@@ -40,8 +40,8 @@ table.lines th.num{text-align:right}
 table.lines td{padding:2.8mm 0 3.2mm;border-bottom:.5pt solid var(--hair);vertical-align:top}
 .c-desc{width:auto}.c-qty,.c-unit,.c-tax{width:31mm}.c-amt{width:27mm}
 .l-title{font-weight:650;font-size:9.4pt}.l-desc{color:var(--soft)}
-.after{margin-top:6mm;align-items:start;break-inside:avoid}
-.after .payc{grid-column:1/4;padding-right:10mm;display:grid;gap:6mm}
+.after{margin-top:6mm;align-items:stretch;break-inside:avoid}
+.after .payc{grid-column:1/4;padding-right:10mm;display:flex;flex-direction:column;justify-content:space-between;gap:6mm}
 .after .totc{grid-column:4/7}
 .t-row{display:flex;justify-content:space-between;gap:4mm;padding:.8mm 0}
 .t-total{border-top:1pt solid var(--ink);margin-top:1.2mm;padding-top:1.8mm;font-weight:700}
@@ -50,11 +50,11 @@ table.lines td{padding:2.8mm 0 3.2mm;border-bottom:.5pt solid var(--hair);vertic
 .pay{display:grid;gap:3mm}
 .pay dl{display:grid;grid-template-columns:auto 1fr;gap:.2mm 4mm;margin:0}
 .pay dt{color:var(--soft)}.pay dd{margin:0}
-.cell{margin-top:5mm;background:var(--brand);color:var(--on);padding:2.2mm}
-.cell .in{border:.5pt solid color-mix(in srgb,var(--on) 45%,transparent);padding:4mm 4mm 4.2mm;min-height:36mm;display:flex;flex-direction:column;justify-content:space-between}
-.cell .top2{display:flex;justify-content:space-between;font-size:7.6pt;font-weight:500;font-stretch:112%;letter-spacing:.06em;text-transform:uppercase}
-.cell .d-value{font-weight:500;font-stretch:118%;font-size:30pt;line-height:1;letter-spacing:-.035em;white-space:nowrap}
-.cell .d-when{font-size:8.2pt;margin-top:1.6mm;opacity:.85}
+.cell{margin-top:5mm;color:var(--on)}
+.cell .top2{background:var(--ink);display:flex;justify-content:space-between;padding:2.2mm 4mm;font-size:7.6pt;font-weight:600;font-stretch:112%;letter-spacing:.06em;text-transform:uppercase}
+.cell .in{background:var(--brand);padding:6mm 4mm 4.4mm;min-height:30mm;display:flex;flex-direction:column;justify-content:flex-end}
+.cell .d-value{font-weight:800;font-stretch:115%;font-size:32pt;line-height:1;letter-spacing:-.035em;white-space:nowrap}
+.cell .d-when{font-size:8.4pt;font-weight:500;margin-top:1.8mm;opacity:.88}
 .notes{display:grid;gap:2.5mm;color:#333}
 .n-title{font-weight:700;color:var(--ink)}
 .legal{margin-top:9mm;padding-top:2.2mm;border-top:.5pt solid var(--hair);color:var(--soft);font-size:7.4pt}
@@ -74,7 +74,7 @@ table.lines td{padding:2.8mm 0 3.2mm;border-bottom:.5pt solid var(--hair);vertic
   <div class="f-dates"><div class="lab">Dates</div><dl class="dates">${v.dates.map((d) => `<dt>${esc(d.label)}</dt><dd>${esc(d.value)}</dd>`).join('')}</dl></div>
 </section>
 ${linesTable(v)}
-<section class="g after"><div class="payc">${paymentBlock(v)}${notesBlock(v)}</div><div class="totc">${totalsBlock(v)}<div class="cell"><div class="in"><div class="top2"><span>${esc(v.amountDue.label)}</span><span>${esc(v.number)}</span></div><div><div class="d-value">${esc(v.amountDue.value)}</div>${v.amountDue.dueLine ? `<div class="d-when">${esc(v.amountDue.dueLine)}</div>` : ''}</div></div></div></div></section>
+<section class="g after"><div class="payc">${paymentBlock(v)}${notesBlock(v)}</div><div class="totc">${totalsBlock(v)}<div class="cell"><div class="top2"><span>${esc(v.amountDue.label)}</span><span>${esc(v.number)}</span></div><div class="in"><div class="d-value">${esc(v.amountDue.value)}</div>${v.amountDue.dueLine ? `<div class="d-when">${esc(v.amountDue.dueLine)}</div>` : ''}</div></div></div></section>
 <footer class="legal keep">${esc(v.seller.companyLine ?? v.legalLine)}${v.seller.companyLine && v.seller.taxLine ? `. ${esc(v.seller.taxLine)}` : ''}</footer>
 `,
 };

@@ -26,14 +26,15 @@ body{font-family:'Hanken Grotesk',sans-serif;font-size:9pt;line-height:1.5;color
 .id .k{color:var(--soft);font-size:8.4pt}
 .id .no{font-weight:600;font-size:13pt;line-height:1.2}
 .summary{margin:9mm 0 8mm;background:var(--tint);border-radius:2mm;display:grid;grid-template-columns:1.15fr .85fr 1.2fr;break-inside:avoid}
-.summary>div{padding:5.5mm 6mm 5.5mm}
+.summary>div{padding:6mm 6mm 6mm}
 .summary>div+div{border-left:.6pt solid color-mix(in oklab,${v.brandColour} 22%,#fff)}
 .lab{font-size:7.8pt;font-weight:600;color:var(--soft);margin-bottom:1.6mm}
-.summary .amt{font-weight:600;font-size:25pt;line-height:1;letter-spacing:-.02em;color:var(--brand);white-space:nowrap}
-.summary .big{font-weight:600;font-size:14pt;line-height:1.15}
+.summary .amt{font-weight:650;font-size:34pt;line-height:1;letter-spacing:-.025em;color:var(--brand);white-space:nowrap}
+.summary .big{font-weight:600;font-size:15pt;line-height:1.15}
 .summary .sub{color:var(--soft);font-size:8.4pt;margin-top:1.4mm}
 .summary .acct{font-size:9.4pt;line-height:1.5}
-.summary .k2{color:var(--soft);font-size:8.2pt}
+.summary .nums{display:grid;grid-template-columns:auto 1fr;gap:.2mm 4mm;margin:1.2mm 0 0}
+.summary .nums dt{color:var(--soft);font-size:8.2pt}.summary .nums dd{margin:0}
 .parties{display:grid;grid-template-columns:1fr 1fr;gap:10mm;margin-bottom:9mm}
 .parties .n{font-weight:600}
 .parties dl{display:grid;grid-template-columns:auto 1fr;gap:.4mm 6mm;margin:0}
@@ -78,7 +79,14 @@ body{font-family:'Hanken Grotesk',sans-serif;font-size:9pt;line-height:1.5;color
   <div><div class="lab">Due</div><div class="big">${esc(v.dates.find((d) => d.label === 'Due')?.value ?? v.amountDue.dueLine ?? '')}</div></div>
   <div><div class="lab">${bank ? 'Pay by bank transfer' : 'How to pay'}</div>${
     bank
-      ? `<div class="acct">${esc([row('Account name'), row('Bank')].filter(Boolean).join(', '))}<br><span class="k2">Sort code</span> <span class="mono">${esc(row('Sort code'))}</span>&emsp;<span class="k2">Account</span> <span class="mono">${esc(row('Account number'))}</span><br><span class="k2">Reference</span> <span class="mono">${esc(row('Reference') ?? v.number)}</span></div>`
+      ? `<div class="acct">${esc([row('Account name'), row('Bank')].filter(Boolean).join(', '))}</div><dl class="nums">${[
+          ['Sort code', row('Sort code')],
+          ['Account', row('Account number')],
+          ['Reference', row('Reference') ?? v.number],
+        ]
+          .filter(([, x]) => x)
+          .map(([l, x]) => `<dt>${esc(l)}</dt><dd class="mono">${esc(x)}</dd>`)
+          .join('')}</dl>`
       : v.paymentLink
         ? `<div class="acct">${esc(v.paymentLink)}</div>`
         : ''

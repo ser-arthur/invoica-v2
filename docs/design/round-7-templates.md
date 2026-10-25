@@ -3,8 +3,8 @@
 25 October 2026. Kobby's notes on the round 6 templates (`round-6-templates.md`), and what changed. These are still
 prototypes in `docs/design/round-6/prototypes`; nothing in the product has changed.
 
-Canvas page: **Invoice templates, round 2**. New directions sit side by side; each rework sits beside its first
-version.
+Canvas pages: **Invoice templates, round 2** (new directions side by side, each rework beside its first version) and
+**Invoice templates, round 3** (section 7: the owner's choices worked in).
 
 ## 1. The notes and what was done
 
@@ -65,3 +65,33 @@ round 6 build plan).
 6. Still open from round 6: static fonts for PDFs. The registration wording was approved on 25 October and fixed on
    `fix/registration-wording` (Scotland for an SC number, Northern Ireland for an NI number); the samples on the canvas
    were rendered before it, so Practice and Heritage still read England and Wales there.
+
+## 7. Third pass: the owner's choices (25 October, afternoon)
+
+The answers, and what was done with them. Canvas page **Invoice templates, round 3**.
+
+1. **Florists, stylists, interiors and weddings** stay one group under Atelier. Atelier (Wilder & Rose) comes back,
+   with its colour used more strongly: the amount due on a solid panel of the business's colour, the job title and the
+   closing line in it, a heavier rule under the letterhead. Shown in rose, emerald and cobalt. Bloom (Marigold Lane) is
+   kept beside it. Arch and Feature are dropped.
+2. **Marquee**: Bricolage in sentence case, with a better colour scheme. The template now makes a second colour from the
+   business's one: the opposite hue, deep on a light colour and pale on a dark one, for the title and the ticket. Shown
+   as tangerine and navy, lime and plum, violet and lemon.
+3. **Billboard** is added beside Mark. The Overcast logo works better on white, so it sits on a white tile on the
+   block of colour.
+4. **The logo's ground**: the business chooses what sits behind its logo wherever a template puts it on a colour
+   (nothing, white, cream, black). Board "What sits behind the logo" shows why: the same logo loses its sun on orange and
+   its cloud on black. For the build: a setting beside the logo upload, stored in the snapshot so an issued invoice keeps
+   the ground it was issued with.
+5. **Grid**: a redder maroon (#951D30); the amount due bold (800) in a block of the colour under a black strip with the
+   label and the number, like a drawing's title block; the inner frame removed; the terms brought down level with the
+   bottom of that block.
+6. **Trade**: approved, with Archivo at its normal width everywhere (the wide labels sat badly with the body text).
+7. **Statement**: approved, with a larger amount due (34 pt) and the bank numbers labelled.
+8. **Practice**: approved as round 2 left it.
+9. **Heritage**: the diamonds and the gold frame replaced by a thick and thin frame in the business's colour, the inner
+   rule curving in at each corner as on a printed label. A second version sets the head as a label in the business's
+   colour, the name and address in cream and the logo on a paper disc.
+
+Still to choose: Heritage plain or with the label; and whether the two-colour Marquee and the logo's ground go into
+the build plan as described.

@@ -4,7 +4,7 @@ import type { ProtoTemplate } from '../lib';
 
 /**
  * Trade: for builders, roofers, electricians, gardeners, cleaners and mechanics. Set like a well-kept van: a charcoal
- * band with the name wide and the phone number in the brand colour, one weight of rule throughout, and the bank
+ * band with the name bold and the phone number in the brand colour, one weight of rule throughout, and the bank
  * details big enough to type straight into a banking app.
  */
 export const trade: ProtoTemplate = {
@@ -17,29 +17,29 @@ export const trade: ProtoTemplate = {
 @page:first{margin-top:0}
 :root{--brand:${v.brandColour};--coal:#1D1F22;--ink:#1D1F22;--soft:#64655f;--rule:#d5d3cc;--panel:#F3F2EE;--w:.75pt}
 body{font-family:'Archivo',sans-serif;font-size:9pt;line-height:1.5;color:var(--ink);font-variant-numeric:lining-nums proportional-nums}
-.wide{font-stretch:125%}
+.wide{font-stretch:100%}
 .band{background:var(--coal);color:#fff;padding:10mm 14mm 9mm;display:grid;grid-template-columns:auto 1fr auto;gap:6mm;align-items:center;border-bottom:2mm solid var(--brand)}
 .badge{width:18mm;height:18mm}
 .badge img{width:100%;height:100%;object-fit:contain}
-.badge .mono{width:100%;height:100%;background:var(--brand);color:var(--coal);display:grid;place-items:center;font-weight:800;font-stretch:125%;font-size:22pt}
-.name{font-weight:800;font-stretch:125%;font-size:20pt;line-height:1;letter-spacing:-.01em}
+.badge .mono{width:100%;height:100%;background:var(--brand);color:var(--coal);display:grid;place-items:center;font-weight:800;font-stretch:100%;font-size:22pt}
+.name{font-weight:800;font-stretch:100%;font-size:22pt;line-height:1;letter-spacing:-.02em}
 .addr{margin-top:1.8mm;font-size:8.4pt;color:#c9c8c2}
 .call{text-align:right}
-.call .ph{font-weight:700;font-stretch:125%;font-size:15pt;line-height:1;color:var(--brand)}
+.call .ph{font-weight:800;font-stretch:100%;font-size:16pt;line-height:1;color:var(--brand)}
 .call .em{font-size:8.4pt;color:#c9c8c2;margin-top:1mm}
 .wrap{padding:0 14mm}
 .idrow{margin:9mm 0 6mm}
-.kind{font-weight:700;font-stretch:125%;font-size:21pt;line-height:1;letter-spacing:-.01em;white-space:nowrap}
+.kind{font-weight:800;font-stretch:100%;font-size:22pt;line-height:1;letter-spacing:-.02em;white-space:nowrap}
 .kind span{font-weight:400;color:var(--soft);margin-left:2.5mm}
 .dates{display:grid;grid-template-columns:auto auto;gap:.6mm 5mm;margin:0;align-content:start}
 .dates dt{color:var(--soft);white-space:nowrap}.dates dd{margin:0;font-weight:600;text-align:right;white-space:nowrap}
-.lab{font-size:7.4pt;font-weight:600;font-stretch:125%;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);margin-bottom:1.6mm}
+.lab{font-size:7.4pt;font-weight:600;font-stretch:100%;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);margin-bottom:1.6mm}
 .pair{display:grid;grid-template-columns:.9fr 1.5fr auto;gap:9mm;border-top:var(--w) solid var(--ink);padding-top:3.5mm;margin-bottom:8mm}
 .pair .n{font-weight:600}
 .extra{color:var(--soft)}
-.job h2{font-weight:700;font-stretch:112%;font-size:12pt;line-height:1.2;margin:0 0 1mm}
+.job h2{font-weight:700;font-stretch:100%;font-size:12pt;line-height:1.2;margin:0 0 1mm}
 .job p{color:#3a3b38}
-table.lines th{font-size:7.4pt;font-weight:600;font-stretch:125%;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);text-align:left;padding:0 0 2.2mm;border-bottom:var(--w) solid var(--ink)}
+table.lines th{font-size:7.4pt;font-weight:600;font-stretch:100%;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);text-align:left;padding:0 0 2.2mm;border-bottom:var(--w) solid var(--ink)}
 table.lines th.num{text-align:right}
 table.lines td{padding:3mm 0;border-bottom:var(--w) solid var(--rule);vertical-align:top}
 table.lines td+td,table.lines th+th{padding-left:6mm}
@@ -50,13 +50,13 @@ table.lines td+td,table.lines th+th{padding-left:6mm}
 .t-total{font-weight:700;border-top:var(--w) solid var(--ink);margin-top:1.2mm;padding-top:2mm}
 .t-payment,.t-note{color:var(--soft)}
 .due{margin-top:4mm;background:var(--brand);color:var(--coal);padding:5mm 6mm 5.5mm}
-.due .d-label{font-size:7.4pt;font-weight:700;font-stretch:125%;letter-spacing:.06em;text-transform:uppercase}
-.due .d-value{font-weight:700;font-stretch:125%;font-size:27pt;line-height:1;letter-spacing:-.02em;margin-top:2mm;white-space:nowrap}
+.due .d-label{font-size:7.4pt;font-weight:700;font-stretch:100%;letter-spacing:.06em;text-transform:uppercase}
+.due .d-value{font-weight:800;font-stretch:100%;font-size:30pt;line-height:1;letter-spacing:-.025em;margin-top:2mm;white-space:nowrap}
 .due .d-when{font-weight:500;margin-top:1.6mm}
 .bank{background:var(--panel);padding:5mm 6mm}
 .bank .big{display:grid;grid-template-columns:auto auto;gap:1mm 9mm;justify-content:start;margin:1mm 0 3.5mm}
 .bank .big span{display:block;font-size:7.6pt;color:var(--soft)}
-.bank .big b{font-weight:700;font-stretch:125%;font-size:15pt;letter-spacing:.01em;line-height:1.15}
+.bank .big b{font-weight:700;font-stretch:100%;font-size:15pt;letter-spacing:.01em;line-height:1.15}
 .bank dl{display:grid;grid-template-columns:auto 1fr;gap:.3mm 5mm;margin:0;font-size:8.6pt}
 .bank dt{color:var(--soft)}.bank dd{margin:0;font-weight:500}
 .bank .link{margin-top:3mm;padding-top:2.5mm;border-top:var(--w) solid var(--rule);font-size:8.6pt}

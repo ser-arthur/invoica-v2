@@ -3,8 +3,9 @@ import { esc, lines, para } from '../../../../../packages/documents/src/template
 import type { ProtoTemplate } from '../lib';
 
 /** The medallion: the logo inside a double ring. */
-function medallion(logo: string | null, name: string, gold: string, colour: string): string {
+function medallion(logo: string | null, name: string, gold: string, colour: string, disc = 'none'): string {
   return `<svg class="medal" viewBox="0 0 200 200" aria-hidden="true">
+<circle cx="100" cy="100" r="89" fill="${disc}"/>
 <circle cx="100" cy="100" r="96" fill="none" stroke="${gold}" stroke-width="2.2"/>
 <circle cx="100" cy="100" r="89" fill="none" stroke="${gold}" stroke-width=".8"/>
 ${Array.from({ length: 48 }, (_, i) => `<line x1="100" y1="6" x2="100" y2="10" stroke="${gold}" stroke-width=".9" transform="rotate(${i * 7.5} 100 100)"/>`).join('')}
@@ -19,31 +20,36 @@ function arch(name: string, colour: string): string {
 <text fill="${colour}" font-family="Cormorant SC" font-weight="700" font-size="${size.toFixed(1)}" letter-spacing="${(size * 0.16).toFixed(1)}" text-anchor="middle"><textPath href="#arc" startOffset="50%">${esc(name.toUpperCase())}</textPath></text></svg>`;
 }
 
-const CORNER = (gold: string, paper: string) =>
-  `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path d='M10 1 L19 10 L10 19 L1 10 Z' fill='${paper}' stroke='${gold}' stroke-width='1.1'/><path d='M10 5.5 L14.5 10 L10 14.5 L5.5 10 Z' fill='${gold}'/></svg>`)}")`;
+/** A quarter circle for one corner of the inner rule, curving in towards the page, as on a printed label. */
+const ARC = (colour: string, corner: 'tl' | 'tr' | 'bl' | 'br') => {
+  const d = { tl: 'M45 0 A45 45 0 0 1 0 45', tr: 'M0 0 A45 45 0 0 0 45 45', bl: 'M45 45 A45 45 0 0 0 0 0', br: 'M0 45 A45 45 0 0 1 45 0' }[corner];
+  return `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 45 45'><path d='${d}' fill='none' stroke='${colour}' stroke-width='2.3'/></svg>`)}")`;
+};
 
 /**
  * Heritage: for distillers, bakers of long standing, barbers, tailors, jewellers and wine merchants. Warm paper inside
- * a gold double frame with a diamond at each corner, the name arched over a medallion like a bottle label, the number
- * in oxblood, and the lines set like a price list with dotted leaders.
+ * a thick and thin frame in the business's colour, the inner rule curving in at the corners like a printed label, the
+ * name arched over a medallion, the number in oxblood, and the lines set like a price list with dotted leaders.
  */
-export const heritage: ProtoTemplate = {
-  id: 'heritage',
-  name: 'Heritage',
+function heritageIn(id: string, name: string, label: boolean): ProtoTemplate {
+  return {
+  id,
+  name,
   fonts: ['Cormorant', 'Cormorant SC', 'EB Garamond'],
   footer: { font: 'EB Garamond', inset: '4mm', color: '#7d7462' },
   css: (v: DocumentView) => {
     const gold = '#A8874A';
     const paper = '#F6EFDF';
-    const c = CORNER(gold, paper);
+    const arc = (k: 'tl' | 'tr' | 'bl' | 'br') => ARC(v.brandColour, k);
+    const g = `linear-gradient(${v.brandColour},${v.brandColour})`;
     return `
 @page{size:A4;margin:10mm 10mm 15mm;background:${paper}}
 :root{--brand:${v.brandColour};--ink:#2a2620;--soft:#6f6654;--gold:${gold};--ox:#7A2430;--paper:${paper};--dot:#bba67a}
 body{font-family:'EB Garamond',serif;font-size:10pt;line-height:1.45;color:var(--ink)}
 .sc{font-family:'Cormorant SC',serif;font-weight:700;letter-spacing:.14em}
-.frame{border:1.1pt solid var(--gold);padding:8mm 15mm 7mm;-webkit-box-decoration-break:clone;box-decoration-break:clone;min-height:268mm;
-background:${c} left -.33mm top -.33mm/5.4mm no-repeat,${c} right -.33mm top -.33mm/5.4mm no-repeat,${c} left -.33mm bottom -.33mm/5.4mm no-repeat,${c} right -.33mm bottom -.33mm/5.4mm no-repeat,
-linear-gradient(var(--gold),var(--gold)) left 2.2mm top 2.2mm/calc(100% - 4.4mm) .35mm no-repeat,linear-gradient(var(--gold),var(--gold)) left 2.2mm bottom 2.2mm/calc(100% - 4.4mm) .35mm no-repeat,linear-gradient(var(--gold),var(--gold)) left 2.2mm top 2.2mm/.35mm calc(100% - 4.4mm) no-repeat,linear-gradient(var(--gold),var(--gold)) right 2.2mm top 2.2mm/.35mm calc(100% - 4.4mm) no-repeat}
+.frame{border:2.4pt solid var(--brand);padding:9mm 15mm 7mm;-webkit-box-decoration-break:clone;box-decoration-break:clone;min-height:268mm;
+background:${arc('tl')} left 1.8mm top 1.8mm/4.5mm no-repeat,${arc('tr')} right 1.8mm top 1.8mm/4.5mm no-repeat,${arc('bl')} left 1.8mm bottom 1.8mm/4.5mm no-repeat,${arc('br')} right 1.8mm bottom 1.8mm/4.5mm no-repeat,
+${g} left 6.3mm top 1.8mm/calc(100% - 12.6mm) .21mm no-repeat,${g} left 6.3mm bottom 1.8mm/calc(100% - 12.6mm) .21mm no-repeat,${g} left 1.8mm top 6.3mm/.21mm calc(100% - 12.6mm) no-repeat,${g} right 1.8mm top 6.3mm/.21mm calc(100% - 12.6mm) no-repeat}
 .top{text-align:center}
 .arch{width:106mm;height:27.8mm;display:block;margin:0 auto -8.6mm}
 .medal{width:24mm;height:24mm;display:block;margin:0 auto 2.4mm}
@@ -86,6 +92,7 @@ linear-gradient(var(--gold),var(--gold)) left 2.2mm top 2.2mm/calc(100% - 4.4mm)
 .notes{text-align:center;margin-top:4mm;font-family:'Cormorant',serif;font-style:italic;font-weight:600;font-size:14pt;color:var(--ox)}
 .small{text-align:center;margin-top:3mm;font-size:9pt;color:var(--soft)}
 .legal{text-align:center;margin-top:3.5mm;font-size:8.4pt;color:var(--soft)}
+${label ? `.top{background:var(--brand);color:#F3EAD3;margin:.5mm -8.5mm 0;padding:3mm 6mm 3.6mm}\n.top .addr{color:rgb(243 234 211 / .82)}\n.top .orn{color:#C9A86A;margin:2.6mm auto 2.2mm}\n.top .kind{color:#F3EAD3}\n.top .no{color:#E9C98B}\n.frame{padding-top:6mm}\n.meta{margin:4mm 0 3mm}\n.top .medal{width:22mm;height:22mm}\n.top .arch{margin-bottom:-8mm}` : ''}
 `;
   },
   body: (v: DocumentView, logo: string | null) => {
@@ -112,8 +119,8 @@ linear-gradient(var(--gold),var(--gold)) left 2.2mm top 2.2mm/calc(100% - 4.4mm)
     return `
 <div class="frame">
 <header class="top">
-  ${arch(v.seller.name, v.brandColour)}
-  ${medallion(logo, v.seller.name, '#A8874A', v.brandColour)}
+  ${arch(v.seller.name, label ? '#F3EAD3' : v.brandColour)}
+  ${medallion(logo, v.seller.name, label ? '#C9A86A' : '#A8874A', v.brandColour, label ? '#F6EFDF' : 'none')}
   <div class="addr">${esc(v.seller.addressLines.join(', '))}<br>${esc(v.seller.contactLines.join(', '))}</div>
   <div class="orn"><i></i></div>
   <div class="title-row"><span class="kind sc">${esc(v.heading)}</span><span class="no">No. ${esc(v.number)}</span></div>
@@ -134,3 +141,8 @@ ${[v.creditNote, v.reverseChargeNote, v.sterlingRateNote, v.terms].filter(Boolea
 `;
   },
 };
+}
+
+export const heritage = heritageIn('heritage', 'Heritage', false);
+/** The same with the head set as a label in the business's colour, the name and the address in cream. */
+export const heritageLabel = heritageIn('heritage-label', 'Heritage, with a label', true);

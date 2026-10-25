@@ -16,10 +16,10 @@ function fit(name: string, width: number, max: number, min: number) {
  * Billboard: for design studios, agencies and developers who want to be loud. The studio's name fills the width of a
  * block of its own colour like a hoarding, and the amount due is the other big thing on the page.
  */
-export const billboard: ProtoTemplate & { logoVariant: string } = {
-  id: 'billboard',
-  name: 'Billboard',
-  logoVariant: '-board',
+function billboardIn(id: string, name: string, tile: string | null): ProtoTemplate {
+  return {
+  id,
+  name,
   fonts: ['Funnel Display', 'Inter Tight'],
   footer: { font: 'Inter Tight', inset: '12mm', color: '#6b6b6b' },
   css: (v: DocumentView) => {
@@ -34,13 +34,14 @@ body{font-family:'Inter Tight',sans-serif;font-size:9pt;line-height:1.5;color:va
 .f{font-family:'Funnel Display',sans-serif}
 .board{background:var(--brand);color:var(--on);padding:10mm 12mm 0;overflow:hidden}
 .board .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10mm;font-size:8.6pt;font-weight:500}
-.board .top img{width:14mm;height:14mm;display:block;margin-bottom:3mm}
+.board .top .lg{display:inline-block;margin-bottom:3mm${tile ? `;background:${tile};border-radius:2.6mm;padding:2.2mm` : ''}}
+.board .top .lg img{width:${tile ? 13 : 15}mm;height:${tile ? 13 : 15}mm;display:block}
 .board .top .r{text-align:right}
 .board .ct span{margin-right:4mm;white-space:nowrap}
 .board .top .r b{display:block;font-family:'Funnel Display';font-weight:800;font-size:18pt;line-height:1.1;letter-spacing:-.02em}
-.board .name{font-family:'Funnel Display';font-weight:800;font-size:${size.toFixed(2)}mm;line-height:.8;letter-spacing:${TRACK}em;margin:${size > 30 ? 9 : 6}mm 0 0;padding-bottom:${(size * (/[gjpqy,]/.test(v.seller.name) ? 0.2 : 0.05)).toFixed(2)}mm;white-space:${size > 20 ? 'nowrap' : 'normal'}}
+.board .name{font-family:'Funnel Display';font-weight:800;font-size:${size.toFixed(2)}mm;line-height:.8;letter-spacing:${TRACK}em;margin:${size > 30 ? 6 : 5}mm 0 0;padding-bottom:${(size * (/[gjpqy,]/.test(v.seller.name) ? 0.2 : 0.05)).toFixed(2)}mm;white-space:${size > 20 ? 'nowrap' : 'normal'}}
 .wrap{padding:0 12mm}
-.open{display:grid;grid-template-columns:1fr 66mm;gap:12mm;margin:8mm 0 6mm}
+.open{display:grid;grid-template-columns:1fr 66mm;gap:12mm;margin:7mm 0 6mm}
 .open h1{font-family:'Funnel Display';font-weight:800;font-size:22pt;line-height:1.05;letter-spacing:-.025em;margin:0}
 .open p{margin:2mm 0 0;font-size:10pt;color:var(--soft);max-width:110mm}
 .lab{font-weight:600;font-size:7.6pt;color:var(--soft);margin-bottom:1mm}
@@ -61,7 +62,7 @@ table.lines td+td,table.lines th+th{padding-left:6mm}
 .t-payment,.t-note{color:var(--soft)}
 .notes{display:grid;gap:3mm;font-size:8.8pt}
 .n-title{font-weight:600;font-size:7.6pt;color:var(--soft);margin-bottom:.6mm}
-.due{margin-top:7mm;background:var(--ink);color:#f2f2f2;display:grid;grid-template-columns:1fr 70mm;gap:10mm;padding:8mm 9mm;break-inside:avoid}
+.due{margin-top:6mm;background:var(--ink);color:#f2f2f2;display:grid;grid-template-columns:1fr 70mm;gap:10mm;padding:7mm 9mm;break-inside:avoid}
 .due .lab{color:#9a9a9a}
 .due .amt{font-family:'Funnel Display';font-weight:800;font-size:46pt;line-height:.95;letter-spacing:-.035em;color:var(--brand);white-space:nowrap}
 .due .when{margin-top:2mm;font-weight:500}
@@ -77,7 +78,7 @@ table.lines td+td,table.lines th+th{padding-left:6mm}
     return `
 <header class="board">
   <div class="top">
-    <div>${logo ? `<img src="${esc(logo)}" alt="">` : ''}<div>${esc(v.seller.addressLines.join(', '))}</div><div class="ct">${v.seller.contactLines.map((c) => `<span>${esc(c)}</span>`).join('')}</div></div>
+    <div>${logo ? `<span class="lg"><img src="${esc(logo)}" alt=""></span>` : ''}<div>${esc(v.seller.addressLines.join(', '))}</div><div class="ct">${v.seller.contactLines.map((c) => `<span>${esc(c)}</span>`).join('')}</div></div>
     <div class="r">${esc(v.heading)}<b>${esc(v.number)}</b></div>
   </div>
   <div class="name word">${esc(v.seller.name)}</div>
@@ -99,3 +100,10 @@ ${linesTable(v)}
 `;
   },
 };
+}
+
+/** The logo on a white tile: the business chooses what sits behind its logo, and white suits most. */
+export const billboard = billboardIn('billboard', 'Billboard', '#ffffff');
+export const billboardNone = billboardIn('billboard-none', 'Billboard, logo on the colour', null);
+export const billboardCream = billboardIn('billboard-cream', 'Billboard, logo on cream', '#F6EFE2');
+export const billboardBlack = billboardIn('billboard-black', 'Billboard, logo on black', '#111111');

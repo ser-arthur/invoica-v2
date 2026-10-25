@@ -26,6 +26,18 @@ export const LOGOS: Record<string, (brand: string) => string> = {
 <g fill="#F4F1EC"><rect x="34" y="104" width="18" height="62" rx="9"/><rect x="62" y="72" width="18" height="94" rx="9"/><rect x="90" y="40" width="18" height="126" rx="9"/><rect x="118" y="84" width="18" height="82" rx="9"/></g>
 <rect x="146" y="58" width="18" height="108" rx="9" fill="${b}"/>
 </svg>`,
+  // A sprig: one stem, five leaves.
+  atelier: (b) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<g fill="none" stroke="${b}" stroke-width="4.5" stroke-linecap="round">
+<path d="M100 186 C 100 140, 96 100, 104 22"/>
+</g>
+<g fill="${b}">
+<path d="M101 150 C 76 150, 58 136, 52 118 C 76 116, 94 128, 101 150 Z"/>
+<path d="M100 120 C 124 120, 142 106, 148 88 C 124 86, 106 98, 100 120 Z"/>
+<path d="M100 92 C 78 90, 64 74, 62 56 C 84 58, 98 72, 100 92 Z"/>
+<path d="M102 64 C 120 62, 134 48, 136 32 C 118 34, 104 46, 102 64 Z"/>
+<ellipse cx="104" cy="22" rx="7" ry="11"/>
+</g></svg>`,
   // A plan: a square with an L-shaped room taken out.
   grid: (b) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
 <path d="M0 0 H200 V200 H0 Z M100 100 H200 V200 H100 Z" fill="#141414" fill-rule="evenodd"/>

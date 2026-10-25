@@ -13,6 +13,62 @@ export function contrast(a: string, b: string) {
   return (x! + 0.05) / (y! + 0.05);
 }
 
+
+/** sRGB hex to OKLCH (lightness 0 to 1, chroma, hue in degrees). */
+function oklch(hex: string): [number, number, number] {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const lin = (x: number) => (x / 255 <= 0.04045 ? x / 255 / 12.92 : ((x / 255 + 0.055) / 1.055) ** 2.4);
+  const [r, g, b] = [lin((n >> 16) & 255), lin((n >> 8) & 255), lin(n & 255)];
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const q = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * q;
+  const A = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * q;
+  const B = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * q;
+  return [L, Math.hypot(A, B), ((Math.atan2(B, A) * 180) / Math.PI + 360) % 360];
+}
+
+/** OKLCH to sRGB hex, taking chroma down until the colour fits in sRGB. */
+function hexOf(L: number, C: number, H: number): string {
+  for (let c = C; c >= 0; c -= 0.005) {
+    const a = c * Math.cos((H * Math.PI) / 180);
+    const b = c * Math.sin((H * Math.PI) / 180);
+    const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+    const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+    const q = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+    const rgb = [
+      4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * q,
+      -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * q,
+      -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * q,
+    ];
+    if (rgb.every((x) => x >= -0.0005 && x <= 1.0005)) {
+      const enc = (x: number) => {
+        const v = Math.min(1, Math.max(0, x));
+        const s = v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055;
+        return Math.trunc(s * 255 + 0.5).toString(16).padStart(2, '0');
+      };
+      return `#${rgb.map(enc).join('')}`;
+    }
+  }
+  return L > 0.5 ? '#ffffff' : '#000000';
+}
+
+/**
+ * A second colour for the poster, from the business's one colour: the opposite hue, deep on a light colour and pale on
+ * a dark one. On a light colour the ticket is that deep tone and the amount is in the business's colour; on a dark one
+ * the ticket is a deep tone of the business's own hue and the amount is in the pale one.
+ */
+export function duo(brand: string) {
+  const [L, , H] = oklch(brand);
+  const opp = (H + 180) % 360;
+  if (L > 0.62) {
+    const ink = hexOf(0.27, 0.11, opp);
+    return { ink, ticket: ink, amount: brand };
+  }
+  const ink = hexOf(0.94, 0.12, opp);
+  return { ink, ticket: hexOf(0.2, 0.07, H), amount: ink };
+}
+
 interface Voice {
   id: string;
   name: string;
@@ -23,6 +79,8 @@ interface Voice {
   /** CSS for the smaller display uses: the number, the amount. */
   figure: string;
   fonts: string[];
+  /** Two colours from the one: the type and the ticket in the opposite hue. */
+  duo?: boolean;
 }
 
 /**
@@ -37,12 +95,14 @@ function marqueeIn(o: Voice): ProtoTemplate & { brand: string } {
     fonts: [...o.fonts, 'Manrope'],
     footer: { font: 'Manrope', inset: '0' },
     css: (v: DocumentView) => {
-      const on = v.onBrand;
-      // The amount on the ticket is in the brand colour when it stands out on the ticket's near black, else white.
-      const amt = contrast(v.brandColour, '#141414') >= 3 ? v.brandColour : '#ffffff';
+      const pair = o.duo ? duo(v.brandColour) : null;
+      const on = pair?.ink ?? v.onBrand;
+      const ticket = pair?.ticket ?? '#141414';
+      // Without a second colour, the amount on the ticket is in the brand colour when it stands out on the near black.
+      const amt = pair?.amount ?? (contrast(v.brandColour, '#141414') >= 3 ? v.brandColour : '#ffffff');
       return `
 @page{size:A4;margin:12mm 12mm 17mm}
-:root{--brand:${v.brandColour};--on:${on};--ink:#141414;--soft:#5c5c5c;--line:#e2ded7;--amt:${amt}}
+:root{--brand:${v.brandColour};--on:${on};--ink:#141414;--soft:#5c5c5c;--line:#e2ded7;--amt:${amt};--ticket:${ticket}}
 body{font-family:'Manrope',sans-serif;font-size:9.2pt;line-height:1.5;color:var(--ink)}
 .d{font-family:'${o.display}',sans-serif}
 .poster{background:var(--brand);color:var(--on);border-radius:3mm;padding:8mm 9mm 7mm;break-inside:avoid}
@@ -76,18 +136,18 @@ table.lines td+td,table.lines th+th{padding-left:5mm}
 .notes{display:grid;gap:3mm;font-size:8.8pt;color:#333}
 .n-title{font-weight:800;font-size:7.6pt;color:var(--soft);margin-bottom:.6mm}
 .ticket{margin-top:7mm;break-inside:avoid}
-.stub{position:relative;display:grid;grid-template-columns:1.05fr 1.3fr 48mm;background:var(--ink);color:#f4f1ec;border-radius:3mm}
+.stub{position:relative;display:grid;grid-template-columns:1.05fr 1.3fr 48mm;background:var(--ticket);color:#f4f1ec;border-radius:3mm}
 .stub>div{padding:7mm 0 7mm 8mm}
-.stub>div:last-child{padding:7mm 8mm 7mm 8mm;border-left:1.4pt dashed #5c5c5c}
+.stub>div:last-child{padding:7mm 8mm 7mm 8mm;border-left:1.4pt dashed rgb(255 255 255 / .3)}
 .notch{position:absolute;right:48mm;width:8mm;height:8mm;margin-right:-4mm;border-radius:50%;background:#fff}
 .notch.t{top:-4mm}.notch.b{bottom:-4mm}
-.stub .lab{color:#a9a39a}
+.stub .lab{color:rgb(255 255 255 / .62)}
 .stub .amt{${o.figure};font-size:27pt;line-height:1.05;color:var(--amt);white-space:nowrap}
-.stub .when{margin-top:1.5mm;color:#d9d4cc;font-size:8.8pt}
+.stub .when{margin-top:1.5mm;color:rgb(255 255 255 / .84);font-size:8.8pt}
 .stub dl{display:grid;grid-template-columns:auto 1fr;gap:.4mm 4mm;margin:0;font-size:8.4pt}
-.stub dt{color:#a9a39a}.stub dd{margin:0}
+.stub dt{color:rgb(255 255 255 / .62)}.stub dd{margin:0}
 .stub .no{${o.figure};font-size:14pt;color:#f4f1ec}
-.stub .link{margin-top:2mm;font-size:8.4pt;color:#d9d4cc;overflow-wrap:anywhere}
+.stub .link{margin-top:2mm;font-size:8.4pt;color:rgb(255 255 255 / .84);overflow-wrap:anywhere}
 .legal{margin:5mm 1mm 0;font-size:7.6pt;color:var(--soft)}
 `;
     },
@@ -152,3 +212,14 @@ export const marqueeC = marqueeIn({
   figure: "font-family:'Bricolage Grotesque';font-weight:800;letter-spacing:-.03em",
   fonts: ['Bricolage Grotesque'],
 });
+
+const BRICOLAGE = {
+  display: 'Bricolage Grotesque',
+  title: "font-family:'Bricolage Grotesque';font-weight:800;font-size:42pt;line-height:.92;letter-spacing:-.045em",
+  figure: "font-family:'Bricolage Grotesque';font-weight:800;letter-spacing:-.03em",
+  fonts: ['Bricolage Grotesque'],
+  duo: true,
+};
+export const marqueeTangerine = marqueeIn({ id: 'marquee-tangerine', name: 'Marquee, tangerine and navy', brand: '#FF7A1A', ...BRICOLAGE });
+export const marqueeLime = marqueeIn({ id: 'marquee-lime', name: 'Marquee, lime and plum', brand: '#C6F03A', ...BRICOLAGE });
+export const marqueeViolet = marqueeIn({ id: 'marquee-violet', name: 'Marquee, violet and lemon', brand: '#5B2BFF', ...BRICOLAGE });

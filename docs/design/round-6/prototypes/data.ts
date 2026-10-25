@@ -200,6 +200,31 @@ const B: Record<string, (template: string) => DocumentSnapshot> = {
       due: '2026-11-18',
       supply: '2026-10-17',
     }),
+  atelier: (t) =>
+    make(t, {
+      number: 'WR-0261',
+      lineStyle: 'quantity',
+      seller: {
+        name: 'Wilder & Rose',
+        email: 'hello@wilderandrose.co.uk',
+        phone: '07700 900537',
+        website: 'wilderandrose.co.uk',
+        address: addr('The Old Dairy, 6 Walcot Yard', 'Bath', 'BA1 5BG'),
+        brandColour: '#C52A55',
+      },
+      bank: { name: 'Metro Bank', sort: '23-05-80', account: '41827369' },
+      buyer: { name: 'Amelia Hartley and Tom Reyes', address: ['4 Sion Hill', null, 'Bath', 'BA1 2UH'] },
+      title: 'Wedding styling at Prior Park, Saturday 26 September',
+      summary: 'Flowers, tablescapes and candlelight for ninety guests, set on the morning and cleared that night.',
+      lines: [
+        { title: 'Ceremony flowers', description: 'Meadow aisle and two urn arrangements', quantity: 1000, unitPrice: 78_000 },
+        { title: 'Tablescapes', description: 'Linen, low flowers and place names', quantity: 12_000, unit: 'tables', unitPrice: 6_500 },
+        { title: 'Candles and glassware hire', quantity: 1000, unitPrice: 24_000 },
+        { title: 'Styling consultations', quantity: 2000, unit: 'meetings', unitPrice: 6_000 },
+      ],
+      notes: 'Thank you for having us. It was a beautiful day.',
+      deposit: { label: 'Deposit paid', amount: 40_000, paidOn: '2026-03-12' },
+    }),
   bloom: (t) =>
     make(t, {
       number: 'ML-0458',
@@ -350,7 +375,7 @@ const B: Record<string, (template: string) => DocumentSnapshot> = {
         phone: '020 7946 0815',
         website: 'hollislane.co.uk',
         address: addr('Studio 4, 12 Cremer Street', 'London', 'E2 8HD'),
-        brandColour: '#6E1A2A',
+        brandColour: '#951D30',
       },
       bank: { name: 'HSBC UK', sort: '40-02-50', account: '88174206' },
       buyer: { name: 'Ana and Tom Okafor', address: ['14 Elm Row', null, 'London', 'N16 7QS'] },
