@@ -57,7 +57,7 @@ body{font-family:'Space Mono',monospace;font-size:8.6pt;line-height:1.55;color:v
 .addr{margin-top:2.5mm;font-size:8pt;line-height:1.5}
 .ident{text-align:right}
 .kind{font-family:'Syne';font-weight:700;font-size:10pt}
-.no{position:relative;font-family:'Syne';font-weight:800;font-size:${fitPt(v.number, 80, 0.78, 30, 14)}pt;line-height:1;letter-spacing:-.02em;color:var(--pink);white-space:nowrap}
+.no{position:relative;font-family:'Syne';font-weight:800;font-size:${fitPt(v.number, 80, 0.78, 30, 14)}pt;line-height:1;letter-spacing:-.02em;color:var(--pinkt);white-space:nowrap}
 .rule{height:0;border-top:1.6pt solid var(--blue);margin:6mm 0 5mm}
 .meta{display:grid;grid-template-columns:1fr 1fr;gap:8mm}
 .lab{font-family:'Syne';font-weight:700;font-size:8.6pt;color:var(--pinks);margin-bottom:1mm;mix-blend-mode:multiply}
