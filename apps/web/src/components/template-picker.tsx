@@ -58,7 +58,7 @@ function Filter<T extends string>({
             value={o.id}
             checked={value === o.id}
             onChange={() => onChange(o.id)}
-            className="sr-only"
+            className="absolute inset-0 m-0 cursor-pointer appearance-none rounded-full opacity-0"
           />
           {o.name}
         </label>
