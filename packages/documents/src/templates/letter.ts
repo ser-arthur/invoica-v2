@@ -19,7 +19,7 @@ body{font-family:'Newsreader',serif;font-size:10.6pt;line-height:1.5;color:#2220
 .top.logo~.sign,.top.logo~.pay,.top.logo~.small{margin-top:4mm}
 .from .addr{font-size:9.4pt;color:#5d5850;margin-top:2mm}
 .meta{text-align:right;font-size:9.6pt;color:#5d5850;min-width:0;overflow-wrap:anywhere}
-.meta strong{color:#22201c;font-weight:600}
+.meta strong{display:inline-block;color:#22201c;font-weight:600;font-size:12.5pt;line-height:1.3;margin-bottom:.8mm}
 .to{margin-bottom:7mm}
 .dear{margin:0 0 4mm}
 .body p{margin:0 0 3mm;max-width:150mm}
@@ -41,7 +41,7 @@ table.lines td+td,table.lines th+th{padding-left:4mm}
 .pay{margin-top:6mm;padding-top:2.6mm;border-top:.4pt solid #cfc8bb;font-size:9.8pt;max-width:150mm;break-inside:avoid}
 .pay .h{font-style:italic;color:#6d675e}
 .sign{margin-top:6mm;break-inside:avoid}
-.sign .n{font-style:italic;font-size:15pt;color:${v.brandColour}}
+.sign .n{font-style:italic;font-size:19pt;line-height:1.25;color:${v.brandColour}}
 .small{margin-top:6mm;font-size:8.8pt;color:#6d675e;max-width:150mm}
 `,
   body: (v: DocumentView, logo: string | null) => {
