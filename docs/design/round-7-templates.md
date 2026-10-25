@@ -62,5 +62,6 @@ round 6 build plan).
 3. Studios: add Billboard beside Mark?
 4. Grid, Trade, Statement, Practice and Heritage: approved, or more notes?
 5. Logos on dark grounds: a white tile, or ask for a light version?
-6. Still open from round 6: the registration wording for Scottish and Northern Irish companies (Practice and Heritage
-   show it: both are SC companies printed as registered in England and Wales), and static fonts for PDFs.
+6. Still open from round 6: static fonts for PDFs. The registration wording was approved on 25 October and fixed on
+   `fix/registration-wording` (Scotland for an SC number, Northern Ireland for an NI number); the samples on the canvas
+   were rendered before it, so Practice and Heritage still read England and Wales there.

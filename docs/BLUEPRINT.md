@@ -148,6 +148,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **25 Oct, about 13:40 to 14:30.** The owner's notes on the round 6 templates, worked through as prototypes in `docs/design/round-7-templates.md` and on the canvas page "Invoice templates, round 2": Sticker kept, a new Riso logo, Marquee in three pairings, three directions in place of Atelier (Bloom, Arch, Feature), Billboard beside Mark, and Grid, Trade, Statement, Practice and Heritage reworked beside their first versions. Real-looking sample details throughout. Nothing in the product changed. Bundle 31.
 
+- **25 Oct, about 14:30 to 14:45.** The owner approved the registration wording: Scotland for an SC company number, Northern Ireland for an NI number, England and Wales for the rest. On `fix/registration-wording`, from `main`. Bundle 32.
+
 ## Decisions in force
 
 | Record | Title | Status |
@@ -217,7 +219,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 2. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
 3. The domain to buy, then the sending subdomain for Resend.
 4. Answered 23 October: the repository is `ser-arthur/invoica-v2`, and commits are authored as Kobby S. Arthur <kobbyarthur95@gmail.com>.
-5. Which invoice templates ship in v1: the round 6 range is proposed in `docs/design/round-6-templates.md` (canvas page "Invoice templates"), with five more decisions at its end (the line, the app below the hero, retiring four templates, the Scottish and Northern Irish registration wording, static fonts for PDFs). The second pass, after the owner's notes, is `docs/design/round-7-templates.md` (canvas page "Invoice templates, round 2"), with six decisions at its end: which florist and wedding direction, which Marquee pairing, Billboard, the five reworks, and logos on dark grounds.
+5. Which invoice templates ship in v1: the round 6 range is proposed in `docs/design/round-6-templates.md` (canvas page "Invoice templates"), with five more decisions at its end (the line, the app below the hero, retiring four templates, the Scottish and Northern Irish registration wording, answered and fixed on 25 October, and static fonts for PDFs). The second pass, after the owner's notes, is `docs/design/round-7-templates.md` (canvas page "Invoice templates, round 2"), with six decisions at its end: which florist and wedding direction, which Marquee pairing, Billboard, the five reworks, and logos on dark grounds.
 6. Approve or change 0003, 0006 and 0007.
 7. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
 8. Approve a plan for the R5-L1 four-taxes refusal (`HANDOVER.md`, "Open finding"): how a credit note that settles a balance shares its tax across the components when one would go below zero.
