@@ -120,6 +120,89 @@ const addr = (line1: string, city: string, postcode: string, line2: string | nul
  * made up; the telephone numbers come from the ranges Ofcom keeps for drama, which are never given to anyone.
  */
 const B: Record<string, (template: string) => DocumentSnapshot> = {
+  signature: (t) =>
+    make(t, {
+      number: 'LA-0214',
+      lineStyle: 'quantity',
+      vat: 'GB 318 4472 06',
+      seller: {
+        name: 'Larkspur Analytics',
+        legalName: 'Larkspur Analytics Ltd',
+        businessType: 'limited_company',
+        companyNumber: '14582093',
+        email: 'accounts@larkspuranalytics.co.uk',
+        phone: '0161 496 0283',
+        website: 'larkspuranalytics.co.uk',
+        address: addr('Unit 4, 22 Brunswick Street', 'Manchester', 'M1 3EH'),
+        brandColour: '#17795a',
+      },
+      bank: { name: 'Lloyds Bank', sort: '30-96-41', account: '58204417' },
+      buyer: { name: 'Ferrow Housing Association', contactName: 'Priya Nair, Head of Assets', address: ['3 Station Approach', null, 'Stockport', 'SK1 1YN'] },
+      title: 'Stock condition data, phase two',
+      summary: 'Survey data from 1,240 homes cleaned, joined to repairs history and built into the asset dashboard.',
+      reference: 'PO 88173',
+      lines: [
+        { title: 'Data cleaning and matching', description: 'Survey returns joined to the repairs log by property', quantity: 4_000, unit: 'days', unitPrice: 62_000 },
+        { title: 'Asset dashboard build', description: 'Condition, cost to fix and priority by estate', quantity: 3_000, unit: 'days', unitPrice: 62_000 },
+        { title: 'Training for the asset team', quantity: 2_000, unit: 'sessions', unitPrice: 45_000 },
+        { title: 'Hosting, October to December', quantity: 1000, unitPrice: 36_000 },
+      ],
+      terms: 'Payment within 30 days of the invoice date, please.',
+      issue: '2026-10-19',
+      due: '2026-11-18',
+    }),
+  letter: (t) =>
+    make(t, {
+      number: 'JP-026',
+      lineStyle: 'amount',
+      seller: {
+        name: 'Joanna Pryce',
+        email: 'joanna@joannapryce.co.uk',
+        phone: '07700 900418',
+        website: 'joannapryce.co.uk',
+        address: addr('Flat 2, 17 Clarendon Road', 'Leeds', 'LS2 9NZ'),
+        brandColour: '#1F5C5B',
+      },
+      bank: { name: 'Starling Bank', sort: '60-83-71', account: '29134471' },
+      buyer: { name: 'Kestrel Freight Ltd', contactName: 'Daniel Okafor', address: ['4 Canal Wharf', null, 'Leeds', 'LS11 5PS'] },
+      title: 'Coaching in September and October',
+      summary: 'Three sessions on leading the depot teams through the move, and the profile we talked through on 10 October.',
+      lines: [
+        { title: 'Coaching session, 90 minutes', quantity: 1000, unitPrice: 28_000, serviceDate: '2026-09-12' },
+        { title: 'Coaching session, 90 minutes', quantity: 1000, unitPrice: 28_000, serviceDate: '2026-09-26' },
+        { title: 'Leadership profile and debrief', quantity: 1000, unitPrice: 35_000, serviceDate: '2026-10-10' },
+        { title: 'Coaching session, 90 minutes', quantity: 1000, unitPrice: 28_000, serviceDate: '2026-10-17' },
+      ],
+      issue: '2026-10-19',
+      due: '2026-11-02',
+    }),
+  ticket: (t) =>
+    make(t, {
+      number: 'HCW-2291',
+      lineStyle: 'quantity',
+      vat: 'GB 274 6610 39',
+      seller: {
+        name: 'Hartley Cycle Works',
+        email: 'shop@hartleycycles.co.uk',
+        phone: '01632 960482',
+        website: 'hartleycycles.co.uk',
+        address: addr('14 Mill Lane', 'Hebden Bridge', 'HX7 8AB'),
+        brandColour: '#D9482B',
+      },
+      bank: { name: 'Nationwide', sort: '07-04-36', account: '61873302' },
+      buyer: { name: 'Mel Townsend', address: ['3 Birchcliffe Road', null, 'Hebden Bridge', 'HX7 8DB'] },
+      title: 'Service and parts',
+      lines: [
+        { title: 'Full service', description: 'Gravel bike, frame no. GR-4410', quantity: 1000, unitPrice: 7_000 },
+        { title: 'Chain, 11 speed', quantity: 1000, unitPrice: 2_750 },
+        { title: 'Cassette, 11 to 34', quantity: 1000, unitPrice: 4_000 },
+        { title: 'Brake pads, pair', quantity: 2_000, unitPrice: 1_150 },
+        { title: 'Inner tube, 700 x 40', quantity: 2_000, unitPrice: 625 },
+      ],
+      notes: 'Ride safe. Bring it back for a free check after 100 miles.',
+      issue: '2026-10-19',
+      due: '2026-10-26',
+    }),
   sticker: (t) =>
     make(t, {
       number: 'CK-0112',
@@ -508,5 +591,8 @@ const B: Record<string, (template: string) => DocumentSnapshot> = {
 
 /** Template id to its business; variants of a template share their business. */
 export const BUSINESSES: Record<string, (template: string) => DocumentSnapshot> = new Proxy(B, {
-  get: (target, id: string) => target[id] ?? target[id.replace(/-[a-z0-9]+$/, '')],
+  get: (target, id: string) => {
+    for (let k = id; k; k = k.replace(/-?[a-z0-9]+$/, '')) if (target[k]) return target[k];
+    return undefined;
+  },
 });
