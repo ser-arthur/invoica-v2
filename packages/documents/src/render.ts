@@ -10,6 +10,7 @@ import { letter } from './templates/letter';
 import { ticket } from './templates/ticket';
 import { sticker } from './templates/sticker';
 import { riso } from './templates/riso';
+import { marquee } from './templates/marquee';
 import { buildView } from './view';
 
 export const TEMPLATES = {
@@ -22,6 +23,7 @@ export const TEMPLATES = {
   ticket,
   sticker,
   riso,
+  marquee,
 } as const;
 export type TemplateId = keyof typeof TEMPLATES;
 
