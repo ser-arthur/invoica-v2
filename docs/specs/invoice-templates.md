@@ -68,6 +68,10 @@ Each new family is added to `packages/documents/fonts` with its licence file (al
 one), latin and latin-ext, and to `FACES` in `fonts.ts`. They stay variable fonts in this change, as the existing seven
 templates use today; static fonts for PDFs are a separate change (round 6, finding 1).
 
+The files are the Fontsource builds (version 5.3), used as they are. One licence declares a Reserved Font Name: Mona
+Sans reserves "Mona", which matters only to someone who modifies the font and publishes it; we do neither. If static
+fonts are cut from it later, the cut files cannot be called Mona.
+
 ## Acceptance criteria
 
 Each is a test. Templates in `packages/documents/test` and `packages/pdf/test`; colours in `packages/core/test`; data
@@ -107,7 +111,10 @@ in `packages/db/test`; settings and the picker in `apps/web` and `e2e`.
 Not in this change: static fonts for PDFs, the payment link as a real link, the website's templates section, the line
 down How it works and the app below the hero.
 
-## For the owner
+## Answered by the owner, 25 October 2026
 
-1. Retire Studio, Poster, Counsel and Ledger from the picker (issued documents keep them)?
-2. This plan, as written?
+1. Studio, Poster, Counsel and Ledger leave the picker; issued documents keep them.
+2. The plan as written, with one addition: after the twelve, a design pass on Signature, Letter and Ticket to bring
+   them up to the new range, shown on the canvas for approval before it is built. The picker's sample details (the
+   client, the bank) are made real-looking at the same time, with account, company and VAT numbers that fail their
+   check digits so none can be real.
