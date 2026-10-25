@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildView, renderDocumentHtml, lineTaxLabel, TEMPLATE_LIST } from '../src/index';
+import { buildView, renderDocumentHtml, lineTaxLabel, TEMPLATE_LIST, TEMPLATES } from '../src/index';
 import { FIXTURES } from './fixtures';
 
 const fontUrl = (f: string) => `/fonts/${f}`;
@@ -89,10 +89,10 @@ describe('reverse charge note (review L7)', () => {
 });
 
 describe('rendering', () => {
-  it('renders every fixture with each of the seven templates and escapes text', () => {
+  it('renders every fixture with every template, offered or retired, and escapes text', () => {
     expect(TEMPLATE_LIST).toHaveLength(7);
     for (const [name, s] of Object.entries(FIXTURES)) {
-      for (const { id: template } of TEMPLATE_LIST) {
+      for (const template of Object.keys(TEMPLATES)) {
         const html = renderDocumentHtml(
           { ...s, template, buyer: { ...s.buyer, name: `${s.buyer.name} <b>&</b>` } },
           { fontUrl },

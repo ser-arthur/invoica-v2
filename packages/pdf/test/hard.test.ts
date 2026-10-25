@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium, type Browser } from 'playwright-core';
 import { formatMoney, type DocumentSnapshot } from '@invoica/core';
-import { TEMPLATE_LIST, renderDocumentHtml } from '@invoica/documents';
+import { TEMPLATES as ALL, renderDocumentHtml } from '@invoica/documents';
 import { closePdfRenderer, fontDataUrl, renderPdf } from '../src/index';
 import { CURRENCIES, HARD } from '../../documents/test/hard-fixtures';
 
@@ -16,7 +16,8 @@ import { CURRENCIES, HARD } from '../../documents/test/hard-fixtures';
 
 const executablePath = process.env.CHROMIUM_PATH || undefined;
 const dir = mkdtempSync(join(tmpdir(), 'invoica-hard-'));
-const TEMPLATES = TEMPLATE_LIST.map((t) => t.id);
+/** Every template a document can be in: those offered and those retired from the picker. */
+const TEMPLATES = Object.keys(ALL);
 /** A4 at 96 pixels to the inch. */
 const A4_WIDTH = 794;
 
