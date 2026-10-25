@@ -58,8 +58,9 @@ describe('PDF of record', () => {
       let examined = 0;
       for (let p = 1; p <= pages; p++) {
         const text = pdfText(path, p);
-        // Every page that carries lines repeats the table heading; the ticket template lists lines without one.
-        if (template !== 'ticket' && p < pages) expect(text, `page ${p}`).toMatch(/Description/i);
+        // Every page that carries lines repeats the table heading; Ticket and Heritage list lines without one.
+        if (template !== 'ticket' && template !== 'heritage' && p < pages)
+          expect(text, `page ${p}`).toMatch(/Description/i);
         expect(text, `page ${p}`).toContain(`Page ${p} of ${pages}`);
         examined += 1;
       }
