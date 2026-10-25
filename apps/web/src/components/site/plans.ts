@@ -40,7 +40,7 @@ export const PLANS: Plan[] = [
     cta: 'Start your 30 days free',
     features: [
       { text: 'Unlimited clients' },
-      { text: 'All seven templates, with your logo and colour' },
+      { text: 'All fifteen templates, with your logo and colour' },
       { text: 'No Invoica mark on your documents' },
       { text: 'Reminders that follow up late payers for you' },
       { text: 'Payment links', soon: true },

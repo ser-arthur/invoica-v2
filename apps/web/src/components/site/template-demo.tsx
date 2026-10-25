@@ -24,7 +24,7 @@ const fontUrl = (f: string) => `/doc-fonts/${f}`;
 export function TemplateDemo({ left, right }: { left: string; right: string }) {
   const [name, setName] = useState('');
   const [colour, setColour] = useState(COLOURS[0]!.value);
-  const [template, setTemplate] = useState('studio');
+  const [template, setTemplate] = useState('billboard');
   const deferredName = useDeferredValue(name);
   const html = useMemo(
     () =>
@@ -37,7 +37,7 @@ export function TemplateDemo({ left, right }: { left: string; right: string }) {
       ),
     [deferredName, colour, template],
   );
-  const layout = TEMPLATE_LIST.find((t) => t.id === template)?.name ?? 'Studio';
+  const layout = TEMPLATE_LIST.find((t) => t.id === template)?.name ?? 'Billboard';
   return (
     <>
       <form className={s.demo} onSubmit={(event) => event.preventDefault()}>
@@ -98,7 +98,7 @@ export function TemplateDemo({ left, right }: { left: string; right: string }) {
         aria-label={`An example invoice in the ${layout} layout, in front of two others`}
       >
         <div className={s.fanInner}>
-          <Paper html={left} width={240} title="Counsel layout" className={s.fanLeft} />
+          <Paper html={left} width={240} title="Practice layout" className={s.fanLeft} />
           <Paper html={html} width={260} title={`${layout} layout`} className={s.fanMiddle} />
           <Paper html={right} width={240} title="Letter layout" className={s.fanRight} />
         </div>

@@ -6,9 +6,9 @@ const fontUrl = (f: string) => `/doc-fonts/${f}`;
 
 /** Three real invoices in different layouts, the one in front redrawn with the visitor's own name and colour. */
 export function Templates() {
-  const counsel = renderDocumentHtml(
+  const practice = renderDocumentHtml(
     sampleSnapshot({
-      template: 'counsel',
+      template: 'practice',
       seller: {
         name: 'Harrow & Vale',
         brandColour: '#1d3c5a',
@@ -28,7 +28,7 @@ export function Templates() {
         <div className={s.templatesText}>
           <span className={s.label}>Templates</span>
           <h2 id="templates-heading" className={`${s.display} ${s.h2}`}>
-            <span className={s.keep}>Seven layouts.</span>{' '}
+            <span className={s.keep}>Fifteen layouts.</span>{' '}
             <span className={s.keep}>Your logo, your colour.</span>
           </h2>
           <p className={s.lead}>
@@ -36,7 +36,7 @@ export function Templates() {
             invoice after that carries the same look, so your clients come to know it as yours.
           </p>
         </div>
-        <TemplateDemo left={counsel} right={letter} />
+        <TemplateDemo left={practice} right={letter} />
       </div>
     </section>
   );

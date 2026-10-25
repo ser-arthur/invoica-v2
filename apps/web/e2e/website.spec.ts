@@ -148,8 +148,8 @@ test('the template demo redraws the invoice with the name, colour and layout cho
   const section = page.locator('#templates');
   await section.getByLabel('Business name').fill('Fernhill Joinery');
   await section.getByRole('radio', { name: 'Navy' }).check();
-  await section.getByRole('radio', { name: 'Ledger' }).check();
-  const preview = section.locator('iframe[title="Ledger layout"]');
+  await section.getByRole('radio', { name: 'Grid' }).check();
+  const preview = section.locator('iframe[title="Grid layout"]');
   await expect(preview).toHaveAttribute('srcdoc', /Fernhill Joinery/);
   await expect(preview).toHaveAttribute('srcdoc', /#1d3c5a/i);
 });
