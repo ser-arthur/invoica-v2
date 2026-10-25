@@ -103,6 +103,25 @@ in `packages/db/test`; settings and the picker in `apps/web` and `e2e`.
 12. Pages are accessible: the picker's choices are labelled, and the new settings are reachable and named for screen
     readers (`e2e/accessibility.spec.ts`).
 
+13. Every template fits the three short fixtures on one page with a wide logo and with a square one
+    (`packages/pdf/test/pdf.test.ts`).
+14. Signature shows the amount due on a slip of the brand colour, its corner turned, before the parties and the lines
+    (`packages/documents/test/kept-templates.test.ts`).
+15. Ticket ends with a stub after a perforation holding the amount due, the bank details and the reference; the band
+    with the amount due sits inside the paper's margins, on a grey page (the same test, and approved images).
+16. Letter keeps its layout, with the invoice and its number and the name under "With thanks" set larger (approved
+    images).
+
+## Signature, Letter and Ticket
+
+The design pass (`docs/design/round-8-kept-templates.md`, canvas page "Signature, Letter and Ticket") as the owner
+chose it: Signature as the second pass; Letter as it was, with the invoice and its number and the signed name larger;
+Ticket as the second pass, with the amount due band inside the paper's margins and the grey page kept. Letter keeps
+speaking in the first person.
+
+They change in place, under the same ids. No invoice has been issued with them outside development yet. A document
+issued before the change keeps its snapshot and its kept PDF; only its view on screen takes the new look.
+
 ## Order of work
 
 1. This spec, approved.
@@ -124,3 +143,6 @@ down How it works and the app below the hero.
    them up to the new range, shown on the canvas for approval before it is built. The picker's sample details (the
    client, the bank) are made real-looking at the same time, with account, company and VAT numbers that fail their
    check digits so none can be real.
+3. 25 October, 17:05, on the design pass: Signature as the second pass, shown in a business's own colour (indigo on
+   the canvas); Letter as it was, with the signed name, the invoice and its number larger; Ticket as the second pass
+   with the band inside the paper's margins and the grey page kept; Letter speaks in the first person.
