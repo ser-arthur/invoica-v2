@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyEntitlements, currentPlan, entitlementsFor, INVOICA_COLOUR } from '../src/plans';
+import { secondColour } from '../src/colours';
 
 /** Acceptance criteria: docs/specs/plans.md. */
 
@@ -48,12 +49,25 @@ describe('criteria 4 and 5: what a document shows', () => {
     seller: { brandColour: '#4338ca', logoFileId: 'logo-1', name: 'Field Office' },
   };
 
-  it('on the free plan: Signature, Invoica colour, no logo, and the mark', () => {
+  it('on the free plan: Signature, Invoica colour and its second colour, no logo, and the mark', () => {
     expect(applyEntitlements(doc, entitlementsFor('free'))).toEqual({
       template: 'signature',
-      seller: { brandColour: INVOICA_COLOUR, logoFileId: null, name: 'Field Office' },
+      seller: {
+        brandColour: INVOICA_COLOUR,
+        accentColour: secondColour(INVOICA_COLOUR),
+        logoFileId: null,
+        name: 'Field Office',
+      },
       madeWithInvoica: true,
     });
+  });
+
+  it('on the free plan, a business’s own second colour gives way to Invoica’s (invoice templates, criterion 10)', () => {
+    const own = { ...doc, seller: { ...doc.seller, accentColour: '#2b0b3f' } };
+    expect(applyEntitlements(own, entitlementsFor('free')).seller.accentColour).toBe(
+      secondColour(INVOICA_COLOUR),
+    );
+    expect(applyEntitlements(own, entitlementsFor('pro')).seller.accentColour).toBe('#2b0b3f');
   });
 
   it('on the trial: unchanged, without the mark', () => {

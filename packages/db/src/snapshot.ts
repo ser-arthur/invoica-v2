@@ -3,6 +3,7 @@ import {
   type CreditTaken,
   type Entitlements,
   assembleSnapshot,
+  secondColour,
   type DocumentSnapshot,
   type DocumentTotals,
   type SnapshotLineSource,
@@ -54,6 +55,8 @@ export function sellerFrom(org: Organisation): DocumentSnapshot['seller'] {
     taxRegistered: org.taxRegistered,
     taxNumber: org.taxNumber,
     brandColour: org.brandColour,
+    accentColour: org.accentColour ?? secondColour(org.brandColour),
+    logoGround: org.logoGround,
     logoFileId: org.logoFileId,
   };
 }

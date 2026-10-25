@@ -145,6 +145,17 @@ export const organisationProfileInput = z.object({
   creditNotePrefix: prefix,
   numberPadding: z.number().int().min(1).max(8),
   brandColour: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Choose a colour.'),
+  /** The business's own second colour; null or empty for one worked out from the brand colour. */
+  accentColour: z.preprocess(
+    (v) => (v === '' ? null : v),
+    z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/, 'Choose a colour, or automatic.')
+      .transform((v) => v.toLowerCase())
+      .nullable()
+      .optional(),
+  ),
+  logoGround: z.enum(['none', 'white', 'cream', 'black']).default('white'),
   defaultTemplate: z.string().min(1).max(40),
   paymentDetails: paymentDetailsInput,
   defaultNotes: optionalText(2000),

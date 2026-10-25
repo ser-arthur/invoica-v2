@@ -5,8 +5,10 @@ import {
   formatQuantity,
   formatRate,
   mustShowLineDetail,
+  secondColour,
   sumMinor,
   type DocumentSnapshot,
+  type LogoGround,
   type PartyAddress,
   type SnapshotLine,
   type TaxCode,
@@ -67,6 +69,10 @@ export interface DocumentView {
   brandColour: string;
   /** Text colour that reads on the brand colour. */
   onBrand: string;
+  /** The second colour, for large type and grounds: the business's own or worked out from the brand colour. */
+  accentColour: string;
+  /** What sits behind the logo where a template sets it on a colour. */
+  logoGround: LogoGround;
   currency: string;
 }
 
@@ -351,6 +357,8 @@ export function buildView(s: DocumentSnapshot, options: { draft?: boolean } = {}
     legalLine: [companyLine ?? legalName ?? seller.name, taxLine].filter(Boolean).join('. '),
     brandColour: seller.brandColour,
     onBrand: readableOn(seller.brandColour),
+    accentColour: seller.accentColour ?? secondColour(seller.brandColour),
+    logoGround: seller.logoGround ?? 'white',
     currency: s.currency,
   };
 }

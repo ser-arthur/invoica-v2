@@ -1,3 +1,4 @@
+import { secondColour } from './colours';
 /** Plans and what each allows (decision 0005, docs/specs/plans.md). */
 
 export type Plan = 'trial' | 'free' | 'pro' | 'studio';
@@ -46,7 +47,14 @@ export function applyEntitlements<
   return {
     ...doc,
     template: e.ownTemplate ? doc.template : 'signature',
-    seller: e.ownBrand ? doc.seller : { ...doc.seller, brandColour: INVOICA_COLOUR, logoFileId: null },
+    seller: e.ownBrand
+      ? doc.seller
+      : {
+          ...doc.seller,
+          brandColour: INVOICA_COLOUR,
+          accentColour: secondColour(INVOICA_COLOUR),
+          logoFileId: null,
+        },
     madeWithInvoica: e.mark,
   };
 }
