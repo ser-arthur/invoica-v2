@@ -6,7 +6,10 @@ const VAT20: TaxCode = {
   components: [{ name: 'VAT', ratePpm: 200_000, compound: false }],
 };
 
-/** An invented invoice for showing templates: on the home page, and in Settings with the business's own details. */
+/**
+ * An invented invoice for showing templates in Settings, with the business's own details. The client and the bank look
+ * real and belong to no one: the account number fails the Vocalink modulus check for its sort code.
+ */
 export function sampleSnapshot(options: {
   template: string;
   seller?: Partial<DocumentSnapshot['seller']>;
@@ -18,15 +21,15 @@ export function sampleSnapshot(options: {
     legalName: null,
     businessType: 'sole_trader',
     companyNumber: null,
-    email: 'hello@fieldoffice.example',
+    email: 'hello@fieldoffice.co.uk',
     phone: null,
     website: null,
     address: {
-      line1: '12 Example Yard',
+      line1: 'Studio 2, 18 Brunswick Yard',
       line2: null,
       city: 'Bristol',
       region: null,
-      postcode: 'BS1 4XX',
+      postcode: 'BS2 8PF',
       countryCode: 'GB',
     },
     taxRegistered: false,
@@ -117,9 +120,9 @@ export function sampleSnapshot(options: {
     paymentDetails: {
       bank: {
         accountName: seller.name,
-        bankName: 'Example Bank',
-        sortCode: '00-00-00',
-        accountNumber: '00000000',
+        bankName: 'Monzo Business',
+        sortCode: '04-00-75',
+        accountNumber: '47290156',
       },
     },
     credits: null,
