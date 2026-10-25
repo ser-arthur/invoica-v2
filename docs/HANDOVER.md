@@ -56,6 +56,16 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+25 October 2026, about 18:15 to 19:30, `feat/website-showcase` (from `feat/invoice-templates`), the owner's notes on the website at 18:14, 18:22 and 18:27 (`docs/specs/website-showcase.md`):
+- The templates section is a shelf of six as designed, each made out by its own invented business: Signature (Larkspur Analytics), Billboard (Overcast), Atelier in rose (Wilder & Rose), Marquee (Night Shift Sound), Trade (Kestrel Roofing) and Riso (Odd Hours Press), which took Heritage's place at the owner's word. Choosing one, by pointer, tap or keyboard, brings it to the front. On phones the six sit in a row to swipe through.
+- "Try it with your business": a business name and eight chosen colours (no colour picker on the website; the app has the full one) redraw all six, and "Back to the examples" puts them back. "See all fifteen" opens the whole range.
+- The six businesses look real and belong to no one: VAT numbers fail both HMRC check schemes, account numbers fail the Vocalink modulus check for their sort code (the tables valid from 17 October 2026), company numbers are 29 million or more, phone numbers come from Ofcom's drama ranges. `packages/documents/test/public-samples.test.ts` holds every public sample to it; the picker's sample business has new details for the same reason.
+- Heritage set a long business name past the end of its arch, so letters went missing (what the owner saw in a preview). The arch now sizes the name from the typeface's letter widths, and a PDF test fails any template whose text runs past its curve.
+- The hero plays one sequence on load, inside two seconds: the header settles, the headline's lines rise whole, the crease draws up from its foot with the grey following its tip, then the facts, the sentence and the buttons, then the slabs. Both copies of the headline share one front, so no letter is ever cut. `e2e/motion.spec.ts` holds the sequence still and steps through it every 40 ms. With less motion asked for, nothing on the site moves on load.
+- On phones the header holds the logo and the menu, and "Create free account" is the menu's last item (the hero keeps its own button). Body text is 16 px and the hero's sentence 19 px; labels and the two facts keep their sizes.
+- Checks: 841 unit, database and PDF tests run, 841 passed, 0 failed, 0 skipped (core 257, schemas 7, documents 48, PDF 191, database 239, web unit 99); format, copy rules, lint, types and the production build pass. The end-to-end suite against the production build, run from a copy elsewhere with production settings, ran 244: 170 passed, 74 skipped by design (one width only), 0 failed. The commit after it changes documents only.
+- Bundle 36.
+
 25 October 2026, about 17:05 to 18:00, `feat/invoice-templates`, the owner's choices on the design pass for the three kept templates (`docs/specs/invoice-templates.md`, "Signature, Letter and Ticket"):
 - Signature is the second pass: the amount due first, on a slip of the business's colour with its corner turned, one row of facts, the parties, the lines, how to pay beside the totals. Shown on the canvas in indigo.
 - Letter keeps its layout, with the invoice and its number and the name under "With thanks" set larger. It keeps speaking in the first person.

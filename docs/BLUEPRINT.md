@@ -157,6 +157,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **25 Oct, about 17:05 to 18:00.** The owner's choices on the three kept templates, built: Signature's second pass (the amount due first, on a slip with its corner turned), Letter as it was with the number and signed name larger, Ticket's second pass (a till roll on grey with a stub to pay from, the band inside the paper's margins). 833 unit, database and PDF tests and 232 end-to-end tests run, none failed (72 skipped by design). Bundle 35.
 
+- **25 Oct, about 18:15 to 19:30.** The website after the new range, on `feat/website-showcase`: the templates section is a shelf of six as designed (Riso in Heritage's place), each made out by its own invented business with details that belong to no one, redrawn as the visitor's with a name and eight colours, with all fifteen a click away. Heritage's arch fits long names. The hero plays one sequence on load (header, headline, the crease drawn up from its foot, then the rest); on phones the way in moves into the menu and body text steps down to 16 px. 841 unit, database and PDF tests and 244 end-to-end tests run, none failed (74 skipped by design). Bundle 36.
+
 ## Decisions in force
 
 | Record | Title | Status |
