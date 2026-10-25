@@ -211,6 +211,20 @@
   color: var(--night);
 }
 
+/* The way in, last in the menu: shown on phones, where the header has no room for it. */
+.site .menuPanel .menuWayIn {
+  display: none;
+  margin-top: 6px;
+  background: var(--night);
+  color: #ffffff;
+  text-align: center;
+}
+
+.site .menuPanel .menuWayIn:hover {
+  background: #17302f;
+  color: #ffffff;
+}
+
 .srOnly {
   position: absolute;
   width: 1px;
@@ -293,7 +307,21 @@
 
 /* The crease: one diagonal fold across a headline (components/site/crease.tsx, geometry in fold.ts) */
 
+/*
+ * The front where the far finish begins, a height across the headline (crease.tsx sets the ends of its travel).
+ * At rest it sits at the top of the drawn line, so the far copy covers everything past the fold; loading the home
+ * page, it rises with the line from its foot. `--crease-sweep` runs from 0, the foot, to 1, at rest.
+ */
+@property --crease-sweep {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
 .crease {
+  --crease-sweep: 1;
+  --crease-front: calc(var(--crease-from) + (var(--crease-to) - var(--crease-from)) * var(--crease-sweep));
+  --crease-front-x: calc(var(--crease-xa) + var(--crease-xb) * var(--crease-front));
   position: relative;
   display: inline-block;
 }
@@ -305,11 +333,23 @@
   pointer-events: none;
 }
 
+/*
+ * The heading itself is clipped to the near side, so its dark edges never show around the far side's letters. The
+ * two clips share the fold and the front, and run well past the box so descenders change finish too.
+ */
 .creaseText {
   display: flex;
   flex-direction: column;
   margin: 0;
   padding-bottom: 0.2em;
+  clip-path: polygon(
+    -30% -30%,
+    130% -30%,
+    130% var(--crease-front),
+    var(--crease-front-x) var(--crease-front),
+    var(--crease-foot) 130%,
+    -30% 130%
+  );
 }
 
 /*
@@ -327,14 +367,24 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  clip-path: polygon(
+    var(--crease-front-x) var(--crease-front),
+    130% var(--crease-front),
+    130% 130%,
+    var(--crease-foot) 130%
+  );
 }
 
+/* The line shows below the front, its leading end soft, a little ahead of the far finish. */
 .creaseLine {
+  --crease-tip: calc((var(--crease-front) + var(--crease-extend)) * var(--crease-k));
   position: absolute;
   left: 0;
   width: 100%;
   overflow: visible;
   pointer-events: none;
+  -webkit-mask-image: linear-gradient(transparent calc(var(--crease-tip) - 5%), #000 var(--crease-tip));
+  mask-image: linear-gradient(transparent calc(var(--crease-tip) - 5%), #000 var(--crease-tip));
 }
 
 .heroType {
@@ -1893,44 +1943,72 @@
 
 @media (prefers-reduced-motion: no-preference) {
   /*
-   * Load: the headline's two sides come in from opposite directions as two pieces, each cut along the crease,
-   * and close the gap between them; the crease draws across as they meet, the slabs grow and the rest settles in.
+   * Load, once, inside two seconds: the header settles, the headline's lines rise whole (both copies together, so no
+   * letter is ever cut), the crease draws up from its foot with the grey following its tip, then the facts, the
+   * sentence and the buttons settle and the slabs rise, left to right.
    */
-  .heroHead .creaseText {
-    animation: slideNear 1150ms var(--ease) both;
+  .arrive .brand,
+  .arrive .nav a,
+  .arrive .account {
+    animation: drop 560ms var(--ease) both;
   }
-  .heroHead .creasePast {
-    animation-name: slideFar;
+  .arrive .nav a:nth-child(1) {
+    animation-delay: 60ms;
   }
-  .heroHead .creaseLine {
-    animation: draw 900ms var(--ease) 560ms both;
+  .arrive .nav a:nth-child(2) {
+    animation-delay: 100ms;
   }
-  .heroFacts,
-  .heroStatement,
+  .arrive .nav a:nth-child(3) {
+    animation-delay: 140ms;
+  }
+  .arrive .nav a:nth-child(4) {
+    animation-delay: 180ms;
+  }
+  .arrive .account {
+    animation-delay: 230ms;
+  }
+  .heroHead .creaseText > span {
+    animation: rise 760ms var(--ease) 150ms both;
+  }
+  .heroHead .creaseText > span:nth-child(2) {
+    animation-delay: 240ms;
+  }
+  .heroHead .creaseText > span:nth-child(3) {
+    animation-delay: 330ms;
+  }
+  .heroHead .crease {
+    animation: sweep 900ms cubic-bezier(0.65, 0, 0.35, 1) 700ms both;
+  }
+  .heroFacts {
+    animation: settle 650ms var(--ease) 950ms both;
+  }
+  .heroStatement {
+    animation: settle 650ms var(--ease) 1000ms both;
+  }
   .heroActions {
-    animation: settle 700ms var(--ease) 520ms both;
+    animation: settle 650ms var(--ease) 1050ms both;
   }
   .slab {
     transform-origin: bottom;
-    animation: grow 820ms var(--ease) both;
+    animation: grow 720ms var(--ease) both;
   }
   .slab:nth-child(1) {
-    animation-delay: 420ms;
+    animation-delay: 950ms;
   }
   .slab:nth-child(2) {
-    animation-delay: 490ms;
+    animation-delay: 1000ms;
   }
   .slab:nth-child(3) {
-    animation-delay: 560ms;
+    animation-delay: 1050ms;
   }
   .slab:nth-child(4) {
-    animation-delay: 630ms;
+    animation-delay: 1100ms;
   }
   .slab:nth-child(5) {
-    animation-delay: 700ms;
+    animation-delay: 1150ms;
   }
   .slab:nth-child(6) {
-    animation-delay: 770ms;
+    animation-delay: 1200ms;
   }
 
   /* The shelf's cards move to and from the front. */
@@ -2056,12 +2134,23 @@
   }
 }
 
-@keyframes slideNear {
+@keyframes drop {
   from {
     opacity: 0;
-    transform: translateX(-0.45em);
+    transform: translateY(-10px);
   }
-  35% {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.34em);
+  }
+  28% {
     opacity: 1;
   }
   to {
@@ -2070,26 +2159,12 @@
   }
 }
 
-@keyframes slideFar {
+@keyframes sweep {
   from {
-    opacity: 0;
-    transform: translateX(0.45em);
-  }
-  35% {
-    opacity: 1;
+    --crease-sweep: 0;
   }
   to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes draw {
-  from {
-    clip-path: inset(-30% 120% -30% -30%);
-  }
-  to {
-    clip-path: inset(-30% -30% -30% -30%);
+    --crease-sweep: 1;
   }
 }
 
@@ -2310,14 +2385,14 @@
   .brand {
     font-size: 30px;
   }
+  /* On phones the header holds the logo and the menu; the way in is the menu's last item. */
   .nav,
-  .signIn {
+  .signIn,
+  .headerButton {
     display: none;
   }
-  .headerButton {
-    height: 40px;
-    padding: 0 14px;
-    font-size: 14px;
+  .site .menuPanel .menuWayIn {
+    display: block;
   }
   .hero {
     --hs: 13vw;
@@ -2327,6 +2402,8 @@
   }
   .heroStatement {
     margin-top: 28px;
+    font-size: 19px;
+    line-height: 1.3;
   }
   .journeyTrack {
     display: none;
@@ -2369,8 +2446,9 @@
   .stepHeading {
     font-size: 30px;
   }
-  .lead {
-    font-size: 17px;
+  .lead,
+  .pillarBody {
+    font-size: 16px;
   }
   .howIntro,
   .pillars {

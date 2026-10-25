@@ -119,13 +119,18 @@ test('the footer carries the planned pages and the ways in', async ({ page }) =>
   }
 });
 
-test('the header stays in view while the page scrolls under it', async ({ page }) => {
+test('the header stays in view while the page scrolls under it', async ({ page }, info) => {
   await page.goto('/');
   await page.evaluate(() => window.scrollTo(0, 2400));
   const banner = page.getByRole('banner');
   const box = (await banner.boundingBox())!;
   expect(box.y).toBe(0);
-  await expect(banner.getByRole('link', { name: 'Create free account' })).toBeInViewport();
+  // On a phone the way in is in the menu.
+  const way =
+    info.project.name === 'phone'
+      ? banner.locator('summary')
+      : banner.getByRole('link', { name: 'Create free account' });
+  await expect(way).toBeInViewport();
 });
 
 test('the itemised invoice says the first 30 days are free, and leads to the plans', async ({ page }) => {
@@ -237,4 +242,39 @@ test('all fifteen are a click away, named, in the picker’s order', async ({ pa
   await expect(all.locator('strong')).toHaveText(FIFTEEN);
   await section.getByRole('button', { name: 'Hide the fifteen' }).click();
   await expect(all).toBeHidden();
+});
+
+test('on a phone the header holds the logo and the menu, and the menu holds both ways in', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'phone', 'Checked at phone widths.');
+  await page.goto('/');
+  const banner = page.getByRole('banner');
+  await expect(banner.getByRole('link')).toHaveCount(1);
+  await expect(banner.getByRole('link')).toHaveAttribute('href', '/');
+  await banner.locator('summary').click();
+  const menu = banner.getByRole('navigation', { name: 'Menu' });
+  await expect(menu.getByRole('link', { name: 'Create free account' })).toHaveAttribute('href', '/sign-up');
+  await expect(menu.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/sign-in');
+  // The hero keeps its own button.
+  await expect(page.locator('main').getByRole('link', { name: 'Create your free account' })).toBeVisible();
+});
+
+test('on a phone body text is 16 pixels and the hero’s sentence 19', async ({ page }, info) => {
+  test.skip(info.project.name !== 'phone', 'Checked at phone widths.');
+  await page.goto('/');
+  const size = (text: string) =>
+    page
+      .getByText(text)
+      .first()
+      .evaluate((el) => getComputedStyle(el).fontSize);
+  expect(await size('Look established from day one')).toBe('19px');
+  for (const text of [
+    'Pick the layout that suits your work',
+    'Every invoice follows the same five steps',
+    'Add your logo and colour once',
+    'Record payments in full or in parts',
+  ]) {
+    expect(await size(text), text).toBe('16px');
+  }
 });

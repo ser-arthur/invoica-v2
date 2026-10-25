@@ -33,7 +33,8 @@ The whole sequence is under two seconds. With reduced motion asked for, the page
 ## On phones
 
 - The header holds the logo and the menu only; "Create free account" moves into the menu. The hero's own button stays.
-- Type steps down on phones: body text 16 px, the hero's sentence 19 px, labels 13 px.
+- Type steps down on phones: body text 16 px and the hero's sentence 19 px. Labels (12 px capitals) and the hero's two
+  facts (14 px) keep their sizes.
 
 ## Sample details in public
 

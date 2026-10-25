@@ -20,7 +20,7 @@ export default async function HomePage() {
   if (await isSignedIn()) redirect('/dashboard');
   return (
     <div className={s.site}>
-      <SiteHeader />
+      <SiteHeader arrive />
       <main>
         <Hero />
         <AppSheet />
