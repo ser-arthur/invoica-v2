@@ -8,9 +8,10 @@ import { ledger } from './templates/ledger';
 import { poster } from './templates/poster';
 import { letter } from './templates/letter';
 import { ticket } from './templates/ticket';
+import { sticker } from './templates/sticker';
 import { buildView } from './view';
 
-export const TEMPLATES = { signature, studio, counsel, ledger, poster, letter, ticket } as const;
+export const TEMPLATES = { signature, studio, counsel, ledger, poster, letter, ticket, sticker } as const;
 export type TemplateId = keyof typeof TEMPLATES;
 
 export const TEMPLATE_LIST: { id: TemplateId; name: string; description: string }[] = [
@@ -72,7 +73,7 @@ export function renderDocumentHtml(snapshot: DocumentSnapshot, options: RenderOp
   const footer = pageFooterCss(
     `${view.heading} ${view.number}`,
     template.footer.font,
-    '#6b746f',
+    'color' in template.footer ? template.footer.color : '#6b746f',
     template.footer.inset,
   );
   const css = `${fontFaceCss(template.fonts, options.fontUrl)}\n${BASE_CSS}\n${template.css(view)}\n${footer}`;
