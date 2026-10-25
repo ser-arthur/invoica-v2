@@ -28,7 +28,13 @@ Kept: **Signature** (the default, and the free plan's), **Letter** and **Ticket*
 exactly as before, so they stay in `TEMPLATES`.
 
 The picker shows each template with the business's own name, logo, colour and details, as today, with filters by kind
-of business and by feel (playful, in between, grounded).
+of business and by feel (playful, in between, grounded). It lists Signature first, then the twelve in the order above,
+then Letter and Ticket. A setting or a draft still on a retired template keeps it, and the picker and the editor say so.
+
+Logos come in every shape. A logo at least 1.4 times as wide as it is tall is set as a wordmark where a template would
+frame it in a circle: Sticker's sticker becomes a pill across the top of the card, Heritage sets it under the arch in
+place of the medallion, and Riso sets it beside the number with the name below. The templates read the shape from the
+image itself (PNG, JPEG or WebP, the types the upload takes).
 
 ## The second colour
 
@@ -48,7 +54,7 @@ stays black or white by the rule we have (`readableOn`), so it keeps a contrast 
 
 ## The logo's ground
 
-Where a template puts the logo on a colour (Billboard, Trade, Practice), the business chooses what sits behind it:
+Where a template puts the logo on a colour (Marquee, Billboard, Trade, Practice), the business chooses what sits behind it:
 nothing, white, cream or black. White by default. Set in Settings beside the logo upload, with a preview of the logo on
 each.
 
