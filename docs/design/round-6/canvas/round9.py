@@ -1,4 +1,4 @@
-"""The fourth templates page: Signature, Letter and Ticket, as they are and after a design pass."""
+"""The fourth templates page: Signature, Letter and Ticket, as they were and as built after the owner's choices."""
 import json
 from common import write, esc, R6
 
@@ -26,19 +26,18 @@ def board(name, title, cols):
 
 
 B = [
-    board('K4Signature', 'Signature, now and after a design pass', [
-        ('k4-sig-now', 'Signature now', 'The amount due at the foot; with this much on it, a second page'),
-        ('k4-sig', 'Signature, second pass', 'The amount due first, on a slip with its corner turned like Invoica’s mark; in Invoica’s green, as on the free plan'),
-        ('k4-sig-indigo', 'In a business’s own colour', 'The same invoice in indigo'),
+    board('K4Signature', 'Signature, as it was and as built', [
+        ('k4-sig-now', 'Signature as it was', 'The amount due at the foot; with this much on it, a second page'),
+        ('k5-sig-indigo', 'Signature as built', 'The amount due first, on a slip of the business’s colour with its corner turned; here in indigo'),
     ]),
-    board('K4Letter', 'Letter, now and after a design pass', [
-        ('k4-let-now', 'Letter now', 'As it is'),
-        ('k4-let', 'Letter, second pass', 'A letterhead, fold marks, the address where a window envelope shows it, sessions by date, how to pay as a P.S.'),
+    board('K4Letter', 'Letter, as it was and as built', [
+        ('k4-let-now', 'Letter as it was', 'The layout you chose to keep'),
+        ('k5-let', 'Letter as built', 'The invoice and its number larger, and the name under “With thanks”'),
     ]),
-    board('K4Ticket', 'Ticket, now and after a design pass', [
-        ('k4-tic-now', 'Ticket now', 'As it is'),
-        ('k4-tic', 'Ticket, second pass', 'A till roll torn from the printer, the amount due on a band of the shop’s colour, a stub to pay from'),
-        ('k4-tic-teal', 'In another colour', 'The same receipt in teal'),
+    board('K4Ticket', 'Ticket, as it was and as built', [
+        ('k4-tic-now', 'Ticket as it was', 'A receipt in a bordered column'),
+        ('k5-tic', 'Ticket as built', 'The till roll on grey, the amount due band inside the paper’s margins'),
+        ('k5-tic-teal', 'In another colour', 'The same receipt in teal'),
     ]),
 ]
 json.dump(B, open(f'{R6}/gen/round9.json', 'w'))

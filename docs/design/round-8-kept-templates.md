@@ -5,6 +5,11 @@ needed bringing up to the same standard. They did: beside the new range they rea
 the canvas page **Signature, Letter and Ticket** (each one as it is beside the second pass). Nothing in the product has
 changed; once approved, each is built the way the twelve were (`docs/specs/invoice-templates.md`).
 
+**Answered and built, 25 October, 17:05.** Signature as the second pass, shown on the canvas in indigo. Letter as it
+was, with the invoice and its number and the name under "With thanks" larger. Ticket as the second pass, with the
+amount due band inside the paper's margins and the grey page kept. Letter keeps speaking in the first person. The
+canvas page now shows each as it was beside it as built (`built.ts` renders them from the product).
+
 The prototypes are in `docs/design/round-6/prototypes/t` (`signature2.ts`, `letter2.ts`, `ticket2.ts`), with three
 more invented businesses in `data.ts` and their marks in `logos.ts`; `before.ts` renders the three as they are today
 with the same businesses. The canvas boards come from `docs/design/round-6/canvas/round9.py`.
