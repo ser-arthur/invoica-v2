@@ -143,13 +143,98 @@ test('the itemised invoice says the first 30 days are free, and leads to the pla
   await expect(banner.getByRole('link', { name: 'Pricing' })).toHaveAttribute('href', '/pricing');
 });
 
-test('the template demo redraws the invoice with the name, colour and layout chosen', async ({ page }) => {
+// docs/specs/website-showcase.md
+
+const SIX = ['Signature', 'Billboard', 'Atelier', 'Marquee', 'Trade', 'Riso'];
+const BUSINESSES = [
+  'Larkspur Analytics',
+  'Overcast',
+  'Wilder & Rose',
+  'Night Shift Sound',
+  'Kestrel Roofing',
+  'Odd Hours Press',
+];
+const FIFTEEN = [
+  'Signature',
+  'Sticker',
+  'Riso',
+  'Marquee',
+  'Atelier',
+  'Bloom',
+  'Mark',
+  'Billboard',
+  'Grid',
+  'Trade',
+  'Statement',
+  'Practice',
+  'Heritage',
+  'Letter',
+  'Ticket',
+];
+/** As the business name appears inside an invoice's HTML. */
+const inHtml = (text: string) =>
+  new RegExp(text.replace(/&/g, '&amp;').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+
+test('the templates shelf shows six as designed, and brings the one chosen to the front', async ({
+  page,
+}, info) => {
   await page.goto('/');
   const section = page.locator('#templates');
+  const shelf = section.getByRole('group', { name: 'Templates' });
+  const cards = shelf.getByRole('radio');
+  await expect(cards).toHaveCount(6);
+  for (const [i, name] of SIX.entries()) {
+    await expect(cards.nth(i)).toHaveAccessibleName(`${name}, made out by ${BUSINESSES[i]}`);
+    await expect(shelf.locator('iframe').nth(i)).toHaveAttribute('srcdoc', inHtml(BUSINESSES[i]!));
+  }
+  await expect(cards.nth(1)).toBeChecked();
+
+  // On a wide screen the cards overlap, the nearer one on top: Trade shows its right-hand edge. On a phone they sit
+  // in a row.
+  const trade = shelf.locator('label').nth(4);
+  if (info.project.name === 'phone') await trade.click();
+  else {
+    const box = (await trade.boundingBox())!;
+    await trade.click({ position: { x: box.width - 16, y: box.height / 2 } });
+  }
+  await expect(cards.nth(4)).toBeChecked();
+  await expect(section.getByText('Builders, roofers, electricians and cleaners')).toBeVisible();
+
+  await cards.nth(4).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(cards.nth(5)).toBeChecked();
+  await expect(section.getByText('Illustrators, printers, zines and labels')).toBeVisible();
+});
+
+test('a name or a colour redraws all six as yours, and they go back to the examples', async ({ page }) => {
+  await page.goto('/');
+  const section = page.locator('#templates');
+  const frames = section.getByRole('group', { name: 'Templates' }).locator('iframe');
+  const colours = section.getByRole('group', { name: 'Colour' }).getByRole('radio');
+  await expect(colours).toHaveCount(8);
+  for (const name of ['Forest', 'Orange', 'Navy', 'Plum', 'Teal', 'Rose', 'Lemon', 'Charcoal']) {
+    await expect(section.getByRole('radio', { name, exact: true })).toBeAttached();
+  }
+
   await section.getByLabel('Business name').fill('Fernhill Joinery');
-  await section.getByRole('radio', { name: 'Navy' }).check();
-  await section.getByRole('radio', { name: 'Grid' }).check();
-  const preview = section.locator('iframe[title="Grid layout"]');
-  await expect(preview).toHaveAttribute('srcdoc', /Fernhill Joinery/);
-  await expect(preview).toHaveAttribute('srcdoc', /#1d3c5a/i);
+  for (let i = 0; i < 6; i++) await expect(frames.nth(i)).toHaveAttribute('srcdoc', /Fernhill Joinery/);
+  await section.getByRole('radio', { name: 'Navy', exact: true }).check();
+  for (let i = 0; i < 6; i++) await expect(frames.nth(i)).toHaveAttribute('srcdoc', /#1d3c5a/i);
+
+  await section.getByRole('button', { name: 'Back to the examples' }).click();
+  await expect(section.getByLabel('Business name')).toHaveValue('');
+  for (const [i, business] of BUSINESSES.entries()) {
+    await expect(frames.nth(i)).toHaveAttribute('srcdoc', inHtml(business));
+  }
+});
+
+test('all fifteen are a click away, named, in the picker’s order', async ({ page }) => {
+  await page.goto('/');
+  const section = page.locator('#templates');
+  await section.getByRole('button', { name: 'See all fifteen' }).click();
+  const all = section.getByRole('list', { name: 'All fifteen templates' });
+  await expect(all.getByRole('listitem')).toHaveCount(15);
+  await expect(all.locator('strong')).toHaveText(FIFTEEN);
+  await section.getByRole('button', { name: 'Hide the fifteen' }).click();
+  await expect(all).toBeHidden();
 });
