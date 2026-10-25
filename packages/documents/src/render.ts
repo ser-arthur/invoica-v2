@@ -14,6 +14,7 @@ import { marquee } from './templates/marquee';
 import { atelier } from './templates/atelier';
 import { bloom } from './templates/bloom';
 import { mark } from './templates/mark';
+import { billboard } from './templates/billboard';
 import { buildView } from './view';
 
 export const TEMPLATES = {
@@ -30,6 +31,7 @@ export const TEMPLATES = {
   atelier,
   bloom,
   mark,
+  billboard,
 } as const;
 export type TemplateId = keyof typeof TEMPLATES;
 
