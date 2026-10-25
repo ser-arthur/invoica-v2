@@ -18,6 +18,7 @@ import { billboard } from './templates/billboard';
 import { grid } from './templates/grid';
 import { trade } from './templates/trade';
 import { statement } from './templates/statement';
+import { practice } from './templates/practice';
 import { buildView } from './view';
 
 export const TEMPLATES = {
@@ -38,6 +39,7 @@ export const TEMPLATES = {
   grid,
   trade,
   statement,
+  practice,
 } as const;
 export type TemplateId = keyof typeof TEMPLATES;
 
