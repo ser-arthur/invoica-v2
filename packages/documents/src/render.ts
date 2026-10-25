@@ -81,7 +81,7 @@ export const TEMPLATE_LIST: {
   {
     id: 'signature',
     name: 'Signature',
-    description: 'Quiet and exact, with the amount due in your brand colour.',
+    description: 'The amount due first, on a slip of your colour with its corner turned.',
     feel: 'in between',
     kinds: ['professional', 'creative', 'trades'],
   },
