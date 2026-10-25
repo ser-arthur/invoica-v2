@@ -70,6 +70,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | D1 | Design round 5 on the website: the logo everywhere and as the icon (decision 0012), the home page rebuilt with its story (`docs/specs/website.md`), the sign-up form filled in from the home page | Built on `feat/website`; waiting for Kobby's review |
 | D2 | The pricing page (`docs/specs/pricing-page.md`), sign in and sign up in the site's look, motion and the template demo | Built on `feat/website`; waiting for Kobby's review; the pricing page goes live with billing (2x) |
 | 3 | Invoice templates round 2: four new templates (Ledger, Poster, Letter, Ticket) beside Signature, Studio and Counsel; template picker with live previews of your own details; landing page built around real invoices | Built; waiting for Kobby's review on the design canvas |
+| 3b | The new range of invoice templates (`docs/specs/invoice-templates.md`): twelve new, four retired from the picker, the second colour and the logo's ground, the picker filtered by kind of business and by feel | Built on `feat/invoice-templates`; waiting for Kobby's review |
 | 4 | Getting paid: payment links | After v1 |
 | 5 | Cash flow and dashboards beyond v1 | After v1 |
 
@@ -152,6 +153,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **25 Oct, about 14:45 to 15:30.** The owner chose from round 2: Atelier (in a stronger use of colour) and Bloom for florists and weddings, Marquee in Bricolage with a better colour scheme, Billboard beside Mark, Practice as it is, Grid, Trade, Statement and Heritage adjusted. Worked in on the canvas page "Invoice templates, round 3", including the business choosing what sits behind its logo. Bundle 33.
 
+- **25 Oct, about 15:40 to 18:00.** The new range built into the product on `feat/invoice-templates`: twelve templates, the picker with filters by kind of business and by feel, the second colour and the logo's ground in Settings and in each snapshot, four templates retired from the picker (issued documents keep them). 831 unit, database and PDF tests and 232 end-to-end tests run, none failed (72 skipped by design). A design pass on Signature, Letter and Ticket proposed on the canvas. Bundle 34.
+
 ## Decisions in force
 
 | Record | Title | Status |
@@ -176,7 +179,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **Tax model:** a tax code holds one or more components (name, rate in parts per million, compound or not). This covers no tax, UK VAT rates, Ghana's stacked levies, compound taxes and tax-inclusive prices with one rule.
 - **Rounding:** decision 0007. UK businesses default to VAT per line, to the nearest penny; Ghana to each tax on the invoice total; others per line. UK businesses that are not retailers may choose "on the total, rounded down".
 - **PDF engine:** decision 0006. The PDF of record is made with the pinned Chromium; footers and page numbers are CSS margin boxes in the document's own font; the first PDF made for an issued document is kept and never replaced.
-- **Templates in the app:** seven on one view model: Signature (Invoica's own), Studio, Counsel, Ledger, Poster, Letter and Ticket. Every one renders the same snapshot, embeds its fonts, repeats its table heading on long invoices and fits an ordinary invoice on one page (tests).
+- **Templates in the app:** nineteen on one view model, fifteen offered (`docs/specs/invoice-templates.md`): Signature (Invoica's own), Sticker, Riso, Marquee, Atelier, Bloom, Mark, Billboard, Grid, Trade, Statement, Practice, Heritage, Letter and Ticket; Studio, Counsel, Ledger and Poster are kept for documents issued in them. Every one renders the same snapshot, embeds its fonts, repeats its table heading on long invoices and fits an ordinary invoice on one page (tests).
 - **Sending:** "Send" queues the email with the kept PDF through the outbox; it is marked as sent once delivered. In development the email is written to `.data/mail`; deployed copies send through Resend (decision 0008).
 - **Known gaps:** fonts embed as Type 3 in PDFs (Chromium's handling of variable fonts); static font files would embed as TrueType. Large objects can still be created by any database role (the functions belong to the database's superuser).
 - **VAT in sterling wording:** "VAT in sterling £X" with "£1 = 1.1500 EUR, HMRC period rate for October 2026" was chosen under the owner's "pick the best way"; it is statutory wording, so it is listed below for a final look.
@@ -221,7 +224,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 2. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
 3. The domain to buy, then the sending subdomain for Resend.
 4. Answered 23 October: the repository is `ser-arthur/invoica-v2`, and commits are authored as Kobby S. Arthur <kobbyarthur95@gmail.com>.
-5. Which invoice templates ship in v1: the round 6 range is proposed in `docs/design/round-6-templates.md` (canvas page "Invoice templates"), with five more decisions at its end (the line, the app below the hero, retiring four templates, the Scottish and Northern Irish registration wording, answered and fixed on 25 October, and static fonts for PDFs). The second pass, after the owner's notes, is `docs/design/round-7-templates.md` (canvas page "Invoice templates, round 2"), with six decisions at its end, answered on 25 October and worked into a third pass (its section 7); left to choose: Heritage plain or with a label head, and whether the two-colour Marquee and the logo's ground go into the build plan.
+5. Answered 25 October: the invoice templates for v1 are the fifteen in `docs/specs/invoice-templates.md`, built on `feat/invoice-templates`. Left: the design pass on Signature, Letter and Ticket, proposed on the canvas page "Signature, Letter and Ticket" (`docs/design/round-8-kept-templates.md`, three questions at its end), and static fonts for PDFs.
 6. Approve or change 0003, 0006 and 0007.
 7. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
 8. Approve a plan for the R5-L1 four-taxes refusal (`HANDOVER.md`, "Open finding"): how a credit note that settles a balance shares its tax across the components when one would go below zero.
