@@ -9,9 +9,20 @@ import { poster } from './templates/poster';
 import { letter } from './templates/letter';
 import { ticket } from './templates/ticket';
 import { sticker } from './templates/sticker';
+import { riso } from './templates/riso';
 import { buildView } from './view';
 
-export const TEMPLATES = { signature, studio, counsel, ledger, poster, letter, ticket, sticker } as const;
+export const TEMPLATES = {
+  signature,
+  studio,
+  counsel,
+  ledger,
+  poster,
+  letter,
+  ticket,
+  sticker,
+  riso,
+} as const;
 export type TemplateId = keyof typeof TEMPLATES;
 
 export const TEMPLATE_LIST: { id: TemplateId; name: string; description: string }[] = [
