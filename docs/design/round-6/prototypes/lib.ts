@@ -80,6 +80,36 @@ export const FONTS: Record<string, [string, string, 'normal' | 'italic'][]> = {
   'Young Serif': [[`${NM}/@fontsource/young-serif/files/young-serif-latin-400-normal.woff2`, '400', 'normal']],
   Gloock: [[`${NM}/@fontsource/gloock/files/gloock-latin-400-normal.woff2`, '400', 'normal']],
   'DM Sans': [[`${NM}/@fontsource-variable/dm-sans/files/dm-sans-latin-standard-normal.woff2`, '100 1000', 'normal']],
+  'Big Shoulders Display': [
+    [`${NM}/@fontsource-variable/big-shoulders-display/files/big-shoulders-display-latin-wght-normal.woff2`, '100 900', 'normal'],
+  ],
+  Anton: [[`${NM}/@fontsource/anton/files/anton-latin-400-normal.woff2`, '400', 'normal']],
+  'Bodoni Moda': [
+    [`${NM}/@fontsource-variable/bodoni-moda/files/bodoni-moda-latin-standard-normal.woff2`, '400 900', 'normal'],
+    [`${NM}/@fontsource-variable/bodoni-moda/files/bodoni-moda-latin-standard-italic.woff2`, '400 900', 'italic'],
+  ],
+  Jost: [
+    [`${NM}/@fontsource-variable/jost/files/jost-latin-wght-normal.woff2`, '100 900', 'normal'],
+    [`${NM}/@fontsource-variable/jost/files/jost-latin-wght-italic.woff2`, '100 900', 'italic'],
+  ],
+  'Libre Caslon Text': [
+    [`${NM}/@fontsource/libre-caslon-text/files/libre-caslon-text-latin-400-normal.woff2`, '400', 'normal'],
+    [`${NM}/@fontsource/libre-caslon-text/files/libre-caslon-text-latin-400-italic.woff2`, '400', 'italic'],
+    [`${NM}/@fontsource/libre-caslon-text/files/libre-caslon-text-latin-700-normal.woff2`, '700', 'normal'],
+  ],
+  'Libre Caslon Display': [[`${NM}/@fontsource/libre-caslon-display/files/libre-caslon-display-latin-400-normal.woff2`, '400', 'normal']],
+  'Playfair Display': [
+    [`${NM}/@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2`, '400 900', 'normal'],
+    [`${NM}/@fontsource-variable/playfair-display/files/playfair-display-latin-wght-italic.woff2`, '400 900', 'italic'],
+  ],
+  'Cormorant Garamond': [
+    [`${NM}/@fontsource-variable/cormorant-garamond/files/cormorant-garamond-latin-wght-normal.woff2`, '300 700', 'normal'],
+    [`${NM}/@fontsource-variable/cormorant-garamond/files/cormorant-garamond-latin-wght-italic.woff2`, '300 700', 'italic'],
+  ],
+  'Schibsted Grotesk': [
+    [`${NM}/@fontsource-variable/schibsted-grotesk/files/schibsted-grotesk-latin-wght-normal.woff2`, '400 900', 'normal'],
+    [`${NM}/@fontsource-variable/schibsted-grotesk/files/schibsted-grotesk-latin-wght-italic.woff2`, '400 900', 'italic'],
+  ],
   Sora: [[`${REPO_FONTS}/sora-latin-wght-normal.woff2`, '100 800', 'normal']],
   Onest: [[`${REPO_FONTS}/onest-latin-wght-normal.woff2`, '100 900', 'normal']],
   'Bricolage Grotesque': [[`${REPO_FONTS}/bricolage-grotesque-latin-wght-normal.woff2`, '200 800', 'normal']],
@@ -88,6 +118,12 @@ export const FONTS: Record<string, [string, string, 'normal' | 'italic'][]> = {
     [`${REPO_FONTS}/newsreader-latin-wght-italic.woff2`, '200 800', 'italic'],
   ],
   'JetBrains Mono': [[`${REPO_FONTS}/jetbrains-mono-latin-wght-normal.woff2`, '100 800', 'normal']],
+  'Funnel Display': [[`${NM}/@fontsource-variable/funnel-display/files/funnel-display-latin-wght-normal.woff2`, '300 800', 'normal']],
+  'Inter Tight': [
+    [`${NM}/@fontsource-variable/inter-tight/files/inter-tight-latin-wght-normal.woff2`, '100 900', 'normal'],
+    [`${NM}/@fontsource-variable/inter-tight/files/inter-tight-latin-wght-italic.woff2`, '100 900', 'italic'],
+  ],
+  'Familjen Grotesk': [[`${NM}/@fontsource-variable/familjen-grotesk/files/familjen-grotesk-latin-wght-normal.woff2`, '400 700', 'normal']],
 };
 
 const cache = new Map<string, string>();

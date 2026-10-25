@@ -1,12 +1,31 @@
 import { sticker } from './sticker';
 import { riso } from './riso';
-import { marquee } from './marquee';
-import { atelier } from './atelier';
-import { grid } from './grid';
+import { marqueeA, marqueeB, marqueeC } from './marquee';
 import { mark } from './mark';
+import { grid } from './grid';
 import { trade } from './trade';
 import { practice } from './practice';
 import { heritage } from './heritage';
 import { statement } from './statement';
+import { bloom } from './bloom';
+import { olive } from './olive';
+import { editorial } from './editorial';
+import { billboard } from './billboard';
 
-export const TEMPLATES = { sticker, riso, marquee, atelier, grid, mark, trade, practice, heritage, statement };
+export const TEMPLATES = {
+  sticker,
+  bloom,
+  olive,
+  editorial,
+  riso,
+  'marquee-a': marqueeA,
+  'marquee-b': marqueeB,
+  'marquee-c': marqueeC,
+  mark,
+  billboard,
+  grid,
+  trade,
+  statement,
+  practice,
+  heritage,
+};

@@ -2,45 +2,58 @@ import type { DocumentView } from '../../../../../packages/documents/src/index';
 import { esc, lines, para } from '../../../../../packages/documents/src/templates/shared';
 import type { ProtoTemplate } from '../lib';
 
-/** The seal: the logo inside a ring with the business's name set round it, drawn in the document's own type. */
-function seal(name: string, logo: string | null, colour: string): string {
-  const ring = `${name.toUpperCase()}  ·  ${name.toUpperCase()}  ·  `;
-  return `<svg class="seal" viewBox="0 0 200 200" aria-hidden="true">
-<defs><path id="ring" d="M100 100 m-76 0 a76 76 0 1 1 152 0 a76 76 0 1 1 -152 0"/></defs>
-<circle cx="100" cy="100" r="97" fill="none" stroke="${colour}" stroke-width="1.6"/>
-<circle cx="100" cy="100" r="91" fill="none" stroke="${colour}" stroke-width=".7"/>
-<circle cx="100" cy="100" r="62" fill="none" stroke="${colour}" stroke-width=".7"/>
-<text fill="${colour}" font-family="Cormorant SC" font-weight="700" font-size="15.5" letter-spacing="3.2"><textPath href="#ring" textLength="470" lengthAdjust="spacing">${esc(ring)}</textPath></text>
-${logo ? `<image href="${esc(logo)}" x="60" y="60" width="80" height="80"/>` : `<text x="100" y="118" text-anchor="middle" fill="${colour}" font-family="Cormorant" font-weight="700" font-size="56">${esc(name.slice(0, 1))}</text>`}
+/** The medallion: the logo inside a double ring. */
+function medallion(logo: string | null, name: string, gold: string, colour: string): string {
+  return `<svg class="medal" viewBox="0 0 200 200" aria-hidden="true">
+<circle cx="100" cy="100" r="96" fill="none" stroke="${gold}" stroke-width="2.2"/>
+<circle cx="100" cy="100" r="89" fill="none" stroke="${gold}" stroke-width=".8"/>
+${Array.from({ length: 48 }, (_, i) => `<line x1="100" y1="6" x2="100" y2="10" stroke="${gold}" stroke-width=".9" transform="rotate(${i * 7.5} 100 100)"/>`).join('')}
+${logo ? `<image href="${esc(logo)}" x="46" y="46" width="108" height="108"/>` : `<text x="100" y="124" text-anchor="middle" fill="${colour}" font-family="Cormorant" font-weight="700" font-size="72">${esc(name.slice(0, 1))}</text>`}
 </svg>`;
 }
 
+/** The name set on a shallow arch, as on a bottle label, sized to its length. */
+function arch(name: string, colour: string): string {
+  const size = Math.min(31, 470 / Math.max(name.length, 1));
+  return `<svg class="arch" viewBox="0 0 320 84" aria-hidden="true"><defs><path id="arc" d="M 16 80 Q 160 -14 304 80"/></defs>
+<text fill="${colour}" font-family="Cormorant SC" font-weight="700" font-size="${size.toFixed(1)}" letter-spacing="${(size * 0.16).toFixed(1)}" text-anchor="middle"><textPath href="#arc" startOffset="50%">${esc(name.toUpperCase())}</textPath></text></svg>`;
+}
+
+const CORNER = (gold: string, paper: string) =>
+  `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path d='M10 1 L19 10 L10 19 L1 10 Z' fill='${paper}' stroke='${gold}' stroke-width='1.1'/><path d='M10 5.5 L14.5 10 L10 14.5 L5.5 10 Z' fill='${gold}'/></svg>`)}")`;
+
 /**
- * Heritage: for distillers, bakers of long standing, barbers, tailors, jewellers and wine merchants. A double-ruled
- * frame on every page, the logo set in a seal ringed with the name, a numbered heading in red, and the lines set
- * like a price list with dotted leaders.
+ * Heritage: for distillers, bakers of long standing, barbers, tailors, jewellers and wine merchants. Warm paper inside
+ * a gold double frame with a diamond at each corner, the name arched over a medallion like a bottle label, the number
+ * in oxblood, and the lines set like a price list with dotted leaders.
  */
 export const heritage: ProtoTemplate = {
   id: 'heritage',
   name: 'Heritage',
   fonts: ['Cormorant', 'Cormorant SC', 'EB Garamond'],
-  footer: { font: 'EB Garamond', inset: '4mm', color: '#7a7466' },
-  css: (v: DocumentView) => `
-@page{size:A4;margin:11mm 11mm 16mm}
-:root{--brand:${v.brandColour};--ink:#26241f;--soft:#6e6859;--red:#9b2c2c}
+  footer: { font: 'EB Garamond', inset: '4mm', color: '#7d7462' },
+  css: (v: DocumentView) => {
+    const gold = '#A8874A';
+    const paper = '#F6EFDF';
+    const c = CORNER(gold, paper);
+    return `
+@page{size:A4;margin:10mm 10mm 15mm;background:${paper}}
+:root{--brand:${v.brandColour};--ink:#2a2620;--soft:#6f6654;--gold:${gold};--ox:#7A2430;--paper:${paper};--dot:#bba67a}
 body{font-family:'EB Garamond',serif;font-size:10pt;line-height:1.45;color:var(--ink)}
-.sc{font-family:'Cormorant SC',serif;font-weight:700;letter-spacing:.12em}
-.frame{border:3.2pt double var(--brand);padding:8mm 13mm 8mm;-webkit-box-decoration-break:clone;box-decoration-break:clone;min-height:268mm}
+.sc{font-family:'Cormorant SC',serif;font-weight:700;letter-spacing:.14em}
+.frame{border:1.1pt solid var(--gold);padding:8mm 15mm 7mm;-webkit-box-decoration-break:clone;box-decoration-break:clone;min-height:268mm;
+background:${c} left -.33mm top -.33mm/5.4mm no-repeat,${c} right -.33mm top -.33mm/5.4mm no-repeat,${c} left -.33mm bottom -.33mm/5.4mm no-repeat,${c} right -.33mm bottom -.33mm/5.4mm no-repeat,
+linear-gradient(var(--gold),var(--gold)) left 2.2mm top 2.2mm/calc(100% - 4.4mm) .35mm no-repeat,linear-gradient(var(--gold),var(--gold)) left 2.2mm bottom 2.2mm/calc(100% - 4.4mm) .35mm no-repeat,linear-gradient(var(--gold),var(--gold)) left 2.2mm top 2.2mm/.35mm calc(100% - 4.4mm) no-repeat,linear-gradient(var(--gold),var(--gold)) right 2.2mm top 2.2mm/.35mm calc(100% - 4.4mm) no-repeat}
 .top{text-align:center}
-.seal{width:29mm;height:29mm;display:block;margin:0 auto 2.5mm}
-.name{font-family:'Cormorant',serif;font-weight:700;font-size:28pt;line-height:1;color:var(--brand);letter-spacing:.01em}
-.addr{margin-top:1.8mm;font-size:9.4pt;color:var(--soft)}
-.orn{display:flex;align-items:center;gap:3mm;justify-content:center;margin:3.5mm auto;color:var(--brand);width:70mm}
+.arch{width:106mm;height:27.8mm;display:block;margin:0 auto -8.6mm}
+.medal{width:24mm;height:24mm;display:block;margin:0 auto 2.4mm}
+.addr{font-size:9.2pt;color:var(--soft)}
+.orn{display:flex;align-items:center;gap:3mm;justify-content:center;margin:3.4mm auto 3mm;color:var(--gold);width:74mm}
 .orn::before,.orn::after{content:'';flex:1;border-top:.7pt solid currentColor}
-.orn i{width:2.2mm;height:2.2mm;background:currentColor;transform:rotate(45deg);display:block}
+.orn i{width:2mm;height:2mm;background:currentColor;transform:rotate(45deg);display:block}
 .title-row{display:flex;justify-content:center;align-items:baseline;gap:5mm}
-.kind{font-size:13pt;color:var(--brand)}
-.no{font-family:'Cormorant',serif;font-weight:700;font-size:20pt;color:var(--red);letter-spacing:.02em}
+.kind{font-size:12.5pt;color:var(--brand)}
+.no{font-family:'Cormorant',serif;font-weight:700;font-size:21pt;color:var(--ox);letter-spacing:.02em}
 .meta{display:grid;grid-template-columns:1fr 1fr;gap:10mm;margin:5mm 0 4mm}
 .lab{font-size:9pt;color:var(--brand);margin-bottom:.8mm}
 .who .n{font-weight:600}
@@ -48,29 +61,33 @@ body{font-family:'EB Garamond',serif;font-size:10pt;line-height:1.45;color:var(-
 .dates dt{color:var(--soft);text-align:left}.dates dd{margin:0}
 .right{text-align:right}
 .intro{text-align:center;margin:0 0 3.5mm}
-.intro h2{font-family:'Cormorant',serif;font-weight:600;font-style:italic;font-size:17pt;margin:0;color:var(--ink)}
-.list{margin:0;padding:0;list-style:none;border-top:.7pt solid var(--brand);padding-top:2mm}
-.item{padding:1.4mm 0;break-inside:avoid}
+.intro h2{font-family:'Cormorant',serif;font-weight:600;font-style:italic;font-size:17.5pt;margin:0;color:var(--brand)}
+.list{margin:0;padding:0;list-style:none;border-top:.7pt solid var(--gold);padding-top:2.2mm}
+.item{padding:1.5mm 0;break-inside:avoid}
 .line{display:flex;align-items:baseline;gap:2mm}
 .line .t{font-weight:500}
-.line .dots{flex:1;border-bottom:1.2pt dotted #9c9584;transform:translateY(-1mm);min-width:8mm}
+.line .dots{flex:1;border-bottom:1.3pt dotted var(--dot);transform:translateY(-1mm);min-width:8mm}
 .line .a{font-variant-numeric:lining-nums tabular-nums;white-space:nowrap}
 .item .d{font-style:italic;color:var(--soft);font-size:9.6pt}
 .line .i{font-style:italic;color:var(--soft);font-size:9.6pt;white-space:nowrap}
-.totals{width:92mm;margin:4mm 0 0 auto;border-top:.7pt solid var(--brand);padding-top:2mm}
+.totals{width:92mm;margin:4mm 0 0 auto;border-top:.7pt solid var(--gold);padding-top:2mm}
 .totals .line{padding:.6mm 0}
 .totals .t-total .t{font-weight:700}
 .totals .soft{color:var(--soft)}
-.due{text-align:center;margin:5mm 0 0;break-inside:avoid}
+.due{text-align:center;margin:5mm auto 0;break-inside:avoid;width:110mm;border-top:.7pt solid var(--gold);border-bottom:.7pt solid var(--gold);padding:2.4mm 0 2.8mm}
 .due .lab{font-size:10pt}
-.due .v{font-family:'Cormorant',serif;font-weight:700;font-size:30pt;line-height:1.05;color:var(--brand)}
+.due .v{font-family:'Cormorant',serif;font-weight:700;font-size:31pt;line-height:1.05;color:var(--brand)}
 .due .w{font-style:italic;color:var(--soft)}
-.pay{margin:4mm auto 0;text-align:center;font-size:9.6pt;max-width:150mm;break-inside:avoid}
-.pay .lab{margin-bottom:.4mm}
-.notes{text-align:center;margin-top:4mm;font-style:italic;font-size:11.5pt;color:var(--ink)}
+.pay{margin:4mm auto 0;text-align:center;font-size:9.6pt;break-inside:avoid}
+.pay .lab{margin-bottom:1mm}
+.pay .pairs{display:flex;flex-wrap:wrap;justify-content:center;gap:.6mm 7mm}
+.pay .pairs span{white-space:nowrap}
+.pay .pairs em{font-style:italic;color:var(--soft);margin-right:1.6mm}
+.notes{text-align:center;margin-top:4mm;font-family:'Cormorant',serif;font-style:italic;font-weight:600;font-size:14pt;color:var(--ox)}
 .small{text-align:center;margin-top:3mm;font-size:9pt;color:var(--soft)}
-.legal{text-align:center;margin-top:4mm;font-size:8.4pt;color:var(--soft)}
-`,
+.legal{text-align:center;margin-top:3.5mm;font-size:8.4pt;color:var(--soft)}
+`;
+  },
   body: (v: DocumentView, logo: string | null) => {
     const c = v.columns;
     const items = v.lines
@@ -90,13 +107,13 @@ body{font-family:'EB Garamond',serif;font-size:10pt;line-height:1.45;color:var(-
       )
       .join('');
     const pay = v.payment
-      .map((p) => `<div><span class="lab sc">${esc(p.title)}</span><br>${p.rows.map((r) => `${esc(r.label)} ${esc(r.value)}`).join(', ')}</div>`)
+      .map((p) => `<div><div class="lab sc">${esc(p.title)}</div><div class="pairs">${p.rows.map((r) => `<span><em>${esc(r.label)}</em>${esc(r.value)}</span>`).join('')}</div></div>`)
       .join('');
     return `
 <div class="frame">
 <header class="top">
-  ${seal(v.seller.name, logo, v.brandColour)}
-  <div class="name word">${esc(v.seller.name)}</div>
+  ${arch(v.seller.name, v.brandColour)}
+  ${medallion(logo, v.seller.name, '#A8874A', v.brandColour)}
   <div class="addr">${esc(v.seller.addressLines.join(', '))}<br>${esc(v.seller.contactLines.join(', '))}</div>
   <div class="orn"><i></i></div>
   <div class="title-row"><span class="kind sc">${esc(v.heading)}</span><span class="no">No. ${esc(v.number)}</span></div>
