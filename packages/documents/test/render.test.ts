@@ -90,7 +90,8 @@ describe('reverse charge note (review L7)', () => {
 
 describe('rendering', () => {
   it('renders every fixture with every template, offered or retired, and escapes text', () => {
-    expect(TEMPLATE_LIST).toHaveLength(7);
+    expect(TEMPLATE_LIST).toHaveLength(15);
+    expect(Object.keys(TEMPLATES)).toHaveLength(19);
     for (const [name, s] of Object.entries(FIXTURES)) {
       for (const template of Object.keys(TEMPLATES)) {
         const html = renderDocumentHtml(

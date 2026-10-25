@@ -22,6 +22,10 @@ import { practice } from './templates/practice';
 import { heritage } from './templates/heritage';
 import { buildView } from './view';
 
+/**
+ * Every template a document can be in. Studio, Counsel, Ledger and Poster have left the picker; documents issued with
+ * them still render as they were.
+ */
 export const TEMPLATES = {
   signature,
   studio,
@@ -45,42 +49,135 @@ export const TEMPLATES = {
 } as const;
 export type TemplateId = keyof typeof TEMPLATES;
 
-export const TEMPLATE_LIST: { id: TemplateId; name: string; description: string }[] = [
+/** How a template feels, for the picker's filter. */
+export type TemplateFeel = 'playful' | 'in between' | 'grounded';
+/** The kinds of business the picker filters by. */
+export type BusinessKind = 'food' | 'creative' | 'events' | 'trades' | 'professional' | 'shops';
+export const BUSINESS_KINDS: { id: BusinessKind; name: string }[] = [
+  { id: 'food', name: 'Food and drink' },
+  { id: 'creative', name: 'Creative' },
+  { id: 'events', name: 'Events and weddings' },
+  { id: 'trades', name: 'Trades' },
+  { id: 'professional', name: 'Professional services' },
+  { id: 'shops', name: 'Shops and makers' },
+];
+
+/** The templates offered in the picker and the editor, in order. */
+export const TEMPLATE_LIST: {
+  id: TemplateId;
+  name: string;
+  description: string;
+  feel: TemplateFeel;
+  kinds: BusinessKind[];
+}[] = [
   {
     id: 'signature',
     name: 'Signature',
     description: 'Quiet and exact, with the amount due in your brand colour.',
+    feel: 'in between',
+    kinds: ['professional', 'creative', 'trades'],
   },
   {
-    id: 'studio',
-    name: 'Studio',
-    description: 'Your colour as a band and your name set large. For studios and agencies.',
+    id: 'sticker',
+    name: 'Sticker',
+    description: 'Soft, round type and your logo as a sticker. For cafés, bakers, makers and classes.',
+    feel: 'playful',
+    kinds: ['food', 'shops'],
   },
   {
-    id: 'counsel',
-    name: 'Counsel',
-    description: 'A centred letterhead in a serif. For firms and practices.',
+    id: 'riso',
+    name: 'Riso',
+    description: 'Printed in two inks, with halftone dots. For illustrators, printers, zines and labels.',
+    feel: 'playful',
+    kinds: ['creative', 'shops'],
   },
   {
-    id: 'poster',
-    name: 'Poster',
-    description: 'The amount set as large as a headline, on a strict grid. For designers and studios.',
-  },
-  {
-    id: 'ledger',
-    name: 'Ledger',
+    id: 'marquee',
+    name: 'Marquee',
     description:
-      'A ruled margin, a folio number and figures in a mono face. For bookkeepers and consultants.',
+      'The job billed like a gig poster, the amount on a ticket. For events, DJs, venues and photographers.',
+    feel: 'playful',
+    kinds: ['events', 'creative'],
+  },
+  {
+    id: 'atelier',
+    name: 'Atelier',
+    description: 'A centred letterhead in a fine serif. For florists, stylists, interiors and weddings.',
+    feel: 'in between',
+    kinds: ['events', 'creative', 'shops'],
+  },
+  {
+    id: 'bloom',
+    name: 'Bloom',
+    description: 'A blush band with wild roses drawn in fine line. For florists and cake makers.',
+    feel: 'in between',
+    kinds: ['food', 'events', 'shops'],
+  },
+  {
+    id: 'mark',
+    name: 'Mark',
+    description: 'Your logo large and a clean grid. For studios, agencies and developers.',
+    feel: 'in between',
+    kinds: ['creative', 'professional'],
+  },
+  {
+    id: 'billboard',
+    name: 'Billboard',
+    description: 'Your name filling a block of your colour. For studios and agencies who want to be loud.',
+    feel: 'playful',
+    kinds: ['creative'],
+  },
+  {
+    id: 'grid',
+    name: 'Grid',
+    description: 'Six columns, the number set wide. For architects, designers and photographers.',
+    feel: 'in between',
+    kinds: ['creative', 'professional'],
+  },
+  {
+    id: 'trade',
+    name: 'Trade',
+    description:
+      'Your phone number up top and bank details big enough to type. For builders, roofers and cleaners.',
+    feel: 'grounded',
+    kinds: ['trades'],
+  },
+  {
+    id: 'statement',
+    name: 'Statement',
+    description: 'How much, by when and where to pay, first. For bookkeepers, contractors and engineers.',
+    feel: 'grounded',
+    kinds: ['professional'],
+  },
+  {
+    id: 'practice',
+    name: 'Practice',
+    description:
+      'A letterhead with a fine gold line, set out as a letter. For accountants, solicitors and clinics.',
+    feel: 'grounded',
+    kinds: ['professional'],
+  },
+  {
+    id: 'heritage',
+    name: 'Heritage',
+    description:
+      'A ruled frame and your name arched like a label. For distillers, tailors and wine merchants.',
+    feel: 'grounded',
+    kinds: ['food', 'shops'],
   },
   {
     id: 'letter',
     name: 'Letter',
     description: 'Addressed by name and signed off, with dotted leaders. For coaches, tutors and therapists.',
+    feel: 'in between',
+    kinds: ['professional'],
   },
   {
     id: 'ticket',
     name: 'Ticket',
     description: 'A printed receipt in one narrow column. For makers, shops and events.',
+    feel: 'playful',
+    kinds: ['shops', 'events', 'food'],
   },
 ];
 
