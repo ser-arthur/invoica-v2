@@ -1,32 +1,58 @@
 import type { DocumentView } from '../view';
 import { esc, para } from './shared';
 
-/** A printed receipt: one narrow column set in a mono face, dashed rules, the total in large type. */
+/**
+ * Ticket: for makers, shops, repairers and events. A till roll torn from the printer, laid on a grey page: one narrow
+ * white column with torn edges, set in a mono face, the amount due on a band of the shop's colour inside the paper's
+ * margins, and a stub below a perforation with everything needed to pay.
+ */
 export const ticket = {
   id: 'ticket',
-  footer: { font: 'JetBrains Mono', inset: '0' },
+  footer: { font: 'JetBrains Mono', inset: '0', color: '#66635d' },
   fonts: ['JetBrains Mono', 'Onest'] as const,
   css: (v: DocumentView) => `
-@page{size:A4;margin:12mm 16mm 20mm}
-@media screen{body{padding:12mm 16mm 20mm}}
-body{font-family:'JetBrains Mono',monospace;font-size:8.4pt;line-height:1.38;color:#141414}
-.ticket{width:124mm;margin:0 auto;padding:6mm 8mm 6mm;background:#fff;border:.5pt solid #d0d0d0;border-top:3.4pt solid ${v.brandColour}}
+@page{size:A4;margin:14mm 16mm 18mm;background:#ECEAE4}
+@media screen{html{background:#ECEAE4}body{padding:14mm 16mm 18mm}}
+:root{--brand:${v.brandColour};--on:${v.onBrand};--ink:#161514;--soft:#66635d;--ground:#ECEAE4;--paper:#ffffff}
+body{font-family:'JetBrains Mono',monospace;font-size:8.2pt;line-height:1.4;color:var(--ink);font-variant-numeric:tabular-nums}
+.roll{position:relative;width:108mm;max-width:100%;margin:2.4mm auto 0;background:var(--paper);padding:7mm 7mm 0;box-sizing:border-box}
+.roll::before,.roll::after{content:'';position:absolute;left:0;right:0;height:2mm;background-size:3.2mm 2mm;background-repeat:repeat-x}
+.roll::before{top:-2mm;background-image:linear-gradient(to bottom right,transparent 50%,var(--paper) 50%),linear-gradient(to bottom left,transparent 50%,var(--paper) 50%)}
+.roll::after{bottom:-2mm;background-image:linear-gradient(to top right,transparent 50%,var(--paper) 50%),linear-gradient(to top left,transparent 50%,var(--paper) 50%)}
 .c{text-align:center}
-.name{font-family:'Onest',sans-serif;font-weight:700;font-size:16pt;letter-spacing:-.02em;line-height:1.1}
-.name img{max-height:14mm;max-width:70mm}
-.dim{color:#666}
-.rule{border:none;border-top:1pt dashed #9a9a9a;margin:2.2mm 0}
+.logo{display:block;margin:0 auto 2mm;height:11mm;width:auto;max-width:60mm;object-fit:contain}
+.name{font-family:'Onest',sans-serif;font-weight:700;font-size:14pt;letter-spacing:-.02em;line-height:1.15}
+.dim{color:var(--soft)}
+.hdr .dim{font-size:7.8pt;margin-top:.6mm}
+.cut{border:none;border-top:1pt dashed #b3afa7;margin:2.4mm 0}
+.kind{display:inline-block;margin:1mm 0 2mm;border:1.1pt solid var(--brand);color:var(--brand);border-radius:1.4mm;padding:.5mm 2.6mm;font-weight:700}
 .kv{display:flex;justify-content:space-between;gap:4mm}
+.kv span{min-width:0;overflow-wrap:anywhere}
 .kv span:last-child{text-align:right}
-.it{padding:1mm 0;break-inside:avoid}
-.it .t{font-weight:600;overflow-wrap:anywhere}
-.it .d{color:#666;overflow-wrap:anywhere}
-.big{font-family:'Onest',sans-serif;font-weight:700;font-size:22pt;letter-spacing:-.03em;text-align:center;margin:2mm 0 0}
-.stamp{display:inline-block;border:1.2pt solid ${v.brandColour};color:${v.brandColour};padding:.6mm 3mm;border-radius:1.5mm;font-weight:700;letter-spacing:.06em}
-.small{font-size:7.6pt;color:#666}
+.it{padding:.8mm 0;break-inside:avoid}
+.it .t{font-weight:700;overflow-wrap:anywhere}
+.it .d{color:var(--soft);overflow-wrap:anywhere}
+.total{font-weight:700;margin-top:.6mm;padding-top:1.2mm;border-top:1pt solid var(--ink)}
+.due{margin:3.4mm 0 0;background:var(--brand);color:var(--on);padding:3.4mm 4.5mm 3.8mm;display:flex;justify-content:space-between;align-items:flex-end;gap:4mm;break-inside:avoid}
+.due .k{font-weight:700}
+.due .w{font-size:7.8pt;margin-top:.4mm}
+.due .amt{font-family:'Onest',sans-serif;font-weight:800;font-size:21pt;letter-spacing:-.03em;line-height:1;white-space:nowrap}
+.thanks{text-align:center;margin:3mm 0 0}
+.small{font-size:7.4pt;color:var(--soft);text-align:center;margin:2.6mm 0 0;padding-bottom:3.6mm}
+.small p{margin:0 0 1mm}
+.end{break-inside:avoid}
+.perf{position:relative;margin:0 -7mm;height:0;border-top:1.1pt dashed #9b978f}
+.perf::before,.perf::after{content:'';position:absolute;top:-2.6mm;width:5.2mm;height:5.2mm;border-radius:50%;background:var(--ground)}
+.perf::before{left:-2.6mm}.perf::after{right:-2.6mm}
+.stub{display:grid;grid-template-columns:40mm 1fr;gap:6mm;align-items:start;padding:4.2mm 0 5mm;break-inside:avoid}
+.stub .lab{color:var(--soft);font-size:7.6pt}
+.stub .big{font-family:'Onest',sans-serif;font-weight:800;font-size:15pt;letter-spacing:-.02em;line-height:1.1;margin:1mm 0 .6mm;white-space:nowrap}
+.stub .ref{margin-top:1.2mm;padding-top:1.2mm;border-top:.5pt solid #e2dfd8}
 `,
   body: (v: DocumentView, logo: string | null) => {
     const c = v.columns;
+    const row = (label: string, value: string, cls = '') =>
+      `<div class="kv${cls}"><span>${esc(label)}</span><span>${esc(value)}</span></div>`;
     const items = v.lines
       .map((l) => {
         const left = [
@@ -39,27 +65,49 @@ body{font-family:'JetBrains Mono',monospace;font-size:8.4pt;line-height:1.38;col
         return `<div class="it"><div class="t">${esc(l.title)}</div>${l.description ? `<div class="d">${para(l.description)}</div>` : ''}<div class="kv"><span class="dim">${esc(left)}</span><span>${esc(l.amount)}</span></div></div>`;
       })
       .join('');
-    const totals = v.totals
-      .map(
-        (t) =>
-          `<div class="kv${t.kind === 'total' ? '' : ' dim'}"${t.kind === 'total' ? ' style="font-weight:700"' : ''}><span>${esc(t.label)}</span><span>${esc(t.value)}</span></div>`,
-      )
-      .join('');
-    const pay = v.payment
+    const lead = v.totals.filter((t) => t.kind !== 'total' && t.kind !== 'payment' && t.kind !== 'note');
+    const total = v.totals.find((t) => t.kind === 'total');
+    const after = v.totals.filter((t) => t.kind === 'payment' || t.kind === 'note');
+    const bank = v.payment[0];
+    const rest = v.payment.slice(1);
+    const due = v.dates.find((d) => d.label === 'Due');
+    const small = [v.creditNote, v.reverseChargeNote, v.sterlingRateNote, v.terms, v.legalLine].filter(
+      Boolean,
+    );
+    const stub =
+      bank || v.paymentLink
+        ? `<div class="perf"></div>
+  <div class="stub">
+    <div><div class="lab word">Pay ${esc(v.seller.name)}</div><div class="big">${esc(v.amountDue.value)}</div>${due ? `<div>by ${esc(due.value)}</div>` : ''}</div>
+    <div>${
+      bank
+        ? `<div class="lab">${esc(bank.title)}</div>${bank.rows
+            .filter(
+              (r) => r.label !== 'Reference' && !(r.label === 'Account name' && r.value === v.seller.name),
+            )
+            .map((r) => row(r.label, r.value))
+            .join('')}`
+        : ''
+    }${rest
       .map(
         (p) =>
-          `<div class="kv"><span>${esc(p.title)}</span><span></span></div>${p.rows.map((r) => `<div class="kv dim"><span>${esc(r.label)}</span><span>${esc(r.value)}</span></div>`).join('')}`,
+          `<div class="lab" style="margin-top:1.6mm">${esc(p.title)}</div>${p.rows.map((r) => row(r.label, r.value)).join('')}`,
       )
-      .join('<hr class="rule">');
+      .join(
+        '',
+      )}${v.paymentLink ? `<div style="margin-top:1.6mm">${row('Online', v.paymentLink)}</div>` : ''}${row('Reference', v.number, ' ref')}</div>
+  </div>`
+        : '';
     return `
-<div class="ticket">
-  <div class="c"><div class="name">${logo ? `<img src="${esc(logo)}" alt="${esc(v.seller.name)}">` : esc(v.seller.name)}</div><div class="dim">${esc([...v.seller.addressLines].join(', '))}</div><div class="dim">${esc(v.seller.contactLines.join('  '))}</div>${v.seller.taxLine ? `<div class="dim">${esc(v.seller.taxLine)}</div>` : ''}</div>
-  <hr class="rule">
-  <div class="c"><span class="stamp">${esc(v.heading.toUpperCase())}</span></div>
-  <div class="kv" style="margin-top:2mm"><span>No.</span><span>${esc(v.number)}</span></div>
-  ${v.dates.map((d) => `<div class="kv"><span>${esc(d.label)}</span><span>${esc(d.value)}</span></div>`).join('')}
-  <hr class="rule">
-  <div><span class="dim">${v.kind === 'credit_note' ? 'Credited to' : 'Billed to'}</span><br><strong>${esc(v.buyer.name)}</strong>${[
+<div class="roll">
+  <div class="c hdr">${logo ? `<img class="logo" src="${esc(logo)}" alt="">` : ''}<div class="name word">${esc(v.seller.name)}</div><div class="dim word">${esc(v.seller.addressLines.join(', '))}</div>${
+    v.seller.contactLines.length ? `<div class="dim word">${esc(v.seller.contactLines.join('  '))}</div>` : ''
+  }${v.seller.taxLine ? `<div class="dim">${esc(v.seller.taxLine)}</div>` : ''}</div>
+  <hr class="cut">
+  <div class="c"><span class="kind word">${esc(v.heading)} ${esc(v.number)}</span></div>
+  ${v.dates.map((d) => row(d.label, d.value)).join('')}
+  <hr class="cut">
+  <div class="word"><span class="dim">${v.kind === 'credit_note' ? 'Credited to' : 'Billed to'}</span><br><strong>${esc(v.buyer.name)}</strong>${[
     v.buyer.contact,
     ...v.buyer.addressLines,
     ...v.buyer.detailLines,
@@ -67,33 +115,19 @@ body{font-family:'JetBrains Mono',monospace;font-size:8.4pt;line-height:1.38;col
     .filter(Boolean)
     .map((l) => `<br>${esc(l)}`)
     .join('')}</div>
-  ${v.title ? `<hr class="rule"><div><strong>${esc(v.title)}</strong>${v.summary ? `<div class="dim">${para(v.summary)}</div>` : ''}</div>` : ''}
-  <hr class="rule">
+  ${v.title ? `<hr class="cut"><div class="word"><strong>${esc(v.title)}</strong>${v.summary ? `<div class="dim">${para(v.summary)}</div>` : ''}</div>` : ''}
+  <hr class="cut">
   ${items}
-  <hr class="rule">
-  <div class="keep">${totals}
-  <hr class="rule">
-  <div class="c dim">${esc(v.amountDue.label)}</div>
-  <div class="big">${esc(v.amountDue.value)}</div>
-  ${v.amountDue.dueLine ? `<div class="c">${esc(v.amountDue.dueLine)}</div>` : ''}</div>
-  ${pay ? `<hr class="rule"><div class="keep">${pay}</div>` : ''}
-  ${v.paymentLink ? `<hr class="rule"><div class="c">Pay online<br>${esc(v.paymentLink)}</div>` : ''}
-  ${
-    [v.creditNote, v.reverseChargeNote, v.sterlingRateNote, v.notes, v.terms].filter(Boolean).length
-      ? `<hr class="rule"><div class="small">${[
-          v.creditNote,
-          v.reverseChargeNote,
-          v.sterlingRateNote,
-          v.notes,
-          v.terms,
-        ]
-          .filter(Boolean)
-          .map((t) => `<p>${para(t)}</p>`)
-          .join('')}</div>`
-      : ''
-  }
-  <hr class="rule">
-  <div class="c small">${esc(v.legalLine)}</div>
+  <hr class="cut">
+  <div class="end">
+  <div class="keep">${lead.map((t) => row(t.label, t.value, ' dim')).join('')}${total ? row(total.label, total.value, ' total') : ''}${after
+    .map((t) => row(t.label, t.value, ' dim'))
+    .join('')}
+  <div class="due"><div><div class="k">${esc(v.amountDue.label)}</div>${v.amountDue.dueLine ? `<div class="w">${esc(v.amountDue.dueLine)}</div>` : ''}</div><div class="amt">${esc(v.amountDue.value)}</div></div></div>
+  ${v.notes ? `<div class="thanks word">${para(v.notes)}</div>` : ''}
+  <div class="small">${small.map((t) => `<p>${para(t)}</p>`).join('')}</div>
+  ${stub}
+  </div>
 </div>
 `;
   },

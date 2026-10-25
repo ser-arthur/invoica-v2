@@ -183,7 +183,8 @@ export const TEMPLATE_LIST: {
   {
     id: 'ticket',
     name: 'Ticket',
-    description: 'A printed receipt in one narrow column. For makers, shops and events.',
+    description:
+      'A till roll on a grey page, with a stub to pay from. For makers, shops, repairers and events.',
     feel: 'playful',
     kinds: ['shops', 'events', 'food'],
   },
