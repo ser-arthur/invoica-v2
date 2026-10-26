@@ -95,6 +95,17 @@ const COUNTRY_NAMES: Record<string, string> = {
   SG: 'Singapore',
 };
 
+/**
+ * The part of the UK a company is registered in, read from the prefix Companies House gives its number: SC for
+ * Scotland, NI for Northern Ireland, and England and Wales for the rest.
+ */
+function ukRegistration(companyNumber: string): string {
+  const prefix = companyNumber.replace(/\s+/g, '').slice(0, 2).toUpperCase();
+  if (prefix === 'SC') return 'Scotland';
+  if (prefix === 'NI') return 'Northern Ireland';
+  return 'England and Wales';
+}
+
 function addressLines(a: PartyAddress, sellerCountry: string | null): string[] {
   const place = [a.city, a.region].filter(Boolean).join(', ');
   const cityLine = [place, a.postcode].filter(Boolean).join(' ');
@@ -273,9 +284,10 @@ export function buildView(s: DocumentSnapshot, options: { draft?: boolean } = {}
 
   const seller = s.seller;
   const legalName = seller.legalName && seller.legalName !== seller.name ? seller.legalName : null;
+  const companyNumber = seller.companyNumber?.trim() ?? '';
   const companyLine =
-    seller.businessType === 'limited_company' && seller.companyNumber
-      ? `${legalName ?? seller.name}, registered in ${sellerCountry === 'GB' ? 'England and Wales' : (COUNTRY_NAMES[sellerCountry ?? ''] ?? 'its country')}, company number ${seller.companyNumber}`
+    seller.businessType === 'limited_company' && companyNumber
+      ? `${legalName ?? seller.name}, registered in ${sellerCountry === 'GB' ? ukRegistration(companyNumber) : (COUNTRY_NAMES[sellerCountry ?? ''] ?? 'its country')}, company number ${companyNumber}`
       : null;
   const taxLine =
     seller.taxRegistered && seller.taxNumber
