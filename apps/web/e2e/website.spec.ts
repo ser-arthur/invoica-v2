@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { creaseSegment } from '../src/components/site/fold';
 import { signUpAndOnboard } from './helpers';
 
@@ -150,11 +150,11 @@ test('the itemised invoice says the first 30 days are free, and leads to the pla
 
 // docs/specs/website-showcase.md
 
-const SIX = ['Riso', 'Billboard', 'Marquee', 'Signature', 'Atelier', 'Trade'];
+const SIX = ['Riso', 'Marquee', 'Billboard', 'Signature', 'Atelier', 'Trade'];
 const BUSINESSES = [
   'Odd Hours Press',
-  'Overcast',
   'Night Shift Sound',
+  'Overcast',
   'Larkspur Analytics',
   'Wilder & Rose',
   'Kestrel Roofing',
@@ -192,10 +192,11 @@ test('the templates shelf shows six as designed, and brings the one chosen to th
     await expect(cards.nth(i)).toHaveAccessibleName(`${name}, made out by ${BUSINESSES[i]}`);
     await expect(shelf.locator('iframe').nth(i)).toHaveAttribute('srcdoc', inHtml(BUSINESSES[i]!));
   }
-  await expect(cards.nth(1)).toBeChecked();
+  // Billboard in front.
+  await expect(cards.nth(2)).toBeChecked();
   // Marquee in lime with navy.
-  await expect(shelf.locator('iframe').nth(2)).toHaveAttribute('srcdoc', /#c5f03c/i);
-  await expect(shelf.locator('iframe').nth(2)).toHaveAttribute('srcdoc', /#1b2559/i);
+  await expect(shelf.locator('iframe').nth(1)).toHaveAttribute('srcdoc', /#c5f03c/i);
+  await expect(shelf.locator('iframe').nth(1)).toHaveAttribute('srcdoc', /#1b2559/i);
 
   // On a wide screen the cards overlap, the nearer one on top: Atelier shows its right-hand edge. On a phone they sit
   // in a row.
@@ -319,12 +320,12 @@ test('on a phone the controls come first and the templates are seen one at a tim
         }).length,
     );
   expect(await whole()).toBe(1);
-  await expect(section.getByText('2 of 6')).toBeVisible();
+  await expect(section.getByText('3 of 6')).toBeVisible();
 
   // Swiped on, the caption follows the card in view.
   await shelf.evaluate((el) => el.scrollBy({ left: el.clientWidth * 0.85 }));
-  await expect(section.getByText('3 of 6')).toBeVisible();
-  await expect(section.getByText('Events, DJs, venues and photographers')).toBeVisible();
+  await expect(section.getByText('4 of 6')).toBeVisible();
+  await expect(section.getByText('Any business. Invoica’s own.')).toBeVisible();
 
   // The fifteen join the six in the same row.
   await section.getByRole('button', { name: 'See all fifteen' }).click();
@@ -342,25 +343,27 @@ test('step 5 shows the invoice paid, and the owed card is not drawn twice', asyn
   await expect(page.locator('[aria-label*="£6,420.00 owed across 5 invoices"]')).toHaveCount(0);
 });
 
-test('the invoice’s route is pinned while How it works is read, marking the step in view', async ({
+test('in How it works each step’s icon appears beside its numeral once the line reaches it', async ({
   page,
 }) => {
   await page.goto('/');
-  const route = page.getByRole('list', { name: 'Where INV-0044 is' });
-  await expect(route.getByRole('listitem')).toHaveText(['Write', 'Issue', 'Send', 'Remind', 'Paid']);
-  await expect(route).not.toBeInViewport();
-  for (const [heading, stop] of [
-    ['In their inbox,', 'Send'],
-    ['Late payers,', 'Remind'],
-  ] as const) {
-    await page
-      .getByRole('heading', { name: new RegExp(heading) })
-      .evaluate((el) => el.scrollIntoView({ block: 'center' }));
-    await expect(route).toBeInViewport();
-    await expect(route.locator('[aria-current="step"]')).toHaveText(stop);
+  const marker = (heading: string) =>
+    page
+      .locator('li')
+      .filter({ has: page.getByRole('heading', { name: new RegExp(heading) }) })
+      .locator('[data-mark]');
+  await page
+    .getByRole('heading', { name: /In their inbox,/ })
+    .evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  for (const heading of ['Look established', 'Numbered properly', 'In their inbox']) {
+    await expect(marker(heading), heading).toHaveAttribute('data-reached', '');
+    await expect(marker(heading).locator('svg'), heading).toBeVisible();
   }
-  await page.locator('#templates').evaluate((el) => el.scrollIntoView({ block: 'start' }));
-  await expect(route).not.toBeInViewport();
+  for (const heading of ['Late payers', 'Always know']) {
+    await expect(marker(heading), heading).not.toHaveAttribute('data-reached', '');
+  }
+  // the pinned bar is gone
+  await expect(page.getByRole('list', { name: 'Where INV-0044 is' })).toHaveCount(0);
 });
 
 test('sections have room between them', async ({ page }, info) => {
@@ -391,8 +394,14 @@ test('the header marks the section in view as the page scrolls', async ({ page }
     ['pricing', 'Pricing'],
   ] as const) {
     await page.locator(`#${id}`).evaluate((el) => el.scrollIntoView({ block: 'start' }));
-    await expect(nav.locator('[aria-current="true"]')).toHaveText(name);
+    const current = nav.locator('[aria-current="true"]');
+    await expect(current).toHaveText(name);
     await expect(nav.locator('[aria-current]')).toHaveCount(1);
+    // It lights up in the logo's green, its words dark; no dot and no underline.
+    await expect(current).toHaveCSS('background-color', 'rgb(55, 198, 107)');
+    await expect(current).toHaveCSS('color', 'rgb(9, 25, 28)');
+    await expect(current).toHaveCSS('text-decoration-line', 'none');
+    expect(await current.evaluate((el) => getComputedStyle(el, '::before').content)).toBe('none');
   }
 });
 
@@ -420,4 +429,93 @@ test('the clients section shows the list of clients and one client’s history',
       name: /clients and what each owes.*Meridian Architects LLP £2,280\.00.*history: invoice INV-0044.*a payment.*credit note CN-0003/i,
     }),
   ).toBeAttached();
+});
+
+/** The most green of the pixels around each point of a screenshot of the page, as the line's colour shows there. */
+async function greenness(page: Page, points: [number, number][]) {
+  const shot = await page.screenshot({ scale: 'css' });
+  return page.evaluate(
+    async ({ png, points }) => {
+      const img = new Image();
+      img.src = `data:image/png;base64,${png}`;
+      await img.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const g = canvas.getContext('2d')!;
+      g.drawImage(img, 0, 0);
+      return points.map(([x, y]) => {
+        let most = 0;
+        const d = g.getImageData(Math.floor(x) - 2, Math.floor(y) - 2, 5, 5).data;
+        for (let i = 0; i < d.length; i += 4)
+          most = Math.max(most, Math.abs(d[i + 1]! - (d[i]! + d[i + 2]!) / 2));
+        return most;
+      });
+    },
+    { png: shot.toString('base64'), points },
+  );
+}
+
+test('the crease’s ends are drawn past the headline and fade out there', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Measured on a wide screen.');
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  // the top end of the line runs past the headline's right edge
+  const beyond = await page.evaluate(() => {
+    const svg = document.querySelector('main h1')!.nextElementSibling!.nextElementSibling as SVGSVGElement;
+    const line = svg.querySelectorAll('line')[1]!;
+    const s = svg.getBoundingClientRect();
+    const [x1, y1, x2, y2] = [line.x1, line.y1, line.x2, line.y2].map((v) => v.baseVal.value) as [
+      number,
+      number,
+      number,
+      number,
+    ];
+    // where the line crosses 104% of the box's width
+    const k = (104 - x2) / (x1 - x2);
+    return [s.left + 1.04 * s.width, s.top + ((y2 + (y1 - y2) * k) / 100) * s.height] as [number, number];
+  });
+  const [past] = await greenness(page, [beyond]);
+  expect(past, 'the line shows past the headline’s edge').toBeGreaterThan(10);
+});
+
+test('on a phone the sign-in and sign-up pages open with the Night band and its headline', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'phone', 'Checked at phone widths.');
+  for (const path of ['/sign-in', '/sign-up']) {
+    await page.goto(path);
+    const band = page.locator('aside');
+    await expect(band, path).toBeVisible();
+    // the headline is set twice, near and far of the crease
+    await expect(band.getByText('Every invoice,').first(), path).toBeVisible();
+    const form = page.locator('main form').first();
+    expect((await band.boundingBox())!.y, path).toBeLessThan((await form.boundingBox())!.y);
+  }
+});
+
+test('the header spreads wider than the page, and the pillars have room between them', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'desktop', 'Measured on a wide screen.');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const banner = page.getByRole('banner');
+  const logo = (await banner.getByRole('link').first().boundingBox())!;
+  const button = (await banner.getByRole('link', { name: 'Create free account' }).boundingBox())!;
+  const headline = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
+  const wrap = (await page.locator('#why').boundingBox())!;
+  expect(logo.x).toBeLessThan(headline.x - 24);
+  expect(button.x + button.width).toBeGreaterThan(wrap.x + wrap.width - 24);
+  const pillars = await page
+    .locator('#why li')
+    .evaluateAll((els) => els.map((el) => el.getBoundingClientRect()));
+  expect(pillars[1]!.left - pillars[0]!.right).toBeGreaterThanOrEqual(72);
+});
+
+test('a field’s focus ring is the logo’s deeper green', async ({ page }) => {
+  await page.goto('/');
+  const email = page.getByLabel('Your email');
+  await email.focus();
+  await expect(email).toHaveCSS('outline-color', 'rgb(31, 156, 87)');
 });

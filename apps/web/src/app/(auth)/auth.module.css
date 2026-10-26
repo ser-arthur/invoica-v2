@@ -122,10 +122,6 @@
   flex-direction: column;
 }
 
-.mobileHeader {
-  display: none;
-}
-
 /*
  * The form sits at the same height on every one of these pages, a little above the middle, so its heading stays in
  * place when the visitor moves between them, however long each form is.
@@ -164,24 +160,36 @@
   }
 }
 
+/*
+ * Narrower, the Night panel becomes a band across the top: the logo, the crease headline and the turned corner, as on
+ * a wide screen, with the form under it.
+ */
 @media (max-width: 960px) {
   .auth {
     grid-template-columns: minmax(0, 1fr);
   }
   .panel {
+    --f: 44px;
+    --pad: 20px;
+    min-height: auto;
+    padding: 20px var(--pad) 30px;
+  }
+  .panelLogo {
+    font-size: 28px;
+  }
+  .panelBody {
+    margin: 0;
+    padding: 34px 0 0;
+  }
+  .panelType {
+    font-size: clamp(40px, calc(100cqi / 6.9), 76px);
+  }
+  .facts,
+  .panelFoot {
     display: none;
-  }
-  .mobileHeader {
-    display: block;
-    padding: 20px;
-  }
-  .mobileLogo {
-    display: inline-flex;
-    font-size: 30px;
-    color: var(--ink);
   }
   .formArea {
     align-items: flex-start;
-    padding: 24px 20px 64px;
+    padding: 32px 20px 64px;
   }
 }

@@ -51,7 +51,7 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: 24px;
+  column-gap: 32px;
   row-gap: 40px;
 }
 
@@ -250,6 +250,12 @@
   height: 84px;
 }
 
+/* The header spreads wider than the page's content, its logo and buttons nearer the edges. */
+.headerBar .header {
+  max-width: 1440px;
+  padding-inline: 40px;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -259,7 +265,7 @@
 
 .nav {
   display: flex;
-  gap: 36px;
+  gap: 8px;
   font-size: 15px;
   font-weight: 500;
 }
@@ -270,42 +276,19 @@
   white-space: nowrap;
 }
 
-/* The section in view: its link carries the dot from the logo's first i, in the same green. */
+/*
+ * The section in view: its link lights up in the logo's green, its words dark so they stay readable (the green as
+ * text would read at 1.9 to 1 on the header's ground).
+ */
 .nav a {
-  position: relative;
+  padding: 8px 14px;
+  border-radius: 999px;
 }
 
-.nav a::before {
-  content: '';
-  position: absolute;
-  top: -9px;
-  left: 50%;
-  width: 6px;
-  height: 6px;
-  margin-left: -3px;
-  border-radius: 50%;
-  background: var(--logo-accent);
-  opacity: 0;
-  scale: 0;
-}
-
-.nav a[aria-current]::before {
-  opacity: 1;
-  scale: 1;
-}
-
+.site .nav a[aria-current],
 .site .menuPanel a[aria-current] {
-  background: var(--mist);
-}
-
-.site .menuPanel a[aria-current]::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin: 0 10px 2px 0;
-  border-radius: 50%;
   background: var(--logo-accent);
+  color: var(--night);
 }
 
 .account {
@@ -415,7 +398,10 @@
   );
 }
 
-/* The line shows up to its tip, which rises from below its foot to its top as it is drawn; the tip's edge is soft. */
+/*
+ * The line shows up to its tip, which rises from below its foot to its top as it is drawn. The clip runs well past the
+ * drawing box on every other side, so the line's ends fade out where they lie, past the headline.
+ */
 .creaseLine {
   --crease-drawn: calc(var(--crease-from) + (var(--crease-to) - var(--crease-from)) * var(--crease-draw));
   --crease-tip: calc((var(--crease-drawn) + var(--crease-extend)) * var(--crease-k));
@@ -424,8 +410,7 @@
   width: 100%;
   overflow: visible;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(transparent calc(var(--crease-tip) - 5%), #000 var(--crease-tip));
-  mask-image: linear-gradient(transparent calc(var(--crease-tip) - 5%), #000 var(--crease-tip));
+  clip-path: inset(calc(var(--crease-tip) - 2%) -60% -60% -60%);
 }
 
 .heroType {
@@ -575,9 +560,9 @@
 
 /* The dashboard in a dark window, flat and large enough to read. */
 .appWindow {
-  --land-tilt: 34deg;
-  --land-turn: -5deg;
-  --land-scale: 0.86;
+  --land-tilt: 58deg;
+  --land-turn: -18deg;
+  --land-scale: 0.64;
   overflow: hidden;
   border-radius: 22px;
   background: #0b1a1c;
@@ -585,7 +570,7 @@
     0 0 0 1px rgb(9 25 28 / 0.14),
     0 30px 60px -36px rgb(9 25 28 / 0.5),
     0 80px 140px -70px rgb(9 25 28 / 0.55);
-  transform-origin: 50% 100%;
+  transform-origin: 50% 80%;
 }
 
 .appShot {
@@ -628,7 +613,7 @@
 .pillarList {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 40px 48px;
+  gap: 48px 88px;
   margin: 72px 0 0;
   padding: 0;
   list-style: none;
@@ -2109,6 +2094,15 @@
   font: 500 16px var(--font-sans);
 }
 
+/* In focus, a field rings in the logo's deeper green (3.4 to 1 on white), haloed in the brighter one. */
+.site .field:focus-visible {
+  outline: 2px solid #1f9c57;
+  outline-offset: 2px;
+  box-shadow:
+    inset 0 0 0 1px #1f9c57,
+    0 0 0 6px rgb(55 198 107 / 0.22);
+}
+
 .field::placeholder {
   color: #6e807d;
 }
@@ -2295,99 +2289,63 @@
   transition-duration: 160ms;
 }
 
-/*
- * The invoice's route, pinned while How it works is read (route.tsx): on a wide screen a rail of five stops in the
- * margin, centred on the screen; narrower, a slim bar under the header. It takes no room in the page.
- */
+/* The line through the steps: down the margin, filled lime to teal to the middle of the screen (journey-line.tsx). */
 .journey {
   position: relative;
 }
 
-.journeyRoute {
+.journeyTrack {
   position: absolute;
-  z-index: 30;
-  top: 0;
-  bottom: 0;
-  left: calc(max(48px, 50% - 592px) - 52px);
-  width: 40px;
-  pointer-events: none;
+  top: 80px;
+  bottom: 80px;
+  left: calc(max(48px, 50% - 592px) - 30px);
+  width: 3px;
+  border-radius: 2px;
+  background: rgb(9 25 28 / 0.08);
 }
 
-.journeyRail {
-  position: sticky;
-  top: calc(50vh - 150px);
-  height: 300px;
-}
-
-.journeyLine {
-  position: absolute;
-  top: 20px;
-  bottom: 20px;
-  left: 19px;
-  width: 2px;
-  border-radius: 1px;
-  background: rgb(9 25 28 / 0.1);
-}
-
-.journeyLineFill {
+.journeyFill {
   position: absolute;
   inset: 0;
-  border-radius: 1px;
+  border-radius: 2px;
   background: linear-gradient(180deg, #cff26a, #37c66b 45%, #138c86);
-  transform: scaleY(var(--progress, 0));
+  transform: scaleY(var(--fill, 1));
   transform-origin: top;
 }
 
-.journeyStops {
+/*
+ * Each step's icon sits on the line beside its numeral, in the step's colour: a small node on the line until the line
+ * reaches it, then the icon.
+ */
+.marker {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
-.journeyStop {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.journeyIcon {
+.markIcon {
+  position: absolute;
+  top: 50%;
+  left: -46.5px;
   display: grid;
-  flex: none;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
+  margin-top: -18px;
   border-radius: 50%;
-  background: #ffffff;
-  color: var(--quiet);
-  box-shadow: inset 0 0 0 1px var(--rule);
-}
-
-.journeyStop[data-state='done'] .journeyIcon {
-  background: color-mix(in srgb, var(--stop) 14%, #ffffff);
-  color: var(--stop);
-  box-shadow: none;
-}
-
-.journeyStop[data-state='now'] .journeyIcon {
   background: var(--stop);
   color: #ffffff;
-  box-shadow: 0 8px 18px -8px var(--stop);
-  scale: 1.12;
+  box-shadow:
+    0 0 0 6px var(--mist),
+    0 12px 22px -10px var(--stop);
 }
 
-/* The stops' names are for screen readers on the rail; on the bar the stop in view shows its name. */
-.journeyName {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+[data-following] .markIcon:not([data-reached]) {
+  background: #c9d2cf;
+  box-shadow: 0 0 0 6px var(--mist);
+  scale: 0.36;
+}
+
+[data-following] .markIcon:not([data-reached]) svg {
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -2496,10 +2454,10 @@
   }
 
   /* The header's dot moves to the section in view; the menu button's lines turn into a cross, the menu's items follow. */
-  .nav a::before {
+  .nav a {
     transition:
-      opacity 250ms ease,
-      scale 400ms var(--arrive);
+      background-color 300ms var(--arrive),
+      color 200ms ease;
   }
   .menuLines [data-line] {
     transition:
@@ -2528,6 +2486,17 @@
   }
   .menu[open] .menuPanel > :nth-child(6) {
     animation-delay: 175ms;
+  }
+
+  /* A step's icon lands on the line as it arrives: a small node grows into the icon, which fades in. */
+  .markIcon {
+    transition:
+      scale 520ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      background-color 260ms ease,
+      opacity 260ms ease;
+  }
+  .markIcon svg {
+    transition: opacity 240ms ease 140ms;
   }
 
   /* The shelf's cards move to and from the front. */
@@ -2607,7 +2576,7 @@
     .appWindow {
       animation: land linear both;
       animation-timeline: view();
-      animation-range: entry 0% cover 42%;
+      animation-range: entry 0% cover 50%;
     }
 
     /* Each section's words rise into place as they arrive, in the order they are read. */
@@ -2760,8 +2729,15 @@
 
 @keyframes land {
   from {
-    transform: perspective(2400px) rotateX(var(--land-tilt)) rotateZ(var(--land-turn))
+    transform: perspective(1800px) translateY(60px) rotateX(var(--land-tilt)) rotateZ(var(--land-turn))
       scale(var(--land-scale));
+    box-shadow:
+      0 0 0 1px rgb(9 25 28 / 0.1),
+      0 120px 120px -60px rgb(9 25 28 / 0.35);
+  }
+  /* it stands up, tips a touch past upright and settles */
+  78% {
+    transform: perspective(1800px) translateY(-6px) rotateX(-4deg) rotateZ(0deg) scale(1.01);
   }
 }
 
@@ -2870,53 +2846,6 @@
 
 /* Below 1180 pixels the hero's statement, buttons and facts sit under the headline. */
 @media (max-width: 1180px) {
-  /* The route becomes a slim bar under the header, the stop in view named. */
-  .journeyRoute {
-    display: contents;
-  }
-  .journeyRail {
-    top: 94px;
-    width: max-content;
-    height: 48px;
-    margin: 8px auto 0;
-    padding: 4px;
-    border-radius: 999px;
-    background: rgb(255 255 255 / 0.9);
-    -webkit-backdrop-filter: saturate(150%) blur(12px);
-    backdrop-filter: saturate(150%) blur(12px);
-    box-shadow:
-      0 0 0 1px rgb(9 25 28 / 0.08),
-      0 12px 28px -16px rgb(9 25 28 / 0.4);
-  }
-  .journeyLine {
-    display: none;
-  }
-  .journeyStops {
-    flex-direction: row;
-    gap: 4px;
-  }
-  .journeyIcon {
-    width: 40px;
-    height: 40px;
-    box-shadow: none;
-  }
-  .journeyStop[data-state='now'] {
-    padding-right: 14px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--stop) 12%, #ffffff);
-  }
-  .journeyStop[data-state='now'] .journeyIcon {
-    scale: 1;
-  }
-  .journeyStop[data-state='now'] .journeyName {
-    position: static;
-    width: auto;
-    height: auto;
-    clip-path: none;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--night);
-  }
   .heroHead,
   .heroFacts,
   .heroStatement,
@@ -3013,6 +2942,9 @@
   .headerButton {
     display: none;
   }
+  .headerBar .header {
+    padding-inline: 20px;
+  }
   .site .menuPanel .menuWayIn {
     display: block;
   }
@@ -3029,6 +2961,27 @@
   }
   .stampBig {
     font-size: 30px;
+  }
+  /* On phones there is no margin for the line: the step's icon lights beside its name. */
+  .journeyTrack {
+    display: none;
+  }
+  .markIcon {
+    position: static;
+    order: 3;
+    width: 30px;
+    height: 30px;
+    margin: 0 0 -4px 2px;
+    box-shadow: 0 8px 16px -8px var(--stop);
+  }
+  .markIcon svg {
+    width: 15px;
+    height: 15px;
+  }
+  [data-following] .markIcon:not([data-reached]) {
+    box-shadow: none;
+    opacity: 0;
+    scale: 0.6;
   }
   .heroFacts {
     gap: 16px;
@@ -3105,9 +3058,9 @@
   }
   /* On phones the dashboard is cropped to its left side, where the figures are, and lands from a gentler tilt. */
   .appWindow {
-    --land-tilt: 18deg;
-    --land-turn: 0deg;
-    --land-scale: 0.94;
+    --land-tilt: 34deg;
+    --land-turn: -7deg;
+    --land-scale: 0.84;
     aspect-ratio: 4 / 5;
     border-radius: 18px;
   }

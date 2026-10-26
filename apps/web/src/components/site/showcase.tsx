@@ -54,7 +54,8 @@ type Card = { template: string; name: string; maker: string; forWhom: string; ht
 export function Showcase() {
   const [name, setName] = useState('');
   const [colour, setColour] = useState<string | null>(null);
-  const [front, setFront] = useState(1);
+  // Billboard, third on the shelf, stands in front.
+  const [front, setFront] = useState(2);
   const [all, setAll] = useState(false);
   const narrow = useNarrow();
   const allId = useId();
@@ -252,7 +253,7 @@ export function Showcase() {
             aria-controls={narrow ? undefined : allId}
             onClick={() => {
               setAll((open) => !open);
-              if (all && front > 5) choose(5);
+              if (all && front > 5) choose(2);
             }}
           >
             {all ? 'Hide the fifteen' : 'See all fifteen'}

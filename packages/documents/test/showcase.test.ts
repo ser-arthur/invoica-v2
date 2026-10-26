@@ -4,11 +4,11 @@ import { SHOWCASE, showcaseSnapshot } from '../src';
 // docs/specs/website-showcase.md, the owner's notes of 26 October: the shelf's order and Marquee's colours.
 
 describe('the website showcase', () => {
-  it('runs Riso, Billboard, Marquee, Signature, Atelier and Trade', () => {
+  it('runs Riso, Marquee, Billboard, Signature, Atelier and Trade', () => {
     expect(SHOWCASE.map((entry) => entry.template)).toEqual([
       'riso',
-      'billboard',
       'marquee',
+      'billboard',
       'signature',
       'atelier',
       'trade',
