@@ -4,7 +4,7 @@ import {
   LOGO_INK,
   LOGO_INK_DOT,
   LOGO_VIEW_BOX,
-} from '../../../apps/web/src/components/logo-shapes';
+} from '../../../packages/documents/src/logo-shapes';
 
 /** Invoica's wordmark as inline SVG for an invoice's foot: the letters in `ink`, the slip's fold and dot in `accent`. */
 export function invoicaMark(ink: string, accent: string, heightMm = 3.2): string {

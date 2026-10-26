@@ -1489,11 +1489,19 @@ export function InvoiceEditor(props: EditorProps) {
                   value={state.template}
                   onChange={(e) => update({ template: e.target.value })}
                 >
-                  {TEMPLATE_LIST.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}: {t.description}
-                    </option>
-                  ))}
+                  {TEMPLATE_LIST.flatMap((t) =>
+                    t.styles
+                      ? t.styles.map((st) => (
+                          <option key={st.id} value={st.id}>
+                            {t.name}, {st.name}: {t.description}
+                          </option>
+                        ))
+                      : [
+                          <option key={t.id} value={t.id}>
+                            {t.name}: {t.description}
+                          </option>,
+                        ],
+                  )}
                   {RETIRED_TEMPLATES.filter((t) => t.id === state.template).map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name}: retired, kept for this draft

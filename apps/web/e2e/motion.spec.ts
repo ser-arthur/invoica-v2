@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 // docs/specs/website.md, rule 9: movement tied to scrolling follows the page's own scroll. A container that clips with
 // `overflow: hidden` becomes a scroll container, and anything inside it would follow that container's scroll, which
@@ -180,6 +180,94 @@ test('the footer’s logo rises when it comes into view, and again after the rea
   await page.waitForTimeout(300);
   await mark.scrollIntoViewIfNeeded();
   await expect.poll(rising).toBe(true);
+});
+
+// The owner's notes of 26 October, 16:52: sign in, sign up and pricing land as they open, as the home page does.
+
+/** Every animation on the page's own clock: its target's description, its name, when it starts and ends. */
+async function loadSequence(page: Page) {
+  return page.evaluate(() =>
+    (document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline) as CSSAnimation[])
+      .filter((a) => a.animationName)
+      .map((a) => {
+        const t = a.effect!.getComputedTiming();
+        const el = (a.effect as KeyframeEffect).target as Element;
+        return {
+          name: a.animationName,
+          tag: el.tagName.toLowerCase(),
+          text: (el.textContent ?? '').trim().slice(0, 24),
+          start: Number(t.delay),
+          end: Number(t.endTime),
+        };
+      }),
+  );
+}
+
+async function heldAt(page: Page, t: number, selectors: string[]) {
+  return page.evaluate(
+    ({ t, selectors }) => {
+      for (const a of document.getAnimations()) {
+        if (!(a.timeline instanceof DocumentTimeline)) continue;
+        a.pause();
+        a.currentTime = t;
+      }
+      return selectors.map((sel) => document.querySelector(sel)!.getBoundingClientRect().left);
+    },
+    { t, selectors },
+  );
+}
+
+test('signing in, the Night panel lands: the logo, the halves from opposite sides, the crease, then each point', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'desktop', 'On a phone the panel is a band; the same sequence plays.');
+  await page.goto('/sign-in');
+  await page.waitForLoadState('networkidle');
+  const seq = await loadSequence(page);
+  const find = (pred: (x: (typeof seq)[number]) => boolean, what: string) => {
+    const hit = seq.find(pred);
+    expect(hit, what).toBeDefined();
+    return hit!;
+  };
+  const near = find((x) => x.tag === 'p' && x.text.startsWith('The smarter way'), 'the near half');
+  const far = find((x) => x.tag === 'div' && x.text.startsWith('The smarter way'), 'the far half');
+  const crease = find((x) => x.tag === 'svg', 'the crease');
+  const points = seq.filter((x) => x.tag === 'li').map((x) => x.start);
+  expect(near.start).toBe(far.start);
+  expect(near.start).toBeLessThan(crease.start);
+  expect(points).toHaveLength(3);
+  expect([...points].sort((a, b) => a - b)).toEqual(points);
+  expect(points[0]).toBeGreaterThan(crease.start);
+  expect(Math.max(...seq.map((x) => x.end))).toBeLessThanOrEqual(2500);
+  const rest = await heldAt(page, 5000, ['aside p', 'aside div[aria-hidden="true"]']);
+  const early = await heldAt(page, near.start + 100, ['aside p', 'aside div[aria-hidden="true"]']);
+  expect(early[0], 'the near half comes from the left').toBeLessThan(rest[0]! - 1);
+  expect(early[1], 'the far half comes from the right').toBeGreaterThan(rest[1]! + 1);
+});
+
+test('the pricing page lands: its heading from opposite sides, then the words, the trial and the plans in turn', async ({
+  page,
+}) => {
+  await page.goto('/pricing');
+  await page.waitForLoadState('networkidle');
+  const seq = await loadSequence(page);
+  const start = (pred: (x: (typeof seq)[number]) => boolean, what: string) => {
+    const hits = seq.filter(pred);
+    expect(hits.length, what).toBeGreaterThan(0);
+    return Math.min(...hits.map((x) => x.start));
+  };
+  const first = start((x) => x.text === 'Plans that grow', 'the heading’s first half');
+  const second = start((x) => x.text === 'with your business.', 'its second half');
+  const lead = start((x) => x.text.startsWith('Start with everything'), 'the words under it');
+  const trial = start((x) => x.text.startsWith('30'), 'the trial');
+  const plans = seq.filter((x) => x.tag === 'article').map((x) => x.start);
+  expect(first).toBe(second);
+  expect(first).toBeLessThan(lead);
+  expect(lead).toBeLessThan(trial);
+  expect(plans).toHaveLength(3);
+  expect([...plans].sort((a, b) => a - b)).toEqual(plans);
+  expect(plans[0]).toBeGreaterThan(trial);
+  expect(Math.max(...seq.map((x) => x.end))).toBeLessThanOrEqual(2500);
 });
 
 test('with less motion asked for, nothing on the website moves when it loads', async ({ page }) => {

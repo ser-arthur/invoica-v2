@@ -33,7 +33,7 @@ export default async function SettingsPage() {
   const plan = organisationPlan(org, now);
   const brandNote = organisationEntitlements(org, now).ownBrand
     ? null
-    : 'On the free plan, invoices use the Signature template in Invoica’s colour, without your logo, and say “Made with Invoica” at the foot. Your choices here are kept for when you upgrade.';
+    : 'On the free plan, invoices use Signature, in the style you choose, in Invoica’s colour and without your logo. Like every Signature, they carry “Powered by Invoica” at the foot. Your other choices here are kept for when you upgrade.';
   const daysLeft = org.trialEndsAt
     ? Math.max(0, Math.ceil((org.trialEndsAt.getTime() - now.getTime()) / 86_400_000))
     : 0;

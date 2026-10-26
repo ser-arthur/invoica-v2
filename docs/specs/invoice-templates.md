@@ -98,15 +98,15 @@ in `packages/db/test`; settings and the picker in `apps/web` and `e2e`.
 9. Settings refuse a second colour that is not a hex colour and a logo ground outside the four values.
 10. On the free plan with plans enforced, documents still use Signature and Invoica's colour (spec `plans.md`
     unchanged), and the second colour is worked out from Invoica's colour.
-11. The picker lists the fifteen in order, filters by kind of business and by feel, and choosing one saves it; the
-    editor's template choice lists the same fifteen.
+11. The picker lists the sixteen in order, filters by kind of business and by feel, and choosing one saves it; the
+    editor's template choice lists the same sixteen, with Signature's four styles.
 12. Pages are accessible: the picker's choices are labelled, and the new settings are reachable and named for screen
     readers (`e2e/accessibility.spec.ts`).
 
 13. Every template fits the three short fixtures on one page with a wide logo and with a square one
     (`packages/pdf/test/pdf.test.ts`).
-14. Signature shows the amount due on a slip of the brand colour, its corner turned, before the parties and the lines
-    (`packages/documents/test/kept-templates.test.ts`).
+14. Signature shows the amount due before the parties and the lines, in each of its styles
+    (`packages/documents/test/kept-templates.test.ts`); the light style on a slip of the brand colour, its corner turned.
 15. Ticket ends with a stub after a perforation holding the amount due, the bank details and the reference; the band
     with the amount due sits inside the paper's margins, on a grey page (the same test, and approved images).
 16. Letter keeps its layout, with the invoice and its number and the name under "With thanks" set larger (approved
@@ -121,6 +121,42 @@ speaking in the first person.
 
 They change in place, under the same ids. No invoice has been issued with them outside development yet. A document
 issued before the change keeps its snapshot and its kept PDF; only its view on screen takes the new look.
+
+## Signature's styles, Powered by Invoica, and Monochrome
+
+The owner's choices of 26 October 2026, 16:38, from the Signature session (`docs/design/round-10-signature.md`,
+canvas page "Signature, new directions"):
+
+- Signature comes in four styles, chosen in its settings: **Night head** (`signature`, the default), **Light**
+  (`signature-light`), **Route** (`signature-route`) and **Route on Night** (`signature-route-dark`). The picker and the
+  editor list Signature once, with its styles under it. There is no fully dark crease.
+- Night head: the top of the page is the sign-in panel's sheet, Night with its corner turned in the business's
+  colour. The number is set large and crossed by the crease, the part past it in mint; the band past the crease is a
+  shade lighter, and that edge is the crease itself, carried across the band, whatever the number. The amount due
+  stands at the right of the band. Below the band the page is light.
+- Light: the number large and crossed by the crease, the part past it grey; the amount due on the slip.
+- Route and Route on Night: the page's top corner turned in the business's colour; the route from issued to due along
+  Invoica's line with the days between; the amount due the largest thing on the page. On Night the business's colour
+  is lifted until it reads.
+- Every style of Signature ends with "Powered by" and Invoica's wordmark, on every plan. Other templates carry nothing
+  of Invoica. The free plan uses Signature, so its documents always carry the mark, and the "Made with Invoica" line
+  goes. The free plan may choose among Signature's styles; anything else still becomes Signature (Night head).
+- **Monochrome** (`monochrome`) joins the range as the sixteenth, last in the picker, shown with a logo: the first app's
+  layout in greys, the logo set in grey, figures in JetBrains Mono, no brand colour. The website's count follows.
+- A document issued before this change on `signature` shows the Night head on screen; its kept PDF is unchanged.
+
+17. Signature's four styles render the sample invoice, the three short fixtures with a wide and a square logo, and the
+    hard documents, each on one page where they did before, with approved images.
+18. In the Night head, the lighter part of the band starts on the line of the crease, for a short number and a long
+    one.
+19. Every Signature style shows "Powered by" and Invoica's wordmark on every plan; no other template does on a paid
+    plan; "Made with Invoica" no longer appears.
+20. On the free plan with plans enforced, a document keeps the Signature style chosen; any other template becomes
+    Signature.
+21. Route shows the days from issue to due, worked out from the business dates, and leaves the route out when there
+    is no due date (a credit note).
+22. Monochrome renders every fixture in greys only: no colour outside the logo, and the logo set in grey.
+23. The picker shows Signature's four styles as choices under it, and choosing one saves it; the editor lists them.
 
 ## Order of work
 

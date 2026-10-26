@@ -1,4 +1,5 @@
 import {
+  daysBetween,
   formatBusinessDate,
   formatExchangeRate,
   formatMoney,
@@ -57,6 +58,8 @@ export interface DocumentView {
     kind: 'line' | 'tax' | 'discount' | 'total' | 'payment' | 'note';
   }[];
   amountDue: { label: string; value: string; dueLine: string | null };
+  /** An invoice's way from issue to due, with the days between; null without a due date and on a credit note. */
+  route: { issued: string; due: string; days: number } | null;
   notes: string | null;
   terms: string | null;
   payment: { title: string; rows: { label: string; value: string }[] }[];
@@ -357,6 +360,10 @@ export function buildView(s: DocumentSnapshot, options: { draft?: boolean } = {}
       value: money(due),
       dueLine: isCredit ? null : s.dueDate ? `Due ${formatBusinessDate(s.dueDate, 'long', s.locale)}` : null,
     },
+    route:
+      !isCredit && s.dueDate
+        ? { issued: date(s.issueDate), due: date(s.dueDate), days: daysBetween(s.issueDate, s.dueDate) }
+        : null,
     notes: s.notes,
     terms: s.terms,
     payment: isCredit ? [] : payment,

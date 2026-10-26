@@ -1,15 +1,12 @@
 import { redirect } from 'next/navigation';
 import { AppSheet } from '@/components/site/app-sheet';
 import { Clients } from '@/components/site/clients';
-import { SiteFooter } from '@/components/site/footer';
-import { SiteHeader } from '@/components/site/header';
 import { Hero } from '@/components/site/hero';
 import { Itemised } from '@/components/site/itemised';
 import { Phones } from '@/components/site/phones';
 import { Pillars } from '@/components/site/pillars';
 import { Steps } from '@/components/site/steps';
 import { Templates } from '@/components/site/templates';
-import s from '@/components/site/site.module.css';
 import { isSignedIn } from '@/lib/session';
 
 /**
@@ -21,19 +18,15 @@ import { isSignedIn } from '@/lib/session';
 export default async function HomePage() {
   if (await isSignedIn()) redirect('/dashboard');
   return (
-    <div className={s.site}>
-      <SiteHeader arrive />
-      <main>
-        <Hero />
-        <AppSheet />
-        <Pillars />
-        <Steps />
-        <Clients />
-        <Templates />
-        <Phones />
-        <Itemised />
-      </main>
-      <SiteFooter />
-    </div>
+    <main>
+      <Hero />
+      <AppSheet />
+      <Pillars />
+      <Steps />
+      <Clients />
+      <Templates />
+      <Phones />
+      <Itemised />
+    </main>
   );
 }

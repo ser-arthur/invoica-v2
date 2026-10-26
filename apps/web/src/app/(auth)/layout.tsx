@@ -5,10 +5,11 @@ import site from '@/components/site/site.module.css';
 import a from './auth.module.css';
 
 /**
- * Sign in, sign up and the email pages: the form on the right in the site's light palette, and on wide
- * screens a Night panel on the left with the crease and what an account brings; narrower, the panel is a band across
- * the top with the crease. The crease is silver here, so it stands apart from the green words past it, and the panel
- * past it is a shade lighter, as if folded there.
+ * Sign in, sign up and the email pages: the form on the right in the site's light palette, and on wide screens a
+ * Night panel on the left with the crease, the first Invoica's line, and what an account brings; narrower, the panel
+ * is a band across the top with the crease. The crease is silver here, so it stands apart from the green words past
+ * it, and the panel past it is a shade lighter, as if folded there. The panel lands once, as the first of these pages
+ * opens (auth.module.css).
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,7 +22,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className={a.panelBody}>
           <Crease
             as="p"
-            lines={['Every invoice,', 'all the way', 'to paid.']}
+            lines={['The smarter way', 'to bill, track', 'and get paid.']}
             typeClass={a.panelType}
             pastClass={a.mint}
             dark

@@ -58,6 +58,17 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+26 October 2026, about 16:40 to 18:30, on `main`, the owner's choices of 16:38 from the Signature session and his notes of 16:52:
+- Signature comes in four styles, chosen under it in the picker and listed in the editor: Night head (`signature`, the default), Light (`signature-light`), Route (`signature-route`) and Route on Night (`signature-route-dark`). In the Night head the band past the crease is a shade lighter along the crease itself, carried across the band, whatever the number (`creaseFold` in `packages/documents/src/templates/invoica.ts`, with a test that its edge lies on the crease's line). The fully dark crease was not taken.
+- Every Signature ends with "Powered by" and Invoica's wordmark, on every plan (the owner: it is our own design, so it should be there). Other templates carry nothing of Invoica; the "Made with Invoica" line is gone. The free plan keeps the Signature style chosen. The logo's shapes now live in `packages/documents/src/logo-shapes.ts`; the web re-exports them.
+- Route shows the days from issue to due, worked out in `@invoica/core` (`view.route`), and leaves the route out without a due date.
+- Monochrome joins the range as the sixteenth, from the first app's layout, greys only with the logo in grey. The website says sixteen; the Pro plan's line reads "No Invoica mark, except on Signature, our own design".
+- Approved images redrawn for Signature and added for its three new styles and Monochrome.
+- The header's links: pointing at one tints it green, the lit one stays lit, Pricing is lit on its page, a clicked link lights at once and holds while the page moves. The public pages share one layout (`app/(site)/layout.tsx`), so the header no longer comes in again between the home page and pricing (what read as the nav going off and coming back).
+- Sign in and sign up take the first Invoica's line, "The smarter way to bill, track and get paid.", and their Night panel lands as it opens; the pricing page lands too. Still for visitors who ask for less motion.
+- Checks: 901 unit, database and PDF tests run, 901 passed, 0 failed, 0 skipped (core 259, schemas 7, documents 66, PDF 231, database 239, web unit 99); format, copy rules, lint, types and the production build pass. The end-to-end suite against the production build, run from a copy elsewhere with production settings, ran 282: 195 passed, 86 skipped by design (one width only), 1 failed: the list of all templates was still expected to hold fifteen. With the count corrected, that test passes against the same build.
+- Bundle 39.
+
 26 October 2026, about 15:20 to 16:40, on `main` at the owner's word ("let's make all our changes go on the main branch, unless there is something that is like significantly that is going to break something", 15:18), his notes of 15:18 and 15:39 (`docs/specs/website-showcase.md`, criteria 19 to 22):
 - How it works: the line down the margin is back, filling to the middle of the screen as the page scrolls, and as it reaches each step that step's icon (pen, sheet, envelope, bell, tick) springs out beside its numeral. The pinned rail and the bar under the header are gone. On phones, with no margin for the line, each icon lights as its step reaches the middle of the screen.
 - The slab under the hero lands with more presence: it starts further back, turned and smaller, and settles just past flat before coming to rest.
@@ -244,12 +255,12 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 2. GitHub: on 23 October the owner chose to put v2 in its own private repository, `ser-arthur/invoica-v2`, cloned from bundle 20 into `~/Downloads/_DEV/invoica-v2` with `feat/website` as its `main`, and to show the site from its own Vercel project (root `apps/web`, no database: the site shows, account actions fail). The old repository and `invoica-io.vercel.app` stay untouched. CI (`.github/workflows/ci.yml`) runs there for the first time on that push. When this session is linked to GitHub: pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
 3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
 4. Templates: real-looking sample details in the picker (account, company and VAT numbers that fail their check digits). Later: static fonts for PDFs, and the website's templates section.
-5. Signature: the owner chooses a direction, whether dark is a choice in its settings, "Powered by Invoica" on the free plan, and Monochrome's logo (`docs/design/round-10-signature.md`). Then it is built to the templates' rules.
+5. Signature: answered and built on 26 October (four styles, Powered by Invoica on every Signature, Monochrome as the sixteenth).
 6. The website on `feat/website`: the owner's review (bundle 20), then a pull request once GitHub is linked; the owner's choice of where to show v2 before launch (a separate Vercel project recommended; the old app's address is not touched without his say). Then the app screens in the round 5 look: tokens and fonts in `globals.css`, the sheet and slab as shared pieces, each screen with its tests and the accessibility checks in both themes. The home page shows the app as drawn on the round 5 canvas, so it runs ahead of the app until those screens are built.
 
 ## Open questions
 
-The list is kept in `docs/BLUEPRINT.md`, "Open questions" (9 items, 7 open).
+The list is kept in `docs/BLUEPRINT.md`, "Open questions" (9 items, 6 open).
 
 ## Decisions
 

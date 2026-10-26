@@ -10,14 +10,30 @@ export const INVOICA_COLOUR = '#17795a';
 export interface Entitlements {
   /** How many clients may be active at once; null for no limit. */
   activeClients: number | null;
-  /** Whether documents may use a template other than Signature. */
+  /** Whether documents may use a template other than Signature (any of its styles). */
   ownTemplate: boolean;
   /** Whether documents carry the organisation's own logo and colour. */
   ownBrand: boolean;
-  /** Whether documents show "Made with Invoica". */
+  /** Whether the plan is the free one, recorded on its documents; Signature carries "Powered by Invoica" on every plan. */
   mark: boolean;
   /** Whether clients are reminded about unpaid invoices (docs/specs/reminders.md). */
   reminders: boolean;
+}
+
+/**
+ * Signature's styles, each its own template id: Night head (the default), light, route and route on Night. The free
+ * plan may use any of them (docs/specs/invoice-templates.md).
+ */
+export const SIGNATURE_STYLES: readonly string[] = [
+  'signature',
+  'signature-light',
+  'signature-route',
+  'signature-route-dark',
+];
+
+/** Whether a template is one of Signature's styles. */
+export function isSignature(template: string): boolean {
+  return SIGNATURE_STYLES.includes(template);
 }
 
 /** The plan an organisation is on: its subscription, else the trial until it ends, else free. */
@@ -46,7 +62,7 @@ export function applyEntitlements<
 >(doc: T, e: Entitlements): T & { madeWithInvoica: boolean } {
   return {
     ...doc,
-    template: e.ownTemplate ? doc.template : 'signature',
+    template: e.ownTemplate || isSignature(doc.template) ? doc.template : 'signature',
     seller: e.ownBrand
       ? doc.seller
       : {

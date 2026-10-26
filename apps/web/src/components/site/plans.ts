@@ -27,8 +27,8 @@ export const PLANS: Plan[] = [
     features: [
       { text: 'Up to 3 active clients' },
       { text: 'Unlimited invoices, credit notes and PDFs' },
-      { text: 'The Signature template, in Invoica’s colours' },
-      { text: '“Made with Invoica” on your documents' },
+      { text: 'Signature, in any of its four styles, in Invoica’s colours' },
+      { text: '“Powered by Invoica” at the foot of your documents' },
       { text: 'One person' },
     ],
   },
@@ -40,8 +40,8 @@ export const PLANS: Plan[] = [
     cta: 'Start your 30 days free',
     features: [
       { text: 'Unlimited clients' },
-      { text: 'All fifteen templates, with your logo and colour' },
-      { text: 'No Invoica mark on your documents' },
+      { text: 'All sixteen templates, with your logo and colour' },
+      { text: 'No Invoica mark, except on Signature, our own design' },
       { text: 'Reminders that follow up late payers for you' },
       { text: 'Payment links', soon: true },
       { text: 'One person' },

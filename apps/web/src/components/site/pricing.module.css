@@ -499,3 +499,78 @@
     scale: 1;
   }
 }
+
+/*
+ * The page landing as it opens: the label, then the heading's two halves from opposite sides, meeting; the words under
+ * it, the trial with its corner turning, then the choice of monthly or yearly and the three plans rising in turn.
+ * Settled inside two and a half seconds, and still for visitors who ask for less motion. The plans move by
+ * `translate`, so their tilt on hover is untouched.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .intro > :first-child {
+    animation: open 600ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both;
+  }
+  .title > span:first-child {
+    display: inline-block;
+    animation: fromLeft 1100ms cubic-bezier(0.16, 1, 0.3, 1) 250ms both;
+  }
+  .title > span:last-child {
+    display: inline-block;
+    animation: fromRight 1100ms cubic-bezier(0.16, 1, 0.3, 1) 250ms both;
+  }
+  .intro > p {
+    animation: open 700ms cubic-bezier(0.16, 1, 0.3, 1) 700ms both;
+  }
+  .trial {
+    animation: open 800ms cubic-bezier(0.16, 1, 0.3, 1) 820ms both;
+  }
+  .trial::after {
+    transform-origin: 100% 0;
+    animation: turn 640ms cubic-bezier(0.16, 1, 0.3, 1) 1100ms both;
+  }
+  .switch {
+    animation: open 700ms cubic-bezier(0.16, 1, 0.3, 1) 940ms both;
+  }
+  .planGrid > * {
+    animation: open 800ms cubic-bezier(0.16, 1, 0.3, 1) 1000ms both;
+  }
+  .planGrid > :nth-child(2) {
+    animation-delay: 1080ms;
+  }
+  .planGrid > :nth-child(3) {
+    animation-delay: 1160ms;
+  }
+}
+
+@keyframes open {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+  }
+}
+
+@keyframes fromLeft {
+  from {
+    opacity: 0;
+    translate: -0.6em 0;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+@keyframes fromRight {
+  from {
+    opacity: 0;
+    translate: 0.6em 0;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+@keyframes turn {
+  from {
+    scale: 0;
+  }
+}
