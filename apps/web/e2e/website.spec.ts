@@ -150,14 +150,14 @@ test('the itemised invoice says the first 30 days are free, and leads to the pla
 
 // docs/specs/website-showcase.md
 
-const SIX = ['Signature', 'Billboard', 'Atelier', 'Marquee', 'Trade', 'Riso'];
+const SIX = ['Riso', 'Billboard', 'Marquee', 'Signature', 'Atelier', 'Trade'];
 const BUSINESSES = [
-  'Larkspur Analytics',
-  'Overcast',
-  'Wilder & Rose',
-  'Night Shift Sound',
-  'Kestrel Roofing',
   'Odd Hours Press',
+  'Overcast',
+  'Night Shift Sound',
+  'Larkspur Analytics',
+  'Wilder & Rose',
+  'Kestrel Roofing',
 ];
 const FIFTEEN = [
   'Signature',
@@ -193,22 +193,25 @@ test('the templates shelf shows six as designed, and brings the one chosen to th
     await expect(shelf.locator('iframe').nth(i)).toHaveAttribute('srcdoc', inHtml(BUSINESSES[i]!));
   }
   await expect(cards.nth(1)).toBeChecked();
+  // Marquee in lime with navy.
+  await expect(shelf.locator('iframe').nth(2)).toHaveAttribute('srcdoc', /#c5f03c/i);
+  await expect(shelf.locator('iframe').nth(2)).toHaveAttribute('srcdoc', /#1b2559/i);
 
-  // On a wide screen the cards overlap, the nearer one on top: Trade shows its right-hand edge. On a phone they sit
+  // On a wide screen the cards overlap, the nearer one on top: Atelier shows its right-hand edge. On a phone they sit
   // in a row.
-  const trade = shelf.locator('label').nth(4);
-  if (info.project.name === 'phone') await trade.click();
+  const atelier = shelf.locator('label').nth(4);
+  if (info.project.name === 'phone') await atelier.click();
   else {
-    const box = (await trade.boundingBox())!;
-    await trade.click({ position: { x: box.width - 16, y: box.height / 2 } });
+    const box = (await atelier.boundingBox())!;
+    await atelier.click({ position: { x: box.width - 16, y: box.height / 2 } });
   }
   await expect(cards.nth(4)).toBeChecked();
-  await expect(section.getByText('Builders, roofers, electricians and cleaners')).toBeVisible();
+  await expect(section.getByText('Florists, stylists, interiors and weddings')).toBeVisible();
 
   await cards.nth(4).focus();
   await page.keyboard.press('ArrowRight');
   await expect(cards.nth(5)).toBeChecked();
-  await expect(section.getByText('Illustrators, printers, zines and labels')).toBeVisible();
+  await expect(section.getByText('Builders, roofers, electricians and cleaners')).toBeVisible();
 });
 
 test('a name or a colour redraws all six as yours, and they go back to the examples', async ({ page }) => {
@@ -233,7 +236,8 @@ test('a name or a colour redraws all six as yours, and they go back to the examp
   }
 });
 
-test('all fifteen are a click away, named, in the picker’s order', async ({ page }) => {
+test('all fifteen are a click away, named, in the picker’s order', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'On a phone the fifteen join the six in one row (below).');
   await page.goto('/');
   const section = page.locator('#templates');
   await section.getByRole('button', { name: 'See all fifteen' }).click();
@@ -252,7 +256,22 @@ test('on a phone the header holds the logo and the menu, and the menu holds both
   const banner = page.getByRole('banner');
   await expect(banner.getByRole('link')).toHaveCount(1);
   await expect(banner.getByRole('link')).toHaveAttribute('href', '/');
-  await banner.locator('summary').click();
+
+  // The menu button: no border, two lines of different lengths that turn into a cross.
+  const button = banner.locator('summary');
+  const frame = await button.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { border: cs.borderTopWidth, shadow: cs.boxShadow };
+  });
+  expect(frame).toEqual({ border: '0px', shadow: 'none' });
+  const lines = button.locator('[data-line]');
+  await expect(lines).toHaveCount(2);
+  const widths = await lines.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().width));
+  expect(widths[0]).not.toBe(widths[1]);
+  await button.click();
+  const turned = await lines.evaluateAll((els) => els.map((el) => getComputedStyle(el).rotate));
+  expect(turned.every((r) => r !== 'none' && r !== '0deg')).toBe(true);
+
   const menu = banner.getByRole('navigation', { name: 'Menu' });
   await expect(menu.getByRole('link', { name: 'Create free account' })).toHaveAttribute('href', '/sign-up');
   await expect(menu.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/sign-in');
@@ -277,4 +296,128 @@ test('on a phone body text is 16 pixels and the hero’s sentence 19', async ({ 
   ]) {
     expect(await size(text), text).toBe('16px');
   }
+});
+
+test('on a phone the controls come first and the templates are seen one at a time, the fifteen in the same row', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'phone', 'Checked at phone widths.');
+  await page.goto('/');
+  const section = page.locator('#templates');
+  const shelf = section.getByRole('group', { name: 'Templates' });
+  const cards = shelf.locator('label');
+  const name = section.getByLabel('Business name');
+  expect((await name.boundingBox())!.y).toBeLessThan((await cards.first().boundingBox())!.y);
+
+  await shelf.scrollIntoViewIfNeeded();
+  const whole = () =>
+    cards.evaluateAll(
+      (els) =>
+        els.filter((el) => {
+          const r = el.getBoundingClientRect();
+          return r.left >= -1 && r.right <= innerWidth + 1;
+        }).length,
+    );
+  expect(await whole()).toBe(1);
+  await expect(section.getByText('2 of 6')).toBeVisible();
+
+  // Swiped on, the caption follows the card in view.
+  await shelf.evaluate((el) => el.scrollBy({ left: el.clientWidth * 0.85 }));
+  await expect(section.getByText('3 of 6')).toBeVisible();
+  await expect(section.getByText('Events, DJs, venues and photographers')).toBeVisible();
+
+  // The fifteen join the six in the same row.
+  await section.getByRole('button', { name: 'See all fifteen' }).click();
+  await expect(cards).toHaveCount(15);
+  await expect(section.getByText(/ of 15$/)).toBeVisible();
+  await section.getByRole('button', { name: 'Hide the fifteen' }).click();
+  await expect(cards).toHaveCount(6);
+});
+
+test('step 5 shows the invoice paid, and the owed card is not drawn twice', async ({ page }) => {
+  await page.goto('/');
+  await expect(
+    page.getByRole('img', { name: /INV-0044 paid in full.*£2,280\.00.*owed to you.*£4,140\.00/i }),
+  ).toBeAttached();
+  await expect(page.locator('[aria-label*="£6,420.00 owed across 5 invoices"]')).toHaveCount(0);
+});
+
+test('the invoice’s route is pinned while How it works is read, marking the step in view', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const route = page.getByRole('list', { name: 'Where INV-0044 is' });
+  await expect(route.getByRole('listitem')).toHaveText(['Write', 'Issue', 'Send', 'Remind', 'Paid']);
+  await expect(route).not.toBeInViewport();
+  for (const [heading, stop] of [
+    ['In their inbox,', 'Send'],
+    ['Late payers,', 'Remind'],
+  ] as const) {
+    await page
+      .getByRole('heading', { name: new RegExp(heading) })
+      .evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await expect(route).toBeInViewport();
+    await expect(route.locator('[aria-current="step"]')).toHaveText(stop);
+  }
+  await page.locator('#templates').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+  await expect(route).not.toBeInViewport();
+});
+
+test('sections have room between them', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Measured on a wide screen.');
+  await page.goto('/');
+  // the lowest edge of anything drawn inside an element
+  const foot = (selector: string) =>
+    page
+      .locator(selector)
+      .evaluate((el) =>
+        Math.max(...[...el.querySelectorAll('*')].map((c) => c.getBoundingClientRect().bottom)),
+      );
+  const head = async (selector: string) => (await page.locator(selector).first().boundingBox())!.y;
+  const how = page.locator('#how').getByText('How it works', { exact: true });
+  expect((await how.boundingBox())!.y - (await foot('#why'))).toBeGreaterThanOrEqual(160);
+  expect((await head('footer')) - (await foot('#pricing'))).toBeGreaterThanOrEqual(160);
+});
+
+test('the header marks the section in view as the page scrolls', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'The links sit in the header on wide screens.');
+  await page.goto('/');
+  const nav = page.getByRole('navigation', { name: 'Site' });
+  await expect(nav.locator('[aria-current]')).toHaveCount(0);
+  for (const [id, name] of [
+    ['why', 'Why Invoica'],
+    ['how', 'How it works'],
+    ['templates', 'Templates'],
+    ['pricing', 'Pricing'],
+  ] as const) {
+    await page.locator(`#${id}`).evaluate((el) => el.scrollIntoView({ block: 'start' }));
+    await expect(nav.locator('[aria-current="true"]')).toHaveText(name);
+    await expect(nav.locator('[aria-current]')).toHaveCount(1);
+  }
+});
+
+test('the home page shows no email address and no example domain, in its words or its invoices', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.locator('#templates').getByRole('button', { name: 'See all fifteen' }).click();
+  await expect(page.locator('#templates iframe')).not.toHaveCount(6);
+  const everything = await page.evaluate(() =>
+    [
+      document.body.innerText,
+      ...[...document.querySelectorAll('iframe')].map((frame) => frame.getAttribute('srcdoc') ?? ''),
+      ...[...document.querySelectorAll('input')].map((input) => input.placeholder),
+    ].join('\n'),
+  );
+  expect(everything).not.toMatch(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i);
+  expect(everything).not.toMatch(/\.example\b/i);
+});
+
+test('the clients section shows the list of clients and one client’s history', async ({ page }) => {
+  await page.goto('/');
+  await expect(
+    page.locator('#clients').getByRole('img', {
+      name: /clients and what each owes.*Meridian Architects LLP £2,280\.00.*history: invoice INV-0044.*a payment.*credit note CN-0003/i,
+    }),
+  ).toBeAttached();
 });

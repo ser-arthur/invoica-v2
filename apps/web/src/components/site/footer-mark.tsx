@@ -27,7 +27,8 @@ const GONE = 330;
 /**
  * The footer's large logo (option E on the design canvas's "Footer logo" page): the letters dark, with a thin
  * holographic edge where their tops catch the light. The edge is drawn twice: faint, and lit, the lit one wiping in
- * from the left as the footer comes into view with a glint at its front (site.module.css, "Motion"); with a mouse
+ * from the left as the logo rises into view with a glint at its front, each time it comes into view (footer-light.tsx
+ * marks it; site.module.css, "Motion"); with a mouse
  * the glint then follows the pointer (FooterLight). Drawn from the logo's own shapes (decision 0012); decoration
  * only, hidden from assistive technology.
  */

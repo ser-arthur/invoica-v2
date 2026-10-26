@@ -1,16 +1,23 @@
 import Image from 'next/image';
-import issuePaper from './images/issue-paper.webp';
+import { renderDocumentHtml, storySnapshot } from '@invoica/documents';
+import { Paper } from '@/components/paper';
 import remindChasing from './images/remind-chasing.webp';
 import writeLines from './images/write-lines.webp';
-import writePreview from './images/write-preview.webp';
+import { Route } from './route';
 import s from './site.module.css';
 import { Tilt } from './tilt';
+
+/** The invoice the steps follow, Linden & Rowe Studio's INV-0044, rendered by the same code as real invoices. */
+const fontUrl = (f: string) => `/doc-fonts/${f}`;
+const STORY = storySnapshot();
+const ISSUED = renderDocumentHtml(STORY, { fontUrl, logoUrl: null });
+const DRAFT = renderDocumentHtml(STORY, { fontUrl, logoUrl: null, draft: true });
 
 /**
  * How one invoice gets paid, in five steps. Each step has a numeral in one flat colour, stepping along the page's
  * lime to teal scale, and a picture on a tinted panel, so the white cards on it stand clear; on phones the picture
- * gives way to one piece of the app at a size that can be read. A line runs down the margin
- * through all five, the invoice's route, filling from lime to teal as the page scrolls past.
+ * gives way to one piece of the app at a size that can be read. The invoice's route is pinned beside them while they
+ * are read (route.tsx), marking the step in view.
  */
 const STEPS = [
   {
@@ -78,13 +85,11 @@ export function Steps() {
           know where an invoice stands and what happens next.
         </p>
       </div>
-      <div className={s.journey}>
-        <span className={s.journeyTrack} aria-hidden="true">
-          <span className={s.journeyFill} />
-        </span>
+      <div className={s.journey} data-journey="">
+        <Route />
         <ol style={{ margin: 0, padding: 0, listStyle: 'none' }}>
           {STEPS.map((step, i) => (
-            <li key={step.name} className={`${s.wrap} ${s.grid} ${s.step}`}>
+            <li key={step.name} className={`${s.wrap} ${s.grid} ${s.step}`} data-step="">
               <div className={s.stepText}>
                 <Marker n={i + 1} name={step.name} colour={step.numeral} />
                 <h3 className={`${s.display} ${s.stepHeading}`}>
@@ -105,7 +110,7 @@ export function Steps() {
               </Tilt>
             </li>
           ))}
-          <li className={`${s.wrap} ${s.step}`}>
+          <li className={`${s.wrap} ${s.step}`} data-step="">
             <div className={`${s.grid} ${s.paidHead}`}>
               <div className={s.introHeading}>
                 <Marker n={5} name="Get paid" colour="#0F7F7A" />
@@ -119,7 +124,7 @@ export function Steps() {
                 what is late and what has arrived this month, with no spreadsheet to keep.
               </p>
             </div>
-            <OwedCard />
+            <PaidCard />
           </li>
         </ol>
       </div>
@@ -141,21 +146,16 @@ function Marker({ n, name, colour }: { n: number; name: string; colour: string }
 function WriteVisual() {
   return (
     <>
-      <Image
-        src={writePreview}
-        alt=""
-        unoptimized
-        className={`${s.lift} ${s.driftSlow}`}
-        style={{
-          position: 'absolute',
-          right: 40,
-          top: 44,
-          width: 300,
-          height: 'auto',
-          borderRadius: 26,
-          transform: 'rotate(3deg)',
-        }}
-      />
+      <div
+        className={`${s.livePreview} ${s.lift} ${s.driftSlow}`}
+        style={{ position: 'absolute', right: 40, top: 44, transform: 'rotate(3deg)' }}
+      >
+        <div className={s.livePreviewHead}>
+          <span>As your client will see it</span>
+          <span>Updates as you type</span>
+        </div>
+        <Paper html={DRAFT} width={264} title="The draft as the client will see it" />
+      </div>
       <Image
         src={writeLines}
         alt=""
@@ -187,21 +187,12 @@ function Tick() {
 function IssueVisual() {
   return (
     <>
-      <Image
-        src={issuePaper}
-        alt=""
-        unoptimized
-        className={`${s.lift} ${s.driftSlow}`}
-        style={{
-          position: 'absolute',
-          left: 56,
-          top: 40,
-          width: 330,
-          height: 'auto',
-          borderRadius: 4,
-          transform: 'rotate(-2deg)',
-        }}
-      />
+      <div
+        className={s.driftSlow}
+        style={{ position: 'absolute', left: 56, top: 40, transform: 'rotate(-2deg)' }}
+      >
+        <Paper html={ISSUED} width={330} title="INV-0044 as issued" />
+      </div>
       <div
         className={`${s.card} ${s.lift} ${s.driftFast} ${s.figures}`}
         style={{ right: 40, bottom: 56, width: 392, padding: '20px 22px' }}
@@ -215,21 +206,12 @@ function IssueVisual() {
 function SendVisual() {
   return (
     <>
-      <Image
-        src={issuePaper}
-        alt=""
-        unoptimized
-        className={`${s.lift} ${s.driftSlow}`}
-        style={{
-          position: 'absolute',
-          right: 48,
-          top: 36,
-          width: 220,
-          height: 'auto',
-          borderRadius: 4,
-          transform: 'rotate(6deg)',
-        }}
-      />
+      <div
+        className={s.driftSlow}
+        style={{ position: 'absolute', right: 48, top: 36, transform: 'rotate(6deg)' }}
+      >
+        <Paper html={ISSUED} width={220} title="INV-0044, attached" />
+      </div>
       <div
         className={`${s.card} ${s.lift} ${s.driftFast}`}
         style={{ left: 48, top: 52, width: 470, overflow: 'hidden' }}
@@ -371,7 +353,7 @@ function MailContent() {
         <span className={s.quiet}>From</span>
         <strong>Linden &amp; Rowe Studio</strong>
         <span className={s.quiet}>To</span>
-        <span>accounts@meridian.example</span>
+        <span>Accounts, Meridian Architects LLP</span>
         <span className={s.quiet}>Subject</span>
         <strong>Invoice INV-0044 from Linden &amp; Rowe Studio</strong>
       </div>
@@ -390,7 +372,7 @@ function MailContent() {
           INV-0044.pdf
         </div>
       </div>
-      <div className={s.mailFoot}>Replies go to hello@lindenrowe.example</div>
+      <div className={s.mailFoot}>Replies come straight back to Linden &amp; Rowe Studio</div>
     </>
   );
 }
@@ -409,62 +391,69 @@ function ReminderContent() {
   );
 }
 
-/** The dashboard's owed card, drawn as it is in the app, with its corner turned. */
-function OwedCard() {
+/**
+ * The moment INV-0044 is paid, drawn as the app shows it: the payment recorded, the invoice's route complete, and the
+ * dashboard's figures after it (owed to you down from £6,420.00, paid in the last 30 days up from £8,950.00).
+ */
+function PaidCard() {
+  const route = [
+    ['Draft', '19 Oct'],
+    ['Issued', '20 Oct'],
+    ['Sent', '20 Oct'],
+    ['Paid', '30 Oct'],
+  ];
   return (
     <figure style={{ margin: 0 }}>
       <Tilt
         className={`${s.owed} ${s.figures}`}
         max={3}
         role="img"
-        aria-label="An example dashboard: £6,420.00 owed across 5 invoices, £4,180.00 not due yet and £2,240.00 overdue, with £8,950.00 paid in the last 30 days."
+        aria-label="INV-0044 paid in full: £2,280.00 from Meridian Architects LLP, recorded on 30 October. After it, owed to you £4,140.00 across 4 invoices, £2,240.00 of it overdue, and £11,230.00 paid in the last 30 days."
       >
         <span className={s.owedFlap} />
         <div aria-hidden="true">
           <div className={s.owedTop}>
             <div>
-              <div className={s.owedLabel}>Owed to you</div>
+              <div className={s.owedLabel}>Payment recorded, 30 October</div>
               <div className={`${s.display} ${s.owedAmount}`}>
-                £6,420<span>.00</span>
+                £2,280<span>.00</span>
               </div>
-              <p className={s.owedNote}>5 invoices with clients</p>
+              <p className={s.owedNote}>Meridian Architects LLP, INV-0044</p>
             </div>
-            <span className={s.chase}>Chase the two overdue</span>
+            <span className={s.paidPill}>
+              <Tick />
+              Paid in full
+            </span>
           </div>
-          <div className={s.split}>
-            <div className={s.barDue} />
-            <div className={s.barLate} />
+          <div className={s.paidRoute}>
+            {route.map(([name, date]) => (
+              <div key={name} className={s.paidStop}>
+                <span className={s.paidDot} />
+                <strong>{name}</strong>
+                <span>{date}</span>
+              </div>
+            ))}
+          </div>
+          <div className={s.owedStats}>
             <div>
-              <div className={s.statLabel}>Not due yet</div>
-              <div className={s.statValue}>£4,180.00</div>
-              <div className={s.statNote}>3 invoices, next due 30 Oct</div>
+              <div className={s.statLabel}>Owed to you</div>
+              <div className={s.statValue}>£4,140.00</div>
+              <div className={s.statNote}>4 invoices, was £6,420.00</div>
             </div>
             <div>
               <div className={s.statLate}>Overdue</div>
               <div className={s.statValue}>£2,240.00</div>
               <div className={s.statNote}>2 invoices</div>
             </div>
-          </div>
-          <div className={s.owedStats}>
             <div>
               <div className={s.statLabel}>Paid in the last 30 days</div>
-              <div className={s.statValue}>£8,950.00</div>
-              <div className={s.statNote}>6 payments</div>
-            </div>
-            <div>
-              <div className={s.statLabel}>Drafts, not sent</div>
-              <div className={s.statValue}>£1,280.00</div>
-              <div className={s.statNote}>2 drafts</div>
-            </div>
-            <div>
-              <div className={s.statLabel}>Invoiced this month</div>
-              <div className={s.statValue}>£3,940.00</div>
-              <div className={s.statNote}>after £240.00 credited</div>
+              <div className={s.statValue}>£11,230.00</div>
+              <div className={s.statNote}>7 payments</div>
             </div>
           </div>
         </div>
       </Tilt>
-      <figcaption className={s.caption}>An example studio&rsquo;s dashboard</figcaption>
+      <figcaption className={s.caption}>The same studio, the day INV-0044 is paid</figcaption>
     </figure>
   );
 }

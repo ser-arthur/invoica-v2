@@ -123,14 +123,7 @@ export function Itemised() {
                   <form className={s.slipForm} action="/sign-up" method="get">
                     <label>
                       Your email
-                      <input
-                        className={s.field}
-                        type="email"
-                        name="email"
-                        autoComplete="email"
-                        placeholder="you@yourstudio.example"
-                        required
-                      />
+                      <input className={s.field} type="email" name="email" autoComplete="email" required />
                     </label>
                     <button type="submit" className={s.button}>
                       Create your free account
