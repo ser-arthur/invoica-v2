@@ -159,6 +159,8 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **25 Oct, about 18:15 to 19:30.** The website after the new range, on `feat/website-showcase`: the templates section is a shelf of six as designed (Riso in Heritage's place), each made out by its own invented business with details that belong to no one, redrawn as the visitor's with a name and eight colours, with all fifteen a click away. Heritage's arch fits long names. The hero plays one sequence on load (header, headline, the crease drawn up from its foot, then the rest); on phones the way in moves into the menu and body text steps down to 16 px. 841 unit, database and PDF tests and 244 end-to-end tests run, none failed (74 skipped by design). Bundle 36.
 
+- **26 Oct, about 12:50 to 14:15.** The owner's notes on the website: the hero's halves meet again with the crease drawn up from its foot, the dashboard below it, motion tied to the scroll section by section, the shelf reordered with Marquee in lime and navy, the templates seen one at a time on phones, How it works following INV-0044 rendered live with its route pinned and step 5 as the paid moment, a clients section, the stamp as the logo's slip, more room between sections, the footer's logo replaying, the section in view marked in the header, and a new phone menu button. Public samples carry no email or web address (every domain used belonged to someone). 845 unit, database and PDF tests and 260 end-to-end tests run, none failed (78 skipped by design). Bundle 37, with the steps to bring everything into `main`.
+
 ## Decisions in force
 
 | Record | Title | Status |
