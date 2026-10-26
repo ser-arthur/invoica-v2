@@ -8,7 +8,8 @@ const VAT20: TaxCode = {
 
 /**
  * An invented invoice for showing templates in Settings, with the business's own details. The client and the bank look
- * real and belong to no one: the account number fails the Vocalink modulus check for its sort code.
+ * real and belong to no one: the account number fails the Vocalink modulus check for its sort code, and there is no
+ * email or web address, since any real-looking one belongs to somebody.
  */
 export function sampleSnapshot(options: {
   template: string;
@@ -21,7 +22,7 @@ export function sampleSnapshot(options: {
     legalName: null,
     businessType: 'sole_trader',
     companyNumber: null,
-    email: 'hello@fieldoffice.co.uk',
+    email: null,
     phone: null,
     website: null,
     address: {

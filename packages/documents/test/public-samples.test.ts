@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SHOWCASE, sampleSnapshot, showcaseSnapshot } from '../src/index';
+import { SHOWCASE, sampleSnapshot, showcaseSnapshot, storySnapshot } from '../src/index';
 
 /**
  * Every invented business shown in public looks real and can belong to no one (docs/specs/website-showcase.md,
@@ -59,6 +59,8 @@ function modulusPasses(sortCode: string, account: string): boolean | 'unknown' {
 const PUBLIC = [
   ...SHOWCASE.map((s) => showcaseSnapshot(s.template)),
   sampleSnapshot({ template: 'signature' }),
+  // the website's own story: Linden & Rowe Studio's INV-0044 to Meridian Architects LLP
+  storySnapshot(),
 ];
 
 describe('sample details in public belong to no one', () => {
@@ -79,6 +81,9 @@ describe('sample details in public belong to no one', () => {
     expect(modulusPasses(bank.sortCode!, bank.accountNumber!), `${bank.sortCode} ${bank.accountNumber}`).toBe(
       false,
     );
-    expect(`${bank.bankName} ${s.seller.email ?? ''}`).not.toMatch(/example/i);
+    expect(bank.bankName).not.toMatch(/example/i);
+    // Any real-looking email or web address belongs to someone, so none is shown.
+    expect(s.seller.email, 'no email address').toBeNull();
+    expect(s.seller.website, 'no web address').toBeNull();
   });
 });
