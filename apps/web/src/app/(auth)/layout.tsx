@@ -6,8 +6,9 @@ import a from './auth.module.css';
 
 /**
  * Sign in, sign up and the email pages: the form on the right in the site's light palette, and on wide
- * screens a Night panel on the left with the crease and what an account brings. The crease is silver here, so it
- * stands apart from the green words past it, and the panel past it is a shade lighter, as if folded there.
+ * screens a Night panel on the left with the crease and what an account brings; narrower, the panel is a band across
+ * the top with the crease. The crease is silver here, so it stands apart from the green words past it, and the panel
+ * past it is a shade lighter, as if folded there.
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -45,11 +46,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <p className={a.panelFoot}>&copy; 2026 Invoica</p>
       </aside>
       <div className={a.side}>
-        <header className={a.mobileHeader}>
-          <Link href="/" aria-label="Invoica home" className={a.mobileLogo}>
-            <Logo shaded label="Invoica" />
-          </Link>
-        </header>
         <main className={a.formArea}>
           <div className={a.formBox}>{children}</div>
         </main>

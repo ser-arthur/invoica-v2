@@ -100,11 +100,35 @@ phone numbers from the ranges Ofcom keeps for drama, and domains that are not re
   Signature template, rendered live with details that belong to no one.
 - **The route's stops** carry icons: a pen, a numbered sheet, an envelope, a bell and a tick.
 
+## The owner's notes of 26 October, 15:18
+
+Built on `main`, as the owner asked for this round.
+
+- **How it works:** the pinned rail and bar did not read well. The line down the margin comes back, filling as the
+  page scrolls; as it reaches each step's numeral, that step's icon (a pen, a sheet, an envelope, a bell, a tick)
+  appears beside the numeral. On phones, with no margin, the icon appears beside the step's name as the step reaches
+  the middle of the screen.
+- **The dashboard below the hero** lands with more presence: it starts lying back like the old slab, turned, and
+  stands up to face the reader.
+- **Width and room:** the header spreads wider than the page's content (the logo and the buttons nearer the edges);
+  the hero and the rest keep their width, with more room between columns (the pillars most of all).
+- **The shelf:** Riso, Marquee, Billboard (in front), Signature, Atelier, Trade.
+- **The header's link** for the section in view lights up in the logo's green: the link sits on a pill of that green
+  with its words dark, so they stay readable. No dot and no underline.
+- **Fields** take a focus ring in Invoica's green: the logo's deeper green (#1F9C57, 3.4 to 1 on white, over the 3
+  to 1 a focus ring needs) with a soft halo of the brighter one.
+- **The crease's ends** fade again on the hero and the sign-in pages: drawing the line no longer trims what lies
+  outside the headline's box.
+- **Sign in and sign up on phones** open with a band of the Night panel: the logo, the crease headline and the
+  turned corner, then the form.
+- **Signature and a monochrome template:** a design session first (light and dark Signature with Invoica's own
+  character; the old app's Monochrome as a neutral, professional layout), on the canvas for the owner's choice.
+
 ## Acceptance criteria
 
 Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/documents/test`.
 
-1. The templates section shows a shelf of six named templates in the order Riso, Billboard, Marquee, Signature, Atelier,
+1. The templates section shows a shelf of six named templates in the order Riso, Marquee, Billboard, Signature, Atelier,
    Trade, each a rendered invoice with its own business; Billboard is in front; choosing one brings it to the front, by
    pointer and by keyboard. Marquee is lime with navy.
 2. Typing a business name redraws all six with it; choosing a colour redraws all six in it; "Back to the examples"
@@ -127,13 +151,18 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
     names and counts the card in view as the row is swiped.
 12. Step 5 shows INV-0044 paid in full, £2,280.00, with owed to you at £4,140.00; the £6,420.00 owed card is not drawn
     on the page.
-13. While How it works is on screen the route shows its five stops, marking the step in view; above and below the
-    section it is out of sight.
+13. In How it works, as the page scrolls, a step's icon appears beside its numeral once the line (on phones, the middle
+    of the screen) reaches it, and not before.
 14. Desktop: at least 160 px between the pillars and How it works, and between the itemised invoice and the footer.
 15. The footer's logo rises when it comes into view, and rises again after the reader scrolls away and back.
 16. As the page scrolls, the header's link for the section in view is marked as current (`aria-current`), and only that
-    one.
+    one; it sits on the logo's green with dark words, and carries no dot or underline.
 17. The home page's text and its rendered invoices contain no email address and no `.example`; the sign-up slip has no
     example address.
 18. The client section shows a list of clients with what each owes and one client's page with its history: an invoice,
     a payment and a credit note.
+19. The crease's ends are drawn past the headline's box on the hero and the sign-in page, fading out there.
+20. At 1440 pixels wide the header's logo and buttons sit nearer the edges than the hero's headline; the pillars stand
+    at least 72 px apart.
+21. At 390 pixels wide the sign-in and sign-up pages show the Night band with the crease headline above the form.
+22. A field's focus ring is the logo's deeper green.

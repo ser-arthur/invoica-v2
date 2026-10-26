@@ -52,9 +52,25 @@ sh ~/Downloads/invoica-repo-19/verify.sh
 
 To take a later bundle into an existing clone: `git pull ~/Downloads/invoica-repo-NN/invoica.bundle main`.
 
+**Since 26 October, 15:18, at the owner's word,** a round is built on `main` unless it could break something significant, and arrives as a bundle he pulls into his `main` with a merge (`git pull --no-rebase --no-edit`, the steps in each bundle's `VERIFY.md`).
+
 The switch to pull requests (foundation section 7) waits on GitHub: the owner connects GitHub in Settings, Connectors, and creates an empty private repository. The history is then pushed as a branch `start`, which the owner renames to `main` (the assistant never pushes to `main`). From then on every change arrives as a pull request.
 
 ## What changed last
+
+26 October 2026, about 15:20 to 16:40, on `main` at the owner's word ("let's make all our changes go on the main branch, unless there is something that is like significantly that is going to break something", 15:18), his notes of 15:18 and 15:39 (`docs/specs/website-showcase.md`, criteria 19 to 22):
+- How it works: the line down the margin is back, filling to the middle of the screen as the page scrolls, and as it reaches each step that step's icon (pen, sheet, envelope, bell, tick) springs out beside its numeral. The pinned rail and the bar under the header are gone. On phones, with no margin for the line, each icon lights as its step reaches the middle of the screen.
+- The slab under the hero lands with more presence: it starts further back, turned and smaller, and settles just past flat before coming to rest.
+- Width: the header spreads to 1440 px with 40 px sides; the hero and the sections keep their width. 32 px between columns, 88 px between the pillars.
+- The shelf runs Riso (Odd Hours), Marquee (Night Shift), Billboard (Overcast, in front), Signature, Atelier, Trade.
+- The header's link for the section in view lights up as a pill of the logo's green under Night text. The green as text reads at 1.9 to 1; as a fill under Night it reads well. No dots and no lines.
+- Fields ring in Invoica's green when focused: #1f9c57 (3.4 to 1 against white, above the 3 to 1 a focus ring needs) with a soft halo of the logo's green.
+- The crease's ends fade again, on the hero and on sign in and sign up: the mask that drew it stopped at the edges of its box and cut the ends square; a clip with room past the box draws it now.
+- Sign in and sign up on phones open with the Night band: the logo, the crease headline and the turned corner.
+- The dashboard picture's cards showed faint frames: the glass blur in the capture. Re-captured without it.
+- The Signature session (`docs/design/round-10-signature.md`, canvas page "Signature, new directions"): the crease (light, with a Night head, dark), the route (light, dark) and the first app's Monochrome, each with "Powered by" and Invoica's wordmark, for Larkspur Analytics and Linden & Rowe beside today's Signature. Nothing in the product changed; the owner chooses.
+- Checks: 850 unit, database and PDF tests run, 850 passed, 0 failed, 0 skipped (core 257, schemas 7, documents 57, PDF 191, database 239, web unit 99); format, copy rules, lint, types and the production build pass. The end-to-end suite against the production build, run from a copy elsewhere with production settings, ran 268: 187 passed, 81 skipped by design (one width only), 0 failed. A first run did not count: the local database had stopped, so the database tests were skipped.
+- Bundle 38, pulled into `main` with a merge (GitHub's merge commits of pull requests 1 and 2 and this bundle's are different commits for the same work; a trial of exactly that merge came out clean with the same files).
 
 26 October 2026, about 12:50 to 14:15, `feat/website-showcase`, the owner's notes of 25 October at 19:34 and 26 October at 12:48 and 12:59 (`docs/specs/website-showcase.md`), with recordings sent before building on:
 - The hero: the header comes down first, the headline's two halves come in from opposite ends again (he preferred them to the lines rising), and the crease is drawn up from its foot as they close; then the words, then the slabs. Settled inside 2.5 seconds.
@@ -228,11 +244,12 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 2. GitHub: on 23 October the owner chose to put v2 in its own private repository, `ser-arthur/invoica-v2`, cloned from bundle 20 into `~/Downloads/_DEV/invoica-v2` with `feat/website` as its `main`, and to show the site from its own Vercel project (root `apps/web`, no database: the site shows, account actions fail). The old repository and `invoica-io.vercel.app` stay untouched. CI (`.github/workflows/ci.yml`) runs there for the first time on that push. When this session is linked to GitHub: pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
 3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
 4. Templates: real-looking sample details in the picker (account, company and VAT numbers that fail their check digits). Later: static fonts for PDFs, and the website's templates section.
-5. The website on `feat/website`: the owner's review (bundle 20), then a pull request once GitHub is linked; the owner's choice of where to show v2 before launch (a separate Vercel project recommended; the old app's address is not touched without his say). Then the app screens in the round 5 look: tokens and fonts in `globals.css`, the sheet and slab as shared pieces, each screen with its tests and the accessibility checks in both themes. The home page shows the app as drawn on the round 5 canvas, so it runs ahead of the app until those screens are built.
+5. Signature: the owner chooses a direction, whether dark is a choice in its settings, "Powered by Invoica" on the free plan, and Monochrome's logo (`docs/design/round-10-signature.md`). Then it is built to the templates' rules.
+6. The website on `feat/website`: the owner's review (bundle 20), then a pull request once GitHub is linked; the owner's choice of where to show v2 before launch (a separate Vercel project recommended; the old app's address is not touched without his say). Then the app screens in the round 5 look: tokens and fonts in `globals.css`, the sheet and slab as shared pieces, each screen with its tests and the accessibility checks in both themes. The home page shows the app as drawn on the round 5 canvas, so it runs ahead of the app until those screens are built.
 
 ## Open questions
 
-The list is kept in `docs/BLUEPRINT.md`, "Open questions" (8 items, 6 open).
+The list is kept in `docs/BLUEPRINT.md`, "Open questions" (9 items, 7 open).
 
 ## Decisions
 

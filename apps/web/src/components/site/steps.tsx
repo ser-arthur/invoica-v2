@@ -3,7 +3,7 @@ import { renderDocumentHtml, storySnapshot } from '@invoica/documents';
 import { Paper } from '@/components/paper';
 import remindChasing from './images/remind-chasing.webp';
 import writeLines from './images/write-lines.webp';
-import { Route } from './route';
+import { JourneyLine } from './journey-line';
 import s from './site.module.css';
 import { Tilt } from './tilt';
 
@@ -16,9 +16,25 @@ const DRAFT = renderDocumentHtml(STORY, { fontUrl, logoUrl: null, draft: true })
 /**
  * How one invoice gets paid, in five steps. Each step has a numeral in one flat colour, stepping along the page's
  * lime to teal scale, and a picture on a tinted panel, so the white cards on it stand clear; on phones the picture
- * gives way to one piece of the app at a size that can be read. The invoice's route is pinned beside them while they
- * are read (route.tsx), marking the step in view.
+ * gives way to one piece of the app at a size that can be read. A line runs down the margin through all five, filling
+ * from lime to teal as the page scrolls, and each step's icon lights beside its numeral as the line reaches it
+ * (journey-line.tsx).
  */
+
+const icon = (d: string) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
+    <path d={d} strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** Each step's icon: a pen, a numbered sheet, an envelope, a bell and a tick. */
+const ICONS = {
+  Write: icon('M4.5 19.5l1-4.2L15.8 5a2 2 0 0 1 2.9 0l.3.3a2 2 0 0 1 0 2.9L8.7 18.5z M13.8 7l3.2 3.2'),
+  Issue: icon('M6.5 3.5h7l4 4v13h-11z M13.5 3.5v4h4 M9.5 12.5h5 M9.5 16h5'),
+  Send: icon('M3.5 6.5h17v11h-17z M4 7l8 6 8-6'),
+  Remind: icon('M6 16.5v-5a6 6 0 0 1 12 0v5l1.5 1.5h-15z M10 20.5a2 2 0 0 0 4 0'),
+  'Get paid': icon('M5 12.5l4.5 4.5L19 7.5'),
+} as const;
 const STEPS = [
   {
     name: 'Write',
@@ -86,12 +102,12 @@ export function Steps() {
         </p>
       </div>
       <div className={s.journey} data-journey="">
-        <Route />
+        <JourneyLine />
         <ol style={{ margin: 0, padding: 0, listStyle: 'none' }}>
           {STEPS.map((step, i) => (
-            <li key={step.name} className={`${s.wrap} ${s.grid} ${s.step}`} data-step="">
+            <li key={step.name} className={`${s.wrap} ${s.grid} ${s.step}`}>
               <div className={s.stepText}>
-                <Marker n={i + 1} name={step.name} colour={step.numeral} />
+                <Marker n={i + 1} name={step.name as keyof typeof ICONS} colour={step.numeral} />
                 <h3 className={`${s.display} ${s.stepHeading}`}>
                   <span className={s.keep}>{step.heading[0]}</span>{' '}
                   <span className={s.keep}>{step.heading[1]}</span>
@@ -110,7 +126,7 @@ export function Steps() {
               </Tilt>
             </li>
           ))}
-          <li className={`${s.wrap} ${s.step}`} data-step="">
+          <li className={`${s.wrap} ${s.step}`}>
             <div className={`${s.grid} ${s.paidHead}`}>
               <div className={s.introHeading}>
                 <Marker n={5} name="Get paid" colour="#0F7F7A" />
@@ -132,9 +148,12 @@ export function Steps() {
   );
 }
 
-function Marker({ n, name, colour }: { n: number; name: string; colour: string }) {
+function Marker({ n, name, colour }: { n: number; name: keyof typeof ICONS; colour: string }) {
   return (
-    <div className={s.marker}>
+    <div className={s.marker} style={{ '--stop': colour } as React.CSSProperties}>
+      <span className={s.markIcon} data-mark="" aria-hidden="true">
+        {ICONS[name]}
+      </span>
       <span className={s.numeral} style={{ color: colour }} aria-hidden="true">
         {n}
       </span>
