@@ -1637,11 +1637,11 @@
   font-family: var(--font-sans);
 }
 
-.allFifteen {
+.allRange {
   grid-column: 1 / -1;
 }
 
-.allFifteen ul {
+.allRange ul {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 36px 24px;
@@ -1650,7 +1650,7 @@
   list-style: none;
 }
 
-.allFifteen li {
+.allRange li {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1659,11 +1659,11 @@
   color: var(--text);
 }
 
-.allFifteen li > div {
+.allRange li > div {
   margin-bottom: 10px;
 }
 
-.allFifteen strong {
+.allRange strong {
   font-size: 15px;
   color: var(--night);
 }

@@ -98,8 +98,8 @@ describe('reverse charge note (review L7)', () => {
 
 describe('rendering', () => {
   it('renders every fixture with every template, offered or retired, and escapes text', () => {
-    expect(TEMPLATE_LIST).toHaveLength(15);
-    expect(Object.keys(TEMPLATES)).toHaveLength(19);
+    expect(TEMPLATE_LIST).toHaveLength(16);
+    expect(Object.keys(TEMPLATES)).toHaveLength(23);
     for (const [name, s] of Object.entries(FIXTURES)) {
       for (const template of Object.keys(TEMPLATES)) {
         const html = renderDocumentHtml(
@@ -111,13 +111,6 @@ describe('rendering', () => {
         expect(html).toContain('@font-face');
       }
     }
-  });
-
-  it('shows "Made with Invoica" on documents of the free plan only', () => {
-    expect(renderDocumentHtml({ ...FIXTURES.ukVat!, madeWithInvoica: true }, { fontUrl })).toContain(
-      'Made with Invoica',
-    );
-    expect(renderDocumentHtml(FIXTURES.ukVat!, { fontUrl })).not.toContain('Made with Invoica');
   });
 
   it('marks drafts', () => {
@@ -133,7 +126,7 @@ describe('rendering', () => {
 });
 
 describe('the template list (docs/specs/invoice-templates.md)', () => {
-  it('offers the fifteen in order, Signature first', () => {
+  it('offers the sixteen in order, Signature first and Monochrome last', () => {
     expect(TEMPLATE_LIST.map((t) => t.id)).toEqual([
       'signature',
       'sticker',
@@ -150,12 +143,16 @@ describe('the template list (docs/specs/invoice-templates.md)', () => {
       'heritage',
       'letter',
       'ticket',
+      'monochrome',
     ]);
   });
 
-  it('names the four retired, and the offered and retired together are every template', () => {
+  it('names the four retired, and the offered, their styles and the retired together are every template', () => {
     expect(RETIRED_TEMPLATES.map((t) => t.name)).toEqual(['Studio', 'Counsel', 'Ledger', 'Poster']);
-    const ids = [...TEMPLATE_LIST, ...RETIRED_TEMPLATES].map((t) => t.id).sort();
+    const styles = TEMPLATE_LIST.flatMap((t) => (t.styles ?? []).map((st) => st.id));
+    const ids = [
+      ...new Set([...TEMPLATE_LIST.map((t) => t.id), ...styles, ...RETIRED_TEMPLATES.map((t) => t.id)]),
+    ].sort();
     expect(ids).toEqual(Object.keys(TEMPLATES).sort());
   });
 

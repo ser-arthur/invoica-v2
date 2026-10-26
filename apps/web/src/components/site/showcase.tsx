@@ -46,9 +46,9 @@ type Card = { template: string; name: string; maker: string; forWhom: string; ht
 
 /**
  * The templates shelf: six templates as they were designed, each made out by its own business, one in front. A business
- * name or a colour redraws all six as the visitor's; "See all fifteen" opens the whole range. On a wide screen the six
- * overlap like a hand of cards and the fifteen open below them. On a phone the name and colours come first, so the
- * card stays in sight while typing, and the cards sit in a row seen one at a time, the fifteen joining the six in the
+ * name or a colour redraws all six as the visitor's; "See all sixteen" opens the whole range. On a wide screen the six
+ * overlap like a hand of cards and the sixteen open below them. On a phone the name and colours come first, so the
+ * card stays in sight while typing, and the cards sit in a row seen one at a time, the sixteen joining the six in the
  * same row. The same code renders real invoices. Without the page's script it shows the six as designed.
  */
 export function Showcase() {
@@ -97,8 +97,8 @@ export function Showcase() {
     }));
   }, [all, typed, colour]);
 
-  // On a wide screen the fifteen open below the shelf, in the picker's order.
-  const fifteen = useMemo(() => {
+  // On a wide screen the sixteen open below the shelf, in the picker's order.
+  const range = useMemo(() => {
     if (!all || narrow) return [];
     const cards = [...six, ...nine];
     return TEMPLATE_LIST.map((t) => ({ ...t, html: cards.find((c) => c.template === t.id)!.html }));
@@ -256,15 +256,15 @@ export function Showcase() {
               if (all && front > 5) choose(2);
             }}
           >
-            {all ? 'Hide the fifteen' : 'See all fifteen'}
+            {all ? 'Hide the sixteen' : 'See all sixteen'}
           </button>
         </div>
       </div>
 
-      <div id={allId} className={s.allFifteen} hidden={!all || narrow}>
+      <div id={allId} className={s.allRange} hidden={!all || narrow}>
         {all && !narrow ? (
-          <ul aria-label="All fifteen templates">
-            {fifteen.map((t) => (
+          <ul aria-label="All sixteen templates">
+            {range.map((t) => (
               <li key={t.id}>
                 <Paper html={t.html} width={200} title={`${t.name} template`} />
                 <strong>{t.name}</strong>

@@ -1,5 +1,7 @@
 # The website: templates showcase, hero motion and the phone header
 
+**26 October, 16:38:** Monochrome joins the range as the sixteenth (`invoice-templates.md`), so the section's count, "See all sixteen" and the list below follow it. Where this spec says fifteen, read sixteen.
+
 The owner's notes of 25 October 2026 (18:14 and 18:22) on the website after the new range of invoice templates.
 
 ## The templates section

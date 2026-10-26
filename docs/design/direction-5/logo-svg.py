@@ -1,7 +1,7 @@
 """Writes the logo and the app icon for the web app from the drawing in direction-4/i_document.py.
 
 Outputs, relative to the repository root:
-  apps/web/src/components/logo-shapes.ts   path data for the Logo component
+  packages/documents/src/logo-shapes.ts    path data for the Logo component and the documents' wordmark
   apps/web/src/app/icon.svg                the browser tab icon (the slip i on Night, flat green)
   apps/web/src/app/apple-icon.svg          a 180 pixel source for apple-icon.png (gradient fold)
 
@@ -58,7 +58,7 @@ export const LOGO_ACCENT_DOT = {fmt_dot(acc_dots[0])};
 /** The line the fold's gradient runs along, from the outer corner to the crease. */
 export const LOGO_FOLD_LINE = {{ x1: {fold_line['x1']:.1f}, y1: {fold_line['y1']:.1f}, x2: {fold_line['x2']:.1f}, y2: {fold_line['y2']:.1f} }};
 """
-open(os.path.join(ROOT, 'apps/web/src/components/logo-shapes.ts'), 'w').write(ts)
+open(os.path.join(ROOT, 'packages/documents/src/logo-shapes.ts'), 'w').write(ts)
 
 
 def icon_svg(size, flat, radius):

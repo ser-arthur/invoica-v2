@@ -113,7 +113,7 @@ export interface DocumentSnapshot {
   payment: SnapshotPaymentDetails;
   /** For a credit note: the invoice it credits and why. */
   credits: { number: string; issueDate: BusinessDate; reason: string } | null;
-  /** Shows "Made with Invoica", on the free plan. Absent on documents issued before plans existed. */
+  /** Issued on the free plan. Absent before plans existed. Signature carries "Powered by Invoica" on every plan. */
   madeWithInvoica?: boolean;
   /** For an invoice: the places its tax was worked out, kept at issue so it can be credited. */
   slots?: CreditSlot[];

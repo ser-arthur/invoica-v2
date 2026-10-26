@@ -1,7 +1,8 @@
 import type { DocumentSnapshot } from '@invoica/core';
 import { fontFaceCss } from './fonts';
 import { BASE_CSS, esc, pageFooterCss } from './templates/shared';
-import { signature } from './templates/signature';
+import { signature, signatureLight, signatureRoute, signatureRouteDark } from './templates/signature';
+import { monochrome } from './templates/monochrome';
 import { studio } from './templates/studio';
 import { counsel } from './templates/counsel';
 import { ledger } from './templates/ledger';
@@ -28,6 +29,9 @@ import { buildView } from './view';
  */
 export const TEMPLATES = {
   signature,
+  'signature-light': signatureLight,
+  'signature-route': signatureRoute,
+  'signature-route-dark': signatureRouteDark,
   studio,
   counsel,
   ledger,
@@ -46,6 +50,7 @@ export const TEMPLATES = {
   statement,
   practice,
   heritage,
+  monochrome,
 } as const;
 export type TemplateId = keyof typeof TEMPLATES;
 
@@ -77,13 +82,21 @@ export const TEMPLATE_LIST: {
   description: string;
   feel: TemplateFeel;
   kinds: BusinessKind[];
+  /** Signature's styles, each its own template id; the first is the template's own id. */
+  styles?: { id: TemplateId; name: string }[];
 }[] = [
   {
     id: 'signature',
     name: 'Signature',
-    description: 'The amount due first, on a slip of your colour with its corner turned.',
+    description: 'Invoica’s own: your number crossed by the crease and the amount due first.',
     feel: 'in between',
     kinds: ['professional', 'creative', 'trades'],
+    styles: [
+      { id: 'signature', name: 'Night head' },
+      { id: 'signature-light', name: 'Light' },
+      { id: 'signature-route', name: 'Route' },
+      { id: 'signature-route-dark', name: 'Route on Night' },
+    ],
   },
   {
     id: 'sticker',
@@ -188,6 +201,13 @@ export const TEMPLATE_LIST: {
     feel: 'playful',
     kinds: ['shops', 'events', 'food'],
   },
+  {
+    id: 'monochrome',
+    name: 'Monochrome',
+    description: 'Greys only, your logo too, the figures in mono. For anyone who wants no colour at all.',
+    feel: 'grounded',
+    kinds: ['professional', 'trades', 'creative'],
+  },
 ];
 
 export function templateFor(id: string) {
@@ -221,7 +241,5 @@ export function renderDocumentHtml(snapshot: DocumentSnapshot, options: RenderOp
       : options.voided
         ? '<div class="void-mark" aria-hidden="true">VOID</div>'
         : ''
-  }${template.body(view, options.logoUrl ?? null)}${
-    snapshot.madeWithInvoica ? '<p class="made-with">Made with Invoica</p>' : ''
-  }</body></html>`;
+  }${template.body(view, options.logoUrl ?? null)}</body></html>`;
 }

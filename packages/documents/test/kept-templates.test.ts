@@ -8,8 +8,8 @@ const fontUrl = (f: string) => f;
 const bodyOf = (html: string) => html.slice(html.indexOf('<body'));
 
 describe('Signature puts the amount due first', () => {
-  it('on a slip before the parties and the lines', () => {
-    const s = { ...FIXTURES.ukVat!, template: 'signature' };
+  it('in its light style, on a slip before the parties and the lines', () => {
+    const s = { ...FIXTURES.ukVat!, template: 'signature-light' };
     const v = buildView(s);
     const body = bodyOf(renderDocumentHtml(s, { fontUrl }));
     const slip = body.indexOf('class="slip"');

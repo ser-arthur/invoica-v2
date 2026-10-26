@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { applyEntitlements, currentPlan, entitlementsFor, INVOICA_COLOUR } from '../src/plans';
+import {
+  applyEntitlements,
+  currentPlan,
+  entitlementsFor,
+  INVOICA_COLOUR,
+  isSignature,
+  SIGNATURE_STYLES,
+} from '../src/plans';
 import { secondColour } from '../src/colours';
 
 /** Acceptance criteria: docs/specs/plans.md. */
@@ -68,6 +75,29 @@ describe('criteria 4 and 5: what a document shows', () => {
       secondColour(INVOICA_COLOUR),
     );
     expect(applyEntitlements(own, entitlementsFor('pro')).seller.accentColour).toBe('#2b0b3f');
+  });
+
+  it('on the free plan, a Signature style is kept and anything else becomes the Night head (invoice templates, criterion 20)', () => {
+    for (const style of SIGNATURE_STYLES)
+      expect(applyEntitlements({ ...doc, template: style }, entitlementsFor('free')).template).toBe(style);
+    expect(SIGNATURE_STYLES).toEqual([
+      'signature',
+      'signature-light',
+      'signature-route',
+      'signature-route-dark',
+    ]);
+    expect(applyEntitlements({ ...doc, template: 'monochrome' }, entitlementsFor('free')).template).toBe(
+      'signature',
+    );
+    expect(applyEntitlements({ ...doc, template: 'signature-x' }, entitlementsFor('free')).template).toBe(
+      'signature',
+    );
+  });
+
+  it('knows Signature by its styles only', () => {
+    expect(SIGNATURE_STYLES.every(isSignature)).toBe(true);
+    for (const other of ['monochrome', 'signatures', 'signature-x', 'studio', ''])
+      expect(isSignature(other)).toBe(false);
   });
 
   it('on the trial: unchanged, without the mark', () => {

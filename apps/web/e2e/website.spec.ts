@@ -159,7 +159,7 @@ const BUSINESSES = [
   'Wilder & Rose',
   'Kestrel Roofing',
 ];
-const FIFTEEN = [
+const SIXTEEN = [
   'Signature',
   'Sticker',
   'Riso',
@@ -175,6 +175,7 @@ const FIFTEEN = [
   'Heritage',
   'Letter',
   'Ticket',
+  'Monochrome',
 ];
 /** As the business name appears inside an invoice's HTML. */
 const inHtml = (text: string) =>
@@ -237,15 +238,15 @@ test('a name or a colour redraws all six as yours, and they go back to the examp
   }
 });
 
-test('all fifteen are a click away, named, in the picker’s order', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'On a phone the fifteen join the six in one row (below).');
+test('all sixteen are a click away, named, in the picker’s order', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'On a phone the sixteen join the six in one row (below).');
   await page.goto('/');
   const section = page.locator('#templates');
-  await section.getByRole('button', { name: 'See all fifteen' }).click();
-  const all = section.getByRole('list', { name: 'All fifteen templates' });
+  await section.getByRole('button', { name: 'See all sixteen' }).click();
+  const all = section.getByRole('list', { name: 'All sixteen templates' });
   await expect(all.getByRole('listitem')).toHaveCount(15);
-  await expect(all.locator('strong')).toHaveText(FIFTEEN);
-  await section.getByRole('button', { name: 'Hide the fifteen' }).click();
+  await expect(all.locator('strong')).toHaveText(SIXTEEN);
+  await section.getByRole('button', { name: 'Hide the sixteen' }).click();
   await expect(all).toBeHidden();
 });
 
@@ -299,7 +300,7 @@ test('on a phone body text is 16 pixels and the hero’s sentence 19', async ({ 
   }
 });
 
-test('on a phone the controls come first and the templates are seen one at a time, the fifteen in the same row', async ({
+test('on a phone the controls come first and the templates are seen one at a time, the sixteen in the same row', async ({
   page,
 }, info) => {
   test.skip(info.project.name !== 'phone', 'Checked at phone widths.');
@@ -327,11 +328,11 @@ test('on a phone the controls come first and the templates are seen one at a tim
   await expect(section.getByText('4 of 6')).toBeVisible();
   await expect(section.getByText('Any business. Invoica’s own.')).toBeVisible();
 
-  // The fifteen join the six in the same row.
-  await section.getByRole('button', { name: 'See all fifteen' }).click();
-  await expect(cards).toHaveCount(15);
-  await expect(section.getByText(/ of 15$/)).toBeVisible();
-  await section.getByRole('button', { name: 'Hide the fifteen' }).click();
+  // The sixteen join the six in the same row.
+  await section.getByRole('button', { name: 'See all sixteen' }).click();
+  await expect(cards).toHaveCount(16);
+  await expect(section.getByText(/ of 16$/)).toBeVisible();
+  await section.getByRole('button', { name: 'Hide the sixteen' }).click();
   await expect(cards).toHaveCount(6);
 });
 
@@ -409,7 +410,7 @@ test('the home page shows no email address and no example domain, in its words o
   page,
 }) => {
   await page.goto('/');
-  await page.locator('#templates').getByRole('button', { name: 'See all fifteen' }).click();
+  await page.locator('#templates').getByRole('button', { name: 'See all sixteen' }).click();
   await expect(page.locator('#templates iframe')).not.toHaveCount(6);
   const everything = await page.evaluate(() =>
     [

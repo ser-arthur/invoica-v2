@@ -8,7 +8,7 @@ export function Templates() {
       <div className={`${s.wrap} ${s.showcaseHead}`}>
         <span className={s.label}>Templates</span>
         <h2 id="templates-heading" className={`${s.display} ${s.h2}`}>
-          <span className={s.keep}>Fifteen layouts.</span>{' '}
+          <span className={s.keep}>Sixteen layouts.</span>{' '}
           <span className={s.keep}>Your logo, your colour.</span>
         </h2>
         <p className={s.lead}>

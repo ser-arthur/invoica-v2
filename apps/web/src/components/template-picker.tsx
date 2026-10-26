@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { DocumentSnapshot } from '@invoica/core';
+import { isSignature, type DocumentSnapshot } from '@invoica/core';
 import {
   BUSINESS_KINDS,
   renderDocumentHtml,
@@ -84,16 +84,22 @@ export function TemplatePicker({
 }) {
   const [kind, setKind] = useState<BusinessKind | 'all'>('all');
   const [feel, setFeel] = useState<TemplateFeel | 'all'>('all');
+  // Signature's style: the one saved, or the last one chosen here while another template is picked
+  const [style, setStyle] = useState(isSignature(value) ? value : 'signature');
   const previews = useMemo(
     () =>
-      TEMPLATE_LIST.map((t) => ({
-        ...t,
-        html: renderDocumentHtml(sampleSnapshot({ template: t.id, seller }), {
-          fontUrl: (f) => `/doc-fonts/${f}`,
-          logoUrl,
-        }),
-      })),
-    [seller, logoUrl],
+      TEMPLATE_LIST.map((t) => {
+        const id = t.styles ? style : t.id;
+        return {
+          ...t,
+          id,
+          html: renderDocumentHtml(sampleSnapshot({ template: id, seller }), {
+            fontUrl: (f) => `/doc-fonts/${f}`,
+            logoUrl,
+          }),
+        };
+      }),
+    [seller, logoUrl, style],
   );
   const shown = previews.filter(
     (t) => (kind === 'all' || t.kinds.includes(kind)) && (feel === 'all' || t.feel === feel),
@@ -123,29 +129,61 @@ export function TemplatePicker({
       ) : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {shown.map((t) => (
-          <label
-            key={t.id}
+          <div
+            key={t.name}
             className={cx(
-              'flex cursor-pointer flex-col gap-3 rounded-[14px] border p-3 transition-colors',
+              'flex flex-col gap-3 rounded-[14px] border p-3 transition-colors',
               value === t.id
                 ? 'border-brand bg-brand-soft/40 ring-2 ring-brand/30'
                 : 'border-line hover:border-line-strong',
             )}
           >
-            <input
-              type="radio"
-              name="template"
-              value={t.id}
-              checked={value === t.id}
-              onChange={() => onChange(t.id)}
-              className="sr-only"
-            />
-            <Paper html={t.html} width={180} title={`${t.name} template`} className="mx-auto" />
-            <span>
-              <span className="block font-medium">{t.name}</span>
-              <span className="block text-[13px] text-muted">{t.description}</span>
-            </span>
-          </label>
+            <label className="flex cursor-pointer flex-col gap-3">
+              <input
+                type="radio"
+                name="template"
+                value={t.id}
+                checked={value === t.id}
+                onChange={() => onChange(t.id)}
+                className="sr-only"
+              />
+              <Paper html={t.html} width={180} title={`${t.name} template`} className="mx-auto" />
+              <span>
+                <span className="block font-medium">{t.name}</span>
+                <span className="block text-[13px] text-muted">{t.description}</span>
+              </span>
+            </label>
+            {t.styles ? (
+              <fieldset className="flex flex-wrap gap-1.5">
+                <legend className="sr-only">Signature’s style</legend>
+                {t.styles.map((st) => (
+                  <label
+                    key={st.id}
+                    className={cx(
+                      'relative inline-flex h-7 cursor-pointer items-center rounded-full border px-2.5 text-[12.5px] transition-colors',
+                      'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand',
+                      style === st.id
+                        ? 'border-brand bg-brand-soft/50 font-medium text-ink'
+                        : 'border-line text-ink-soft hover:border-line-strong',
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="signature-style"
+                      value={st.id}
+                      checked={style === st.id}
+                      onChange={() => {
+                        setStyle(st.id);
+                        onChange(st.id);
+                      }}
+                      className="absolute inset-0 m-0 cursor-pointer appearance-none rounded-full opacity-0"
+                    />
+                    {st.name}
+                  </label>
+                ))}
+              </fieldset>
+            ) : null}
+          </div>
         ))}
       </div>
     </fieldset>
