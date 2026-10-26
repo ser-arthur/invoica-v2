@@ -2872,8 +2872,7 @@
 @media (max-width: 1180px) {
   /* The route becomes a slim bar under the header, the stop in view named. */
   .journeyRoute {
-    position: static;
-    width: auto;
+    display: contents;
   }
   .journeyRail {
     top: 94px;
