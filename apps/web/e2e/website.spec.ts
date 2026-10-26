@@ -406,6 +406,80 @@ test('the header marks the section in view as the page scrolls', async ({ page }
   }
 });
 
+test('pointing at a link tints it green, and the lit link stays as it is', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'The links sit in the header on wide screens.');
+  await page.goto('/');
+  const nav = page.getByRole('navigation', { name: 'Site' });
+  await page.locator('#how').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+  const lit = nav.getByRole('link', { name: 'How it works' });
+  await expect(lit).toHaveAttribute('aria-current', 'true');
+  const other = nav.getByRole('link', { name: 'Templates' });
+  await other.hover();
+  await expect(other).toHaveCSS('background-color', 'rgba(55, 198, 107, 0.16)');
+  await expect(other).toHaveCSS('color', 'rgb(9, 25, 28)');
+  await lit.hover();
+  await expect(lit).toHaveCSS('background-color', 'rgb(55, 198, 107)');
+  await expect(lit).toHaveCSS('color', 'rgb(9, 25, 28)');
+});
+
+test('on the pricing page its link is lit', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'The links sit in the header on wide screens.');
+  await page.goto('/pricing');
+  const nav = page.getByRole('navigation', { name: 'Site' });
+  await expect(nav.locator('[aria-current]')).toHaveCount(1);
+  const pricing = nav.getByRole('link', { name: 'Pricing' });
+  await expect(pricing).toHaveAttribute('aria-current', 'page');
+  await expect(pricing).toHaveCSS('background-color', 'rgb(55, 198, 107)');
+});
+
+test('a link clicked lights at once, and nothing passed on the way lights up', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'The links sit in the header on wide screens.');
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  const nav = page.getByRole('navigation', { name: 'Site' });
+  await page.evaluate(() => {
+    const seen: string[] = [];
+    (window as unknown as { seen: string[] }).seen = seen;
+    new MutationObserver(() => {
+      const lit = document.querySelector('nav[aria-label="Site"] [aria-current]')?.textContent ?? '';
+      if (seen.at(-1) !== lit) seen.push(lit);
+    }).observe(document.querySelector('nav[aria-label="Site"]')!, { subtree: true, attributes: true });
+  });
+  await nav.getByRole('link', { name: 'Templates' }).click();
+  await expect(nav.locator('[aria-current]')).toHaveText('Templates');
+  await page.waitForTimeout(600);
+  expect(await page.evaluate(() => (window as unknown as { seen: string[] }).seen)).toEqual(['Templates']);
+});
+
+test('moving between the home page and pricing keeps the header where it is', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'The links sit in the header on wide screens.');
+  await page.goto('/pricing');
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(1500);
+  // Anything in the header that starts to move from here on is recorded.
+  await page.evaluate(() => {
+    const header = document.querySelector('header')!;
+    const w = window as unknown as { started: string[] };
+    w.started = [];
+    (header as unknown as { kept: boolean }).kept = true;
+    header.parentElement!.addEventListener('animationstart', (e) => w.started.push(e.animationName));
+  });
+  const nav = page.getByRole('navigation', { name: 'Site' });
+  await nav.getByRole('link', { name: 'Templates' }).click();
+  await expect(page).toHaveURL(/\/#templates$/);
+  await expect(nav.locator('[aria-current]')).toHaveText('Templates');
+  await nav.getByRole('link', { name: 'Pricing' }).click();
+  await expect(page).toHaveURL(/\/pricing$/);
+  await expect(nav.getByRole('link', { name: 'Pricing' })).toHaveAttribute('aria-current', 'page');
+  await page.waitForTimeout(400);
+  expect(
+    await page.evaluate(() => ({
+      kept: (document.querySelector('header') as unknown as { kept?: boolean }).kept === true,
+      started: (window as unknown as { started: string[] }).started,
+    })),
+  ).toEqual({ kept: true, started: [] });
+});
+
 test('the home page shows no email address and no example domain, in its words or its invoices', async ({
   page,
 }) => {
@@ -489,7 +563,7 @@ test('on a phone the sign-in and sign-up pages open with the Night band and its 
     const band = page.locator('aside');
     await expect(band, path).toBeVisible();
     // the headline is set twice, near and far of the crease
-    await expect(band.getByText('Every invoice,').first(), path).toBeVisible();
+    await expect(band.getByText('The smarter way').first(), path).toBeVisible();
     const form = page.locator('main form').first();
     expect((await band.boundingBox())!.y, path).toBeLessThan((await form.boundingBox())!.y);
   }

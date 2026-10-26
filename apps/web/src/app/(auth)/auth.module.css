@@ -79,9 +79,9 @@
   padding: 24px 0;
 }
 
-/* The headline fills the panel inside its padding (it is about 6.5 times as wide as its type size), at any width. */
+/* The headline fills the panel inside its padding (it is about 7.9 times as wide as its type size), at any width. */
 .panelType {
-  font-size: clamp(52px, calc(100cqi / 6.75), 150px);
+  font-size: clamp(30px, calc(100cqi / 8.1), 150px);
   line-height: 0.94;
   letter-spacing: -0.05em;
   white-space: nowrap;
@@ -161,6 +161,101 @@
 }
 
 /*
+ * The panel landing, once, as the first of these pages opens: the corner turns, the logo comes down, the headline's two
+ * halves come in from opposite sides and meet, the crease is drawn up from its foot as they close and the page past
+ * it turns a shade lighter, then each thing an account brings settles in turn. Settled inside two and a half seconds,
+ * and still for visitors who ask for less motion.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .flap {
+    transform-origin: 100% 0;
+    animation: turn 640ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+  }
+  .panelLogo {
+    animation: come 600ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both;
+  }
+  .panelBody p.panelType {
+    animation: near 1300ms cubic-bezier(0.16, 1, 0.3, 1) 250ms both;
+  }
+  .panelBody div.panelType {
+    animation: far 1300ms cubic-bezier(0.16, 1, 0.3, 1) 250ms both;
+  }
+  .panelBody svg {
+    animation: draw 860ms cubic-bezier(0.65, 0, 0.35, 1) 660ms both;
+  }
+  .panelBody [data-fold-tone] {
+    animation: fold 900ms cubic-bezier(0.65, 0, 0.35, 1) 660ms both;
+  }
+  .facts li {
+    animation: settle 700ms cubic-bezier(0.16, 1, 0.3, 1) 1150ms both;
+  }
+  .facts li:nth-child(2) {
+    animation-delay: 1230ms;
+  }
+  .facts li:nth-child(3) {
+    animation-delay: 1310ms;
+  }
+  .panelFoot {
+    animation: settle 700ms cubic-bezier(0.16, 1, 0.3, 1) 1400ms both;
+  }
+}
+
+@keyframes turn {
+  from {
+    scale: 0;
+  }
+}
+
+@keyframes come {
+  from {
+    opacity: 0;
+    translate: 0 -12px;
+  }
+}
+
+@keyframes near {
+  from {
+    opacity: 0;
+    translate: -0.5em 0;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+@keyframes far {
+  from {
+    opacity: 0;
+    translate: 0.5em 0;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+@keyframes draw {
+  from {
+    --crease-draw: 0;
+  }
+  to {
+    --crease-draw: 1;
+  }
+}
+
+@keyframes fold {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+}
+
+/*
  * Narrower, the Night panel becomes a band across the top: the logo, the crease headline and the turned corner, as on
  * a wide screen, with the form under it.
  */
@@ -182,7 +277,7 @@
     padding: 34px 0 0;
   }
   .panelType {
-    font-size: clamp(40px, calc(100cqi / 6.9), 76px);
+    font-size: clamp(30px, calc(100cqi / 8.1), 76px);
   }
   .facts,
   .panelFoot {

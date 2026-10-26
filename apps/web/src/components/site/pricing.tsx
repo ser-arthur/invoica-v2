@@ -94,7 +94,7 @@ function PlanCard({ plan }: { plan: Plan }) {
 export function Pricing() {
   return (
     <div className={p.pricing}>
-      <section className={`${s.wrap} ${p.intro}`} aria-labelledby="pricing-heading">
+      <section className={`${s.wrap} ${p.intro}`} aria-labelledby="pricing-heading" data-lands="">
         <span className={s.label}>Pricing</span>
         <h1 id="pricing-heading" className={`${s.display} ${p.title}`}>
           <span className={s.keep}>Plans that grow</span> <span className={s.keep}>with your business.</span>

@@ -126,6 +126,22 @@ Built on `main`, as the owner asked for this round.
 - **Signature and a monochrome template:** a design session first (light and dark Signature with Invoica's own
   character; the old app's Monochrome as a neutral, professional layout), on the canvas for the owner's choice.
 
+## The owner's notes of 26 October, 16:52
+
+- **The header's links:** pointing at a link tints it with the logo's green; the lit link stays as it is when pointed
+  at, and a link becoming current fills from the tint to the full green. On the pricing page, Pricing is lit. A link
+  clicked lights at once and stays lit while the page moves to its section; the sections passed on the way do not
+  light up in turn.
+- **Moving between the home page and pricing** keeps the header where it is: the public pages share one header and
+  footer, so the header settles in once, as the first of them loads, and never comes in again on the way between them.
+- **Sign in and sign up** take the first Invoica's line, "The smarter way to bill, track and get paid.", in place of
+  the home page's. Their panel lands as it opens: the corner turns, the logo comes down, the headline's halves come in
+  from opposite sides and meet, the crease is drawn and the page past it turns a shade lighter, then each thing an
+  account brings settles in turn.
+- **The pricing page** lands the same way: the label, the heading's two halves from opposite sides, the words under
+  it, the trial with its corner turning, the choice of monthly or yearly, then the three plans in turn.
+- Settled inside two and a half seconds; still for visitors who ask for less motion.
+
 ## Acceptance criteria
 
 Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/documents/test`.
@@ -168,3 +184,11 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
     at least 72 px apart.
 21. At 390 pixels wide the sign-in and sign-up pages show the Night band with the crease headline above the form.
 22. A field's focus ring is the logo's deeper green.
+23. Pointing at a link that is not current tints it (green at 16%) with dark words; pointing at the current one leaves
+    it the full green.
+24. On the pricing page its link is current (`aria-current="page"`).
+25. Clicking a header link makes it current at once, and no other link is current on the way.
+26. From the pricing page to the templates and back, the header is the same element and starts no animation.
+27. Sign in lands in order: the halves from opposite sides together, the crease after them, then the three points in
+    turn; pricing lands in order: the heading's halves together, the words, the trial, then the plans in turn. Both
+    settle inside 2.5 seconds, and with less motion asked for nothing moves.

@@ -209,11 +209,6 @@
   text-decoration: none;
 }
 
-.site .menuPanel a:hover {
-  background: var(--mist);
-  color: var(--night);
-}
-
 /* The way in, last in the menu: shown on phones, where the header has no room for it. */
 .site .menuPanel .menuWayIn {
   display: none;
@@ -277,16 +272,25 @@
 }
 
 /*
- * The section in view: its link lights up in the logo's green, its words dark so they stay readable (the green as
- * text would read at 1.9 to 1 on the header's ground).
+ * The section in view, or the page: its link lights up in the logo's green, its words dark so they stay readable (the
+ * green as text would read at 1.9 to 1 on the header's ground). Pointing at another link tints it with the same green,
+ * so choosing it fills the tint in; pointing at the lit one leaves it as it is.
  */
 .nav a {
   padding: 8px 14px;
   border-radius: 999px;
 }
 
+.site .nav a:hover,
+.site .menuPanel a:hover {
+  background: rgb(55 198 107 / 0.16);
+  color: var(--night);
+}
+
 .site .nav a[aria-current],
-.site .menuPanel a[aria-current] {
+.site .nav a[aria-current]:hover,
+.site .menuPanel a[aria-current],
+.site .menuPanel a[aria-current]:hover {
   background: var(--logo-accent);
   color: var(--night);
 }
@@ -2454,7 +2458,8 @@
   }
 
   /* The header's dot moves to the section in view; the menu button's lines turn into a cross, the menu's items follow. */
-  .nav a {
+  .nav a,
+  .site .menuPanel a {
     transition:
       background-color 300ms var(--arrive),
       color 200ms ease;
@@ -2579,11 +2584,12 @@
       animation-range: entry 0% cover 50%;
     }
 
-    /* Each section's words rise into place as they arrive, in the order they are read. */
+    /* Each section's words rise into place as they arrive, in the order they are read; a page's opening lands on load. */
     .site
       main
       :is(.label, .h2, .lead, .numeral, .stepName, .stepHeading, .pillarHeading, .pillarBody, .caption):not(
-        .hero *
+        .hero *,
+        [data-lands] *
       ),
     .moreLink,
     .tryIt,
