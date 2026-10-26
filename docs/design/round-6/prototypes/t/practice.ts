@@ -3,63 +3,69 @@ import { esc, lines, linesTable, para, totalsBlock } from '../../../../../packag
 import type { ProtoTemplate } from '../lib';
 
 /**
- * Practice: for accountants, solicitors, surveyors, consultants and clinics. A letterhead with the firm's details in
- * a margin column, the invoice set out like a letter, and how to pay written as one plain sentence.
+ * Practice: for accountants, solicitors, surveyors, consultants and clinics. A letterhead in the firm's own deep
+ * colour with a fine gold line, the invoice set out as a letter on warm paper, the amount due in a gold-ruled frame,
+ * and how to pay written as one plain sentence.
  */
-export const practice: ProtoTemplate = {
+export const practice: ProtoTemplate & { logoVariant: string } = {
   id: 'practice',
   name: 'Practice',
-  fonts: ['Source Serif 4', 'Source Sans 3'],
-  footer: { font: 'Source Sans 3', inset: '0' },
+  logoVariant: '-light',
+  fonts: ['Libre Caslon Display', 'Libre Caslon Text', 'Source Sans 3'],
+  footer: { font: 'Source Sans 3', inset: '18mm', color: '#6d6a62' },
   css: (v: DocumentView) => `
-@page{size:A4;margin:18mm 16mm 20mm}
-:root{--brand:${v.brandColour};--ink:#1b1d22;--soft:#5f646e;--line:#d9dbe0}
-body{font-family:'Source Serif 4',serif;font-size:9.8pt;line-height:1.5;color:var(--ink);font-optical-sizing:auto}
+@page{size:A4;margin:16mm 0 20mm;background:#FBF8F2}
+@page:first{margin-top:0}
+:root{--brand:${v.brandColour};--gold:#B08D57;--ink:#1f2228;--soft:#66635c;--line:#e2dccf;--paper:#FBF8F2;--ivory:#F3EEE4}
+body{font-family:'Libre Caslon Text',serif;font-size:9pt;line-height:1.55;color:var(--ink)}
 .sans{font-family:'Source Sans 3',sans-serif}
-.page{display:grid;grid-template-columns:49mm 1fr;gap:0 9mm;margin-bottom:7mm}
-.side{font-family:'Source Sans 3',sans-serif;font-size:8.2pt;line-height:1.5;color:var(--soft);border-right:.5pt solid var(--line);padding-right:6mm}
-.lock{display:block;margin-bottom:7mm}
-.lock img{width:13mm;height:13mm;display:block;margin-bottom:3.5mm}
-.lock .n{font-family:'Source Serif 4',serif;font-weight:600;font-size:14pt;line-height:1.15;color:var(--brand);letter-spacing:-.005em}
-.side .grp{margin-bottom:4.5mm}
-.side .grp b{display:block;color:var(--ink);font-weight:600}
-.main{min-width:0}
-.to{margin-top:21mm;min-height:28mm}
-.to .n{font-weight:600}
-.headline{display:flex;justify-content:space-between;align-items:baseline;gap:8mm;border-bottom:.8pt solid var(--brand);padding-bottom:2.5mm;margin:6mm 0 3mm}
-.headline h1{font-weight:600;font-size:21pt;line-height:1;margin:0;color:var(--brand);letter-spacing:-.01em}
-.headline .no{font-family:'Source Sans 3';font-weight:600;font-size:10pt}
-.dates{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;gap:0 8mm;margin:0;font-family:'Source Sans 3';font-size:8.6pt}
-.dates div span{display:block;color:var(--soft)}
-.re{font-weight:600;margin:0 0 1.5mm}
-.re i{font-style:italic;font-weight:400;color:var(--soft);margin-right:1.5mm}
-.sum{margin-bottom:5mm;color:#333}
-table.lines th{font-family:'Source Sans 3';font-weight:600;font-size:8pt;color:var(--soft);text-align:left;padding:0 0 1.8mm;border-bottom:.6pt solid var(--ink)}
+.lh{background:var(--brand);color:var(--ivory);padding:13mm 18mm 0;position:relative}
+.lh .row{display:flex;justify-content:space-between;align-items:center;gap:10mm;padding-bottom:10mm}
+.lock{display:flex;align-items:center;gap:6mm}
+.lock img{width:21mm;height:21mm}
+.lock .n{font-family:'Libre Caslon Display',serif;font-size:27pt;line-height:1;letter-spacing:.01em}
+.lh .ct{font-family:'Source Sans 3';font-size:8.4pt;line-height:1.6;text-align:right;color:color-mix(in srgb,var(--ivory) 78%,transparent)}
+.lh .gold{height:0;border-top:.7pt solid var(--gold);position:relative;top:-3.2mm}
+.wrap{padding:0 18mm}
+.letter{display:grid;grid-template-columns:1fr 66mm;gap:12mm;margin-top:11mm;align-items:start}
+.to .n{font-weight:700}
+.title{font-family:'Libre Caslon Display';font-size:22pt;line-height:1;color:var(--brand);margin:0 0 3mm}
+.title+.no{font-family:'Source Sans 3';font-weight:600;font-size:9.6pt;letter-spacing:.04em;margin-bottom:3mm}
+.dates{display:grid;grid-template-columns:auto 1fr;gap:.3mm 5mm;margin:0;font-family:'Source Sans 3';font-size:8.8pt}
+.dates dt{color:var(--soft)}.dates dd{margin:0}
+.re{margin:10mm 0 4mm;font-size:10.5pt}
+.re i{color:var(--soft);margin-right:1.6mm}
+.sum{margin:-2mm 0 4mm;color:#3a3833}
+table.lines th{font-family:'Source Sans 3';font-weight:600;font-size:7.8pt;letter-spacing:.04em;color:var(--soft);text-align:left;padding:0 0 2mm;border-bottom:.6pt solid var(--brand)}
 table.lines th.num{text-align:right}
-table.lines td{padding:2.6mm 0;border-bottom:.5pt solid var(--line);vertical-align:top}
+table.lines td{padding:2.8mm 0;border-bottom:.5pt solid var(--line);vertical-align:top}
 table.lines td+td,table.lines th+th{padding-left:5mm}
-.l-title{font-weight:500}.l-desc{color:var(--soft);font-size:9pt;font-style:italic}
-.end{break-inside:avoid}
-.totals{width:80mm;margin:3mm 0 0 auto;font-family:'Source Sans 3';font-size:9.2pt}
-.t-row{display:flex;justify-content:space-between;gap:6mm;padding:.7mm 0}
+.l-desc{color:var(--soft);font-size:8.4pt;font-style:italic}
+td.num{font-family:'Source Sans 3';font-size:9.2pt}
+.end{display:grid;grid-template-columns:1fr 78mm;gap:12mm;margin-top:4mm;break-inside:avoid}
+.totals{font-family:'Source Sans 3';font-size:9.2pt}
+.t-row{display:flex;justify-content:space-between;gap:6mm;padding:.8mm 0}
 .t-total{border-top:.6pt solid var(--ink);margin-top:1mm;padding-top:1.6mm;font-weight:700}
 .t-payment,.t-note{color:var(--soft)}
-.due{width:80mm;margin:2mm 0 0 auto;border-top:.6pt solid var(--ink);border-bottom:2.2pt double var(--ink);padding:2.2mm 0 2.4mm;display:flex;justify-content:space-between;align-items:baseline}
-.due .d-label{font-weight:600}
-.due .d-value{font-weight:700;font-size:15pt;color:var(--brand)}
-.how{margin-top:7mm;padding:4.5mm 5mm;background:color-mix(in oklab,${v.brandColour} 5%,#fff);border-radius:1mm;break-inside:avoid}
-.how b{font-weight:600}
-.how .alt{margin-top:1.5mm;color:var(--soft);font-size:9pt}
-.small{margin-top:5mm;font-size:8.8pt;color:#333;display:grid;gap:2mm}
-.sign{margin-top:8mm;break-inside:avoid}
+.due{margin-top:4mm;border:.7pt solid var(--gold);padding:1.2mm}
+.due .in{border:.35pt solid var(--gold);padding:4mm 5mm;display:flex;justify-content:space-between;align-items:baseline;background:#fff}
+.due .d-label{font-family:'Source Sans 3';font-weight:600;font-size:8.4pt;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+.due .d-value{font-family:'Libre Caslon Display';font-size:22pt;line-height:1;color:var(--brand)}
+.how{border-left:1.6pt solid var(--gold);padding:.6mm 0 .6mm 5mm;align-self:center}
+.how b{font-weight:700}
+.how .alt{margin-top:1.5mm;color:var(--soft)}
+.small{margin-top:7mm;color:#3a3833;display:grid;gap:2mm}
+.sign{margin-top:7mm;break-inside:avoid}
 .sign .by{font-style:italic;color:var(--soft)}
-.sign .firm{font-weight:600;color:var(--brand)}
+.sign .firm{font-family:'Libre Caslon Display';font-size:15pt;color:var(--brand);margin-top:1mm}
+.legal{margin-top:9mm;padding-top:2.6mm;border-top:.5pt solid var(--gold);font-family:'Source Sans 3';font-size:7.6pt;color:var(--soft);text-align:center}
 `,
   body: (v: DocumentView, logo: string | null) => {
     const bank = v.payment.find((p) => p.title === 'Bank transfer');
     const r = (l: string) => bank?.rows.find((x) => x.label === l)?.value ?? null;
     const payee = r('Account name');
     const parts = [
+      r('Bank') ? `${esc(r('Bank'))}` : null,
       r('Sort code') ? `sort code ${esc(r('Sort code'))}` : null,
       r('Account number') ? `account ${esc(r('Account number'))}` : null,
       r('IBAN') ? `IBAN ${esc(r('IBAN'))}` : null,
@@ -68,40 +74,30 @@ table.lines td+td,table.lines th+th{padding-left:5mm}
       v.kind === 'credit_note'
         ? ''
         : `Please pay <b>${esc(v.amountDue.value)}</b>${v.amountDue.dueLine ? ` by ${esc(v.amountDue.dueLine.replace(/^Due /, ''))}` : ''}${payee ? ` to ${esc(payee)}` : ''}${parts.length ? `, ${parts.join(', ')}` : ''}${r('Reference') ? `, quoting <b>${esc(r('Reference'))}</b>` : ''}.`;
-    const contact = v.seller.contactLines;
     return `
-<div class="page">
-  <aside class="side">
+<header class="lh">
+  <div class="row">
     <div class="lock">${logo ? `<img src="${esc(logo)}" alt="">` : ''}<div class="n word">${esc(v.seller.name)}</div></div>
-    <div class="grp">${lines(v.seller.addressLines)}</div>
-    <div class="grp">${lines(contact)}</div>
-    ${v.seller.taxLine ? `<div class="grp">${esc(v.seller.taxLine)}</div>` : ''}
-    ${v.seller.companyLine ? `<div class="grp">${esc(v.seller.companyLine)}</div>` : ''}
-  </aside>
-  <div class="main">
-    <div class="to word"><div class="n">${esc(v.buyer.name)}</div>${lines([v.buyer.contact, ...v.buyer.addressLines, ...v.buyer.detailLines])}</div>
-    <div class="headline"><h1>${esc(v.heading)}</h1><div class="no">${esc(v.number)}</div></div>
-    <div class="dates">${v.dates.map((d) => `<div><span>${esc(d.label)}</span>${esc(d.value)}</div>`).join('')}</div>
+    <div class="ct">${lines([v.seller.addressLines.join(', '), ...v.seller.contactLines])}</div>
   </div>
+  <div class="gold"></div>
+</header>
+<div class="wrap">
+<section class="letter">
+  <div class="to word"><div class="n">${esc(v.buyer.name)}</div>${lines([v.buyer.contact, ...v.buyer.addressLines, ...v.buyer.detailLines])}</div>
+  <div><h1 class="title">${esc(v.heading)}</h1><div class="no">${esc(v.number)}</div><dl class="dates">${v.dates.map((d) => `<dt>${esc(d.label)}</dt><dd>${esc(d.value)}</dd>`).join('')}</dl></div>
+</section>
+${v.title ? `<p class="re"><i>For</i>${esc(v.title)}</p>` : ''}
+${v.summary ? `<p class="sum">${para(v.summary)}</p>` : ''}
+${linesTable(v)}
+<section class="end">
+  ${sentence ? `<div class="how">${sentence}${v.paymentLink ? `<div class="alt">Or pay online at ${esc(v.paymentLink)}</div>` : ''}</div>` : '<div></div>'}
+  <div>${totalsBlock(v)}<div class="due"><div class="in"><span class="d-label">${esc(v.amountDue.label)}</span><span class="d-value">${esc(v.amountDue.value)}</span></div></div></div>
+</section>
+<div class="small">${[v.creditNote, v.reverseChargeNote, v.sterlingRateNote, v.notes, v.terms].filter(Boolean).map((x) => `<p>${para(x)}</p>`).join('')}</div>
+<div class="sign"><div class="by">With thanks,</div><div class="firm">${esc(v.seller.name)}</div></div>
+<footer class="legal keep">${esc(v.seller.companyLine ?? v.legalLine)}${v.seller.companyLine && v.seller.taxLine ? `. ${esc(v.seller.taxLine)}` : ''}</footer>
 </div>
-<main>
-    ${v.title ? `<p class="re"><i>For</i>${esc(v.title)}</p>` : ''}
-    ${v.summary ? `<p class="sum">${para(v.summary)}</p>` : ''}
-    ${linesTable(v)}
-    <div class="end">
-    ${totalsBlock(v)}
-    <div class="due"><span class="d-label sans">${esc(v.amountDue.label)}</span><span class="d-value">${esc(v.amountDue.value)}</span></div>
-    </div>
-    ${sentence ? `<div class="how">${sentence}${v.paymentLink ? `<div class="alt">Or pay online at ${esc(v.paymentLink)}</div>` : ''}</div>` : ''}
-    <div class="small">${[
-      v.creditNote ? `<p>${esc(v.creditNote)}</p>` : '',
-      v.reverseChargeNote ? `<p>${esc(v.reverseChargeNote)}</p>` : '',
-      v.sterlingRateNote ? `<p>${esc(v.sterlingRateNote)}</p>` : '',
-      v.notes ? `<p>${para(v.notes)}</p>` : '',
-      v.terms ? `<p>${para(v.terms)}</p>` : '',
-    ].join('')}</div>
-    <div class="sign"><div class="by">With thanks,</div><div class="firm">${esc(v.seller.name)}</div></div>
-</main>
 `;
   },
 };

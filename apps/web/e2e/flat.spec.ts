@@ -34,12 +34,14 @@ test('on a phone each step shows a readable piece of the app, not a picture of a
       return Math.min(...sizes);
     });
     expect(smallest, heading).toBeGreaterThanOrEqual(12);
-    for (const picture of await step(page, heading).locator('img').all()) await expect(picture).toBeHidden();
+    // the pictures of the app, and the invoices rendered live beside them
+    for (const picture of await step(page, heading).locator('img, iframe').all())
+      await expect(picture).toBeHidden();
   }
   await page.setViewportSize({ width: 1440, height: 900 });
   for (const [heading] of STEP_PIECES) {
     await expect(step(page, heading).locator('[data-piece]'), heading).toBeHidden();
-    await expect(step(page, heading).locator('img').first(), heading).toBeVisible();
+    await expect(step(page, heading).locator('img, iframe').first(), heading).toBeVisible();
   }
 });
 
@@ -96,7 +98,8 @@ test('nothing draws a radial gradient, and dark grounds, numerals and bars are f
     expect(await gradients(page, /radial-gradient/), path).toEqual([]);
   }
   await page.goto('/');
-  expect(await flat(page.getByRole('img', { name: /An example dashboard/ }))).toBe('none');
+  // step 5's dark card, the moment INV-0044 is paid
+  expect(await flat(page.getByRole('img', { name: /INV-0044 paid in full/ }))).toBe('none');
   const numerals = page.locator('li span[aria-hidden="true"]').filter({ hasText: /^[1-5]$/ });
   await expect(numerals).toHaveCount(5);
   for (const numeral of await numerals.all()) expect(await flat(numeral)).toBe('none');

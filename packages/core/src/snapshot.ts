@@ -30,8 +30,15 @@ export interface SnapshotSeller {
   taxRegistered: boolean;
   taxNumber: string | null;
   brandColour: string;
+  /** The second colour, worked out at issue when the business has not chosen one. Absent before 25 October 2026. */
+  accentColour?: string;
+  /** What sits behind the logo where a template sets it on a colour. Absent before 25 October 2026: white. */
+  logoGround?: LogoGround;
   logoFileId: string | null;
 }
+
+export type LogoGround = 'none' | 'white' | 'cream' | 'black';
+export const LOGO_GROUNDS: readonly LogoGround[] = ['none', 'white', 'cream', 'black'];
 
 export interface SnapshotBuyer {
   name: string;

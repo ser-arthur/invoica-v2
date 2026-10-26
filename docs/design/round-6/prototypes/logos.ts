@@ -1,4 +1,5 @@
-/** Invented marks for the invented businesses. Original drawings; none is any real company's. */
+import { existsSync, readFileSync } from 'node:fs';
+/** Invented marks for the invented businesses, original drawings. The rest are drawn by make_logos.py into logos/. */
 
 function spiral(cx: number, cy: number, turns: number, r: number): string {
   const pts: string[] = [];
@@ -13,19 +14,30 @@ function spiral(cx: number, cy: number, turns: number, r: number): string {
 }
 
 export const LOGOS: Record<string, (brand: string) => string> = {
+  // A spike of larkspur flowers rising like a chart.
+  signature: (b) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<rect width="200" height="200" rx="44" fill="${b}"/>
+<g fill="#F2F7F4"><circle cx="58" cy="146" r="17"/><circle cx="88" cy="118" r="15"/><circle cx="114" cy="92" r="13"/><circle cx="136" cy="68" r="11"/><circle cx="153" cy="47" r="9"/></g>
+</svg>`,
+  // A path that climbs and turns, ending in a point.
+  letter: (b) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<circle cx="100" cy="100" r="92" fill="none" stroke="${b}" stroke-width="7"/>
+<path d="M46 142 C 78 142, 70 96, 104 96 C 136 96, 128 58, 152 58" fill="none" stroke="${b}" stroke-width="9" stroke-linecap="round"/>
+<circle cx="152" cy="58" r="11" fill="${b}"/>
+</svg>`,
+  // A chainring: teeth round a ring.
+  ticket: (b) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<g fill="${b}">${Array.from({ length: 16 }, (_, i) => `<rect x="92" y="6" width="16" height="26" rx="4" transform="rotate(${i * 22.5} 100 100)"/>`).join('')}</g>
+<circle cx="100" cy="100" r="74" fill="${b}"/>
+<circle cx="100" cy="100" r="46" fill="#fff"/>
+<circle cx="100" cy="100" r="14" fill="${b}"/>
+</svg>`,
   // A cinnamon knot: a swirl in a bun.
   sticker: (b) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
 <circle cx="100" cy="100" r="96" fill="${b}"/>
 <circle cx="100" cy="100" r="70" fill="#FFF3E6"/>
 <path d="${spiral(100, 100, 3.1, 58)}" fill="none" stroke="#3A2320" stroke-width="10" stroke-linecap="round"/>
 </svg>`,
-  // Two inks out of register: a clock face at an odd hour.
-  riso: () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-<g style="mix-blend-mode:multiply">
-<circle cx="92" cy="104" r="78" fill="#FF48B0"/>
-<circle cx="110" cy="94" r="78" fill="none" stroke="#0078BF" stroke-width="14"/>
-<path d="M110 94 L110 44 M110 94 L150 120" stroke="#0078BF" stroke-width="14" stroke-linecap="round"/>
-</g></svg>`,
   // Levels on a meter, the last one tipping into the red.
   marquee: (b) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
 <rect x="0" y="0" width="200" height="200" rx="34" fill="#141414"/>
@@ -54,19 +66,6 @@ export const LOGOS: Record<string, (brand: string) => string> = {
 <path d="M58 20 H112 L84 180 H30 Z" fill="${b}"/>
 <path d="M128 20 H182 L154 180 H100 Z" fill="${b}" opacity=".45"/>
 </svg>`,
-  // Two roof lines and a wing.
-  trade: (b) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-<path d="M100 8 L192 76 V196 H8 V76 Z" fill="#161616"/>
-<path d="M38 112 L100 66 L162 112" fill="none" stroke="${b}" stroke-width="18" stroke-linejoin="miter"/>
-<path d="M38 152 L100 106 L162 152" fill="none" stroke="${b}" stroke-width="18" stroke-linejoin="miter"/>
-</svg>`,
-  // A K inside an A: two strokes and a crossbar each, boxed.
-  practice: (b) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-<rect x="0" y="0" width="200" height="200" fill="${b}"/>
-<g fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="square">
-<path d="M42 156 L80 46 L118 156 M58 112 H104"/>
-<path d="M132 46 V156 M132 112 L168 46 M146 92 L170 156"/>
-</g></svg>`,
   // A thistle: the head, its spikes and two leaves.
   heritage: (b) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
 <g fill="${b}">
@@ -86,3 +85,13 @@ export const LOGOS: Record<string, (brand: string) => string> = {
 <rect x="20" y="96" width="160" height="8" fill="#FFFFFF"/>
 </svg>`,
 };
+
+/** A drawn logo from logos/<id>.svg when there is one (variants fall back to their template's), else the one above. */
+export function logoFor(id: string, brand: string, variant = ''): string {
+  const dir = new URL('./logos/', import.meta.url).pathname;
+  const base = id.replace(/(-[a-z0-9]+)+$/, '');
+  for (const name of [`${id}${variant}`, `${base}${variant}`, id, base]) {
+    if (existsSync(`${dir}${name}.svg`)) return readFileSync(`${dir}${name}.svg`, 'utf8').replaceAll('{BRAND}', brand);
+  }
+  return (LOGOS[id] ?? LOGOS[base]!)(brand);
+}

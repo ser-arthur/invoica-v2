@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { closePdfRenderer, renderPdf } from '../src/index';
-import { TEMPLATE_LIST } from '@invoica/documents';
+import { TEMPLATES } from '@invoica/documents';
 import { FIXTURES } from '../../documents/test/fixtures';
 
 /**
@@ -66,7 +66,8 @@ function difference(a: Grey, b: Grey): number {
   return differing / a.pixels.length;
 }
 
-const CASES = TEMPLATE_LIST.flatMap(({ id: template }) => [
+/** Every template a document can be in: those offered and those retired from the picker. */
+const CASES = Object.keys(TEMPLATES).flatMap((template) => [
   { template, fixture: 'ukVat' as const, page: 1 },
   { template, fixture: 'long' as const, page: 2 },
 ]);

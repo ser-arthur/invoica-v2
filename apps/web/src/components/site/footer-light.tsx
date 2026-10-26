@@ -21,6 +21,26 @@ function restingCentre() {
  */
 export function FooterLight({ className, children }: { className: string | undefined; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  // The logo rises when half of it is in view, and again each time the reader leaves and comes back.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    el.dataset.armed = '';
+    const seen = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        if (entry.intersectionRatio >= 0.5) el.dataset.seen = '';
+        else if (!entry.isIntersecting) delete el.dataset.seen;
+      },
+      { threshold: [0, 0.5] },
+    );
+    seen.observe(el);
+    return () => {
+      seen.disconnect();
+      delete el.dataset.armed;
+      delete el.dataset.seen;
+    };
+  }, []);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium, type Browser } from 'playwright-core';
 import { formatMoney, type DocumentSnapshot } from '@invoica/core';
-import { TEMPLATE_LIST, renderDocumentHtml } from '@invoica/documents';
+import { TEMPLATES as ALL, renderDocumentHtml } from '@invoica/documents';
 import { closePdfRenderer, fontDataUrl, renderPdf } from '../src/index';
 import { CURRENCIES, HARD } from '../../documents/test/hard-fixtures';
 
@@ -16,7 +16,8 @@ import { CURRENCIES, HARD } from '../../documents/test/hard-fixtures';
 
 const executablePath = process.env.CHROMIUM_PATH || undefined;
 const dir = mkdtempSync(join(tmpdir(), 'invoica-hard-'));
-const TEMPLATES = TEMPLATE_LIST.map((t) => t.id);
+/** Every template a document can be in: those offered and those retired from the picker. */
+const TEMPLATES = Object.keys(ALL);
 /** A4 at 96 pixels to the inch. */
 const A4_WIDTH = 794;
 
@@ -55,6 +56,13 @@ async function overflowing(snapshot: DocumentSnapshot): Promise<string[]> {
         if (el.childElementCount > 0 || !(el.textContent ?? '').trim()) continue;
         const r = el.getBoundingClientRect();
         if (r.width > 0 && r.right > width + 0.5) out.push((el.textContent ?? '').trim().slice(0, 50));
+      }
+      // Text set along a curve is cut where the curve ends: it must fit the curve's length.
+      for (const tp of document.querySelectorAll('textPath')) {
+        const text = tp.closest('text') as SVGTextElement | null;
+        const path = document.querySelector(tp.getAttribute('href') ?? '') as SVGPathElement | null;
+        if (text && path && text.getComputedTextLength() > path.getTotalLength() + 0.5)
+          out.push(`${(tp.textContent ?? '').slice(0, 50)} runs past its curve`);
       }
       return out;
     }, A4_WIDTH);

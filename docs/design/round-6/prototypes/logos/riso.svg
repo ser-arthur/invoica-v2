@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<defs><mask id="m"><rect width="200" height="200" fill="#fff"/><circle cx="152" cy="66" r="50" fill="#000"/></mask></defs>
+<circle cx="80" cy="112" r="62" fill="{BRAND}"/>
+<circle cx="124" cy="92" r="62" fill="#0078BF" mask="url(#m)" style="mix-blend-mode:multiply"/>
+<path d="M176 150 l4.5 11.5 l11.5 4.5 l-11.5 4.5 l-4.5 11.5 l-4.5 -11.5 l-11.5 -4.5 l11.5 -4.5 z" fill="#0078BF" style="mix-blend-mode:multiply"/>
+<path d="M36 30 l3 8 l8 3 l-8 3 l-3 8 l-3 -8 l-8 -3 l8 -3 z" fill="{BRAND}"/>
+</svg>

@@ -26,6 +26,7 @@ import type {
   SterlingRateMethod,
   ReminderKind,
   ReminderWording,
+  LogoGround,
 } from '@invoica/core';
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
@@ -123,6 +124,10 @@ export const organisation = pgTable('organisation', {
   numberPadding: integer('number_padding').notNull().default(4),
   brandColour: text('brand_colour').notNull().default('#17795a'),
   logoFileId: uuid('logo_file_id'),
+  /** A second colour chosen by the business; null when it is worked out from the brand colour. */
+  accentColour: text('accent_colour'),
+  /** What sits behind the logo where a template sets it on a colour. */
+  logoGround: text('logo_ground').$type<LogoGround>().notNull().default('white'),
   defaultTemplate: text('default_template').notNull().default('signature'),
   paymentDetails: jsonb('payment_details').$type<PaymentDetails>().notNull().default({}),
   defaultNotes: text('default_notes'),

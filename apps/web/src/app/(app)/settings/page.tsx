@@ -74,6 +74,8 @@ export default async function SettingsPage() {
     creditNotePrefix: org.creditNotePrefix,
     numberPadding: org.numberPadding,
     brandColour: org.brandColour,
+    accentColour: org.accentColour,
+    logoGround: org.logoGround,
     defaultTemplate: org.defaultTemplate,
     paymentDetails: org.paymentDetails,
     defaultNotes: org.defaultNotes,

@@ -70,6 +70,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | D1 | Design round 5 on the website: the logo everywhere and as the icon (decision 0012), the home page rebuilt with its story (`docs/specs/website.md`), the sign-up form filled in from the home page | Built on `feat/website`; waiting for Kobby's review |
 | D2 | The pricing page (`docs/specs/pricing-page.md`), sign in and sign up in the site's look, motion and the template demo | Built on `feat/website`; waiting for Kobby's review; the pricing page goes live with billing (2x) |
 | 3 | Invoice templates round 2: four new templates (Ledger, Poster, Letter, Ticket) beside Signature, Studio and Counsel; template picker with live previews of your own details; landing page built around real invoices | Built; waiting for Kobby's review on the design canvas |
+| 3b | The new range of invoice templates (`docs/specs/invoice-templates.md`): twelve new, four retired from the picker, the second colour and the logo's ground, the picker filtered by kind of business and by feel | Built on `feat/invoice-templates`; waiting for Kobby's review |
 | 4 | Getting paid: payment links | After v1 |
 | 5 | Cash flow and dashboards beyond v1 | After v1 |
 
@@ -146,6 +147,20 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **24 Oct, about 01:00 to 02:30, while the owner slept.** He asked for a wider range of invoice templates, a more creative line down How it works and other ways to show the app than the tilted slab. Proposal in `docs/design/round-6-templates.md` and on three new canvas pages: ten new templates from playful to grounded (Sticker, Riso, Marquee, Atelier, Mark, Grid, Trade, Statement, Practice, Heritage), five lines and five ways to show the app, each with a recommendation. Nothing in the product changed. Bundle 30.
 
+- **25 Oct, about 13:40 to 14:30.** The owner's notes on the round 6 templates, worked through as prototypes in `docs/design/round-7-templates.md` and on the canvas page "Invoice templates, round 2": Sticker kept, a new Riso logo, Marquee in three pairings, three directions in place of Atelier (Bloom, Arch, Feature), Billboard beside Mark, and Grid, Trade, Statement, Practice and Heritage reworked beside their first versions. Real-looking sample details throughout. Nothing in the product changed. Bundle 31.
+
+- **25 Oct, about 14:30 to 14:45.** The owner approved the registration wording: Scotland for an SC company number, Northern Ireland for an NI number, England and Wales for the rest. On `fix/registration-wording`, from `main`. Bundle 32.
+
+- **25 Oct, about 14:45 to 15:30.** The owner chose from round 2: Atelier (in a stronger use of colour) and Bloom for florists and weddings, Marquee in Bricolage with a better colour scheme, Billboard beside Mark, Practice as it is, Grid, Trade, Statement and Heritage adjusted. Worked in on the canvas page "Invoice templates, round 3", including the business choosing what sits behind its logo. Bundle 33.
+
+- **25 Oct, about 15:40 to 18:00.** The new range built into the product on `feat/invoice-templates`: twelve templates, the picker with filters by kind of business and by feel, the second colour and the logo's ground in Settings and in each snapshot, four templates retired from the picker (issued documents keep them). 831 unit, database and PDF tests and 232 end-to-end tests run, none failed (72 skipped by design). A design pass on Signature, Letter and Ticket proposed on the canvas. Bundle 34.
+
+- **25 Oct, about 17:05 to 18:00.** The owner's choices on the three kept templates, built: Signature's second pass (the amount due first, on a slip with its corner turned), Letter as it was with the number and signed name larger, Ticket's second pass (a till roll on grey with a stub to pay from, the band inside the paper's margins). 833 unit, database and PDF tests and 232 end-to-end tests run, none failed (72 skipped by design). Bundle 35.
+
+- **25 Oct, about 18:15 to 19:30.** The website after the new range, on `feat/website-showcase`: the templates section is a shelf of six as designed (Riso in Heritage's place), each made out by its own invented business with details that belong to no one, redrawn as the visitor's with a name and eight colours, with all fifteen a click away. Heritage's arch fits long names. The hero plays one sequence on load (header, headline, the crease drawn up from its foot, then the rest); on phones the way in moves into the menu and body text steps down to 16 px. 841 unit, database and PDF tests and 244 end-to-end tests run, none failed (74 skipped by design). Bundle 36.
+
+- **26 Oct, about 12:50 to 14:15.** The owner's notes on the website: the hero's halves meet again with the crease drawn up from its foot, the dashboard below it, motion tied to the scroll section by section, the shelf reordered with Marquee in lime and navy, the templates seen one at a time on phones, How it works following INV-0044 rendered live with its route pinned and step 5 as the paid moment, a clients section, the stamp as the logo's slip, more room between sections, the footer's logo replaying, the section in view marked in the header, and a new phone menu button. Public samples carry no email or web address (every domain used belonged to someone). 845 unit, database and PDF tests and 260 end-to-end tests run, none failed (78 skipped by design). Bundle 37, with the steps to bring everything into `main`.
+
 ## Decisions in force
 
 | Record | Title | Status |
@@ -170,7 +185,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **Tax model:** a tax code holds one or more components (name, rate in parts per million, compound or not). This covers no tax, UK VAT rates, Ghana's stacked levies, compound taxes and tax-inclusive prices with one rule.
 - **Rounding:** decision 0007. UK businesses default to VAT per line, to the nearest penny; Ghana to each tax on the invoice total; others per line. UK businesses that are not retailers may choose "on the total, rounded down".
 - **PDF engine:** decision 0006. The PDF of record is made with the pinned Chromium; footers and page numbers are CSS margin boxes in the document's own font; the first PDF made for an issued document is kept and never replaced.
-- **Templates in the app:** seven on one view model: Signature (Invoica's own), Studio, Counsel, Ledger, Poster, Letter and Ticket. Every one renders the same snapshot, embeds its fonts, repeats its table heading on long invoices and fits an ordinary invoice on one page (tests).
+- **Templates in the app:** nineteen on one view model, fifteen offered (`docs/specs/invoice-templates.md`): Signature (Invoica's own), Sticker, Riso, Marquee, Atelier, Bloom, Mark, Billboard, Grid, Trade, Statement, Practice, Heritage, Letter and Ticket; Studio, Counsel, Ledger and Poster are kept for documents issued in them. Every one renders the same snapshot, embeds its fonts, repeats its table heading on long invoices and fits an ordinary invoice on one page (tests).
 - **Sending:** "Send" queues the email with the kept PDF through the outbox; it is marked as sent once delivered. In development the email is written to `.data/mail`; deployed copies send through Resend (decision 0008).
 - **Known gaps:** fonts embed as Type 3 in PDFs (Chromium's handling of variable fonts); static font files would embed as TrueType. Large objects can still be created by any database role (the functions belong to the database's superuser).
 - **VAT in sterling wording:** "VAT in sterling £X" with "£1 = 1.1500 EUR, HMRC period rate for October 2026" was chosen under the owner's "pick the best way"; it is statutory wording, so it is listed below for a final look.
@@ -215,7 +230,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 2. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
 3. The domain to buy, then the sending subdomain for Resend.
 4. Answered 23 October: the repository is `ser-arthur/invoica-v2`, and commits are authored as Kobby S. Arthur <kobbyarthur95@gmail.com>.
-5. Which invoice templates ship in v1: the round 6 range is proposed in `docs/design/round-6-templates.md` (canvas page "Invoice templates"), with five more decisions at its end (the line, the app below the hero, retiring four templates, the Scottish and Northern Irish registration wording, static fonts for PDFs).
+5. Answered 25 October: the invoice templates for v1 are the fifteen in `docs/specs/invoice-templates.md`, built on `feat/invoice-templates`. The design pass on Signature, Letter and Ticket was answered and built the same evening. Left: real-looking sample details in the picker, and static fonts for PDFs.
 6. Approve or change 0003, 0006 and 0007.
 7. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
 8. Approve a plan for the R5-L1 four-taxes refusal (`HANDOVER.md`, "Open finding"): how a credit note that settles a balance shares its tax across the components when one would go below zero.

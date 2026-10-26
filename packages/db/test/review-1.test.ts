@@ -493,6 +493,7 @@ describe('L4: rounding choices follow the country', () => {
       creditNotePrefix: org.creditNotePrefix,
       numberPadding: org.numberPadding,
       brandColour: org.brandColour,
+      logoGround: org.logoGround,
       defaultTemplate: org.defaultTemplate,
       paymentDetails: org.paymentDetails as never,
       defaultNotes: org.defaultNotes,

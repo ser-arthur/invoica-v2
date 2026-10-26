@@ -106,4 +106,16 @@ describe('schemas', () => {
           'Invoica cannot fill in {amout}. Use {client}, {number}, {amount}, {due_date}, {days_late} or {business}.',
       });
   });
+
+  it('takes a second colour or none, and one of four grounds for the logo (invoice templates, criterion 9)', () => {
+    const ok = organisationProfileInput.shape.accentColour;
+    expect(ok.parse('#2B0B3F')).toBe('#2b0b3f');
+    expect(ok.parse(null)).toBeNull();
+    expect(ok.parse('')).toBeNull();
+    expect(ok.safeParse('navy').success).toBe(false);
+    const ground = organisationProfileInput.shape.logoGround;
+    expect(ground.parse('cream')).toBe('cream');
+    expect(ground.parse(undefined)).toBe('white');
+    expect(ground.safeParse('pink').success).toBe(false);
+  });
 });

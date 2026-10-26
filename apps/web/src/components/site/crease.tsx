@@ -28,6 +28,7 @@ const FINISHES = {
  * A headline crossed by one diagonal fold. The headline is set twice: the heading itself, and a copy
  * clipped to the far side of the fold that takes a different finish. The fold is drawn as a gradient
  * line with a hairline beside it, square to it so the two end together, both fading out at their ends.
+ * The two copies are clipped along the same edges, so between them every letter shows exactly once.
  *
  * xTop and xBottom are where the fold meets the top and the bottom of the drawing box, as a percentage
  * of the headline's width. The box runs `extend` per cent of the headline's height above and below it.
@@ -72,13 +73,21 @@ export function Crease({
   const height = 100 + 2 * extend;
   // where the fold crosses a given height, in per cent of the headline box (0 is its top, 100 its foot)
   const at = (y: number) => xTop + (xBottom - xTop) * ((extend + y) / height);
-  // the clip runs well past the box so descenders change finish too
-  const clip = `polygon(${at(-30).toFixed(2)}% -30%, 130% -30%, 130% 130%, ${at(130).toFixed(2)}% 130%)`;
-  // the heading itself is clipped to the near side, so its dark edges never show around the far side's letters
-  const near = `polygon(-30% -30%, ${at(-30).toFixed(2)}% -30%, ${at(130).toFixed(2)}% 130%, -30% 130%)`;
   // draw the fold only across the headline, a little past each end
   const t0 = Math.max(0, (xTop - span[1]) / (xTop - xBottom));
   const t1 = Math.min(1, (xTop - span[0]) / (xTop - xBottom));
+  // The far finish starts at a front across the headline, which sits at the top of the drawn line at rest. Loading
+  // the home page, the front rises with the line's tip from just below its foot (site.module.css, `sweep`).
+  const sweep = {
+    '--crease-from': `${(-extend + height * t1 + 3).toFixed(2)}%`,
+    '--crease-to': `${(-extend + height * t0).toFixed(2)}%`,
+    // where the fold crosses the front: at(front), written as a + b * front
+    '--crease-xa': `${at(0).toFixed(3)}%`,
+    '--crease-xb': ((xBottom - xTop) / height).toFixed(5),
+    '--crease-foot': `${at(130).toFixed(2)}%`,
+    '--crease-extend': `${extend}%`,
+    '--crease-k': (100 / height).toFixed(5),
+  } as React.CSSProperties;
   const x = (t: number, shift = 0) => (xTop + shift + (xBottom - xTop) * t).toFixed(2);
   const y = (t: number) => (100 * t).toFixed(2);
   // the hairline: the same stretch of the fold, moved across by `gap` and square to it
@@ -88,7 +97,7 @@ export function Crease({
   const hair = dark ? 'rgb(255 255 255 / 0.45)' : 'rgb(9 25 28 / 0.4)';
   const words = lines.map((line, i) => <span key={i}>{line}</span>);
   return (
-    <div className={s.crease}>
+    <div className={s.crease} style={sweep}>
       {tone ? (
         <span
           aria-hidden="true"
@@ -106,13 +115,10 @@ export function Crease({
           }}
         />
       ) : null}
-      <Tag className={`${s.creaseText} ${s.display} ${typeClass}`} style={{ clipPath: near }}>
-        {interleave(words)}
-      </Tag>
+      <Tag className={`${s.creaseText} ${s.display} ${typeClass}`}>{interleave(words)}</Tag>
       <div
         aria-hidden="true"
         className={`${s.creaseText} ${s.creasePast} ${s.display} ${typeClass} ${pastClass}`}
-        style={{ clipPath: clip }}
       >
         {interleave(lines.map((line, i) => <span key={i}>{line}</span>))}
       </div>

@@ -2,16 +2,139 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
-import { SUPPORTED_CURRENCIES, allowedRounding, type RoundingChoice } from '@invoica/core';
+import {
+  SUPPORTED_CURRENCIES,
+  allowedRounding,
+  secondColour,
+  type LogoGround,
+  type RoundingChoice,
+} from '@invoica/core';
 import { saveProfileAction } from '@/lib/actions/settings';
 import { COUNTRIES, TIME_ZONES } from '@/lib/countries';
-import { Button, Checkbox, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
+import { Button, Checkbox, cx, Field, FormMessage, Input, Panel, Select, Textarea } from './ui';
 import type { DocumentSnapshot } from '@invoica/core';
 import { TemplatePicker } from './template-picker';
 import { LeaveDialog, useLeaveGuard } from './leave-guard';
 import { followUntouched } from '@/lib/follow-untouched';
 import { reach } from '@/lib/reach';
 import { useHydrated } from '@/lib/use-hydrated';
+
+const HEX = /^#[0-9a-fA-F]{6}$/;
+
+/** The second colour: worked out from the brand colour, or one the business chooses. */
+function SecondColour({
+  brand,
+  value,
+  onChange,
+  error,
+}: {
+  brand: string;
+  value: string | null;
+  onChange: (colour: string | null) => void;
+  error?: string;
+}) {
+  const auto = secondColour(brand);
+  const own = value !== null;
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="mb-1 text-[13px] font-medium text-ink-soft">Second colour</legend>
+      <p className="-mt-1 mb-1 text-[13px] text-muted">
+        Some templates set large type and panels in a second colour.
+      </p>
+      <label className="flex items-center gap-3 text-[14px]">
+        <input type="radio" name="accent" checked={!own} onChange={() => onChange(null)} />
+        <span
+          aria-hidden="true"
+          className="h-6 w-10 rounded-[6px] border border-line"
+          style={{ background: `linear-gradient(90deg, ${brand} 50%, ${auto} 50%)` }}
+        />
+        Automatic, from your brand colour
+      </label>
+      <label className="flex items-center gap-3 text-[14px]">
+        <input type="radio" name="accent" checked={own} onChange={() => onChange(own ? value : auto)} />
+        <input
+          type="color"
+          aria-label="Your second colour"
+          value={own && HEX.test(value) ? value : auto}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-8 w-12 cursor-pointer rounded-[8px] border border-line-strong bg-surface p-0.5"
+        />
+        Your own
+      </label>
+      {error ? <FormMessage>{error}</FormMessage> : null}
+    </fieldset>
+  );
+}
+
+const GROUNDS: { id: LogoGround; label: string; colour: string | null }[] = [
+  { id: 'none', label: 'Nothing', colour: null },
+  { id: 'white', label: 'White', colour: '#ffffff' },
+  { id: 'cream', label: 'Cream', colour: '#f6efe2' },
+  { id: 'black', label: 'Black', colour: '#111111' },
+];
+
+/** What sits behind the logo where a template sets it on a colour, each shown on the brand colour. */
+function LogoGroundChoice({
+  brand,
+  logoUrl,
+  name,
+  value,
+  onChange,
+}: {
+  brand: string;
+  logoUrl: string | null;
+  name: string;
+  value: LogoGround;
+  onChange: (ground: LogoGround) => void;
+}) {
+  return (
+    <fieldset className="sm:col-span-2">
+      <legend className="mb-1 text-[13px] font-medium text-ink-soft">Behind your logo</legend>
+      <p className="mb-3 text-[13px] text-muted">
+        Where a template sets your logo on a colour, choose what sits behind it so all of it shows.
+      </p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {GROUNDS.map((g) => (
+          <label
+            key={g.id}
+            className={cx(
+              'flex cursor-pointer flex-col gap-2 rounded-[12px] border p-2 text-[14px] transition-colors',
+              value === g.id ? 'border-brand ring-2 ring-brand/30' : 'border-line hover:border-line-strong',
+            )}
+          >
+            <input
+              type="radio"
+              name="logo-ground"
+              value={g.id}
+              checked={value === g.id}
+              onChange={() => onChange(g.id)}
+              className="sr-only"
+            />
+            <span
+              className="flex h-16 items-center justify-center rounded-[8px]"
+              style={{ background: brand }}
+            >
+              <span
+                className="flex h-11 w-11 items-center justify-center rounded-[6px]"
+                style={g.colour ? { background: g.colour } : undefined}
+              >
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoUrl} alt="" className="max-h-8 max-w-8 object-contain" />
+                ) : (
+                  <span className="font-semibold" style={{ color: g.colour === '#111111' ? '#fff' : '#111' }}>
+                    {name.trim().slice(0, 1) || 'A'}
+                  </span>
+                )}
+              </span>
+            </span>
+            {g.label}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
 
 export interface ProfileValues {
   name: string;
@@ -40,6 +163,9 @@ export interface ProfileValues {
   creditNotePrefix: string;
   numberPadding: number;
   brandColour: string;
+  /** The business's own second colour, or null for one worked out from the brand colour. */
+  accentColour: string | null;
+  logoGround: LogoGround;
   defaultTemplate: string;
   paymentDetails: {
     bank?: {
@@ -205,6 +331,8 @@ export function SettingsForm({
       taxRegistered: v.taxRegistered,
       taxNumber: v.taxNumber,
       brandColour: /^#[0-9a-fA-F]{6}$/.test(v.brandColour) ? v.brandColour : '#17795a',
+      ...(v.accentColour && HEX.test(v.accentColour) ? { accentColour: v.accentColour.toLowerCase() } : {}),
+      logoGround: v.logoGround,
       logoFileId: null,
     }),
     [v],
@@ -490,6 +618,19 @@ export function SettingsForm({
             />
           </div>
         </Field>
+        <SecondColour
+          brand={previewSeller.brandColour}
+          value={v.accentColour}
+          onChange={(c) => set('accentColour', c)}
+          error={errors.accentColour}
+        />
+        <LogoGroundChoice
+          brand={previewSeller.brandColour}
+          logoUrl={logoUrl}
+          name={v.name}
+          value={v.logoGround}
+          onChange={(g) => set('logoGround', g)}
+        />
         <Field
           label="Note to clients"
           htmlFor="s-notes"

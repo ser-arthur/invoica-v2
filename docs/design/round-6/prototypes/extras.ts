@@ -4,10 +4,10 @@ import { execFileSync } from 'node:child_process';
 import { sampleSnapshot } from '../../../../packages/documents/src/index';
 import { BUSINESSES } from './data';
 import { close, pageHtml, pdf, svgUrl, type ProtoTemplate } from './lib';
-import { LOGOS } from './logos';
+import { logoFor } from './logos';
 import { TEMPLATES } from './t/index';
 
-const out = process.env.OUT ?? join(import.meta.dirname, 'out', 'extras');
+const out = join(process.env.OUT ?? join(import.meta.dirname, 'out'), 'extras');
 mkdirSync(out, { recursive: true });
 
 function png(name: string, bytes: Buffer, dpi: number) {
@@ -61,7 +61,7 @@ for (const [id, list] of Object.entries(COLOURS)) {
   for (const c of list) {
     const snap = BUSINESSES[id]!(id);
     snap.seller = { ...snap.seller, brandColour: c };
-    png(`colour-${id}-${c.slice(1)}`, await pdf(pageHtml(t, snap, svgUrl(LOGOS[id]!(c)))), 72);
+    png(`colour-${id}-${c.slice(1)}`, await pdf(pageHtml(t, snap, svgUrl(logoFor(id, c)))), 72);
   }
 }
 await close();
