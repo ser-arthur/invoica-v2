@@ -161,6 +161,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 - **26 Oct, about 12:50 to 14:15.** The owner's notes on the website: the hero's halves meet again with the crease drawn up from its foot, the dashboard below it, motion tied to the scroll section by section, the shelf reordered with Marquee in lime and navy, the templates seen one at a time on phones, How it works following INV-0044 rendered live with its route pinned and step 5 as the paid moment, a clients section, the stamp as the logo's slip, more room between sections, the footer's logo replaying, the section in view marked in the header, and a new phone menu button. Public samples carry no email or web address (every domain used belonged to someone). 845 unit, database and PDF tests and 260 end-to-end tests run, none failed (78 skipped by design). Bundle 37, with the steps to bring everything into `main`.
 - **26 Oct, about 15:20 to 16:40, on `main` at the owner's word.** The line down How it works trails again and lands each step's icon beside its numeral; the slab lands with more presence; the header wider and the columns and pillars further apart; the shelf runs Riso, Marquee, Billboard (in front), Signature, Atelier, Trade; the link for the section in view lights up green; fields ring green; the crease's ends fade; sign in and sign up on phones open with the Night band; the dashboard picture without the faint frames. A Signature session for the owner's choice (`docs/design/round-10-signature.md`). 850 unit, database and PDF tests and 268 end-to-end tests run, none failed (81 skipped by design). Bundle 38.
+- **26 Oct, about 16:40 to 18:30, on `main`.** Signature in four styles (Night head, Light, Route, Route on Night), every one with Powered by Invoica on every plan; Monochrome as the sixteenth template; the header's links tint and hold, Pricing lit on its page, one header across the public pages; sign in and sign up with the first Invoica's line and a landing, as the pricing page has. 901 unit, database and PDF tests and 282 end-to-end tests run, none failed once a test still counting fifteen was corrected (86 skipped by design). Bundle 39.
 
 ## Decisions in force
 
@@ -235,9 +236,9 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 6. Approve or change 0003, 0006 and 0007.
 7. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
 8. Approve a plan for the R5-L1 four-taxes refusal (`HANDOVER.md`, "Open finding"): how a credit note that settles a balance shares its tax across the components when one would go below zero.
-9. Signature's direction (the crease or the route; light, with a Night head, or dark), "Powered by Invoica" on the free plan, and Monochrome as a template (`docs/design/round-10-signature.md`).
+9. Answered 26 October, 16:38: Signature in four styles, Powered by Invoica on every Signature, Monochrome as the sixteenth template (`docs/specs/invoice-templates.md`).
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-38.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-39.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.

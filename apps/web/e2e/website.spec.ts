@@ -244,7 +244,7 @@ test('all sixteen are a click away, named, in the picker’s order', async ({ pa
   const section = page.locator('#templates');
   await section.getByRole('button', { name: 'See all sixteen' }).click();
   const all = section.getByRole('list', { name: 'All sixteen templates' });
-  await expect(all.getByRole('listitem')).toHaveCount(15);
+  await expect(all.getByRole('listitem')).toHaveCount(16);
   await expect(all.locator('strong')).toHaveText(SIXTEEN);
   await section.getByRole('button', { name: 'Hide the sixteen' }).click();
   await expect(all).toBeHidden();

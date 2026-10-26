@@ -15,6 +15,12 @@ Studio (the website's story, no logo, in navy), beside today's Signature. The ca
 
 No new fonts: Sora and Onest, and JetBrains Mono for Monochrome's figures.
 
+**Answered and built, 26 October, 16:38.** Signature as A: the Night head the default, light the other choice, no fully
+dark crease; B, the route, in light and on Night, as two more of Signature's styles in its settings. The band's lighter
+side starts on the crease's own line. "Powered by Invoica" on every Signature, on every plan. Monochrome as the
+sixteenth template, shown with its logo. Built under `docs/specs/invoice-templates.md`; `built.ts` renders them from the
+product.
+
 ## 1. The directions
 
 | Direction | What it is |
