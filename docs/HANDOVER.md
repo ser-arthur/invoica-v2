@@ -58,6 +58,14 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+27 October 2026, about 11:10 to 14:30, on `main`, the owner's notes of 11:07, 11:36, 12:50, 12:55 and 12:59:
+- Sign in and sign up on phones: the Night band is gone. Mockups on the canvas page "Sign in on phones" (as it was, then A to G); the owner chose E and F, with the theme deciding which. There is no logo at the top: the line "The smarter way to bill, track and get paid." opens the page with its crease, then the form, then the small print (Privacy, Terms, Help) and the website's footer mark, its lit edge on Night, which leads home.
+- E, light with the mark on a Night foot, is the default. F, Night all through with dark fields and a lime button, is for a visitor who chose Dark in the app on this device, or System with the device dark (the root layout already sets `data-theme` from the `invoica_theme` cookie). No switch on these pages. On a wide screen Dark turns the form's side Night beside the panel.
+- On phones the line lands as the page opens (its halves from opposite sides, the crease drawn), the foot settles and the mark rises as it does in the website's footer.
+- Asked of the owner, not built: saving the theme on the account so it carries to other devices (a new place on the account with its own row rule; on the ask-first list). Today it is remembered per device.
+- Checks: 901 unit, database and PDF tests run, 901 passed, 0 failed, 0 skipped (core 259, schemas 7, documents 66, PDF 231, database 239, web unit 99); format, copy rules, lint, types and the production build pass. The end-to-end suite against the production build, run from a copy elsewhere with production settings, ran 290: 200 passed, 89 skipped by design (one width only), 1 failed: on the phone run, the request downloading an invoice's PDF lost its connection (socket hang up; nothing in the server's log). The invoice flow file run again against the same build: 14 run, 14 passed.
+- Bundle 40.
+
 26 October 2026, about 16:40 to 18:30, on `main`, the owner's choices of 16:38 from the Signature session and his notes of 16:52:
 - Signature comes in four styles, chosen under it in the picker and listed in the editor: Night head (`signature`, the default), Light (`signature-light`), Route (`signature-route`) and Route on Night (`signature-route-dark`). In the Night head the band past the crease is a shade lighter along the crease itself, carried across the band, whatever the number (`creaseFold` in `packages/documents/src/templates/invoica.ts`, with a test that its edge lies on the crease's line). The fully dark crease was not taken.
 - Every Signature ends with "Powered by" and Invoica's wordmark, on every plan (the owner: it is our own design, so it should be there). Other templates carry nothing of Invoica; the "Made with Invoica" line is gone. The free plan keeps the Signature style chosen. The logo's shapes now live in `packages/documents/src/logo-shapes.ts`; the web re-exports them.
@@ -256,7 +264,8 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
 4. Templates: real-looking sample details in the picker (account, company and VAT numbers that fail their check digits). Later: static fonts for PDFs, and the website's templates section.
 5. Signature: answered and built on 26 October (four styles, Powered by Invoica on every Signature, Monochrome as the sixteenth).
-6. The website on `feat/website`: the owner's review (bundle 20), then a pull request once GitHub is linked; the owner's choice of where to show v2 before launch (a separate Vercel project recommended; the old app's address is not touched without his say). Then the app screens in the round 5 look: tokens and fonts in `globals.css`, the sheet and slab as shared pieces, each screen with its tests and the accessibility checks in both themes. The home page shows the app as drawn on the round 5 canvas, so it runs ahead of the app until those screens are built.
+6. If the owner says yes: the theme saved on the account (a new migration and its row rule), applied on sign-in and remembered on the device.
+7. The website on `feat/website`: the owner's review (bundle 20), then a pull request once GitHub is linked; the owner's choice of where to show v2 before launch (a separate Vercel project recommended; the old app's address is not touched without his say). Then the app screens in the round 5 look: tokens and fonts in `globals.css`, the sheet and slab as shared pieces, each screen with its tests and the accessibility checks in both themes. The home page shows the app as drawn on the round 5 canvas, so it runs ahead of the app until those screens are built.
 
 ## Open questions
 
