@@ -58,6 +58,16 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+27 October 2026, about 16:35 to 18:00, on `main`, the owner's notes of 16:34 and 16:46 (`docs/specs/website-showcase.md`, notes of 16:34, criteria 34 to 37):
+- Phones turned the telephone and VAT numbers in rendered invoices into blue links. Every rendered document now carries `<meta name="format-detection" content="telephone=no, date=no, email=no, address=no">` (`packages/documents/src/render.ts`), in the website's invoices and the app's.
+- The phones section: the two fanned phones, the one under the pointer coming to the front (what the owner had been waiting on, 16:46), are now one phone. Its screen is the app in light and, past a crease like the hero's, the same screen in Night (`--fold` in site.module.css, a registered property). As the band comes into view the crease sweeps up from the screen's foot, resting across the list of invoices on wide screens and higher on phones, where the phone also rises out of the band's foot. With less motion asked for, the crease is simply there.
+- On phones: the money-in bars under the hero are 124px tall (from 180px); each figure's caption is one short line at 12px (the rest shows where there is room); invoice numbers in the clients card stay on one line.
+- How it works: the three pictures of INV-0044 are cut away past the turned corner (`Paper`'s `turned`), so the panel shows there, not white; the PDF keeps its page. The pieces in each panel rise into place as it arrives, the nearer ones further (96px and 32px), and part a little as it leaves.
+- Selects draw their own arrow 12px in from the edge, in the app (`.select-chevron` in globals.css, both themes) and in the editor's picture in How it works (recaptured from the round 5 design with the same arrow; `docs/design/direction-5/r5app.py`).
+- Proposed, not built: Signature's Night head with its accents (the number past the crease, the labels, the due date, the crease line) taken from the business's colour, lifted in OKLCH so it keeps its hue on Night (`docs/design/round-11-signature-colour.md`, boards in `docs/design/round-11/`). Waiting for the owner.
+- Checks: 920 unit, database and PDF tests run, 920 passed, 0 failed, 0 skipped (core 259, schemas 7, documents 80, PDF 231, database 244, web unit 99); format, copy rules, lint, types and the production build pass. A first run did not count: the local database stopped. The end-to-end suite against the production build, run from a copy elsewhere with production settings, first ran 306 with 2 failed: a test still counting the phones section's pictures (now it counts the phone) and the load sequence test, which met a transition with no name (it now looks at animations only). Run again: 306, 214 passed, 92 skipped by design (one width only), 0 failed. The new tests failed first against bundle 43's build.
+- Bundle 44.
+
 27 October 2026, about 15:30 to 16:30, on `main`, after bundle 42's CI run and the owner's note of 15:39:
 - CI run 17 (bundle 42) failed in the production end-to-end job on one test: the accessibility check of the notice in Night, on the phone run ("dark notice: color-contrast"). The site was not at fault. The test switched the page to Night and checked contrast at once, while buttons and links were still easing into the new colours (`transition-colors`), so on a slower machine the check could catch them halfway. The test now waits for those transitions to end. With the transitions slowed to 1.5 seconds, the old test fails with the same error and the new one passes. Vercel deployed bundle 42 regardless: the deployment does not wait on CI.
 - Sign in's headline ("The smarter way to bill, track and get paid.") has a little more room between its lines (line height 0.94 to 1.02), on the panel and on phones.
@@ -291,7 +301,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 
 ## Open questions
 
-The list is kept in `docs/BLUEPRINT.md`, "Open questions" (10 items, 6 open).
+The list is kept in `docs/BLUEPRINT.md`, "Open questions" (11 items, 7 open).
 
 ## Decisions
 

@@ -166,6 +166,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **27 Oct, about 13:50 to 15:00, on `main`.** Every template in the website's range made out by its own invented business (Sticker a bakery in pink, Grid architects in maroon and black, Ticket a bike shop in orange, and the rest); in Night, the forgot-password link muted. 913 unit, database and PDF tests and 294 end-to-end tests run, none failed (90 skipped by design). Bundle 41.
 - **27 Oct, about 14:25 to 16:00, on `main`.** The theme saved on the account and carried to every device signed in on (migration 0028, `user_preference` with its own row rule by person; decision 0014); Grid's sample numbered INV-0047 under its first plan mark again. 919 unit, database and PDF tests and 298 end-to-end tests run, none failed (90 skipped by design). Bundle 42.
 - **27 Oct, about 15:30 to 16:30, on `main`.** The accessibility test of the notice in Night waits for the theme's colour transitions before checking contrast (CI run 17 caught them halfway); sign in's headline has a little more room between its lines. Hosting for production discussed: Vercel Pro and Neon in London recommended, to be decided after a PDF spike. 919 unit, database and PDF tests and 298 end-to-end tests run, none failed (90 skipped by design). Bundle 43.
+- **27 Oct, about 16:35 to 18:00, on `main`.** No numbers turned into links on phones; the phones section as one phone split by the crease, light and Night; shorter bars and one-line captions on phones; How it works shows the panel past the turned corner and its pieces rise into place; selects with their own arrow. Signature's head in the business's colour proposed (round 11). 920 unit, database and PDF tests and 306 end-to-end tests run, none failed on the second run (92 skipped by design). Bundle 44.
 
 ## Decisions in force
 
@@ -243,8 +244,9 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 8. Approve a plan for the R5-L1 four-taxes refusal (`HANDOVER.md`, "Open finding"): how a credit note that settles a balance shares its tax across the components when one would go below zero.
 9. Answered 26 October, 16:38: Signature in four styles, Powered by Invoica on every Signature, Monochrome as the sixteenth template (`docs/specs/invoice-templates.md`).
 10. Answered 27 October, 14:22: the theme is saved on the account and follows a person to other devices (`docs/specs/theme-on-the-account.md`, decision 0014).
+11. Signature's Night head with its accents in the business's colour (`docs/design/round-11-signature-colour.md`): proposed 27 October, 17:00, waiting for the owner.
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-43.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-44.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.
