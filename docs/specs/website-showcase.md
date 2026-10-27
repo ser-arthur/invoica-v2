@@ -142,6 +142,20 @@ Built on `main`, as the owner asked for this round.
   it, the trial with its corner turning, the choice of monthly or yearly, then the three plans in turn.
 - Settled inside two and a half seconds; still for visitors who ask for less motion.
 
+## The owner's choices of 27 October, 12:59: sign in on phones
+
+From the canvas page "Sign in on phones": on a phone, sign in and sign up drop the Night band. There is no logo at the
+top; the line "The smarter way to bill, track and get paid." opens the page with its crease, then the form, and the
+page ends with the website's footer mark, its lit edge on Night, under the small print (Privacy, Terms, Help). The
+mark leads home.
+
+- **Light (E), the default:** the light page, the line's crease green with its far side grey, as on the home page; the
+  mark on a Night foot with rounded top corners.
+- **Night (F):** the whole page Night, the line's crease silver with its far side mint, the form's fields dark and its
+  button lime; the mark at the foot.
+- **Which:** the theme the visitor chose in the app on this device. Never chosen, or Light: E. Dark: F. System: the
+  device's own setting. No switch on these pages. On a wide screen, Dark turns the form's side Night beside the panel.
+
 ## Acceptance criteria
 
 Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/documents/test`.
@@ -182,7 +196,8 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
 19. The crease's ends are drawn past the headline's box on the hero and the sign-in page, fading out there.
 20. At 1440 pixels wide the header's logo and buttons sit nearer the edges than the hero's headline; the pillars stand
     at least 72 px apart.
-21. At 390 pixels wide the sign-in and sign-up pages show the Night band with the crease headline above the form.
+21. At 390 pixels wide the sign-in and sign-up pages open with the line and its crease above the form, show no logo above
+    it, and end with the footer's mark under the form; the band is gone.
 22. A field's focus ring is the logo's deeper green.
 23. Pointing at a link that is not current tints it (green at 16%) with dark words; pointing at the current one leaves
     it the full green.
@@ -192,3 +207,8 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
 27. Sign in lands in order: the halves from opposite sides together, the crease after them, then the three points in
     turn; pricing lands in order: the heading's halves together, the words, the trial, then the plans in turn. Both
     settle inside 2.5 seconds, and with less motion asked for nothing moves.
+28. With no theme chosen, or Light, the phone sign-in page is light with a Night foot; with Dark it is Night all
+    through, its button lime; with System it follows the device. On a wide screen with Dark, the form's side is Night.
+29. The footer's mark on these pages leads home, and the pages pass the automated accessibility checks in light and in
+    dark.
+30. On a phone the line lands as the page opens: its halves from opposite sides together, the crease after them.

@@ -196,6 +196,7 @@ async function loadSequence(page: Page) {
           name: a.animationName,
           tag: el.tagName.toLowerCase(),
           text: (el.textContent ?? '').trim().slice(0, 24),
+          inLine: !!el.closest('[data-testid="auth-line"]'),
           start: Number(t.delay),
           end: Number(t.endTime),
         };
@@ -241,6 +242,28 @@ test('signing in, the Night panel lands: the logo, the halves from opposite side
   expect(Math.max(...seq.map((x) => x.end))).toBeLessThanOrEqual(2500);
   const rest = await heldAt(page, 5000, ['aside p', 'aside div[aria-hidden="true"]']);
   const early = await heldAt(page, near.start + 100, ['aside p', 'aside div[aria-hidden="true"]']);
+  expect(early[0], 'the near half comes from the left').toBeLessThan(rest[0]! - 1);
+  expect(early[1], 'the far half comes from the right').toBeGreaterThan(rest[1]! + 1);
+});
+
+test('on a phone, the line at the top of sign in lands: its halves from opposite sides, the crease after them', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'phone', 'On a wide screen the panel lands (above).');
+  await page.goto('/sign-in');
+  await page.waitForLoadState('networkidle');
+  const seq = await loadSequence(page);
+  const line = '[data-testid="auth-line"] [data-line="light"]';
+  const near = seq.find((x) => x.inLine && x.tag === 'p');
+  const far = seq.find((x) => x.inLine && x.tag === 'div' && x.text.startsWith('The smarter way'));
+  const crease = seq.filter((x) => x.inLine && x.tag === 'svg').map((x) => x.start);
+  expect(near, 'the near half').toBeDefined();
+  expect(far, 'the far half').toBeDefined();
+  expect(near!.start).toBe(far!.start);
+  expect(Math.min(...crease)).toBeGreaterThan(near!.start);
+  expect(Math.max(...seq.map((x) => x.end))).toBeLessThanOrEqual(2500);
+  const rest = await heldAt(page, 5000, [`${line} p`, `${line} div[aria-hidden="true"]`]);
+  const early = await heldAt(page, near!.start + 100, [`${line} p`, `${line} div[aria-hidden="true"]`]);
   expect(early[0], 'the near half comes from the left').toBeLessThan(rest[0]! - 1);
   expect(early[1], 'the far half comes from the right').toBeGreaterThan(rest[1]! + 1);
 });

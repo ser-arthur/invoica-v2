@@ -554,19 +554,82 @@ test('the crease’s ends are drawn past the headline and fade out there', async
   expect(past, 'the line shows past the headline’s edge').toBeGreaterThan(10);
 });
 
-test('on a phone the sign-in and sign-up pages open with the Night band and its headline', async ({
+/** The page's own background, as drawn behind the form. */
+const groundOf = (page: Page) =>
+  page.locator('main').evaluate((el) => {
+    for (let at: Element | null = el; at; at = at.parentElement) {
+      const bg = getComputedStyle(at).backgroundColor;
+      if (bg !== 'rgba(0, 0, 0, 0)') return bg;
+    }
+    return '';
+  });
+
+test('on a phone sign in and sign up open with the line, the form, then the footer’s mark leading home', async ({
   page,
 }, info) => {
   test.skip(info.project.name !== 'phone', 'Checked at phone widths.');
   for (const path of ['/sign-in', '/sign-up']) {
     await page.goto(path);
-    const band = page.locator('aside');
-    await expect(band, path).toBeVisible();
-    // the headline is set twice, near and far of the crease
-    await expect(band.getByText('The smarter way').first(), path).toBeVisible();
+    await expect(page.locator('aside'), path).toBeHidden();
+    const line = page.getByTestId('auth-line');
+    await expect(line.getByText('The smarter way').first(), path).toBeVisible();
     const form = page.locator('main form').first();
-    expect((await band.boundingBox())!.y, path).toBeLessThan((await form.boundingBox())!.y);
+    const foot = page.getByTestId('auth-foot');
+    await expect(foot, path).toBeVisible();
+    expect((await line.boundingBox())!.y, path).toBeLessThan((await form.boundingBox())!.y);
+    expect((await foot.boundingBox())!.y, path).toBeGreaterThan((await form.boundingBox())!.y);
+    // no logo above the form: the mark at the foot is the way home
+    const home = page.getByRole('link', { name: 'Invoica home' });
+    await expect(home).toHaveCount(1);
+    expect((await home.boundingBox())!.y, path).toBeGreaterThan((await form.boundingBox())!.y);
+    await expect(foot.getByRole('link', { name: 'Privacy' })).toBeVisible();
   }
+});
+
+test('with no theme chosen, or Light, the phone page is light with a Night foot; Dark makes it Night', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'phone', 'Checked at phone widths.');
+  await page.goto('/sign-in');
+  expect(await groundOf(page)).toBe('rgb(236, 239, 237)');
+  await expect(page.getByTestId('auth-foot')).toHaveCSS('background-color', 'rgb(9, 25, 28)');
+  for (const theme of ['light', 'dark'] as const) {
+    await page.context().addCookies([{ name: 'invoica_theme', value: theme, url: page.url() }]);
+    await page.goto('/sign-up');
+    const button = page.locator('main form button[type="submit"]');
+    if (theme === 'light') {
+      expect(await groundOf(page)).toBe('rgb(236, 239, 237)');
+      await expect(button).toHaveCSS('background-color', 'rgb(9, 25, 28)');
+    } else {
+      expect(await groundOf(page)).toBe('rgb(9, 25, 28)');
+      await expect(button).toHaveCSS('background-color', 'rgb(207, 242, 106)');
+      await expect(page.locator('main form input').first()).toHaveCSS('color', 'rgb(255, 255, 255)');
+    }
+  }
+});
+
+test('with System, the sign-in page follows the device', async ({ page }) => {
+  await page.goto('/sign-in');
+  await page.context().addCookies([{ name: 'invoica_theme', value: 'system', url: page.url() }]);
+  for (const [scheme, ground] of [
+    ['dark', 'rgb(9, 25, 28)'],
+    ['light', 'rgb(236, 239, 237)'],
+  ] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/sign-in');
+    expect(await groundOf(page), scheme).toBe(ground);
+  }
+});
+
+test('on a wide screen with Dark, the form’s side is Night beside the panel', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Checked at desktop widths.');
+  await page.goto('/sign-in');
+  await page.context().addCookies([{ name: 'invoica_theme', value: 'dark', url: page.url() }]);
+  await page.goto('/sign-in');
+  await expect(page.locator('aside')).toBeVisible();
+  expect(await groundOf(page)).toBe('rgb(9, 25, 28)');
+  await expect(page.getByTestId('auth-line')).toBeHidden();
+  await expect(page.getByTestId('auth-foot')).toBeHidden();
 });
 
 test('the header spreads wider than the page, and the pillars have room between them', async ({

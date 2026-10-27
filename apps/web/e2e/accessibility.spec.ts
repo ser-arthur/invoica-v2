@@ -23,6 +23,14 @@ test('public pages have no automated accessibility violations', async ({ page })
     const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();
     expect(result.violations.map((v) => `${path}: ${v.id} (${v.nodes.length})`)).toEqual([]);
   }
+  // Sign in and sign up in Night too (docs/specs/website-showcase.md, criterion 29).
+  await page.context().addCookies([{ name: 'invoica_theme', value: 'dark', url: page.url() }]);
+  for (const path of ['/sign-in', '/sign-up']) {
+    await page.goto(path);
+    const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+    expect(result.violations.map((v) => `dark ${path}: ${v.id} (${v.nodes.length})`)).toEqual([]);
+  }
+  await page.context().clearCookies({ name: 'invoica_theme' });
   // The page a confirmation link opens, which asks for the password.
   const email = uniqueEmail('a11y');
   const started = Date.now();
