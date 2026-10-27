@@ -62,7 +62,7 @@ describe('the Drizzle schema matches the migrated database', () => {
           problems.push(`${config.name}.${column.name}: nullability differs`);
       }
     }
-    expect(tables.length).toBe(19);
+    expect(tables.length).toBe(20);
     expect(examined).toBeGreaterThan(150);
     expect(problems).toEqual([]);
   });

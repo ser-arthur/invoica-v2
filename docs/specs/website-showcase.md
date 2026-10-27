@@ -161,12 +161,16 @@ mark leads home.
 - **Every template in the range has its own invented business**, of the kind it is for, as the six on the shelf do.
   The ten others were made out by the website's example studio in green, which did not fit (a studio on Sticker, the
   template for cafés and bakers). From the first template rounds: Crumb & Kettle, a bakery in pink, on Sticker;
-  Hollis Lane Architects in maroon with black on Grid, its logo redrawn as a balanced plan (a three by three grid, the
-  middle bay maroon) in place of the L-shaped one; Hartley Cycle Works in orange on Ticket; Marigold Lane on Bloom,
+  Hollis Lane Architects in maroon with black on Grid; Hartley Cycle Works in orange on Ticket; Marigold Lane on Bloom,
   Parallax Labs on Mark, Penrose Bookkeeping on Statement, Ashdown Kerr on Practice, Thistle & Oak on Heritage, Joanna
   Pryce on Letter (in plum, so fewer of the range are green), and a new one, Fenwick Marsh, surveyors, on Monochrome.
   Every detail follows the public samples rule.
 - **In Night**, "Forgot your password?" is muted, so the lime is left to the button and the way to an account.
+
+## The owner's notes of 27 October, 14:24
+
+- **Grid's invoice is numbered INV-0047**, in the INV form, and carries the plan mark from the first template rounds
+  again: a black square with its lower right quarter in maroon.
 
 ## Acceptance criteria
 
@@ -227,3 +231,4 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
 31. Every template in the range is shown made out by its own business, each different, none the example studio, every
     one passing the public samples checks.
 32. In Night, "Forgot your password?" is the muted grey; "Create an account" and the button stay lime.
+33. Grid's invoice in the range is numbered INV-0047, under the plan mark from the first template rounds.
