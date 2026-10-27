@@ -256,35 +256,144 @@
 }
 
 /*
- * Narrower, the Night panel becomes a band across the top: the logo, the crease headline and the turned corner, as on
- * a wide screen, with the form under it.
+ * Night, when the visitor chose Dark in the app on this device, or System with the device dark (the root layout sets
+ * `data-theme` from that choice). The tokens the shared form components read turn Night: dark fields, white words, a
+ * lime button. Contrast: ink, muted and the lime pass 4.5:1 on Night and on the fields.
+ */
+:global([data-theme='dark']) .auth {
+  --canvas: #09191c;
+  --surface: #10272a;
+  --surface-sunk: #0c2023;
+  --ink: #ffffff;
+  --ink-soft: #d5dfdd;
+  --muted: #a3b2b0;
+  --line: #2a4144;
+  --line-strong: #3d5558;
+  --brand: #cff26a;
+  --brand-hover: #dcf78a;
+  --brand-ink: #09191c;
+  --brand-soft: #1d3527;
+  --brand-bright: #46da80;
+  --danger: #f2877d;
+  --danger-soft: #3a1714;
+  --info: #8db8e6;
+  --info-soft: #14263a;
+  --label: #6ce4a2;
+  color-scheme: dark;
+}
+
+/* On a wide screen in Night, a hairline keeps the panel apart from the form's side. */
+:global([data-theme='dark']) .side {
+  box-shadow: inset 1px 0 0 rgb(255 255 255 / 0.06);
+}
+
+/* The line at the top and the foot with the mark are for phones; a wide screen has the panel. */
+.line,
+.foot {
+  display: none;
+}
+
+/*
+ * On a phone there is no panel. The line opens the page with its crease (green on light, silver on Night), then the
+ * form, then the small print and the website's footer mark, its lit edge on Night, leading home.
  */
 @media (max-width: 960px) {
   .auth {
     grid-template-columns: minmax(0, 1fr);
   }
   .panel {
-    --f: 44px;
-    --pad: 20px;
-    min-height: auto;
-    padding: 20px var(--pad) 30px;
-  }
-  .panelLogo {
-    font-size: 28px;
-  }
-  .panelBody {
-    margin: 0;
-    padding: 34px 0 0;
-  }
-  .panelType {
-    font-size: clamp(30px, calc(100cqi / 8.1), 76px);
-  }
-  .facts,
-  .panelFoot {
     display: none;
+  }
+  .side {
+    min-height: 100dvh;
+  }
+  .line {
+    display: block;
+    padding: 30px 20px 0;
+  }
+  .lineType {
+    font-size: clamp(30px, calc((100vw - 40px) / 8.1), 46px);
+    line-height: 0.94;
+    letter-spacing: -0.05em;
+    white-space: nowrap;
+  }
+  .lineNight {
+    display: none;
+  }
+  .lineNight .lineType {
+    color: #ffffff;
+  }
+  :global([data-theme='dark']) .lineLight {
+    display: none;
+  }
+  :global([data-theme='dark']) .lineNight {
+    display: block;
   }
   .formArea {
     align-items: flex-start;
-    padding: 32px 20px 64px;
+    padding: 26px 20px 40px;
+  }
+  .foot {
+    display: block;
+    margin-top: auto;
+    padding: 22px 20px 0;
+    border-radius: 26px 26px 0 0;
+    background: #09191c;
+    color: rgb(255 255 255 / 0.6);
+  }
+  :global([data-theme='dark']) .foot {
+    background: transparent;
+  }
+}
+
+.small {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.small a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.small a:hover {
+  color: #ffffff;
+}
+
+.markLink {
+  display: block;
+  margin: 0 -20px;
+  padding: 0 20px;
+  color: inherit;
+}
+
+.markLink:focus-visible {
+  outline: 2px solid #46da80;
+  outline-offset: -4px;
+  border-radius: 12px;
+}
+
+/* The website's footer mark, at the phone's width with the page's 20 px sides. */
+.mark {
+  --gutter: 20px;
+  margin-top: 14px;
+}
+
+/* On a phone the line lands as the page opens, as the panel does on a wide screen, and the foot settles under it. */
+@media (prefers-reduced-motion: no-preference) {
+  .line p {
+    animation: near 1300ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both;
+  }
+  .line div[aria-hidden='true'] {
+    animation: far 1300ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both;
+  }
+  .line svg {
+    animation: draw 860ms cubic-bezier(0.65, 0, 0.35, 1) 560ms both;
+  }
+  .foot {
+    animation: settle 800ms cubic-bezier(0.16, 1, 0.3, 1) 700ms both;
   }
 }
