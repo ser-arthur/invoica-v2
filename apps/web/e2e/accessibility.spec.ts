@@ -194,7 +194,19 @@ test('the leave dialog and the notice at the foot of the screen have no automate
   await expect(page.getByText(/could not be reached/)).toBeVisible();
   await page.context().setOffline(false);
   for (const theme of ['light', 'dark']) {
-    await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
+    // Buttons and links ease into the new theme's colours; they are checked once they have come to rest, as a person
+    // sees them, and not halfway between the two themes.
+    await page.evaluate(async (t) => {
+      document.documentElement.setAttribute('data-theme', t);
+      // The transitions start with the next frames; then each is waited for to its end.
+      await new Promise((ready) => requestAnimationFrame(() => requestAnimationFrame(ready)));
+      await Promise.all(
+        document
+          .getAnimations()
+          .filter((a) => Number.isFinite(Number(a.effect?.getComputedTiming().endTime)))
+          .map((a) => a.finished.catch(() => undefined)),
+      );
+    }, theme);
     const notice = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();
     expect(notice.violations.map((v) => `${theme} notice: ${v.id}`)).toEqual([]);
   }
