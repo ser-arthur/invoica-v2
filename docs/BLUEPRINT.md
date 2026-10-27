@@ -165,6 +165,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **27 Oct, about 11:10 to 14:30, on `main`.** Sign in and sign up on phones: the band replaced by the line at the top and the website's footer mark at the foot; light by default, Night for a visitor who chose Dark (or System with the device dark), from the theme remembered on the device. 901 unit, database and PDF tests and 290 end-to-end tests run (89 skipped by design); one PDF download lost its connection once and passed when run again. Bundle 40.
 - **27 Oct, about 13:50 to 15:00, on `main`.** Every template in the website's range made out by its own invented business (Sticker a bakery in pink, Grid architects in maroon and black, Ticket a bike shop in orange, and the rest); in Night, the forgot-password link muted. 913 unit, database and PDF tests and 294 end-to-end tests run, none failed (90 skipped by design). Bundle 41.
 - **27 Oct, about 14:25 to 16:00, on `main`.** The theme saved on the account and carried to every device signed in on (migration 0028, `user_preference` with its own row rule by person; decision 0014); Grid's sample numbered INV-0047 under its first plan mark again. 919 unit, database and PDF tests and 298 end-to-end tests run, none failed (90 skipped by design). Bundle 42.
+- **27 Oct, about 15:30 to 16:30, on `main`.** The accessibility test of the notice in Night waits for the theme's colour transitions before checking contrast (CI run 17 caught them halfway); sign in's headline has a little more room between its lines. Hosting for production discussed: Vercel Pro and Neon in London recommended, to be decided after a PDF spike. 919 unit, database and PDF tests and 298 end-to-end tests run, none failed (90 skipped by design). Bundle 43.
 
 ## Decisions in force
 
@@ -232,7 +233,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 ## Open questions
 
-1. Hosting: approve decision 0010 (`docs/deploy.md` is the runbook for it).
+1. Hosting: decision 0010 (a server behind Cloudflare) is to be replaced. On 27 October the owner agreed to Vercel Pro and Neon in London, starting on Neon's free plan, to be written as a decision after a spike on the PDF of record on Vercel; the public pages come first.
 2. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
 3. The domain to buy, then the sending subdomain for Resend.
 4. Answered 23 October: the repository is `ser-arthur/invoica-v2`, and commits are authored as Kobby S. Arthur <kobbyarthur95@gmail.com>.
@@ -245,5 +246,5 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-42.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-43.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.

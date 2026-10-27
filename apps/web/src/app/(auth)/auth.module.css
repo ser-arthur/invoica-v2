@@ -82,7 +82,7 @@
 /* The headline fills the panel inside its padding (it is about 7.9 times as wide as its type size), at any width. */
 .panelType {
   font-size: clamp(30px, calc(100cqi / 8.1), 150px);
-  line-height: 0.94;
+  line-height: 1.02;
   letter-spacing: -0.05em;
   white-space: nowrap;
   color: #ffffff;
@@ -321,7 +321,7 @@
   }
   .lineType {
     font-size: clamp(30px, calc((100vw - 40px) / 8.1), 46px);
-    line-height: 0.94;
+    line-height: 1.02;
     letter-spacing: -0.05em;
     white-space: nowrap;
   }
