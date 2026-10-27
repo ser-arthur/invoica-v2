@@ -19,7 +19,8 @@ export function AppSheet() {
           />
         </div>
         <figcaption className={s.caption}>
-          The same studio&rsquo;s dashboard: what is owed, what is late and what has come in.
+          The same studio&rsquo;s dashboard
+          <span className={s.captionMore}>: what is owed, what is late and what has come in.</span>
         </figcaption>
       </figure>
     </section>

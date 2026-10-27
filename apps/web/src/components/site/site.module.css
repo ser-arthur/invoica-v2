@@ -552,6 +552,18 @@
   text-align: right;
 }
 
+/* The rest of a caption, after its first words: shown where there is room for it on one line. */
+@media (max-width: 960px) {
+  .captionMore {
+    display: none;
+  }
+  .caption {
+    margin-top: 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+}
+
 /* The app on a tilted sheet with its corner turned */
 
 .appStage {
@@ -1415,7 +1427,12 @@
   min-width: 0;
 }
 
-.historyWhat span {
+/* A number in a row's title stays on one line. */
+.historyNumber {
+  white-space: nowrap;
+}
+
+.historyWhat > span {
   overflow: hidden;
   font-size: 12.5px;
   white-space: nowrap;
@@ -1698,20 +1715,33 @@
   margin-top: 12px;
 }
 
-/* The pair is the timeline both phones move on as it scrolls by; --spread scales how far they travel. */
+/* The phone's place, and the timeline its crease sweeps on as it scrolls by. */
 .phonePair {
-  --spread: 1;
   position: relative;
   grid-column: 6 / span 7;
   height: 640px;
   view-timeline: --phones;
 }
 
+/*
+ * Where the crease crosses the middle of the phone's screen, as a height down it: past the crease (below and to the
+ * right, as past the hero's fold) the screen is the app in Night. At rest it crosses the list of invoices, where
+ * the two themes differ most; on phones, where the band crops the phone's foot, it crosses higher.
+ */
+@property --fold {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 66%;
+}
+
 /* A modern phone, drawn in code and sized by --w: metal edge, bezel, screen, camera cut-out and side keys. */
 .device {
-  --w: 290px;
+  --w: 320px;
+  --fold: 66%;
   position: absolute;
-  top: 0;
+  top: 12px;
+  left: 50%;
+  margin-left: calc(var(--w) * -0.5);
   width: var(--w);
   padding: calc(var(--w) * 0.012);
   box-sizing: border-box;
@@ -1749,6 +1779,27 @@
   display: block;
   width: 100%;
   height: auto;
+}
+
+/* The same screen in Night, past the crease; the crease rises a tenth of the screen's height either side of --fold. */
+.deviceScreen .screenNight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  clip-path: polygon(0 calc(var(--fold) + 10%), 100% calc(var(--fold) - 10%), 100% 100%, 0 100%);
+}
+
+/* The crease itself, lime to teal as the hero's is. */
+.screenCrease {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #cff26a, #37c66b 50%, #138c86);
+  clip-path: polygon(
+    0 calc(var(--fold) + 9.7%),
+    100% calc(var(--fold) - 10.3%),
+    100% calc(var(--fold) - 9.7%),
+    0 calc(var(--fold) + 10.3%)
+  );
 }
 
 .deviceIsland {
@@ -1794,19 +1845,6 @@
   top: 27%;
   right: calc(var(--w) * -0.01);
   height: 12.5%;
-}
-
-/* At rest the two phones lie slightly fanned, the dark one in front. */
-.phoneLight {
-  left: calc(50% - 288px);
-  rotate: -4deg;
-}
-
-.phoneDark {
-  z-index: 2;
-  top: 64px;
-  left: calc(50% - 12px);
-  rotate: 3deg;
 }
 
 /* The details, itemised, and the tear-off slip */
@@ -2520,20 +2558,6 @@
     .slab {
       transition: translate 400ms var(--ease);
     }
-    /* The phone under the pointer is picked up: it comes to the front and lifts towards you. */
-    .phonePair .device {
-      transition:
-        scale 500ms var(--ease),
-        box-shadow 500ms var(--ease);
-    }
-    .phonePair .device:hover {
-      z-index: 3;
-      scale: 1.035;
-      box-shadow:
-        0 0 0 0.5px rgb(0 0 0 / 0.5),
-        0 80px 110px -50px rgb(9 25 28 / 0.65),
-        0 30px 50px -26px rgb(9 25 28 / 0.45);
-    }
     .slab:hover {
       translate: 0 -8px;
     }
@@ -2556,25 +2580,26 @@
       animation-range: cover;
     }
     .driftSlow {
-      --drift: 14px;
+      --drift-in: 32px;
+      --drift-out: -14px;
     }
     .driftFast {
-      --drift: 36px;
+      --drift-in: 96px;
+      --drift-out: -32px;
     }
 
     /*
-     * The phones come in from either side, turned, and are set down together as the band arrives; as it
-     * leaves they part a little, the light one rising and the dark one sinking.
+     * As the band arrives the crease sweeps up the phone's screen from its foot to the middle, turning the lower part
+     * Night; the phone drifts up a little as the band passes.
      */
-    .phoneLight {
-      animation: phoneLight linear both;
-      animation-timeline: --phones;
-      animation-range: cover;
-    }
-    .phoneDark {
-      animation: phoneDark linear both;
-      animation-timeline: --phones;
-      animation-range: cover;
+    .device {
+      animation:
+        phoneFold linear both,
+        phoneDrift linear both;
+      animation-timeline: --phones, --phones;
+      animation-range:
+        entry 30% cover 55%,
+        cover;
     }
 
     /* The dashboard lands: tipped back as it comes into view, it stands up to face the reader. */
@@ -2767,42 +2792,53 @@
   }
 }
 
+/* A panel's pieces rise into place as it comes into view, the nearer ones further, and part a little as it leaves. */
 @keyframes drift {
   from {
-    translate: 0 var(--drift);
-  }
-  to {
-    translate: 0 calc(var(--drift) * -1);
-  }
-}
-
-@keyframes phoneLight {
-  from {
-    translate: calc(var(--spread) * -64px) calc(var(--spread) * 90px);
-    rotate: -13deg;
+    translate: 0 var(--drift-in);
   }
   45% {
     translate: 0 0;
-    rotate: -4deg;
   }
   to {
-    translate: 0 calc(var(--spread) * -22px);
-    rotate: -3deg;
+    translate: 0 var(--drift-out);
   }
 }
 
-@keyframes phoneDark {
+@keyframes phoneFold {
   from {
-    translate: calc(var(--spread) * 72px) calc(var(--spread) * 150px);
-    rotate: 12deg;
-  }
-  45% {
-    translate: 0 0;
-    rotate: 3deg;
+    --fold: 125%;
   }
   to {
-    translate: 0 calc(var(--spread) * 26px);
-    rotate: 2deg;
+    --fold: 66%;
+  }
+}
+
+@keyframes phoneFoldHigher {
+  from {
+    --fold: 125%;
+  }
+  to {
+    --fold: 24%;
+  }
+}
+
+@keyframes phoneDrift {
+  from {
+    translate: 0 40px;
+  }
+  to {
+    translate: 0 -24px;
+  }
+}
+
+/* On phones the phone rises out of the band's foot as it comes into view. */
+@keyframes phoneRise {
+  from {
+    translate: 0 150px;
+  }
+  to {
+    translate: 0 0;
   }
 }
 
@@ -2882,14 +2918,7 @@
 
 @media (max-width: 1100px) {
   .device {
-    --w: 250px;
-  }
-  .phoneLight {
-    left: calc(50% - 248px);
-  }
-  .phoneDark {
-    top: 54px;
-    left: calc(50% - 10px);
+    --w: 270px;
   }
   .phonePair {
     height: 580px;
@@ -2996,7 +3025,7 @@
     font-size: 14px;
   }
   .slabs {
-    height: 180px;
+    height: 124px;
     column-gap: 8px;
   }
   .slabFront {
@@ -3165,16 +3194,8 @@
   }
   .device {
     --w: 270px;
-  }
-  .phoneLight {
+    --fold: 24%;
     top: 28px;
-    left: 50%;
-    translate: -50% 0;
-    rotate: 0deg;
-    animation: none;
-  }
-  .phoneDark {
-    display: none;
   }
   .footer {
     margin-top: 112px;
@@ -3262,5 +3283,20 @@
   }
   .slip {
     padding: 24px 20px 28px;
+  }
+}
+
+/* On phones the phone rises out of the band's foot as it comes into view, while the crease sweeps up its screen. */
+@media (max-width: 960px) and (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .device {
+      animation:
+        phoneFoldHigher linear both,
+        phoneRise linear both;
+      animation-timeline: --phones, --phones;
+      animation-range:
+        entry 20% cover 50%,
+        entry 0% cover 45%;
+    }
   }
 }

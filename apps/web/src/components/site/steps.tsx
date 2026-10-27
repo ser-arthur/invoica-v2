@@ -173,7 +173,7 @@ function WriteVisual() {
           <span>As your client will see it</span>
           <span>Updates as you type</span>
         </div>
-        <Paper html={DRAFT} width={264} title="The draft as the client will see it" />
+        <Paper html={DRAFT} width={264} title="The draft as the client will see it" turned />
       </div>
       <Image
         src={writeLines}
@@ -210,7 +210,7 @@ function IssueVisual() {
         className={s.driftSlow}
         style={{ position: 'absolute', left: 56, top: 40, transform: 'rotate(-2deg)' }}
       >
-        <Paper html={ISSUED} width={330} title="INV-0044 as issued" />
+        <Paper html={ISSUED} width={330} title="INV-0044 as issued" turned />
       </div>
       <div
         className={`${s.card} ${s.lift} ${s.driftFast} ${s.figures}`}
@@ -229,7 +229,7 @@ function SendVisual() {
         className={s.driftSlow}
         style={{ position: 'absolute', right: 48, top: 36, transform: 'rotate(6deg)' }}
       >
-        <Paper html={ISSUED} width={220} title="INV-0044, attached" />
+        <Paper html={ISSUED} width={220} title="INV-0044, attached" turned />
       </div>
       <div
         className={`${s.card} ${s.lift} ${s.driftFast}`}

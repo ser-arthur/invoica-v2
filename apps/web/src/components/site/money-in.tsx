@@ -33,7 +33,9 @@ export function MoneyIn() {
           <span key={m.short}>{m.short}</span>
         ))}
       </div>
-      <figcaption className={s.caption}>An example studio&rsquo;s money in, May to October</figcaption>
+      <figcaption className={s.caption}>
+        An example studio&rsquo;s money in<span className={s.captionMore}>, May to October</span>
+      </figcaption>
     </figure>
   );
 }

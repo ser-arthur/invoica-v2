@@ -304,3 +304,35 @@ test('with less motion asked for, nothing on the website moves when it loads', a
     expect(moving, path).toEqual([]);
   }
 });
+
+// docs/specs/website-showcase.md, the owner's notes of 27 October, 16:34: the crease sweeps up the phone's screen as
+// the band comes into view, and on phones the phone rises out of the band's foot.
+
+test('as the phones band comes into view the crease sweeps up the phone, which rises on phones', async ({
+  page,
+}, info) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  const phone = page.getByTestId('phone');
+  const pairTop = await phone.evaluate((el) => el.parentElement!.getBoundingClientRect().top + scrollY);
+  const height = page.viewportSize()!.height;
+  const at = async (offset: number) => {
+    await page.evaluate((y) => window.scrollTo(0, y), pairTop - offset);
+    await page.waitForTimeout(400);
+    return phone.evaluate((el) => {
+      const style = getComputedStyle(el);
+      const length = (value: string) => Number(value.replace(/[^\d.-]/g, '') || '0');
+      const rise = style.translate === 'none' ? 0 : length(style.translate.split(' ')[1] ?? '0');
+      return { fold: length(style.getPropertyValue('--fold')), rise };
+    });
+  };
+  const arriving = await at(height - 80);
+  const settled = await at(0);
+  expect(arriving.fold).toBeGreaterThan(100);
+  const phones = info.project.name === 'phone';
+  expect(settled.fold).toBe(phones ? 24 : 66);
+  if (phones) {
+    expect(arriving.rise).toBeGreaterThan(80);
+    expect(settled.rise).toBe(0);
+  }
+});
