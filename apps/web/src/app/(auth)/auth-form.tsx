@@ -143,7 +143,7 @@ export function AuthForm({
           mode === 'sign-up' ? (
             'At least 10 characters.'
           ) : (
-            <Link href="/forgot-password" className={linkClass}>
+            <Link href="/forgot-password" className={`${linkClass} ${a.quiet}`}>
               Forgot your password?
             </Link>
           )

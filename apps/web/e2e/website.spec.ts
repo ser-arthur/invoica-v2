@@ -480,6 +480,38 @@ test('moving between the home page and pricing keeps the header where it is', as
   ).toEqual({ kept: true, started: [] });
 });
 
+test('every template in the range is made out by a business of its own kind', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'On a phone the sixteen join the six in one row.');
+  await page.goto('/');
+  const section = page.locator('#templates');
+  await section.getByRole('button', { name: 'See all sixteen' }).click();
+  const all = section.getByRole('list', { name: 'All sixteen templates' });
+  await expect(all.locator('iframe')).toHaveCount(16);
+  const docs = await all
+    .locator('iframe')
+    .evaluateAll((els) => els.map((e) => (e as HTMLIFrameElement).srcdoc));
+  const makers = [
+    'Larkspur Analytics',
+    'Crumb & Kettle',
+    'Odd Hours Press',
+    'Night Shift Sound',
+    'Wilder & Rose',
+    'Marigold Lane',
+    'Parallax Labs',
+    'Overcast',
+    'Hollis Lane Architects',
+    'Kestrel Roofing',
+    'Penrose Bookkeeping',
+    'Ashdown Kerr',
+    'Thistle & Oak',
+    'Joanna Pryce',
+    'Hartley Cycle Works',
+    'Fenwick Marsh',
+  ];
+  docs.forEach((doc, i) => expect(doc, makers[i]).toMatch(inHtml(makers[i]!)));
+  for (const doc of docs) expect(doc).not.toMatch(inHtml('Linden & Rowe'));
+});
+
 test('the home page shows no email address and no example domain, in its words or its invoices', async ({
   page,
 }) => {
@@ -606,6 +638,25 @@ test('with no theme chosen, or Light, the phone page is light with a Night foot;
       await expect(page.locator('main form input').first()).toHaveCSS('color', 'rgb(255, 255, 255)');
     }
   }
+});
+
+test('in Night, “Forgot your password?” is quiet, and the way to an account stays lime', async ({ page }) => {
+  await page.goto('/sign-in');
+  await page.context().addCookies([{ name: 'invoica_theme', value: 'dark', url: page.url() }]);
+  await page.goto('/sign-in');
+  const form = page.locator('main');
+  await expect(form.getByRole('link', { name: 'Forgot your password?' })).toHaveCSS(
+    'color',
+    'rgb(163, 178, 176)',
+  );
+  await expect(form.getByRole('link', { name: 'Create an account' })).toHaveCSS(
+    'color',
+    'rgb(207, 242, 106)',
+  );
+  await expect(form.getByRole('button', { name: 'Sign in' })).toHaveCSS(
+    'background-color',
+    'rgb(207, 242, 106)',
+  );
 });
 
 test('with System, the sign-in page follows the device', async ({ page }) => {

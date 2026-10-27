@@ -282,6 +282,14 @@
   color-scheme: dark;
 }
 
+/*
+ * In Night, "Forgot your password?" is quiet, so the lime is left to the button under it and the way to an account.
+ * The muted grey reads at 8 to 1 on Night.
+ */
+:global([data-theme='dark']) .quiet {
+  color: var(--muted);
+}
+
 /* On a wide screen in Night, a hairline keeps the panel apart from the form's side. */
 :global([data-theme='dark']) .side {
   box-shadow: inset 1px 0 0 rgb(255 255 255 / 0.06);

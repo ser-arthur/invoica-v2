@@ -163,6 +163,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **26 Oct, about 15:20 to 16:40, on `main` at the owner's word.** The line down How it works trails again and lands each step's icon beside its numeral; the slab lands with more presence; the header wider and the columns and pillars further apart; the shelf runs Riso, Marquee, Billboard (in front), Signature, Atelier, Trade; the link for the section in view lights up green; fields ring green; the crease's ends fade; sign in and sign up on phones open with the Night band; the dashboard picture without the faint frames. A Signature session for the owner's choice (`docs/design/round-10-signature.md`). 850 unit, database and PDF tests and 268 end-to-end tests run, none failed (81 skipped by design). Bundle 38.
 - **26 Oct, about 16:40 to 18:30, on `main`.** Signature in four styles (Night head, Light, Route, Route on Night), every one with Powered by Invoica on every plan; Monochrome as the sixteenth template; the header's links tint and hold, Pricing lit on its page, one header across the public pages; sign in and sign up with the first Invoica's line and a landing, as the pricing page has. 901 unit, database and PDF tests and 282 end-to-end tests run, none failed once a test still counting fifteen was corrected (86 skipped by design). Bundle 39.
 - **27 Oct, about 11:10 to 14:30, on `main`.** Sign in and sign up on phones: the band replaced by the line at the top and the website's footer mark at the foot; light by default, Night for a visitor who chose Dark (or System with the device dark), from the theme remembered on the device. 901 unit, database and PDF tests and 290 end-to-end tests run (89 skipped by design); one PDF download lost its connection once and passed when run again. Bundle 40.
+- **27 Oct, about 13:50 to 15:00, on `main`.** Every template in the website's range made out by its own invented business (Sticker a bakery in pink, Grid architects in maroon and black, Ticket a bike shop in orange, and the rest); in Night, the forgot-password link muted. 913 unit, database and PDF tests and 294 end-to-end tests run, none failed (90 skipped by design). Bundle 41.
 
 ## Decisions in force
 
@@ -242,5 +243,5 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-40.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-41.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.

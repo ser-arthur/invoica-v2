@@ -58,6 +58,13 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+27 October 2026, about 13:50 to 15:00, on `main`, the owner's notes of 13:46:
+- The website's whole range ("See all sixteen") made the ten templates off the shelf out by the example studio in green, which did not fit them. Each now has an invented business of its own kind (`RANGE` in `packages/documents/src/showcase.ts`), mostly from the first template rounds: Crumb & Kettle in pink on Sticker; Hollis Lane Architects in maroon and black on Grid, its logo redrawn as a three by three plan with the middle bay maroon (the L-shaped one read lopsided); Hartley Cycle Works in orange on Ticket; Marigold Lane on Bloom; Parallax Labs on Mark; Penrose Bookkeeping on Statement; Ashdown Kerr on Practice; Thistle & Oak on Heritage; Joanna Pryce on Letter, now in plum; and Fenwick Marsh, surveyors, on Monochrome. Every one passes the public samples checks (no email or web address, numbers that fail their check digits, Ofcom drama telephone numbers).
+- In Night, "Forgot your password?" on sign in is the muted grey; "Create an account" and the button stay lime.
+- Answered: Signature's four styles are chosen inside the app, under Signature in the picker; the website's shelf shows the Night head.
+- Checks: 913 unit, database and PDF tests run, 913 passed, 0 failed, 0 skipped (core 259, schemas 7, documents 78, PDF 231, database 239, web unit 99); format, copy rules, lint, types and the production build pass. The end-to-end suite against the production build, run from a copy elsewhere with production settings, ran 294: 204 passed, 90 skipped by design (one width only), 0 failed. A first run did not count: the local database had stopped.
+- Bundle 41.
+
 27 October 2026, about 11:10 to 14:30, on `main`, the owner's notes of 11:07, 11:36, 12:50, 12:55 and 12:59:
 - Sign in and sign up on phones: the Night band is gone. Mockups on the canvas page "Sign in on phones" (as it was, then A to G); the owner chose E and F, with the theme deciding which. There is no logo at the top: the line "The smarter way to bill, track and get paid." opens the page with its crease, then the form, then the small print (Privacy, Terms, Help) and the website's footer mark, its lit edge on Night, which leads home.
 - E, light with the mark on a Night foot, is the default. F, Night all through with dark fields and a lime button, is for a visitor who chose Dark in the app on this device, or System with the device dark (the root layout already sets `data-theme` from the `invoica_theme` cookie). No switch on these pages. On a wide screen Dark turns the form's side Night beside the panel.

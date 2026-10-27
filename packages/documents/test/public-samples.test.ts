@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SHOWCASE, sampleSnapshot, showcaseSnapshot, storySnapshot } from '../src/index';
+import { RANGE, sampleSnapshot, showcaseSnapshot, storySnapshot } from '../src/index';
 
 /**
  * Every invented business shown in public looks real and can belong to no one (docs/specs/website-showcase.md,
@@ -57,7 +57,7 @@ function modulusPasses(sortCode: string, account: string): boolean | 'unknown' {
 }
 
 const PUBLIC = [
-  ...SHOWCASE.map((s) => showcaseSnapshot(s.template)),
+  ...RANGE.map((s) => showcaseSnapshot(s.template)),
   sampleSnapshot({ template: 'signature' }),
   // the website's own story: Linden & Rowe Studio's INV-0044 to Meridian Architects LLP
   storySnapshot(),

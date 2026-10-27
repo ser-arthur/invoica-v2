@@ -1,13 +1,7 @@
 'use client';
 
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
-import {
-  renderDocumentHtml,
-  sampleSnapshot,
-  SHOWCASE,
-  showcaseSnapshot,
-  TEMPLATE_LIST,
-} from '@invoica/documents';
+import { RANGE, renderDocumentHtml, SHOWCASE, showcaseSnapshot, TEMPLATE_LIST } from '@invoica/documents';
 import { Paper } from '@/components/paper';
 import s from './site.module.css';
 
@@ -22,9 +16,6 @@ const COLOURS = [
   { name: 'Lemon', value: '#f2d33b' },
   { name: 'Charcoal', value: '#2f3a3d' },
 ];
-
-/** The website's example studio, which makes out the nine templates that have no business of their own. */
-const STUDIO = 'Linden & Rowe Studio';
 
 const fontUrl = (f: string) => `/doc-fonts/${f}`;
 const nameOf = (template: string) => TEMPLATE_LIST.find((t) => t.id === template)?.name ?? template;
@@ -79,32 +70,31 @@ export function Showcase() {
     }));
   }, [typed, colour]);
 
-  // The nine with no business of their own, made out by the example studio or the visitor.
-  const nine = useMemo<Card[]>(() => {
+  // The ten not on the shelf, each made out by its own invented business, or by the visitor.
+  const rest = useMemo<Card[]>(() => {
     if (!all) return [];
-    return TEMPLATE_LIST.filter((t) => !SHOWCASE.some((e) => e.template === t.id)).map((t) => ({
-      template: t.id,
-      name: t.name,
-      maker: typed || STUDIO,
-      forWhom: t.description,
-      html: renderDocumentHtml(
-        sampleSnapshot({
-          template: t.id,
-          seller: { name: typed || STUDIO, brandColour: colour ?? '#17795a' },
-        }),
-        { fontUrl, logoUrl: null },
-      ),
+    const visitor = { name: typed || undefined, colour: colour ?? undefined };
+    const mine = typed !== '' || colour !== null;
+    return RANGE.filter((r) => !SHOWCASE.some((e) => e.template === r.template)).map((r) => ({
+      template: r.template,
+      name: nameOf(r.template),
+      maker: mine && typed ? typed : r.business,
+      forWhom: TEMPLATE_LIST.find((t) => t.id === r.template)?.description ?? r.forWhom,
+      html: renderDocumentHtml(showcaseSnapshot(r.template, visitor), {
+        fontUrl,
+        logoUrl: mine ? null : r.logo,
+      }),
     }));
   }, [all, typed, colour]);
 
   // On a wide screen the sixteen open below the shelf, in the picker's order.
   const range = useMemo(() => {
     if (!all || narrow) return [];
-    const cards = [...six, ...nine];
+    const cards = [...six, ...rest];
     return TEMPLATE_LIST.map((t) => ({ ...t, html: cards.find((c) => c.template === t.id)!.html }));
-  }, [all, narrow, six, nine]);
+  }, [all, narrow, six, rest]);
 
-  const row = narrow && all ? [...six, ...nine] : six;
+  const row = narrow && all ? [...six, ...rest] : six;
   const shown = Math.min(front, row.length - 1);
   const inFront = row[shown]!;
 
