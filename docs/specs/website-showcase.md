@@ -156,6 +156,18 @@ mark leads home.
 - **Which:** the theme the visitor chose in the app on this device. Never chosen, or Light: E. Dark: F. System: the
   device's own setting. No switch on these pages. On a wide screen, Dark turns the form's side Night beside the panel.
 
+## The owner's notes of 27 October, 13:46
+
+- **Every template in the range has its own invented business**, of the kind it is for, as the six on the shelf do.
+  The ten others were made out by the website's example studio in green, which did not fit (a studio on Sticker, the
+  template for cafés and bakers). From the first template rounds: Crumb & Kettle, a bakery in pink, on Sticker;
+  Hollis Lane Architects in maroon with black on Grid, its logo redrawn as a balanced plan (a three by three grid, the
+  middle bay maroon) in place of the L-shaped one; Hartley Cycle Works in orange on Ticket; Marigold Lane on Bloom,
+  Parallax Labs on Mark, Penrose Bookkeeping on Statement, Ashdown Kerr on Practice, Thistle & Oak on Heritage, Joanna
+  Pryce on Letter (in plum, so fewer of the range are green), and a new one, Fenwick Marsh, surveyors, on Monochrome.
+  Every detail follows the public samples rule.
+- **In Night**, "Forgot your password?" is muted, so the lime is left to the button and the way to an account.
+
 ## Acceptance criteria
 
 Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/documents/test`.
@@ -212,3 +224,6 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
 29. The footer's mark on these pages leads home, and the pages pass the automated accessibility checks in light and in
     dark.
 30. On a phone the line lands as the page opens: its halves from opposite sides together, the crease after them.
+31. Every template in the range is shown made out by its own business, each different, none the example studio, every
+    one passing the public samples checks.
+32. In Night, "Forgot your password?" is the muted grey; "Create an account" and the button stay lime.
