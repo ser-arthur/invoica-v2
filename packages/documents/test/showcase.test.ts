@@ -54,4 +54,11 @@ describe('the website showcase', () => {
       brandColour: '#D9482B',
     });
   });
+
+  it('numbers Grid’s invoice in the INV form, under the plan mark from the first template rounds', () => {
+    expect(showcaseSnapshot('grid').number).toBe('INV-0047');
+    const logo = decodeURIComponent(RANGE.find((r) => r.template === 'grid')!.logo);
+    expect(logo).toContain('M0 0 H200 V200 H0 Z M100 100 H200 V200 H100 Z');
+    expect(logo).toContain('<rect x="100" y="100" width="100" height="100" fill="#951D30"/>');
+  });
 });

@@ -500,9 +500,9 @@ const MORE: Business[] = [
     template: 'grid',
     forWhom: 'Architects, designers and photographers',
     logo: svg(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#141414"/><g fill="none" stroke="#FFFFFF" stroke-opacity=".28" stroke-width="3"><path d="M66.7 0 V200 M133.3 0 V200 M0 66.7 H200 M0 133.3 H200"/></g><rect x="68.2" y="68.2" width="63.6" height="63.6" fill="#951D30"/></svg>',
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path d="M0 0 H200 V200 H0 Z M100 100 H200 V200 H100 Z" fill="#141414" fill-rule="evenodd"/><rect x="100" y="100" width="100" height="100" fill="#951D30"/></svg>',
     ),
-    number: '2026-047',
+    number: 'INV-0047',
     lineStyle: 'amount',
     seller: {
       name: 'Hollis Lane Architects',
