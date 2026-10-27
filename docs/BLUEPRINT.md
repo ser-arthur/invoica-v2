@@ -164,6 +164,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **26 Oct, about 16:40 to 18:30, on `main`.** Signature in four styles (Night head, Light, Route, Route on Night), every one with Powered by Invoica on every plan; Monochrome as the sixteenth template; the header's links tint and hold, Pricing lit on its page, one header across the public pages; sign in and sign up with the first Invoica's line and a landing, as the pricing page has. 901 unit, database and PDF tests and 282 end-to-end tests run, none failed once a test still counting fifteen was corrected (86 skipped by design). Bundle 39.
 - **27 Oct, about 11:10 to 14:30, on `main`.** Sign in and sign up on phones: the band replaced by the line at the top and the website's footer mark at the foot; light by default, Night for a visitor who chose Dark (or System with the device dark), from the theme remembered on the device. 901 unit, database and PDF tests and 290 end-to-end tests run (89 skipped by design); one PDF download lost its connection once and passed when run again. Bundle 40.
 - **27 Oct, about 13:50 to 15:00, on `main`.** Every template in the website's range made out by its own invented business (Sticker a bakery in pink, Grid architects in maroon and black, Ticket a bike shop in orange, and the rest); in Night, the forgot-password link muted. 913 unit, database and PDF tests and 294 end-to-end tests run, none failed (90 skipped by design). Bundle 41.
+- **27 Oct, about 14:25 to 16:00, on `main`.** The theme saved on the account and carried to every device signed in on (migration 0028, `user_preference` with its own row rule by person; decision 0014); Grid's sample numbered INV-0047 under its first plan mark again. 919 unit, database and PDF tests and 298 end-to-end tests run, none failed (90 skipped by design). Bundle 42.
 
 ## Decisions in force
 
@@ -182,6 +183,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 0011 | The reminder scan when an older image runs | Accepted: a second scan function for the worker (migration 0026) |
 | 0012 | The logo | Accepted: the name, its first i a slip with the corner turned |
 | 0013 | Where the launch offers show | Accepted: the trial leads; local prices public; the founding offer in the app at the end of the trial |
+| 0014 | The theme on the account | Accepted: saved on the account in `user_preference`, one row per person under its own row rule; each device keeps a copy |
 
 ## Choices made during the build (reversible, flagged for Kobby)
 
@@ -239,9 +241,9 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 7. The printed VAT in sterling wording, chosen under "pick the best way" (see "Choices made during the build").
 8. Approve a plan for the R5-L1 four-taxes refusal (`HANDOVER.md`, "Open finding"): how a credit note that settles a balance shares its tax across the components when one would go below zero.
 9. Answered 26 October, 16:38: Signature in four styles, Powered by Invoica on every Signature, Monochrome as the sixteenth template (`docs/specs/invoice-templates.md`).
-10. The theme saved on the account so it follows a person to other devices: asked 27 October, 13:01, waiting for the owner (it adds a place on the account with its own row rule).
+10. Answered 27 October, 14:22: the theme is saved on the account and follows a person to other devices (`docs/specs/theme-on-the-account.md`, decision 0014).
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-41.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-42.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.

@@ -33,7 +33,7 @@ This is the **v2 repository**: a re-architecture from scratch (decision 0001). T
 
 **Reviews:** reviews 1 to 12 (`docs/reviews/`), each with a Resolution section mapping findings to fixes and tests.
 
-**Local databases:** `invoica` (manual testing), `invoica_demo` (seeded; the end-to-end tests against the development server also write into it) and `invoica_prodcheck` (for the production build's runs), all at migration 0026. Migrations that have run are never edited: changes go in a new one.
+**Local databases:** `invoica` (manual testing and the development server, at migration 0028), `invoica_ci` (made fresh for each end-to-end run against the production build) and `invoica_prodcheck` (older production build runs, at migration 0026). Migrations that have run are never edited: changes go in a new one.
 
 ## Delivery method
 
@@ -58,6 +58,14 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+27 October 2026, about 14:25 to 16:00, on `main`, the owner's yes of 14:22 and his note of 14:24:
+- The theme is saved on the account (`docs/specs/theme-on-the-account.md`, decision 0014). Choosing Light, Dark or System under Appearance saves it on the account and on the device at once. Any device the person signs in on opens the app in the account's theme and remembers it, so its sign-in pages follow it after signing out; a device whose copy is behind (changed elsewhere since) catches up when a page of the app opens. System still means each device's own setting. A device never signed in on shows the light sign-in.
+- Migration 0028 adds `user_preference`, one row per person, removed with the account: the first table that belongs to a person and to no organisation, so its row rule is by person (`own_preference`: `user_id` must be `app.user_id`, which `withUser` sets from the verified session). The app may select, insert and update it. The tenancy test's snapshots name the table, policy and grants. Approved by the owner at 14:22 (on the ask-first list as a change to tenancy rules).
+- In the app: `apps/web/src/lib/theme.ts` (the account's theme, the device's, and which a page shows), `setThemeAction` saves both, the root layout shows the account's theme for a signed-in person, and `ThemeSync` in the app's layout sets it before the page is drawn after signing in (the page's root is kept when moving between pages) and brings the device's copy up to date. Choosing System now turns a dark device dark at once; before, it waited for the next full load.
+- Grid's sample in the website's range is numbered INV-0047 and carries the plan mark from the first template rounds again (a black square with its lower right quarter in maroon); the three by three plan is gone.
+- Checks: 919 unit, database and PDF tests run, 919 passed, 0 failed, 0 skipped (core 259, schemas 7, documents 79, PDF 231, database 244, web unit 99); format, copy rules, lint, types and the production build pass. The end-to-end suite against the production build, run from a copy elsewhere with production settings, ran 298: 208 passed, 90 skipped by design (one width only), 0 failed. The new end-to-end tests were run first against bundle 41's build and failed there (the second device opened in Light; System chosen in the menu stayed light until a reload).
+- Bundle 42.
+
 27 October 2026, about 13:50 to 15:00, on `main`, the owner's notes of 13:46:
 - The website's whole range ("See all sixteen") made the ten templates off the shelf out by the example studio in green, which did not fit them. Each now has an invented business of its own kind (`RANGE` in `packages/documents/src/showcase.ts`), mostly from the first template rounds: Crumb & Kettle in pink on Sticker; Hollis Lane Architects in maroon and black on Grid, its logo redrawn as a three by three plan with the middle bay maroon (the L-shaped one read lopsided); Hartley Cycle Works in orange on Ticket; Marigold Lane on Bloom; Parallax Labs on Mark; Penrose Bookkeeping on Statement; Ashdown Kerr on Practice; Thistle & Oak on Heritage; Joanna Pryce on Letter, now in plum; and Fenwick Marsh, surveyors, on Monochrome. Every one passes the public samples checks (no email or web address, numbers that fail their check digits, Ofcom drama telephone numbers).
 - In Night, "Forgot your password?" on sign in is the muted grey; "Create an account" and the button stay lime.
@@ -69,7 +77,7 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 - Sign in and sign up on phones: the Night band is gone. Mockups on the canvas page "Sign in on phones" (as it was, then A to G); the owner chose E and F, with the theme deciding which. There is no logo at the top: the line "The smarter way to bill, track and get paid." opens the page with its crease, then the form, then the small print (Privacy, Terms, Help) and the website's footer mark, its lit edge on Night, which leads home.
 - E, light with the mark on a Night foot, is the default. F, Night all through with dark fields and a lime button, is for a visitor who chose Dark in the app on this device, or System with the device dark (the root layout already sets `data-theme` from the `invoica_theme` cookie). No switch on these pages. On a wide screen Dark turns the form's side Night beside the panel.
 - On phones the line lands as the page opens (its halves from opposite sides, the crease drawn), the foot settles and the mark rises as it does in the website's footer.
-- Asked of the owner, not built: saving the theme on the account so it carries to other devices (a new place on the account with its own row rule; on the ask-first list). Today it is remembered per device.
+- Asked of the owner then, built since (bundle 42): saving the theme on the account so it carries to other devices.
 - Checks: 901 unit, database and PDF tests run, 901 passed, 0 failed, 0 skipped (core 259, schemas 7, documents 66, PDF 231, database 239, web unit 99); format, copy rules, lint, types and the production build pass. The end-to-end suite against the production build, run from a copy elsewhere with production settings, ran 290: 200 passed, 89 skipped by design (one width only), 1 failed: on the phone run, the request downloading an invoice's PDF lost its connection (socket hang up; nothing in the server's log). The invoice flow file run again against the same build: 14 run, 14 passed.
 - Bundle 40.
 
@@ -271,12 +279,12 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
 4. Templates: real-looking sample details in the picker (account, company and VAT numbers that fail their check digits). Later: static fonts for PDFs, and the website's templates section.
 5. Signature: answered and built on 26 October (four styles, Powered by Invoica on every Signature, Monochrome as the sixteenth).
-6. If the owner says yes: the theme saved on the account (a new migration and its row rule), applied on sign-in and remembered on the device.
+6. The theme saved on the account: built on 27 October (bundle 42, migration 0028, decision 0014).
 7. The website on `feat/website`: the owner's review (bundle 20), then a pull request once GitHub is linked; the owner's choice of where to show v2 before launch (a separate Vercel project recommended; the old app's address is not touched without his say). Then the app screens in the round 5 look: tokens and fonts in `globals.css`, the sheet and slab as shared pieces, each screen with its tests and the accessibility checks in both themes. The home page shows the app as drawn on the round 5 canvas, so it runs ahead of the app until those screens are built.
 
 ## Open questions
 
-The list is kept in `docs/BLUEPRINT.md`, "Open questions" (9 items, 6 open).
+The list is kept in `docs/BLUEPRINT.md`, "Open questions" (10 items, 6 open).
 
 ## Decisions
 
@@ -295,3 +303,4 @@ The list is kept in `docs/BLUEPRINT.md`, "Open questions" (9 items, 6 open).
 | 0011 | The reminder scan when an older image runs | Accepted |
 | 0012 | The logo | Accepted |
 | 0013 | Where the launch offers show | Accepted |
+| 0014 | The theme on the account | Accepted |
