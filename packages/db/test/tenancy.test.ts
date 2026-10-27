@@ -118,6 +118,7 @@ describe('cross-organisation access is refused', () => {
         'membership membership_visible public SELECT',
         'organisation organisation_member public SELECT',
         'organisation organisation_update public UPDATE',
+        'user_preference own_preference public ALL',
       ].sort(),
     );
   });
@@ -175,6 +176,7 @@ describe('cross-organisation access is refused', () => {
         'invoica_app reminder_pause DELETE,INSERT,SELECT',
         `invoica_app stored_file ${all}`,
         `invoica_app tax_code ${all}`,
+        'invoica_app user_preference INSERT,SELECT,UPDATE',
       ].sort(),
     );
   });

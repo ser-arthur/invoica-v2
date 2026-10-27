@@ -79,6 +79,15 @@ export const authVerification = pgTable('auth_verification', {
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });
 
+/** A person's own settings, the same in every business they belong to; seen and written only by them. */
+export const userPreference = pgTable('user_preference', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => authUser.id, { onDelete: 'cascade' }),
+  theme: text('theme').$type<'light' | 'dark' | 'system'>().notNull().default('light'),
+  updatedAt: ts('updated_at').notNull().defaultNow(),
+});
+
 export type BusinessType = 'sole_trader' | 'limited_company' | 'partnership' | 'other';
 export type Plan = 'trial' | 'free' | 'pro' | 'studio';
 
