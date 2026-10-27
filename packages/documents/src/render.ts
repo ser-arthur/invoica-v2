@@ -235,7 +235,7 @@ export function renderDocumentHtml(snapshot: DocumentSnapshot, options: RenderOp
   );
   const css = `${fontFaceCss(template.fonts, options.fontUrl)}\n${BASE_CSS}\n${template.css(view)}\n${footer}`;
   const title = `${view.heading} ${view.number}`;
-  return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${css}</style></head><body>${
+  return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="format-detection" content="telephone=no, date=no, email=no, address=no"><title>${esc(title)}</title><style>${css}</style></head><body>${
     options.draft
       ? '<div class="draft-mark" aria-hidden="true">DRAFT</div>'
       : options.voided

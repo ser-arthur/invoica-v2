@@ -113,6 +113,16 @@ describe('rendering', () => {
     }
   });
 
+  it('asks phones not to turn its numbers into links, in every template (website showcase, criterion 34)', () => {
+    for (const template of Object.keys(TEMPLATES)) {
+      const html = renderDocumentHtml({ ...FIXTURES.ukVat!, template }, { fontUrl });
+      const head = html.slice(0, html.indexOf('</head>'));
+      expect(head, template).toContain(
+        '<meta name="format-detection" content="telephone=no, date=no, email=no, address=no">',
+      );
+    }
+  });
+
   it('marks drafts', () => {
     expect(renderDocumentHtml(FIXTURES.ukVat!, { fontUrl, draft: true })).toContain('draft-mark');
   });
