@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { cookies, headers } from 'next/headers';
+import { headers } from 'next/headers';
+import { pageTheme } from '@/lib/theme';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -16,7 +17,8 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const preference = (await cookies()).get('invoica_theme')?.value ?? 'light';
+  // The signed-in person's account theme, else this device's (docs/specs/theme-on-the-account.md).
+  const { theme: preference } = await pageTheme();
   const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
     <html lang="en-GB" data-theme={preference === 'dark' ? 'dark' : 'light'} suppressHydrationWarning>
