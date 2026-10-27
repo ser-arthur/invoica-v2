@@ -40,7 +40,9 @@ test('loading the home page, everything arrives in reading order and is settled 
   const timings = await page.evaluate(() => {
     const held = document
       .getAnimations()
-      .filter((a) => a.timeline instanceof DocumentTimeline) as CSSAnimation[];
+      .filter((a) => a.timeline instanceof DocumentTimeline)
+      // animations only: a transition caught running (a pointer over a link as the page opens) has no name
+      .filter((a) => (a as CSSAnimation).animationName) as CSSAnimation[];
     const heading = document.querySelector('main h1')!;
     const find = (el: Element | null | undefined, name: string): Timing | null => {
       const a = held.find(
