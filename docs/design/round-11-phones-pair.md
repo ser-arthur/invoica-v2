@@ -15,3 +15,6 @@ wide screen and a phone. The boards are `round-11/phones-*.png`.
 
 Recommended: C. It is the only one that says "light or dark" with the page itself as well as the screens, and it
 uses the crease the way the hero and sign in do. A is the calm choice if C is too strong for the band.
+
+**Chosen and built, 28 October, 00:35: D**, one behind the other (`docs/specs/website-showcase.md`, the notes of that
+time).
