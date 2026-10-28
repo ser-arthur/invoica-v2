@@ -205,6 +205,16 @@ mark leads home.
   the right edge (twelve columns' worth of 32-pixel gaps is wider than a small phone). On phones the gaps are now 16
   pixels.
 
+## The owner's notes of 28 October, 01:58
+
+- **The menu closes with a tap or click anywhere outside it**, with Escape (focus back on the menu button), and when
+  one of its links is chosen. It still opens without the page's script, as a disclosure.
+- **In the menu the page or section you are on is its words, bold, in the logo's green**, with no fill (the fill was
+  too strong on a phone). The words take the deepest shade of the logo's green, `#14804a`, which reads at 5 to 1 on the
+  menu's white; the logo's own green would read at 2.2 to 1. The header's links on wide screens keep the green fill.
+- **Sign up on phones is still not landing.** Mockups A to D in `docs/design/round-12-sign-up-phone.md`; waiting for the
+  owner.
+
 ## Acceptance criteria
 
 Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/documents/test`.
@@ -271,3 +281,6 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
 36. In How it works, the three pictures of the invoice are cut away past the turned corner, by the corner's own size.
 37. On phones every figure's caption is one line, at 390, 360 and 320 pixels wide.
 38. On phones of 375, 360 and 320 pixels, no words on the home page run past the edge of the screen.
+39. On a phone the menu closes with a tap outside it, with Escape (the menu button then has focus), and when one of its
+    links is chosen; a tap inside it leaves it open.
+40. In the menu the page you are on is its words in bold green, `#14804a`, with no fill.
