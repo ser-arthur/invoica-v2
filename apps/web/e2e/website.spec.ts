@@ -711,29 +711,40 @@ test('a field’s focus ring is the logo’s deeper green', async ({ page }) => 
 
 // docs/specs/website-showcase.md, the owner's notes of 27 October, 16:34.
 
-test('the phones section shows one phone, light and, past a crease across its screen, in Night (35)', async ({
+test('the phones section shows two phones, the dark one in front, offset so both screens show (35)', async ({
   page,
 }, info) => {
   await page.goto('/');
   const section = page.locator('section[aria-labelledby="phones-heading"]');
-  await expect(section.getByTestId('phone')).toHaveCount(1);
-  const phone = section.getByTestId('phone');
-  await phone.scrollIntoViewIfNeeded();
-  const screen = (await phone.locator('img').first().boundingBox())!;
-  // Past the crease (below and to its right) the screen is the Night one; before it, the light one.
-  const hit = (fx: number, fy: number) =>
-    page.evaluate(
-      ([x, y]) => {
-        const el = document.elementFromPoint(x!, y!);
-        return el?.getAttribute('data-testid') === 'phone-night' ? 'night' : el?.tagName.toLowerCase();
-      },
+  const light = section.getByTestId('phone-light');
+  const dark = section.getByTestId('phone-dark');
+  await expect(light).toHaveCount(1);
+  await expect(dark).toHaveCount(1);
+  await dark.scrollIntoViewIfNeeded();
+  // What is on top at a point of each screen: the dark phone in front, and the light one's figures still in view.
+  const at = async (phone: typeof light, fx: number, fy: number) => {
+    const screen = (await phone.locator('img').boundingBox())!;
+    return page.evaluate(
+      ([x, y]) => document.elementFromPoint(x!, y!)?.closest('[data-testid]')?.getAttribute('data-testid'),
       [screen.x + screen.width * fx, screen.y + screen.height * fy],
     );
-  // On phones the band crops the phone's foot, so the crease crosses higher.
-  const low = info.project.name === 'phone' ? 0.5 : 0.9;
-  expect(await hit(0.1, 0.12)).toBe('img');
-  expect(await hit(0.9, low)).toBe('night');
-  expect(await hit(0.1, low)).toBe('night');
+  };
+  expect(await at(dark, 0.5, 0.3)).toBe('phone-dark');
+  expect(await at(light, 0.2, 0.3)).toBe('phone-light');
+  // Nothing changes under the pointer.
+  if (info.project.name === 'desktop') {
+    const look = () =>
+      page.evaluate(() =>
+        ['phone-light', 'phone-dark'].map((id) => {
+          const style = getComputedStyle(document.querySelector(`[data-testid="${id}"]`)!);
+          return `${style.zIndex} ${style.scale} ${style.rotate} ${style.boxShadow}`;
+        }),
+      );
+    const before = await look();
+    await light.hover({ position: { x: 40, y: 120 } });
+    await page.waitForTimeout(600);
+    expect(await look()).toEqual(before);
+  }
 });
 
 test('on phones each figure’s caption is one short line', async ({ page }, info) => {
@@ -771,5 +782,26 @@ test('in How it works the invoice is cut away past its turned corner, so the pan
     // The Night head's corner is turned 18mm in from the edge of a 210mm page.
     const turn = Number(((18 / 210) * width).toFixed(1));
     expect(clip).toBe(`polygon(0px 0px, calc(100% - ${turn}px) 0px, 100% ${turn}px, 100% 100%, 0px 100%)`);
+  }
+});
+
+test('on small phones no words on the home page run past the edge of the screen (38)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'phone', 'Checked at phone widths.');
+  for (const width of [375, 360, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/');
+    const past = await page.evaluate(
+      (w) =>
+        [...document.querySelectorAll('main p, main h2, main h3, main li, main figcaption')]
+          .filter((el) => {
+            const box = el.getBoundingClientRect();
+            return box.width > 0 && box.right > w + 0.5 && !el.closest('[aria-hidden="true"]');
+          })
+          .map((el) => (el.textContent ?? '').trim().slice(0, 40)),
+      width,
+    );
+    expect(past, `${width}px`).toEqual([]);
   }
 });
