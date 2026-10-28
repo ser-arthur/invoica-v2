@@ -183,7 +183,17 @@ export function Clients() {
                     </svg>
                   </span>
                   <span className={s.historyWhat}>
-                    <strong>{h.title}</strong>
+                    <strong>
+                      {h.title.split(/(\b[A-Z]{2,3}-\d+)/).map((part, i) =>
+                        i % 2 ? (
+                          <span key={part} className={s.historyNumber}>
+                            {part}
+                          </span>
+                        ) : (
+                          part
+                        ),
+                      )}
+                    </strong>
                     <span>{h.what}</span>
                   </span>
                   <span className={s.historyAmount}>{h.amount}</span>
@@ -196,7 +206,8 @@ export function Clients() {
           </div>
         </div>
         <figcaption className={s.caption}>
-          The same studio&rsquo;s clients, with Meridian Architects open
+          The same studio&rsquo;s clients
+          <span className={s.captionMore}>, with Meridian Architects open</span>
         </figcaption>
       </figure>
     </section>

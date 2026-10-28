@@ -93,10 +93,15 @@ s = add_css(s, FOLD_CSS)
 s = fold_section(s, 'Still to pay', 56)
 write('R5Invoice.dc.html', s)
 
-# the list and the editor: the logo only
+# the list and the editor: the logo, and selects with the app's own arrow 14px in from the edge
+SELECT_CSS = ("select.f{appearance:none;-webkit-appearance:none;padding-right:40px;background:#FFFFFF url(\"data:image/svg+xml,"
+              "%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' "
+              "fill='none' stroke='%235B6862' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") "
+              "no-repeat right 14px center/12px 12px}")
 for src, dst in [('R3Invoices.dc.html', 'R5Invoices.dc.html'), ('R3Editor.dc.html', 'R5Editor.dc.html')]:
     s = read(src)
     s = header_logo(s, 28)
+    s = add_css(s, SELECT_CSS)
     write(dst, s)
 
 # sign in: the logo, line-drawn sheets behind the cards, and the crease on the headline

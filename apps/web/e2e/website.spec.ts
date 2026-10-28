@@ -708,3 +708,68 @@ test('a field’s focus ring is the logo’s deeper green', async ({ page }) => 
   await email.focus();
   await expect(email).toHaveCSS('outline-color', 'rgb(31, 156, 87)');
 });
+
+// docs/specs/website-showcase.md, the owner's notes of 27 October, 16:34.
+
+test('the phones section shows one phone, light and, past a crease across its screen, in Night (35)', async ({
+  page,
+}, info) => {
+  await page.goto('/');
+  const section = page.locator('section[aria-labelledby="phones-heading"]');
+  await expect(section.getByTestId('phone')).toHaveCount(1);
+  const phone = section.getByTestId('phone');
+  await phone.scrollIntoViewIfNeeded();
+  const screen = (await phone.locator('img').first().boundingBox())!;
+  // Past the crease (below and to its right) the screen is the Night one; before it, the light one.
+  const hit = (fx: number, fy: number) =>
+    page.evaluate(
+      ([x, y]) => {
+        const el = document.elementFromPoint(x!, y!);
+        return el?.getAttribute('data-testid') === 'phone-night' ? 'night' : el?.tagName.toLowerCase();
+      },
+      [screen.x + screen.width * fx, screen.y + screen.height * fy],
+    );
+  // On phones the band crops the phone's foot, so the crease crosses higher.
+  const low = info.project.name === 'phone' ? 0.5 : 0.9;
+  expect(await hit(0.1, 0.12)).toBe('img');
+  expect(await hit(0.9, low)).toBe('night');
+  expect(await hit(0.1, low)).toBe('night');
+});
+
+test('on phones each figure’s caption is one short line', async ({ page }, info) => {
+  test.skip(info.project.name !== 'phone', 'Checked at phone widths.');
+  for (const width of [390, 360, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/');
+    const captions = page.locator('main figcaption:visible');
+    expect(await captions.count()).toBeGreaterThanOrEqual(4);
+    for (const caption of await captions.all()) {
+      const box = (await caption.boundingBox())!;
+      const line = await caption.evaluate((el) => Number(getComputedStyle(el).lineHeight.replace('px', '')));
+      expect(box.height, `${width}: ${await caption.innerText()}`).toBeLessThanOrEqual(line + 1);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+    }
+    await expect(page.locator('figcaption', { hasText: 'The same studio’s clients' })).toHaveText(
+      'The same studio’s clients',
+      { useInnerText: true },
+    );
+  }
+});
+
+test('in How it works the invoice is cut away past its turned corner, so the panel shows there, not white (36)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'desktop', 'The pictures are shown on wide screens.');
+  await page.goto('/');
+  const papers = page.locator('#how [data-turned]');
+  await expect(papers).toHaveCount(3);
+  for (const paper of await papers.all()) {
+    const { clip, width } = await paper.evaluate((el) => ({
+      clip: getComputedStyle(el).clipPath,
+      width: (el as HTMLElement).offsetWidth,
+    }));
+    // The Night head's corner is turned 18mm in from the edge of a 210mm page.
+    const turn = Number(((18 / 210) * width).toFixed(1));
+    expect(clip).toBe(`polygon(0px 0px, calc(100% - ${turn}px) 0px, 100% ${turn}px, 100% 100%, 0px 100%)`);
+  }
+});

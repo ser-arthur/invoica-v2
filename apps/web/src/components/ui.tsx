@@ -108,7 +108,7 @@ export function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
 }
 
 export function Select({ className, ...props }: ComponentProps<'select'>) {
-  return <select className={cx(inputClass, width(className), 'pr-8', className)} {...props} />;
+  return <select className={cx(inputClass, width(className), 'select-chevron pr-9', className)} {...props} />;
 }
 
 export function Checkbox({

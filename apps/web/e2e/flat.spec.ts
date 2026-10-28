@@ -52,8 +52,8 @@ test('on a phone the phones section shows one phone, upright', async ({ page }, 
   const section = page.locator('section[aria-labelledby="phones-heading"]');
   await section.scrollIntoViewIfNeeded();
   await page.mouse.wheel(0, 300);
-  await expect(section.locator('img:visible')).toHaveCount(1);
-  const turned = await section.locator('img:visible').evaluate((img) => {
+  await expect(section.getByTestId('phone')).toHaveCount(1);
+  const turned = await section.getByTestId('phone').evaluate((img) => {
     const found: string[] = [];
     for (let el: Element | null = img; el && el.tagName !== 'SECTION'; el = el.parentElement) {
       const style = getComputedStyle(el);

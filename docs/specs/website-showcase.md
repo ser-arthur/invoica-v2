@@ -172,6 +172,28 @@ mark leads home.
 - **Grid's invoice is numbered INV-0047**, in the INV form, and carries the plan mark from the first template rounds
   again: a black square with its lower right quarter in maroon.
 
+## The owner's notes of 27 October, 16:34
+
+- **The money-in bars under the hero are shorter on phones** (124px tall, from 180px).
+- **On phones each figure's caption is one short, quiet line**: "An example studio's money in", "The same studio's
+  dashboard", "The same studio's clients" and "The same studio, the day INV-0044 is paid", at 12px. The rest of each
+  caption shows where there is room for it. They stay because the first says the figures are an example studio's, and
+  the others tie each picture to it. Invoice numbers in the clients card stay on one line.
+- **No number on an invoice turns into a link on a phone.** Phones made telephone numbers and VAT numbers in the
+  rendered invoices blue links; every rendered document now asks them not to.
+- **The phones section shows one phone where it showed two**, on wide screens too, where the two lay fanned and the
+  one under the pointer came to the front. Its screen is the app in light, and past a crease like the hero's (lime to
+  teal), the same screen in Night: "Light or dark, it is the same Invoica" shown on one screen. As the band comes into
+  view the crease sweeps up the screen from its foot, resting across the list of invoices, where the two themes differ
+  most; on phones, where the band crops the phone's foot, it rests higher, and the phone rises out of the band's foot
+  as it comes into view. With less motion asked for, the crease is simply there.
+- **In How it works the invoice is cut away past its turned corner**, so the panel shows there and not the page's
+  white (steps 1 to 3). The PDF keeps its page as it is.
+- **The editor's picture in How it works has its selects' arrows 14px in from the edge**, and the app's own selects
+  draw their arrow 12px in, in place of the browser's, which sat against the border.
+- **How it works' pieces rise into place** as each panel comes into view, the nearer ones further (96px and 32px),
+  and part a little as it leaves.
+
 ## Acceptance criteria
 
 Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/documents/test`.
@@ -232,3 +254,8 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
     one passing the public samples checks.
 32. In Night, "Forgot your password?" is the muted grey; "Create an account" and the button stay lime.
 33. Grid's invoice in the range is numbered INV-0047, under the plan mark from the first template rounds.
+34. Every rendered document asks phones not to turn its numbers into links (`packages/documents/test/render.test.ts`).
+35. The phones section shows one phone; at rest, its screen is light before the crease and Night past it; as the band
+    comes into view the crease sweeps up from below the screen, and on phones the phone rises into place.
+36. In How it works, the three pictures of the invoice are cut away past the turned corner, by the corner's own size.
+37. On phones every figure's caption is one line, at 390, 360 and 320 pixels wide.
