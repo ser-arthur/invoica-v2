@@ -20,3 +20,5 @@ In Dark, the head is a shade lighter than the page (`#0f2427`) so it still stand
 
 Recommended: B. It is the owner's idea, keeps the line, and puts the line and the form on grounds of their own so the
 two headings no longer meet. C if sign in should look the same at every width.
+
+**Chosen and built, 28 October, 02:05: A**, with a sharp edge on light and a fine crease in Dark (`docs/specs/website-showcase.md`, criteria 41 to 43).

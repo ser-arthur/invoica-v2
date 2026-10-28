@@ -168,6 +168,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **27 Oct, about 15:30 to 16:30, on `main`.** The accessibility test of the notice in Night waits for the theme's colour transitions before checking contrast (CI run 17 caught them halfway); sign in's headline has a little more room between its lines. Hosting for production discussed: Vercel Pro and Neon in London recommended, to be decided after a PDF spike. 919 unit, database and PDF tests and 298 end-to-end tests run, none failed (90 skipped by design). Bundle 43.
 - **27 Oct, about 16:35 to 18:00, on `main`.** No numbers turned into links on phones; the phones section as one phone split by the crease, light and Night; shorter bars and one-line captions on phones; How it works shows the panel past the turned corner and its pieces rise into place; selects with their own arrow. Signature's head in the business's colour proposed (round 11). 920 unit, database and PDF tests and 306 end-to-end tests run, none failed on the second run (92 skipped by design). Bundle 44.
 - **28 Oct, about 00:35 to 02:00, on `main`.** The phones section as two phones, the dark one in front (round 11, option D); the website's words no longer run past the edge of phones narrower than about 392 pixels. 920 unit, database and PDF tests and 308 end-to-end tests run, none failed (93 skipped by design). Bundle 45.
+- **28 Oct, about 02:00 to 03:30, on `main`.** The phone menu closes on a tap outside it, Escape or a link, and lights its page as bold green words; on phones sign in and sign up open with the website's mark rising on a Night head (round 12, option A). BLUEPRINT_CHECKS Bundle 46.
 
 ## Decisions in force
 
@@ -246,8 +247,9 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 9. Answered 26 October, 16:38: Signature in four styles, Powered by Invoica on every Signature, Monochrome as the sixteenth template (`docs/specs/invoice-templates.md`).
 10. Answered 27 October, 14:22: the theme is saved on the account and follows a person to other devices (`docs/specs/theme-on-the-account.md`, decision 0014).
 11. Signature's Night head with its accents in the business's colour (`docs/design/round-11-signature-colour.md`): proposed 27 October, 17:00, waiting for the owner.
+12. Answered 28 October, 02:05: sign up on phones opens with the website's mark on a Night head (option A of `docs/design/round-12-sign-up-phone.md`).
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-45.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-46.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.
