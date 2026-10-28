@@ -12,9 +12,11 @@ import a from './auth.module.css';
  * there, so it stands apart from the green words past it, and the panel past it is a shade lighter, as if folded
  * there. The panel lands once, as the first of these pages opens (auth.module.css).
  *
- * On a phone there is no panel: the line opens the page, then the form, then the small print and the website's footer
- * mark, which leads home. The page is light with the mark on a Night foot, or Night all through when the visitor chose
- * Dark in the app on this device (or System, with the device dark); the root layout sets the theme from that choice.
+ * On a phone there is no panel: the website's footer mark opens the page on a Night head of its own, its foot slanted
+ * along the crease, and leads home; then the form, then the small print. As the page opens the crease draws across and
+ * the mark rises out of it with the light running along its edge, as it does in the website's footer. The page is
+ * light, or Night all through when the visitor chose Dark in the app on this device (or System, with the device dark),
+ * the head then a shade lighter; the root layout sets the theme from that choice.
  */
 const LINE = ['The smarter way', 'to bill, track', 'and get paid.'];
 
@@ -54,19 +56,19 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <p className={a.panelFoot}>&copy; 2026 Invoica</p>
       </aside>
       <div className={a.side}>
-        {/* On a phone: the line opens the page, light or Night with the theme (auth.module.css). */}
-        <div className={a.line} data-testid="auth-line">
-          <div className={a.lineLight} data-line="light">
-            <Crease as="p" lines={LINE} typeClass={a.lineType} pastClass={site.slate} line="green" />
-          </div>
-          <div className={a.lineNight} data-line="night">
-            <Crease as="p" lines={LINE} typeClass={a.lineType} pastClass={a.mint} dark line="silver" />
-          </div>
+        {/* On a phone: the website's footer mark on a Night head, which leads home (auth.module.css). */}
+        <div className={a.head} data-testid="auth-head">
+          <Link href="/" aria-label="Invoica home" className={a.markLink}>
+            <FooterLight className={`${site.footerMark} ${a.mark}`}>
+              <FooterMark />
+            </FooterLight>
+          </Link>
+          <span className={a.headCrease} aria-hidden="true" />
         </div>
         <main className={a.formArea}>
           <div className={a.formBox}>{children}</div>
         </main>
-        {/* On a phone: the small print, then the website's footer mark, which leads home. */}
+        {/* On a phone: the small print. */}
         <footer className={a.foot} data-testid="auth-foot">
           <div className={a.small}>
             <span>&copy; 2026 Invoica</span>
@@ -74,11 +76,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <a href="/terms">Terms</a>
             <a href="/help">Help</a>
           </div>
-          <Link href="/" aria-label="Invoica home" className={a.markLink}>
-            <FooterLight className={`${site.footerMark} ${a.mark}`}>
-              <FooterMark />
-            </FooterLight>
-          </Link>
         </footer>
       </div>
     </div>

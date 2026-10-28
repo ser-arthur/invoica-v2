@@ -295,15 +295,15 @@
   box-shadow: inset 1px 0 0 rgb(255 255 255 / 0.06);
 }
 
-/* The line at the top and the foot with the mark are for phones; a wide screen has the panel. */
-.line,
+/* The head with the mark and the small print are for phones; a wide screen has the panel. */
+.head,
 .foot {
   display: none;
 }
 
 /*
- * On a phone there is no panel. The line opens the page with its crease (green on light, silver on Night), then the
- * form, then the small print and the website's footer mark, its lit edge on Night, leading home.
+ * On a phone there is no panel. The website's footer mark opens the page on a Night head, its foot slanted with the
+ * hero's fold, then the form, then the small print. In Night the head is a shade lighter than the page.
  */
 @media (max-width: 960px) {
   .auth {
@@ -315,26 +315,31 @@
   .side {
     min-height: 100dvh;
   }
-  .line {
+  .head {
+    --slant: 34px;
+    position: relative;
     display: block;
-    padding: 30px 20px 0;
+    padding: 34px 20px calc(var(--slant) + 22px);
+    background: #09191c;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--slant)), 0 100%);
   }
-  .lineType {
-    font-size: clamp(30px, calc((100vw - 40px) / 8.1), 46px);
-    line-height: 1.02;
-    letter-spacing: -0.05em;
-    white-space: nowrap;
+  :global([data-theme='dark']) .head {
+    background: #0f2427;
   }
-  .lineNight {
+  /* The crease along the head's foot, lime to teal: in Night, where the head is only a shade from the page. */
+  .headCrease {
+    position: absolute;
+    inset: 0;
     display: none;
+    background: linear-gradient(90deg, #cff26a, #46da80 50%, #2fb3a6);
+    clip-path: polygon(
+      0 calc(100% - 1.5px),
+      100% calc(100% - var(--slant) - 1.5px),
+      100% calc(100% - var(--slant)),
+      0 100%
+    );
   }
-  .lineNight .lineType {
-    color: #ffffff;
-  }
-  :global([data-theme='dark']) .lineLight {
-    display: none;
-  }
-  :global([data-theme='dark']) .lineNight {
+  :global([data-theme='dark']) .headCrease {
     display: block;
   }
   .formArea {
@@ -344,13 +349,8 @@
   .foot {
     display: block;
     margin-top: auto;
-    padding: 22px 20px 0;
-    border-radius: 26px 26px 0 0;
-    background: #09191c;
-    color: rgb(255 255 255 / 0.6);
-  }
-  :global([data-theme='dark']) .foot {
-    background: transparent;
+    padding: 8px 20px 28px;
+    color: var(--muted);
   }
 }
 
@@ -368,7 +368,7 @@
 }
 
 .small a:hover {
-  color: #ffffff;
+  color: var(--ink);
 }
 
 .markLink {
@@ -384,24 +384,45 @@
   border-radius: 12px;
 }
 
-/* The website's footer mark, at the phone's width with the page's 20 px sides. */
+/*
+ * The website's footer mark, whole, at the phone's width with the page's 20 px sides. It rises out of its box's foot
+ * with the light running along its edge as the page opens (site.module.css, FooterLight), a moment after the crease.
+ * Its motion reads the website's curves, which live on the website's own root, so they are set here too.
+ */
 .mark {
   --gutter: 20px;
-  margin-top: 14px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --arrive: cubic-bezier(0.16, 1, 0.3, 1);
+  --draw: cubic-bezier(0.65, 0, 0.35, 1);
+  height: auto;
+  margin: 0;
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
-/* On a phone the line lands as the page opens, as the panel does on a wide screen, and the foot settles under it. */
 @media (prefers-reduced-motion: no-preference) {
-  .line p {
-    animation: near 1300ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both;
+  .headCrease {
+    -webkit-mask-image: linear-gradient(#000, #000);
+    mask-image: linear-gradient(#000, #000);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    animation: across 700ms cubic-bezier(0.65, 0, 0.35, 1) 100ms both;
   }
-  .line div[aria-hidden='true'] {
-    animation: far 1300ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both;
-  }
-  .line svg {
-    animation: draw 860ms cubic-bezier(0.65, 0, 0.35, 1) 560ms both;
+  .formArea {
+    animation: settle 800ms cubic-bezier(0.16, 1, 0.3, 1) 450ms both;
   }
   .foot {
-    animation: settle 800ms cubic-bezier(0.16, 1, 0.3, 1) 700ms both;
+    animation: settle 800ms cubic-bezier(0.16, 1, 0.3, 1) 600ms both;
+  }
+}
+
+@keyframes across {
+  from {
+    -webkit-mask-size: 0% 100%;
+    mask-size: 0% 100%;
+  }
+  to {
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
   }
 }

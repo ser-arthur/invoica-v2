@@ -212,8 +212,13 @@ mark leads home.
 - **In the menu the page or section you are on is its words, bold, in the logo's green**, with no fill (the fill was
   too strong on a phone). The words take the deepest shade of the logo's green, `#14804a`, which reads at 5 to 1 on the
   menu's white; the logo's own green would read at 2.2 to 1. The header's links on wide screens keep the green fill.
-- **Sign up on phones is still not landing.** Mockups A to D in `docs/design/round-12-sign-up-phone.md`; waiting for the
-  owner.
+- **Sign up on phones is still not landing.** Mockups A to D in `docs/design/round-12-sign-up-phone.md`. The owner chose
+  A (02:05): the website's footer mark at the top of sign in, sign up and the email pages on a phone, on a Night head of
+  its own whose foot is slanted with the hero's fold, then the form, then the small print, without the line. As the page
+  opens the mark rises out of the head with the light running along its edge, as in the website's footer, and the form
+  settles under it. At his word (02:07) the head meets a light page with a sharp edge, no crease; in Dark, where the head
+  is only a shade lighter than the page (`#0f2427` on `#09191c`), the crease runs along its foot, drawn across as the
+  page opens, a fine line (1.5px, at his word at 02:11).
 
 ## Acceptance criteria
 
@@ -266,11 +271,11 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
 27. Sign in lands in order: the halves from opposite sides together, the crease after them, then the three points in
     turn; pricing lands in order: the heading's halves together, the words, the trial, then the plans in turn. Both
     settle inside 2.5 seconds, and with less motion asked for nothing moves.
-28. With no theme chosen, or Light, the phone sign-in page is light with a Night foot; with Dark it is Night all
-    through, its button lime; with System it follows the device. On a wide screen with Dark, the form's side is Night.
+28. With System the sign-in page follows the device, and on a wide screen with Dark the form's side is Night. (How the
+    phone page looks in Light and Dark is 42, since 28 October.)
 29. The footer's mark on these pages leads home, and the pages pass the automated accessibility checks in light and in
     dark.
-30. On a phone the line lands as the page opens: its halves from opposite sides together, the crease after them.
+30. Replaced by 43 (28 October): on a phone the line no longer opens the page.
 31. Every template in the range is shown made out by its own business, each different, none the example studio, every
     one passing the public samples checks.
 32. In Night, "Forgot your password?" is the muted grey; "Create an account" and the button stay lime.
@@ -284,3 +289,9 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
 39. On a phone the menu closes with a tap outside it, with Escape (the menu button then has focus), and when one of its
     links is chosen; a tap inside it leaves it open.
 40. In the menu the page you are on is its words in bold green, `#14804a`, with no fill.
+41. On a phone, sign in and sign up open with the mark on a Night head, the only way home on the page, then the form,
+    then the small print; the line is not shown.
+42. With no theme chosen, or Light, the head is Night (`#09191c`) with a sharp edge on the light page; with Dark the page
+    is Night and the head `#0f2427`, with the crease along its foot.
+43. As sign in opens on a phone the crease is drawn across (in Dark), the mark rises and the light runs along its edge,
+    all settled inside two and a half seconds, the mark at rest in place.
