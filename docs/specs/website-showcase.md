@@ -194,6 +194,17 @@ mark leads home.
 - **How it works' pieces rise into place** as each panel comes into view, the nearer ones further (96px and 32px),
   and part a little as it leaves.
 
+## The owner's notes of 28 October, 00:35
+
+- **The phones section shows two phones, light and dark**, option D of `docs/design/round-11-phones-pair.md`: the light
+  phone behind and to the left, the dark one in front and lower, each turned a few degrees, offset so both screens
+  show. Nothing changes under the pointer. As the band passes they part a little; on phones they rise out of the
+  band's foot as it comes into view, the dark one a moment after the light, sized so both stay whole on the narrowest
+  phones. This replaces the one phone split by the crease of 27 October.
+- **Found on the way:** on phones narrower than about 392 pixels, the words in the website's grid sections ran past
+  the right edge (twelve columns' worth of 32-pixel gaps is wider than a small phone). On phones the gaps are now 16
+  pixels.
+
 ## Acceptance criteria
 
 Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/documents/test`.
@@ -255,7 +266,8 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
 32. In Night, "Forgot your password?" is the muted grey; "Create an account" and the button stay lime.
 33. Grid's invoice in the range is numbered INV-0047, under the plan mark from the first template rounds.
 34. Every rendered document asks phones not to turn its numbers into links (`packages/documents/test/render.test.ts`).
-35. The phones section shows one phone; at rest, its screen is light before the crease and Night past it; as the band
-    comes into view the crease sweeps up from below the screen, and on phones the phone rises into place.
+35. The phones section shows two phones, the dark one in front, offset so both screens show, and nothing changes
+    under the pointer; as the band passes they part, and on phones they rise into place, both whole down to 320 pixels.
 36. In How it works, the three pictures of the invoice are cut away past the turned corner, by the corner's own size.
 37. On phones every figure's caption is one line, at 390, 360 and 320 pixels wide.
+38. On phones of 375, 360 and 320 pixels, no words on the home page run past the edge of the screen.

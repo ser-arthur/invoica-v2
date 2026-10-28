@@ -45,28 +45,23 @@ test('on a phone each step shows a readable piece of the app, not a picture of a
   }
 });
 
-test('on a phone the phones section shows one phone, upright', async ({ page }, info) => {
+test('on a phone the phones section shows both phones, each at a size that can be seen', async ({
+  page,
+}, info) => {
   test.skip(info.project.name !== 'desktop', 'Sets its own widths.');
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
-  const section = page.locator('section[aria-labelledby="phones-heading"]');
-  await section.scrollIntoViewIfNeeded();
-  await page.mouse.wheel(0, 300);
-  await expect(section.getByTestId('phone')).toHaveCount(1);
-  const turned = await section.getByTestId('phone').evaluate((img) => {
-    const found: string[] = [];
-    for (let el: Element | null = img; el && el.tagName !== 'SECTION'; el = el.parentElement) {
-      const style = getComputedStyle(el);
-      if (!/^(none|0(deg)?)$/.test(style.rotate)) found.push(`rotate ${style.rotate}`);
-      const m = style.transform.match(/^matrix\(([^)]+)\)$/);
-      if (m) {
-        const [, b, c] = m[1]!.split(',').map(Number);
-        if (Math.abs(b ?? 0) > 1e-3 || Math.abs(c ?? 0) > 1e-3) found.push(`transform ${style.transform}`);
-      }
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/');
+    const section = page.locator('section[aria-labelledby="phones-heading"]');
+    await section.scrollIntoViewIfNeeded();
+    await page.mouse.wheel(0, 300);
+    for (const id of ['phone-light', 'phone-dark']) {
+      const box = (await section.getByTestId(id).boundingBox())!;
+      expect(box.width, `${width}: ${id}`).toBeGreaterThanOrEqual(width * 0.42);
+      expect(box.x, `${width}: ${id}`).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width, `${width}: ${id}`).toBeLessThanOrEqual(width);
     }
-    return found;
-  });
-  expect(turned).toEqual([]);
+  }
 });
 
 /** Every element on the page, and its ::before and ::after, whose background draws a gradient of the given kind. */

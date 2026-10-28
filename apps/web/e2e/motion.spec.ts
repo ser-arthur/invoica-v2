@@ -307,34 +307,41 @@ test('with less motion asked for, nothing on the website moves when it loads', a
   }
 });
 
-// docs/specs/website-showcase.md, the owner's notes of 27 October, 16:34: the crease sweeps up the phone's screen as
-// the band comes into view, and on phones the phone rises out of the band's foot.
+// docs/specs/website-showcase.md, the owner's notes of 28 October, 00:35: as the phones band passes the two phones
+// part a little, and on phones they rise out of the band's foot as it comes into view.
 
-test('as the phones band comes into view the crease sweeps up the phone, which rises on phones', async ({
+test('as the phones band passes the two phones part a little, and on phones they rise into place', async ({
   page,
 }, info) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  const phone = page.getByTestId('phone');
-  const pairTop = await phone.evaluate((el) => el.parentElement!.getBoundingClientRect().top + scrollY);
+  const pairTop = await page
+    .getByTestId('phone-light')
+    .evaluate((el) => el.parentElement!.getBoundingClientRect().top + scrollY);
   const height = page.viewportSize()!.height;
   const at = async (offset: number) => {
     await page.evaluate((y) => window.scrollTo(0, y), pairTop - offset);
     await page.waitForTimeout(400);
-    return phone.evaluate((el) => {
-      const style = getComputedStyle(el);
+    return page.evaluate(() => {
       const length = (value: string) => Number(value.replace(/[^\d.-]/g, '') || '0');
-      const rise = style.translate === 'none' ? 0 : length(style.translate.split(' ')[1] ?? '0');
-      return { fold: length(style.getPropertyValue('--fold')), rise };
+      const moved = (id: string) => {
+        const t = getComputedStyle(document.querySelector(`[data-testid="${id}"]`)!).translate;
+        const [x = '0', y = '0'] = t === 'none' ? [] : t.split(' ');
+        return { x: length(x), y: length(y) };
+      };
+      return { light: moved('phone-light'), dark: moved('phone-dark') };
     });
   };
   const arriving = await at(height - 80);
-  const settled = await at(0);
-  expect(arriving.fold).toBeGreaterThan(100);
-  const phones = info.project.name === 'phone';
-  expect(settled.fold).toBe(phones ? 24 : 66);
-  if (phones) {
-    expect(arriving.rise).toBeGreaterThan(80);
-    expect(settled.rise).toBe(0);
+  const leaving = await at(-200);
+  if (info.project.name === 'phone') {
+    expect(arriving.light.y).toBeGreaterThan(80);
+    expect(arriving.dark.y).toBeGreaterThan(arriving.light.y);
+    expect(leaving.light.y).toBe(0);
+    expect(leaving.dark.y).toBe(0);
+  } else {
+    // apart = how far the dark phone sits right of and below the light one, beyond where they rest
+    const apart = (m: typeof arriving) => m.dark.x - m.light.x + (m.dark.y - m.light.y);
+    expect(apart(leaving)).toBeGreaterThan(apart(arriving) + 40);
   }
 });
