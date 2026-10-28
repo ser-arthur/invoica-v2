@@ -58,6 +58,14 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+28 October 2026, about 02:00 to 03:30, on `main`, the owner's notes of 01:58, 02:05, 02:07 and 02:11:
+- The header's menu (narrow screens) closes with a tap or click outside it, with Escape (focus returns to the menu button), and when one of its links is chosen (`MenuCloser` in `apps/web/src/components/site/menu-closer.tsx`, inside the disclosure, which still opens without the page's script).
+- In the menu, the page or section you are on is its words in bold, in the deepest shade of the logo's green (`#14804a`, 5 to 1 on white), with no fill. The header's links on wide screens keep the green fill.
+- Sign up on phones, still not landing for the owner: four mockups (`docs/design/round-12-sign-up-phone.md`), and he chose A at 02:05. On a phone, sign in, sign up and the email pages open with the website's footer mark, whole, on a Night head whose foot is slanted with the hero's fold; then the form; then the small print on the page's own ground. The line is the wide screen's alone. As the page opens the mark rises out of the head with the light running along its edge, as in the website's footer, and the form settles. At his word the head meets a light page with a sharp edge; in Dark the head is a shade lighter (`#0f2427`) with a fine crease (1.5px) along its foot, drawn across as the page opens.
+- Found on the way and fixed: the footer mark's rise and light never played outside the website (sign in included), because its animation read the website's motion curves (`--arrive`, `--draw`), which are set on the website's root only. The mark now carries them.
+- Checks: 920 unit, database and PDF tests run, 920 passed, 0 failed, 0 skipped (core 259, schemas 7, documents 80, PDF 231, database 244, web unit 99); format, copy rules, lint, types and the production build pass. The end-to-end suite against the production build, run from a copy elsewhere with production settings, ran 312: 217 passed, 95 skipped by design (one width only), 0 failed. The new menu tests failed first against bundle 45's build, and the new sign-in tests against the code before the head.
+- Bundle 46.
+
 28 October 2026, about 00:35 to 02:00, on `main`, the owner's choice of 00:35:
 - The phones section shows two phones again, option D of the round 11 mockups (`docs/design/round-11-phones-pair.md`; on 27 October, 18:18, the owner asked to see two-phone versions of the one split phone): the light phone behind and to the left, the dark one in front and lower, each turned a few degrees, offset so both screens show. Nothing changes under the pointer (the pair no longer leans towards it either). As the band passes they part a little; on phones they rise out of the band's foot, the dark one a moment after the light, sized from the screen's width so both stay whole down to 320 pixels. The crease split, `--fold` and its keyframes are gone.
 - Found on the way and fixed: on phones narrower than about 392 pixels, the words in the website's grid sections ran past the right edge, because twelve columns' worth of 32-pixel gaps is wider than a small phone. On phones the gaps are 16 pixels; a test checks 375, 360 and 320 pixels.
@@ -307,7 +315,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 
 ## Open questions
 
-The list is kept in `docs/BLUEPRINT.md`, "Open questions" (11 items, 7 open).
+The list is kept in `docs/BLUEPRINT.md`, "Open questions" (12 items, 7 open).
 
 ## Decisions
 

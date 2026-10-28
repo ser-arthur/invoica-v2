@@ -596,44 +596,53 @@ const groundOf = (page: Page) =>
     return '';
   });
 
-test('on a phone sign in and sign up open with the line, the form, then the footer’s mark leading home', async ({
+test('on a phone sign in and sign up open with the mark on a Night head, then the form, then the small print (41)', async ({
   page,
 }, info) => {
   test.skip(info.project.name !== 'phone', 'Checked at phone widths.');
   for (const path of ['/sign-in', '/sign-up']) {
     await page.goto(path);
     await expect(page.locator('aside'), path).toBeHidden();
-    const line = page.getByTestId('auth-line');
-    await expect(line.getByText('The smarter way').first(), path).toBeVisible();
+    const head = page.getByTestId('auth-head');
     const form = page.locator('main form').first();
     const foot = page.getByTestId('auth-foot');
+    await expect(head, path).toBeVisible();
     await expect(foot, path).toBeVisible();
-    expect((await line.boundingBox())!.y, path).toBeLessThan((await form.boundingBox())!.y);
+    expect((await head.boundingBox())!.y, path).toBeLessThan((await form.boundingBox())!.y);
     expect((await foot.boundingBox())!.y, path).toBeGreaterThan((await form.boundingBox())!.y);
-    // no logo above the form: the mark at the foot is the way home
+    // the mark at the top is the way home, and the only one; the line is the wide screen's alone
     const home = page.getByRole('link', { name: 'Invoica home' });
     await expect(home).toHaveCount(1);
-    expect((await home.boundingBox())!.y, path).toBeGreaterThan((await form.boundingBox())!.y);
+    await expect(head.getByRole('link', { name: 'Invoica home' })).toBeVisible();
+    await expect(page.getByText('The smarter way').first()).toBeHidden();
     await expect(foot.getByRole('link', { name: 'Privacy' })).toBeVisible();
+    await expect(foot.getByRole('link', { name: 'Invoica home' })).toHaveCount(0);
   }
 });
 
-test('with no theme chosen, or Light, the phone page is light with a Night foot; Dark makes it Night', async ({
+test('the phone page is light with a sharp Night head; Dark makes it Night, the head a shade lighter with the crease (42)', async ({
   page,
 }, info) => {
   test.skip(info.project.name !== 'phone', 'Checked at phone widths.');
   await page.goto('/sign-in');
+  const head = page.getByTestId('auth-head');
+  const crease = head.locator('span[aria-hidden="true"]');
   expect(await groundOf(page)).toBe('rgb(236, 239, 237)');
-  await expect(page.getByTestId('auth-foot')).toHaveCSS('background-color', 'rgb(9, 25, 28)');
+  await expect(head).toHaveCSS('background-color', 'rgb(9, 25, 28)');
+  await expect(crease).toBeHidden();
   for (const theme of ['light', 'dark'] as const) {
     await page.context().addCookies([{ name: 'invoica_theme', value: theme, url: page.url() }]);
     await page.goto('/sign-up');
     const button = page.locator('main form button[type="submit"]');
     if (theme === 'light') {
       expect(await groundOf(page)).toBe('rgb(236, 239, 237)');
+      await expect(head).toHaveCSS('background-color', 'rgb(9, 25, 28)');
+      await expect(crease).toBeHidden();
       await expect(button).toHaveCSS('background-color', 'rgb(9, 25, 28)');
     } else {
       expect(await groundOf(page)).toBe('rgb(9, 25, 28)');
+      await expect(head).toHaveCSS('background-color', 'rgb(15, 36, 39)');
+      await expect(crease).toBeVisible();
       await expect(button).toHaveCSS('background-color', 'rgb(207, 242, 106)');
       await expect(page.locator('main form input').first()).toHaveCSS('color', 'rgb(255, 255, 255)');
     }
@@ -679,7 +688,7 @@ test('on a wide screen with Dark, the form’s side is Night beside the panel', 
   await page.goto('/sign-in');
   await expect(page.locator('aside')).toBeVisible();
   expect(await groundOf(page)).toBe('rgb(9, 25, 28)');
-  await expect(page.getByTestId('auth-line')).toBeHidden();
+  await expect(page.getByTestId('auth-head')).toBeHidden();
   await expect(page.getByTestId('auth-foot')).toBeHidden();
 });
 
@@ -804,4 +813,50 @@ test('on small phones no words on the home page run past the edge of the screen 
     );
     expect(past, `${width}px`).toEqual([]);
   }
+});
+
+// docs/specs/website-showcase.md, the owner's notes of 28 October, 01:58.
+
+test('the menu closes with a tap outside it, with Escape, and when a link in it is chosen (39)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'phone', 'The menu is for narrow screens.');
+  await page.goto('/');
+  const menu = page.locator('header details');
+  const button = page.locator('header summary');
+  const open = () => menu.evaluate((d) => (d as HTMLDetailsElement).open);
+
+  await button.click();
+  expect(await open()).toBe(true);
+  await page.mouse.click(30, 600);
+  await expect.poll(open).toBe(false);
+
+  await button.click();
+  expect(await open()).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect.poll(open).toBe(false);
+  await expect(button).toBeFocused();
+
+  await button.click();
+  await page.getByRole('navigation', { name: 'Menu' }).getByRole('link', { name: 'How it works' }).click();
+  await expect.poll(open).toBe(false);
+
+  // A tap inside the menu, between its links, leaves it open.
+  await button.click();
+  const panel = (await page.getByRole('navigation', { name: 'Menu' }).boundingBox())!;
+  await page.mouse.click(panel.x + 4, panel.y + 4);
+  expect(await open()).toBe(true);
+});
+
+test('in the menu the page you are on is its words in bold green, with no fill (40)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'phone', 'The menu is for narrow screens.');
+  await page.goto('/pricing');
+  await page.locator('header summary').click();
+  const lit = page.getByRole('navigation', { name: 'Menu' }).getByRole('link', { name: 'Pricing' });
+  await expect(lit).toHaveAttribute('aria-current', 'page');
+  await expect(lit).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(lit).toHaveCSS('color', 'rgb(20, 128, 74)');
+  await expect(lit).toHaveCSS('font-weight', '800');
 });

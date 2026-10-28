@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
+import { MenuCloser } from './menu-closer';
 import { SectionLinks, type SectionLink } from './section-links';
 import s from './site.module.css';
 
@@ -13,7 +14,8 @@ const LINKS: SectionLink[] = [
 
 /**
  * The site's header: it stays at the top while the page scrolls under it, marking the section in view. On narrow screens
- * the links fold into a menu, and on phones the way in moves into it too. Signed in, the way in is the dashboard.
+ * the links fold into a menu, and on phones the way in moves into it too; a tap outside it, Escape or a link closes it.
+ * Signed in, the way in is the dashboard.
  * `arrive` lets it settle in as the home page loads.
  */
 export function SiteHeader({ signedIn = false, arrive = false }: { signedIn?: boolean; arrive?: boolean }) {
@@ -49,6 +51,7 @@ export function SiteHeader({ signedIn = false, arrive = false }: { signedIn?: bo
               </span>
               <span className={s.srOnly}>Menu</span>
             </summary>
+            <MenuCloser />
             <nav className={s.menuPanel} aria-label="Menu">
               <SectionLinks links={LINKS} />
               {signedIn ? (

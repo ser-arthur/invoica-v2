@@ -198,7 +198,6 @@ async function loadSequence(page: Page) {
           name: a.animationName,
           tag: el.tagName.toLowerCase(),
           text: (el.textContent ?? '').trim().slice(0, 24),
-          inLine: !!el.closest('[data-testid="auth-line"]'),
           start: Number(t.delay),
           end: Number(t.endTime),
         };
@@ -248,26 +247,37 @@ test('signing in, the Night panel lands: the logo, the halves from opposite side
   expect(early[1], 'the far half comes from the right').toBeGreaterThan(rest[1]! + 1);
 });
 
-test('on a phone, the line at the top of sign in lands: its halves from opposite sides, the crease after them', async ({
+test('on a phone, as sign in opens, the mark rises out of its Night head with the light along its edge (43)', async ({
   page,
 }, info) => {
   test.skip(info.project.name !== 'phone', 'On a wide screen the panel lands (above).');
   await page.goto('/sign-in');
+  await page.context().addCookies([{ name: 'invoica_theme', value: 'dark', url: page.url() }]);
+  await page.goto('/sign-in');
   await page.waitForLoadState('networkidle');
-  const seq = await loadSequence(page);
-  const line = '[data-testid="auth-line"] [data-line="light"]';
-  const near = seq.find((x) => x.inLine && x.tag === 'p');
-  const far = seq.find((x) => x.inLine && x.tag === 'div' && x.text.startsWith('The smarter way'));
-  const crease = seq.filter((x) => x.inLine && x.tag === 'svg').map((x) => x.start);
-  expect(near, 'the near half').toBeDefined();
-  expect(far, 'the far half').toBeDefined();
-  expect(near!.start).toBe(far!.start);
-  expect(Math.min(...crease)).toBeGreaterThan(near!.start);
-  expect(Math.max(...seq.map((x) => x.end))).toBeLessThanOrEqual(2500);
-  const rest = await heldAt(page, 5000, [`${line} p`, `${line} div[aria-hidden="true"]`]);
-  const early = await heldAt(page, near!.start + 100, [`${line} p`, `${line} div[aria-hidden="true"]`]);
-  expect(early[0], 'the near half comes from the left').toBeLessThan(rest[0]! - 1);
-  expect(early[1], 'the far half comes from the right').toBeGreaterThan(rest[1]! + 1);
+  const moving = await page.evaluate(() =>
+    document.getAnimations().map((a) => {
+      const el = (a.effect as KeyframeEffect).target as Element;
+      return {
+        name: (a as CSSAnimation).animationName ?? '',
+        head: !!el.closest('[data-testid="auth-head"]'),
+        end: Number(a.effect!.getComputedTiming().endTime),
+      };
+    }),
+  );
+  const named = (part: string) => moving.filter((m) => m.head && m.name.includes(part));
+  expect(named('across'), 'the crease drawn across the head’s foot').toHaveLength(1);
+  expect(named('surface'), 'the mark rising').toHaveLength(1);
+  expect(named('light'), 'the light along its edge').toHaveLength(1);
+  for (const m of moving) expect(m.end, m.name).toBeLessThanOrEqual(2500);
+  // at rest the mark is in place
+  await page.waitForTimeout(2600);
+  const rest = await page
+    .getByTestId('auth-head')
+    .locator('svg')
+    .first()
+    .evaluate((svg) => getComputedStyle(svg).translate);
+  expect(['none', '0px', '0px 0px'].includes(rest) || /^0px [0-9.e+-]+%$/.test(rest)).toBe(true);
 });
 
 test('the pricing page lands: its heading from opposite sides, then the words, the trial and the plans in turn', async ({
