@@ -288,11 +288,20 @@
 }
 
 .site .nav a[aria-current],
-.site .nav a[aria-current]:hover,
-.site .menuPanel a[aria-current],
-.site .menuPanel a[aria-current]:hover {
+.site .nav a[aria-current]:hover {
   background: var(--logo-accent);
   color: var(--night);
+}
+
+/*
+ * In the menu the lit link is its words, bold, in the logo's green, with no fill. The logo's own green reads at 2.2 to
+ * 1 as text on white, so the words take the deepest shade of it, which reads at 5 to 1.
+ */
+.site .menuPanel a[aria-current],
+.site .menuPanel a[aria-current]:hover {
+  background: none;
+  color: #14804a;
+  font-weight: 800;
 }
 
 .account {

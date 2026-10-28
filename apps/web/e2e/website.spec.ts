@@ -805,3 +805,49 @@ test('on small phones no words on the home page run past the edge of the screen 
     expect(past, `${width}px`).toEqual([]);
   }
 });
+
+// docs/specs/website-showcase.md, the owner's notes of 28 October, 01:58.
+
+test('the menu closes with a tap outside it, with Escape, and when a link in it is chosen (39)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'phone', 'The menu is for narrow screens.');
+  await page.goto('/');
+  const menu = page.locator('header details');
+  const button = page.locator('header summary');
+  const open = () => menu.evaluate((d) => (d as HTMLDetailsElement).open);
+
+  await button.click();
+  expect(await open()).toBe(true);
+  await page.mouse.click(30, 600);
+  await expect.poll(open).toBe(false);
+
+  await button.click();
+  expect(await open()).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect.poll(open).toBe(false);
+  await expect(button).toBeFocused();
+
+  await button.click();
+  await page.getByRole('navigation', { name: 'Menu' }).getByRole('link', { name: 'How it works' }).click();
+  await expect.poll(open).toBe(false);
+
+  // A tap inside the menu, between its links, leaves it open.
+  await button.click();
+  const panel = (await page.getByRole('navigation', { name: 'Menu' }).boundingBox())!;
+  await page.mouse.click(panel.x + 4, panel.y + 4);
+  expect(await open()).toBe(true);
+});
+
+test('in the menu the page you are on is its words in bold green, with no fill (40)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'phone', 'The menu is for narrow screens.');
+  await page.goto('/pricing');
+  await page.locator('header summary').click();
+  const lit = page.getByRole('navigation', { name: 'Menu' }).getByRole('link', { name: 'Pricing' });
+  await expect(lit).toHaveAttribute('aria-current', 'page');
+  await expect(lit).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(lit).toHaveCSS('color', 'rgb(20, 128, 74)');
+  await expect(lit).toHaveCSS('font-weight', '800');
+});
