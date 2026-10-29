@@ -35,3 +35,7 @@ business never chose. A business in Invoica's own green looks as it does today.
 
 Built, the change goes through `docs/specs/invoice-templates.md` with its criteria (contrast of every accent on Night,
 the hue kept, the neutral case), and the visual baselines for Signature are approved again.
+
+**Chosen and built, 29 October, 14:48: proposed**, at the owner's word ("it should change"), with Route on Night the
+same way (`docs/specs/invoice-templates.md`, "Signature's Night accents in the business's colour", criteria 24 to 28).
+The rule is `liftForNight` in `@invoica/core`.
