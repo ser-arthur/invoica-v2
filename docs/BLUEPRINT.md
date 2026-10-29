@@ -169,6 +169,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **27 Oct, about 16:35 to 18:00, on `main`.** No numbers turned into links on phones; the phones section as one phone split by the crease, light and Night; shorter bars and one-line captions on phones; How it works shows the panel past the turned corner and its pieces rise into place; selects with their own arrow. Signature's head in the business's colour proposed (round 11). 920 unit, database and PDF tests and 306 end-to-end tests run, none failed on the second run (92 skipped by design). Bundle 44.
 - **28 Oct, about 00:35 to 02:00, on `main`.** The phones section as two phones, the dark one in front (round 11, option D); the website's words no longer run past the edge of phones narrower than about 392 pixels. 920 unit, database and PDF tests and 308 end-to-end tests run, none failed (93 skipped by design). Bundle 45.
 - **28 Oct, about 02:00 to 03:30, on `main`.** The phone menu closes on a tap outside it, Escape or a link, and lights its page as bold green words; on phones sign in and sign up open with the website's mark rising on a Night head (round 12, option A). 920 unit, database and PDF tests and 312 end-to-end tests run, none failed (95 skipped by design). Bundle 46.
+- **29 Oct, about 00:50 to 03:40, on `main`.** Why Invoica's three points become a file of three white folders, the colour on their tabs, each wider than the one before and holding a picture of what is filed in it (round 13, chosen white and stepped). 920 unit, database and PDF tests and 322 end-to-end tests run, none failed (95 skipped by design). Bundle 47.
 
 ## Decisions in force
 
@@ -248,8 +249,9 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 10. Answered 27 October, 14:22: the theme is saved on the account and follows a person to other devices (`docs/specs/theme-on-the-account.md`, decision 0014).
 11. Signature's Night head with its accents in the business's colour (`docs/design/round-11-signature-colour.md`): proposed 27 October, 17:00, waiting for the owner.
 12. Answered 28 October, 02:05: sign up on phones opens with the website's mark on a Night head (option A of `docs/design/round-12-sign-up-phone.md`).
+13. Answered 29 October, 03:26: the website's six picks stay on the home page and the sixteen get a Templates page of their own, which the header's Templates link leads to (`docs/specs/templates-page.md`). Later: a "Use this one" on each template, opening sign up with it chosen.
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-46.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-47.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.
