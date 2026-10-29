@@ -883,3 +883,24 @@ test('on a wide screen each picture is right of its words, on a phone above its 
     else expect(f.picture!.left, f.name!).toBeGreaterThan(f.heading!.right);
   }
 });
+
+// docs/specs/website-showcase.md, the owner's note of 29 October, 04:06.
+
+test('“Compare plans and prices” stands out as a button with a Night outline (49)', async ({ page }) => {
+  await page.goto('/');
+  const compare = page.locator('#pricing').getByRole('link', { name: 'Compare plans and prices' });
+  await expect(compare).toHaveAttribute('href', '/pricing');
+  const look = await compare.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return {
+      height: el.getBoundingClientRect().height,
+      ring: cs.boxShadow,
+      colour: cs.color,
+      radius: cs.borderRadius,
+    };
+  });
+  expect(look.height).toBeGreaterThanOrEqual(48);
+  expect(look.ring).toMatch(/rgb\(9, 25, 28\).*inset|inset.*rgb\(9, 25, 28\)/);
+  expect(look.colour).toBe('rgb(9, 25, 28)');
+  expect(look.radius).not.toBe('0px');
+});

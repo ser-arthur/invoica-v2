@@ -116,6 +116,33 @@
   text-underline-offset: 4px;
 }
 
+/* A second way on beside or after the main one: the button's shape in a Night outline, filled under the pointer. */
+.buttonLine {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 54px;
+  padding: 0 24px;
+  border-radius: 14px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--night);
+  color: var(--night);
+  font: 600 16px var(--font-sans);
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.site .buttonLine {
+  color: var(--night);
+}
+
+.site .buttonLine:hover {
+  background: var(--night);
+  color: #ffffff;
+}
+
 /* Header */
 
 /* The header stays at the top; the page scrolls under it, softened by a frosted ground. */
@@ -2405,8 +2432,7 @@
 }
 
 .moreLink {
-  display: inline-block;
-  margin-top: 18px;
+  margin-top: 28px;
 }
 
 .totals {

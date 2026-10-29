@@ -43,8 +43,8 @@ export default function TemplatesPage() {
           <Link href="/sign-up" className={s.button}>
             Create free account
           </Link>
-          <Link href="/pricing" className={s.textLink}>
-            Compare the plans
+          <Link href="/pricing" className={s.buttonLine}>
+            Compare plans and prices
           </Link>
         </div>
       </section>

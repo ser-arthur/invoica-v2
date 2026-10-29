@@ -241,6 +241,12 @@ mark leads home.
   With less motion asked for, everything is in place.
 - The words of the three points do not change.
 
+## The owner's note of 29 October, 04:06
+
+- **"Compare plans and prices" in What you get was almost hidden**, bold words with nothing to mark them as a way on.
+  It becomes a button with a Night outline, the same height and corners as the site's buttons, filled Night under the
+  pointer. The Templates page's foot uses the same button beside "Create free account".
+
 ## Acceptance criteria
 
 Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/documents/test`.
@@ -329,4 +335,6 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
 47. On a wide screen each folder's picture is to the right of its words; on a phone it is above its heading.
 48. As the file comes into view each folder rises into place, the later ones further, and its picture after it; once in
     view they are at rest.
+49. In What you get, "Compare plans and prices" leads to the pricing page as a button at least 48 pixels tall with a
+    Night outline and Night words.
 
