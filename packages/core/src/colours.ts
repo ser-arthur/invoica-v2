@@ -100,4 +100,3 @@ export function liftForNight(brand: string, lightness: number, minChroma: number
   const [, chroma, hue] = oklch(brand.toLowerCase());
   return fromOklch(lightness, chroma < 0.03 ? 0 : Math.max(chroma, minChroma), hue);
 }
-
