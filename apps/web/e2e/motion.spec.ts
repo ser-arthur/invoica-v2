@@ -355,3 +355,41 @@ test('as the phones band passes the two phones part a little, and on phones they
     expect(apart(leaving)).toBeGreaterThan(apart(arriving) + 40);
   }
 });
+
+test('as Why Invoica’s file arrives each folder rises into place, the later ones further, its picture after it (48)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  const fileTop = await page.locator('#why ul').evaluate((el) => el.getBoundingClientRect().top + scrollY);
+  const fileHeight = await page.locator('#why ul').evaluate((el) => el.getBoundingClientRect().height);
+  const height = page.viewportSize()!.height;
+  const at = async (y: number) => {
+    await page.evaluate((top) => window.scrollTo(0, top), y);
+    await page.waitForTimeout(400);
+    return page.locator('#why li').evaluateAll((els) =>
+      els.map((el) => {
+        const lifted = (e: Element) => {
+          const t = getComputedStyle(e).translate;
+          return t === 'none' ? 0 : Number((t.split(' ')[1] ?? '0').replace(/[^\d.-]/g, '') || '0');
+        };
+        const picture = el.querySelector('[role="img"]')!;
+        return {
+          folder: lifted(el),
+          picture: Number(getComputedStyle(picture).opacity),
+        };
+      }),
+    );
+  };
+  // the file's top just in at the foot of the screen
+  const arriving = await at(fileTop - height + 60);
+  expect(arriving[0]!.folder).toBeGreaterThan(0);
+  expect(arriving[2]!.folder).toBeGreaterThan(arriving[0]!.folder);
+  for (const f of arriving) expect(f.picture).toBeLessThan(1);
+  // the whole file scrolled past
+  const past = await at(fileTop + fileHeight + 200);
+  for (const f of past) {
+    expect(f.folder).toBe(0);
+    expect(f.picture).toBe(1);
+  }
+});

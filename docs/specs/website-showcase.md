@@ -45,7 +45,7 @@ back and stands up to face the reader by the time it is in view. On phones it is
 
 Below the hero nothing plays on its own: it moves with the scroll and runs back when the page is scrolled back. Each
 section's words rise into place as they arrive, in the order they are read, and each section has one moment of its
-own: the dashboard standing up, the pillars' rules drawn one after another, the route through How it works, the shelf
+own: the dashboard standing up, the folders of Why Invoica rising into place one after another, the route through How it works, the shelf
 dealt out from one stack, the phones set down, the invoice's lines and its slip, and the logo at the foot. Where the
 browser cannot tie motion to the scroll, everything is in place.
 
@@ -220,6 +220,26 @@ mark leads home.
   is only a shade lighter than the page (`#0f2427` on `#09191c`), the crease runs along its foot, drawn across as the
   page opens, a fine line (1.5px, at his word at 02:11).
 
+## The owner's notes of 29 October, 00:49 to 03:01
+
+- **Why Invoica's three points become a file of three folders**, from `docs/design/round-13-why-points.md` (option C4,
+  made white and stepped in its fourth pass). Each point is a folder with its name on the folder's tab; the tabs step
+  across like dividers in a file (on a wide screen at the left, a third of the way and two thirds; on a phone left,
+  middle, right). The colour is on the tabs only, lime `#cff26a`, green `#6cd47a` and teal `#2fb3a6`, the words on them
+  in Night. The folders are white, each a little wider than the one before (44 and 22 pixels narrower each side on a
+  wide screen, 12 and 6 on a phone) and the ones further back a shade greyer (`#f6f8f7`, `#fbfcfb`), so each stands in
+  front of the one before; a fine edge and a soft shadow on the top and sides keep them off the ground. The coloured
+  rules over each point go.
+- **Each folder shows what is filed in it**, option A's pieces: one invoice in three businesses' colours; what the
+  example studio invoiced in the last three months, split into paid, not due yet and overdue; and three of its clients
+  with what each owes. The money piece has figures of its own (£21,560.00: £15,140.00 paid, £4,180.00 not due yet,
+  £2,240.00 overdue), so it does not repeat the dashboard's £6,420.00 just above it; what is not due and overdue agree
+  with the dashboard, and the clients agree with the clients section. On a wide screen the piece is on the right of the
+  folder's words; below 960 pixels it sits above the heading.
+- **Motion:** as the file arrives, each folder rises into place in front of the one before it, and its piece follows.
+  With less motion asked for, everything is in place.
+- The words of the three points do not change.
+
 ## Acceptance criteria
 
 Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/documents/test`.
@@ -258,8 +278,8 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
 18. The client section shows a list of clients with what each owes and one client's page with its history: an invoice,
     a payment and a credit note.
 19. The crease's ends are drawn past the headline's box on the hero and the sign-in page, fading out there.
-20. At 1440 pixels wide the header's logo and buttons sit nearer the edges than the hero's headline; the pillars stand
-    at least 72 px apart.
+20. At 1440 pixels wide the header's logo and buttons sit nearer the edges than the hero's headline. (The pillars'
+    72 px apart is replaced by 44: they are now a file of folders.)
 21. At 390 pixels wide the sign-in and sign-up pages open with the line and its crease above the form, show no logo above
     it, and end with the footer's mark under the form; the band is gone.
 22. A field's focus ring is the logo's deeper green.
@@ -295,3 +315,16 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
     is Night and the head `#0f2427`, with the crease along its foot.
 43. As sign in opens on a phone the crease is drawn across (in Dark), the mark rises and the light runs along its edge,
     all settled inside two and a half seconds, the mark at rest in place.
+44. Why Invoica shows a file of three folders in the order Your identity, Financial clarity, Client management, each
+    name on its folder's tab. The tabs are lime, green and teal with Night words; the folders are white or a shade off
+    white; each is wider than the one before and overlaps it, at 1440 and at 390 pixels wide. The coloured rules are
+    gone.
+45. The tabs step across: on a wide screen each starts further right than the one before; on a phone the first is at
+    the left, the second in the middle and the last at the right.
+46. Each folder holds a picture named for screen readers: the invoice in three businesses' colours, what was invoiced in
+    the last three months (£21,560.00 = £15,140.00 paid + £4,180.00 not due yet + £2,240.00 overdue), and three clients
+    with what each owes. Nowhere in Why Invoica is £6,420.00.
+47. On a wide screen each folder's picture is to the right of its words; on a phone it is above its heading.
+48. As the file comes into view each folder rises into place, the later ones further, and its picture after it; once in
+    view they are at rest.
+
