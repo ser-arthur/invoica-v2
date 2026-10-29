@@ -170,6 +170,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **28 Oct, about 00:35 to 02:00, on `main`.** The phones section as two phones, the dark one in front (round 11, option D); the website's words no longer run past the edge of phones narrower than about 392 pixels. 920 unit, database and PDF tests and 308 end-to-end tests run, none failed (93 skipped by design). Bundle 45.
 - **28 Oct, about 02:00 to 03:30, on `main`.** The phone menu closes on a tap outside it, Escape or a link, and lights its page as bold green words; on phones sign in and sign up open with the website's mark rising on a Night head (round 12, option A). 920 unit, database and PDF tests and 312 end-to-end tests run, none failed (95 skipped by design). Bundle 46.
 - **29 Oct, about 00:50 to 03:40, on `main`.** Why Invoica's three points become a file of three white folders, the colour on their tabs, each wider than the one before and holding a picture of what is filed in it (round 13, chosen white and stepped). 920 unit, database and PDF tests and 322 end-to-end tests run, none failed (95 skipped by design). Bundle 47.
+- **29 Oct, about 03:40 to 05:00, on `main`.** A Templates page holds all sixteen with the try-it controls; the header's and footer's Templates lead to it, and the home page keeps six with "See all sixteen" as a link. "Compare plans and prices" is an outlined button. 920 unit, database and PDF tests and 334 end-to-end tests run, none failed (95 skipped by design). Bundle 48.
 
 ## Decisions in force
 
@@ -253,5 +254,5 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-47.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-48.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.
