@@ -1,24 +1,11 @@
 'use client';
 
-import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { RANGE, renderDocumentHtml, SHOWCASE, showcaseSnapshot, TEMPLATE_LIST } from '@invoica/documents';
+import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { renderDocumentHtml, SHOWCASE, showcaseSnapshot } from '@invoica/documents';
 import { Paper } from '@/components/paper';
 import s from './site.module.css';
-
-/** Eight colours to try, one of them pale, so the readable-text rule and Marquee's second colour show. */
-const COLOURS = [
-  { name: 'Forest', value: '#17795a' },
-  { name: 'Orange', value: '#d9480f' },
-  { name: 'Navy', value: '#1d3c5a' },
-  { name: 'Plum', value: '#5b2a4e' },
-  { name: 'Teal', value: '#138c86' },
-  { name: 'Rose', value: '#c52a55' },
-  { name: 'Lemon', value: '#f2d33b' },
-  { name: 'Charcoal', value: '#2f3a3d' },
-];
-
-const fontUrl = (f: string) => `/doc-fonts/${f}`;
-const nameOf = (template: string) => TEMPLATE_LIST.find((t) => t.id === template)?.name ?? template;
+import { fontUrl, nameOf, TryIt, useVisitor } from './try-it';
 
 /** Whether the page is as narrow as a phone, where the shelf becomes a row to swipe. */
 function useNarrow() {
@@ -37,64 +24,35 @@ type Card = { template: string; name: string; maker: string; forWhom: string; ht
 
 /**
  * The templates shelf: six templates as they were designed, each made out by its own business, one in front. A business
- * name or a colour redraws all six as the visitor's; "See all sixteen" opens the whole range. On a wide screen the six
- * overlap like a hand of cards and the sixteen open below them. On a phone the name and colours come first, so the
- * card stays in sight while typing, and the cards sit in a row seen one at a time, the sixteen joining the six in the
- * same row. The same code renders real invoices. Without the page's script it shows the six as designed.
+ * name or a colour redraws all six as the visitor's; "See all sixteen" leads to the Templates page, which holds the
+ * whole range. On a wide screen the six overlap like a hand of cards. On a phone the name and colours come first, so
+ * the card stays in sight while typing, and the cards sit in a row seen one at a time. The same code renders real
+ * invoices. Without the page's script it shows the six as designed.
  */
 export function Showcase() {
-  const [name, setName] = useState('');
-  const [colour, setColour] = useState<string | null>(null);
+  const visitor = useVisitor();
+  const { typed, colour, chosen } = visitor;
   // Billboard, third on the shelf, stands in front.
   const [front, setFront] = useState(2);
-  const [all, setAll] = useState(false);
   const narrow = useNarrow();
-  const allId = useId();
   const shelfRef = useRef<HTMLFieldSetElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  const typed = useDeferredValue(name.trim());
-  const yours = typed !== '' || colour !== null;
 
   const six = useMemo<Card[]>(() => {
-    const visitor = { name: typed || undefined, colour: colour ?? undefined };
-    const mine = typed !== '' || colour !== null;
+    const yours = { name: typed || undefined, colour: colour ?? undefined };
     return SHOWCASE.map((entry) => ({
       template: entry.template,
       name: nameOf(entry.template),
-      maker: mine && typed ? typed : entry.business,
+      maker: chosen && typed ? typed : entry.business,
       forWhom: entry.forWhom,
-      html: renderDocumentHtml(showcaseSnapshot(entry.template, visitor), {
+      html: renderDocumentHtml(showcaseSnapshot(entry.template, yours), {
         fontUrl,
-        logoUrl: mine ? null : entry.logo,
+        logoUrl: chosen ? null : entry.logo,
       }),
     }));
-  }, [typed, colour]);
+  }, [typed, colour, chosen]);
 
-  // The ten not on the shelf, each made out by its own invented business, or by the visitor.
-  const rest = useMemo<Card[]>(() => {
-    if (!all) return [];
-    const visitor = { name: typed || undefined, colour: colour ?? undefined };
-    const mine = typed !== '' || colour !== null;
-    return RANGE.filter((r) => !SHOWCASE.some((e) => e.template === r.template)).map((r) => ({
-      template: r.template,
-      name: nameOf(r.template),
-      maker: mine && typed ? typed : r.business,
-      forWhom: TEMPLATE_LIST.find((t) => t.id === r.template)?.description ?? r.forWhom,
-      html: renderDocumentHtml(showcaseSnapshot(r.template, visitor), {
-        fontUrl,
-        logoUrl: mine ? null : r.logo,
-      }),
-    }));
-  }, [all, typed, colour]);
-
-  // On a wide screen the sixteen open below the shelf, in the picker's order.
-  const range = useMemo(() => {
-    if (!all || narrow) return [];
-    const cards = [...six, ...rest];
-    return TEMPLATE_LIST.map((t) => ({ ...t, html: cards.find((c) => c.template === t.id)!.html }));
-  }, [all, narrow, six, rest]);
-
-  const row = narrow && all ? [...six, ...rest] : six;
+  const row = six;
   const shown = Math.min(front, row.length - 1);
   const inFront = row[shown]!;
 
@@ -140,54 +98,7 @@ export function Showcase() {
 
   return (
     <div className={`${s.wrap} ${s.showcase}`}>
-      <form ref={formRef} className={s.tryIt} onSubmit={(event) => event.preventDefault()}>
-        <p className={s.tryTitle}>Try it with your business</p>
-        <label className={s.tryField}>
-          <span>Business name</span>
-          <input
-            className={s.field}
-            value={name}
-            maxLength={60}
-            placeholder="Your business name"
-            autoComplete="organization"
-            onFocus={keepInSight}
-            onChange={(event) => setName(event.target.value)}
-          />
-        </label>
-        <fieldset className={s.trySet}>
-          <legend>Colour</legend>
-          <div className={s.swatches}>
-            {COLOURS.map((c) => (
-              <label
-                key={c.value}
-                className={s.swatch}
-                style={{ '--swatch': c.value } as React.CSSProperties}
-              >
-                <input
-                  type="radio"
-                  name="showcase-colour"
-                  value={c.value}
-                  checked={colour === c.value}
-                  onChange={() => setColour(c.value)}
-                />
-                <span className={s.srOnly}>{c.name}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        {yours ? (
-          <button
-            type="button"
-            className={s.tryBack}
-            onClick={() => {
-              setName('');
-              setColour(null);
-            }}
-          >
-            Back to the examples
-          </button>
-        ) : null}
-      </form>
+      <TryIt visitor={visitor} formRef={formRef} onFocus={keepInSight} />
 
       <div className={s.shelfArea}>
         <fieldset ref={shelfRef} className={s.shelf}>
@@ -236,33 +147,10 @@ export function Showcase() {
               {shown + 1} of {row.length}
             </span>
           </p>
-          <button
-            type="button"
-            className={s.textLink}
-            aria-expanded={all}
-            aria-controls={narrow ? undefined : allId}
-            onClick={() => {
-              setAll((open) => !open);
-              if (all && front > 5) choose(2);
-            }}
-          >
-            {all ? 'Hide the sixteen' : 'See all sixteen'}
-          </button>
+          <Link href="/templates" className={s.textLink}>
+            See all sixteen
+          </Link>
         </div>
-      </div>
-
-      <div id={allId} className={s.allRange} hidden={!all || narrow}>
-        {all && !narrow ? (
-          <ul aria-label="All sixteen templates">
-            {range.map((t) => (
-              <li key={t.id}>
-                <Paper html={t.html} width={200} title={`${t.name} template`} />
-                <strong>{t.name}</strong>
-                <span>{t.description}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
       </div>
     </div>
   );

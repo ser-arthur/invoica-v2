@@ -59,7 +59,7 @@ export function Itemised() {
             Every account comes with all of it. Your first 30 days cost nothing and need no card. After that,
             up to three clients stay free.
           </p>
-          <a href="/pricing" className={`${s.textLink} ${s.moreLink}`}>
+          <a href="/pricing" className={`${s.buttonLine} ${s.moreLink}`}>
             Compare plans and prices
           </a>
         </div>

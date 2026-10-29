@@ -159,24 +159,6 @@ const BUSINESSES = [
   'Wilder & Rose',
   'Kestrel Roofing',
 ];
-const SIXTEEN = [
-  'Signature',
-  'Sticker',
-  'Riso',
-  'Marquee',
-  'Atelier',
-  'Bloom',
-  'Mark',
-  'Billboard',
-  'Grid',
-  'Trade',
-  'Statement',
-  'Practice',
-  'Heritage',
-  'Letter',
-  'Ticket',
-  'Monochrome',
-];
 /** As the business name appears inside an invoice's HTML. */
 const inHtml = (text: string) =>
   new RegExp(text.replace(/&/g, '&amp;').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
@@ -238,18 +220,6 @@ test('a name or a colour redraws all six as yours, and they go back to the examp
   }
 });
 
-test('all sixteen are a click away, named, in the picker’s order', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'On a phone the sixteen join the six in one row (below).');
-  await page.goto('/');
-  const section = page.locator('#templates');
-  await section.getByRole('button', { name: 'See all sixteen' }).click();
-  const all = section.getByRole('list', { name: 'All sixteen templates' });
-  await expect(all.getByRole('listitem')).toHaveCount(16);
-  await expect(all.locator('strong')).toHaveText(SIXTEEN);
-  await section.getByRole('button', { name: 'Hide the sixteen' }).click();
-  await expect(all).toBeHidden();
-});
-
 test('on a phone the header holds the logo and the menu, and the menu holds both ways in', async ({
   page,
 }, info) => {
@@ -300,7 +270,7 @@ test('on a phone body text is 16 pixels and the hero’s sentence 19', async ({ 
   }
 });
 
-test('on a phone the controls come first and the templates are seen one at a time, the sixteen in the same row', async ({
+test('on a phone the controls come first and the templates are seen one at a time', async ({
   page,
 }, info) => {
   test.skip(info.project.name !== 'phone', 'Checked at phone widths.');
@@ -328,12 +298,9 @@ test('on a phone the controls come first and the templates are seen one at a tim
   await expect(section.getByText('4 of 6')).toBeVisible();
   await expect(section.getByText('Any business. Invoica’s own.')).toBeVisible();
 
-  // The sixteen join the six in the same row.
-  await section.getByRole('button', { name: 'See all sixteen' }).click();
-  await expect(cards).toHaveCount(16);
-  await expect(section.getByText(/ of 16$/)).toBeVisible();
-  await section.getByRole('button', { name: 'Hide the sixteen' }).click();
+  // The whole range is on the Templates page (docs/specs/templates-page.md); the row holds the six.
   await expect(cards).toHaveCount(6);
+  await expect(section.getByRole('link', { name: 'See all sixteen' })).toHaveAttribute('href', '/templates');
 });
 
 test('step 5 shows the invoice paid, and the owed card is not drawn twice', async ({ page }) => {
@@ -445,13 +412,15 @@ test('a link clicked lights at once, and nothing passed on the way lights up', a
       if (seen.at(-1) !== lit) seen.push(lit);
     }).observe(document.querySelector('nav[aria-label="Site"]')!, { subtree: true, attributes: true });
   });
-  await nav.getByRole('link', { name: 'Templates' }).click();
-  await expect(nav.locator('[aria-current]')).toHaveText('Templates');
+  await nav.getByRole('link', { name: 'How it works' }).click();
+  await expect(nav.locator('[aria-current]')).toHaveText('How it works');
   await page.waitForTimeout(600);
-  expect(await page.evaluate(() => (window as unknown as { seen: string[] }).seen)).toEqual(['Templates']);
+  expect(await page.evaluate(() => (window as unknown as { seen: string[] }).seen)).toEqual(['How it works']);
 });
 
-test('moving between the home page and pricing keeps the header where it is', async ({ page }, info) => {
+test('moving between the Templates and pricing pages keeps the header where it is', async ({
+  page,
+}, info) => {
   test.skip(info.project.name !== 'desktop', 'The links sit in the header on wide screens.');
   await page.goto('/pricing');
   await page.waitForLoadState('networkidle');
@@ -466,8 +435,8 @@ test('moving between the home page and pricing keeps the header where it is', as
   });
   const nav = page.getByRole('navigation', { name: 'Site' });
   await nav.getByRole('link', { name: 'Templates' }).click();
-  await expect(page).toHaveURL(/\/#templates$/);
-  await expect(nav.locator('[aria-current]')).toHaveText('Templates');
+  await expect(page).toHaveURL(/\/templates$/);
+  await expect(nav.getByRole('link', { name: 'Templates' })).toHaveAttribute('aria-current', 'page');
   await nav.getByRole('link', { name: 'Pricing' }).click();
   await expect(page).toHaveURL(/\/pricing$/);
   await expect(nav.getByRole('link', { name: 'Pricing' })).toHaveAttribute('aria-current', 'page');
@@ -480,44 +449,10 @@ test('moving between the home page and pricing keeps the header where it is', as
   ).toEqual({ kept: true, started: [] });
 });
 
-test('every template in the range is made out by a business of its own kind', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'On a phone the sixteen join the six in one row.');
-  await page.goto('/');
-  const section = page.locator('#templates');
-  await section.getByRole('button', { name: 'See all sixteen' }).click();
-  const all = section.getByRole('list', { name: 'All sixteen templates' });
-  await expect(all.locator('iframe')).toHaveCount(16);
-  const docs = await all
-    .locator('iframe')
-    .evaluateAll((els) => els.map((e) => (e as HTMLIFrameElement).srcdoc));
-  const makers = [
-    'Larkspur Analytics',
-    'Crumb & Kettle',
-    'Odd Hours Press',
-    'Night Shift Sound',
-    'Wilder & Rose',
-    'Marigold Lane',
-    'Parallax Labs',
-    'Overcast',
-    'Hollis Lane Architects',
-    'Kestrel Roofing',
-    'Penrose Bookkeeping',
-    'Ashdown Kerr',
-    'Thistle & Oak',
-    'Joanna Pryce',
-    'Hartley Cycle Works',
-    'Fenwick Marsh',
-  ];
-  docs.forEach((doc, i) => expect(doc, makers[i]).toMatch(inHtml(makers[i]!)));
-  for (const doc of docs) expect(doc).not.toMatch(inHtml('Linden & Rowe'));
-});
-
 test('the home page shows no email address and no example domain, in its words or its invoices', async ({
   page,
 }) => {
   await page.goto('/');
-  await page.locator('#templates').getByRole('button', { name: 'See all sixteen' }).click();
-  await expect(page.locator('#templates iframe')).not.toHaveCount(6);
   const everything = await page.evaluate(() =>
     [
       document.body.innerText,
@@ -947,4 +882,25 @@ test('on a wide screen each picture is right of its words, on a phone above its 
     if (info.project.name === 'phone') expect(f.picture!.bottom, f.name!).toBeLessThanOrEqual(f.heading!.top);
     else expect(f.picture!.left, f.name!).toBeGreaterThan(f.heading!.right);
   }
+});
+
+// docs/specs/website-showcase.md, the owner's note of 29 October, 04:06.
+
+test('“Compare plans and prices” stands out as a button with a Night outline (49)', async ({ page }) => {
+  await page.goto('/');
+  const compare = page.locator('#pricing').getByRole('link', { name: 'Compare plans and prices' });
+  await expect(compare).toHaveAttribute('href', '/pricing');
+  const look = await compare.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return {
+      height: el.getBoundingClientRect().height,
+      ring: cs.boxShadow,
+      colour: cs.color,
+      radius: cs.borderRadius,
+    };
+  });
+  expect(look.height).toBeGreaterThanOrEqual(48);
+  expect(look.ring).toMatch(/rgb\(9, 25, 28\).*inset|inset.*rgb\(9, 25, 28\)/);
+  expect(look.colour).toBe('rgb(9, 25, 28)');
+  expect(look.radius).not.toBe('0px');
 });

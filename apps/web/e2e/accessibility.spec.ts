@@ -11,6 +11,7 @@ test('public pages have no automated accessibility violations', async ({ page })
   for (const path of [
     '/',
     '/pricing',
+    '/templates',
     '/sign-in',
     '/sign-up',
     '/forgot-password',
