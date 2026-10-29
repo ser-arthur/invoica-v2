@@ -692,9 +692,7 @@ test('on a wide screen with Dark, the form’s side is Night beside the panel', 
   await expect(page.getByTestId('auth-foot')).toBeHidden();
 });
 
-test('the header spreads wider than the page, and the pillars have room between them', async ({
-  page,
-}, info) => {
+test('the header spreads wider than the page', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'Measured on a wide screen.');
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
@@ -705,10 +703,6 @@ test('the header spreads wider than the page, and the pillars have room between 
   const wrap = (await page.locator('#why').boundingBox())!;
   expect(logo.x).toBeLessThan(headline.x - 24);
   expect(button.x + button.width).toBeGreaterThan(wrap.x + wrap.width - 24);
-  const pillars = await page
-    .locator('#why li')
-    .evaluateAll((els) => els.map((el) => el.getBoundingClientRect()));
-  expect(pillars[1]!.left - pillars[0]!.right).toBeGreaterThanOrEqual(72);
 });
 
 test('a field’s focus ring is the logo’s deeper green', async ({ page }) => {
@@ -859,4 +853,98 @@ test('in the menu the page you are on is its words in bold green, with no fill (
   await expect(lit).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(lit).toHaveCSS('color', 'rgb(20, 128, 74)');
   await expect(lit).toHaveCSS('font-weight', '800');
+});
+
+// docs/specs/website-showcase.md, criteria 44 to 47: Why Invoica's three points as a file of three folders.
+
+/** The three folders, measured at rest: each one's box, ground, tab, the words on the tab, heading and picture. */
+async function theFile(page: Page) {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  if (page.viewportSize()!.width > 760) await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.locator('#why').scrollIntoViewIfNeeded();
+  return page.locator('#why li').evaluateAll((els) =>
+    els.map((el) => {
+      const box = (e: Element | null) => {
+        const r = e?.getBoundingClientRect();
+        return r ? { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width } : null;
+      };
+      const tab = el.querySelector('[data-tab]');
+      const words = tab?.querySelector('*') ?? tab;
+      return {
+        box: box(el)!,
+        ground: getComputedStyle(el).backgroundColor,
+        tab: tab ? getComputedStyle(tab).backgroundColor : null,
+        tabBox: box(tab),
+        ink: words ? getComputedStyle(words).color : null,
+        name: tab?.textContent?.trim() ?? null,
+        heading: box(el.querySelector('h3')),
+        picture: box(el.querySelector('[role="img"]')),
+        rule: el.querySelector('[class*="pillarRule"]') !== null,
+      };
+    }),
+  );
+}
+
+test('Why Invoica is a file of three folders, each wider than the one before, the colour on their tabs (44)', async ({
+  page,
+}) => {
+  const file = await theFile(page);
+  expect(file.map((f) => f.name)).toEqual(['Your identity', 'Financial clarity', 'Client management']);
+  expect(file.map((f) => f.tab)).toEqual(['rgb(207, 242, 106)', 'rgb(108, 212, 122)', 'rgb(47, 179, 166)']);
+  for (const f of file) {
+    expect(f.ink, f.name!).toBe('rgb(9, 25, 28)');
+    const [r = 0, g = 0, b = 0] = (f.ground.match(/\d+/g) ?? []).map(Number);
+    expect(Math.min(r, g, b), `${f.name}: ${f.ground}`).toBeGreaterThanOrEqual(240);
+    expect(f.rule, f.name!).toBe(false);
+  }
+  for (const i of [1, 2]) {
+    expect(file[i]!.box.width, file[i]!.name!).toBeGreaterThan(file[i - 1]!.box.width + 8);
+    expect(file[i]!.box.top, file[i]!.name!).toBeLessThan(file[i - 1]!.box.bottom);
+  }
+});
+
+test('the folders’ tabs step across, like dividers in a file (45)', async ({ page }, info) => {
+  const file = await theFile(page);
+  const tabs = file.map((f) => f.tabBox!);
+  if (info.project.name === 'phone') {
+    const middle = (b: { left: number; right: number }) => (b.left + b.right) / 2;
+    expect(tabs[0]!.left - file[0]!.box.left).toBeLessThan(40);
+    expect(Math.abs(middle(tabs[1]!) - middle(file[1]!.box))).toBeLessThan(4);
+    expect(file[2]!.box.right - tabs[2]!.right).toBeLessThan(40);
+  } else {
+    expect(tabs[1]!.left).toBeGreaterThan(tabs[0]!.right);
+    expect(tabs[2]!.left).toBeGreaterThan(tabs[1]!.right);
+  }
+});
+
+test('each folder holds a picture of what is filed in it, none repeating the dashboard (46)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const folders = page.locator('#why li');
+  await expect(folders.nth(0).getByRole('img')).toHaveAccessibleName(/invoice.*three businesses’ colours/i);
+  await expect(folders.nth(2).getByRole('img')).toHaveAccessibleName(
+    /Meridian Architects LLP.*Oakridge Dental.*Ashby Print Co/,
+  );
+  const money = folders.nth(1).getByRole('img');
+  await expect(money).toHaveAccessibleName(/last three months/);
+  const name = (await money.getAttribute('aria-label'))!;
+  const [total, ...parts] = [...name.matchAll(/£([\d,]+)\.00/g)].map((m) => Number(m[1]!.replace(/,/g, '')));
+  expect(total).toBe(21560);
+  expect(parts).toEqual([15140, 4180, 2240]);
+  expect(parts.reduce((a, b) => a + b, 0)).toBe(total);
+  await expect(money).toContainText('£21,560.00');
+  expect(await page.locator('#why').textContent()).not.toContain('£6,420');
+  expect(await page.locator('#why').evaluate((el) => el.innerHTML)).not.toContain('6,420');
+});
+
+test('on a wide screen each picture is right of its words, on a phone above its heading (47)', async ({
+  page,
+}, info) => {
+  const file = await theFile(page);
+  for (const f of file) {
+    if (info.project.name === 'phone') expect(f.picture!.bottom, f.name!).toBeLessThanOrEqual(f.heading!.top);
+    else expect(f.picture!.left, f.name!).toBeGreaterThan(f.heading!.right);
+  }
 });

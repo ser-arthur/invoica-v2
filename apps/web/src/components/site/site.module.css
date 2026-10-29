@@ -628,46 +628,364 @@
   margin: 0;
 }
 
-/* Why Invoica */
+/* Why Invoica: a file of three folders, each named on its tab, each a little wider than the one before and standing in
+   front of it. The colour is on the tabs only; the folders are white, the ones further back a shade greyer. */
 
 .pillars {
   padding-top: 144px;
   padding-bottom: 0;
 }
 
-.pillarList {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 48px 88px;
+.file {
   margin: 72px 0 0;
-  padding: 0;
+  padding: 40px 0 0;
   list-style: none;
+  filter: drop-shadow(0 26px 34px rgb(19 32 26 / 0.1));
 }
 
-.pillar {
+.folder {
+  --tab: var(--lime);
+  --tab-h: 40px;
+  --inset: 44px;
+  --overlap: 16px;
+  --lift: 48px;
+  position: relative;
+  z-index: 1;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 56px;
+  margin: 0 var(--inset);
+  padding: 40px 56px calc(var(--overlap) + var(--tab-h) + 38px);
+  border-radius: 0 10px 10px;
+  background: #f6f8f7;
+  filter: drop-shadow(0 0 0.6px rgb(9 25 28 / 0.16)) drop-shadow(0 -5px 12px rgb(19 32 26 / 0.06));
 }
 
-.pillarRule {
-  display: block;
-  height: 4px;
-  margin-bottom: 22px;
-  border-radius: 2px;
+.folder + .folder {
+  margin-top: calc(var(--overlap) * -1);
+  filter: drop-shadow(0 0 0.6px rgb(9 25 28 / 0.16)) drop-shadow(0 -5px 12px rgb(19 32 26 / 0.14));
 }
 
-.pillarHeading {
-  margin: 4px 0 0;
+.folder:nth-child(2) {
+  --tab: #6cd47a;
+  --inset: 22px;
+  --lift: 72px;
+  z-index: 2;
+  border-radius: 10px;
+  background: #fbfcfb;
+}
+
+.folder:nth-child(3) {
+  --tab: #2fb3a6;
+  --inset: 0px;
+  --lift: 96px;
+  z-index: 3;
+  padding-bottom: 48px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* The tab: the folder's own sheet rising above its top edge, with soft shoulders either side, the point's name on it. */
+.folderTab {
+  position: absolute;
+  bottom: 100%;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  height: var(--tab-h);
+  padding: 0 12px;
+  background: var(--tab);
+  white-space: nowrap;
+}
+
+.folderTab::before,
+.folderTab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 18px;
+  height: 100%;
+  background: inherit;
+}
+
+.folderTab::before {
+  right: 100%;
+  clip-path: path('M0 40 C 9.9 40 7.2 0 18 0 L 18 40 Z');
+}
+
+.folderTab::after {
+  left: 100%;
+  clip-path: path('M0 0 C 10.8 0 8.1 40 18 40 L 0 40 Z');
+}
+
+.site .folderTab .label {
+  margin: 0;
+  color: var(--night);
+  font-size: 12.5px;
+}
+
+/* On a wide screen the tabs stand at the start, a third of the way and two thirds of the way along. */
+.folder:nth-child(2) .folderTab {
+  left: calc(100% / 3 + 18px);
+}
+
+.folder:nth-child(3) .folderTab {
+  left: calc(200% / 3 + 18px);
+}
+
+.folderWords {
+  flex: 0 1 46%;
+}
+
+.folderHeading {
+  margin: 0;
   font-size: 30px;
   line-height: 1.08;
 }
 
-.pillarBody {
+.folderBody {
   margin: 14px 0 0;
   font-size: 16.5px;
   line-height: 1.6;
   color: var(--text);
   text-wrap: pretty;
+}
+
+/* What is filed in each folder, drawn as the app and the invoices show it. */
+.filedPiece {
+  flex: 0 1 360px;
+  margin: 0;
+}
+
+/* One invoice in three businesses' colours, fanned. Sized from its own width so it fits the narrowest phone. */
+.filedInvoices {
+  container-type: inline-size;
+  position: relative;
+  flex-basis: 300px;
+  width: min(300px, 100%);
+  aspect-ratio: 300 / 140;
+}
+
+.miniInvoice {
+  position: absolute;
+  top: 10cqw;
+  left: 1.3cqw;
+  width: 45.3cqw;
+  height: 32cqw;
+  overflow: clip;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.05),
+    0 14px 24px -14px rgb(19 32 26 / 0.45);
+  rotate: -7deg;
+}
+
+.miniInvoice:nth-child(2) {
+  top: 5.3cqw;
+  left: 26.7cqw;
+  rotate: -1deg;
+}
+
+.miniInvoice:nth-child(3) {
+  top: 9.3cqw;
+  left: 52cqw;
+  rotate: 5deg;
+}
+
+.miniHead {
+  position: relative;
+  height: 15.3cqw;
+  padding: 3cqw 3.3cqw;
+  background: var(--brand);
+}
+
+.miniLogo {
+  display: block;
+  width: 4cqw;
+  height: 4cqw;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.92);
+}
+
+.miniName {
+  position: absolute;
+  top: 4cqw;
+  left: 9.3cqw;
+  width: 14.7cqw;
+  height: 1.7cqw;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 0.7);
+}
+
+.miniNumber {
+  position: absolute;
+  bottom: 2cqw;
+  left: 3.3cqw;
+  font: 700 4.4cqw/1 var(--font-display);
+  color: #fff;
+}
+
+.miniLines {
+  display: grid;
+  gap: 2cqw;
+  padding: 3cqw 3.3cqw;
+}
+
+.miniLines span {
+  display: block;
+  width: 70%;
+  height: 1.4cqw;
+  border-radius: 2px;
+  background: #e3e8e6;
+}
+
+.miniLines span:nth-child(2) {
+  width: 50%;
+}
+
+.miniLines span:nth-child(3) {
+  width: 60%;
+}
+
+/* What the studio invoiced in the last three months, paid, not due yet and overdue. */
+.invoiced {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invoicedHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.invoicedTotal {
+  font-size: 36px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--night);
+}
+
+.invoicedWhat {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.invoicedBar {
+  display: flex;
+  gap: 3px;
+  height: 10px;
+}
+
+.invoicedBar span {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+}
+
+.invoicedKey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.invoicedKey span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.invoicedKey span::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tone);
+  box-shadow: 0 0 0 1px rgb(9 25 28 / 0.12);
+}
+
+.invoicedKey b {
+  font-weight: 600;
+  color: var(--night);
+}
+
+.invoiced [data-tone='paid'] {
+  --tone: #37c66b;
+  background: var(--tone);
+}
+
+.invoiced [data-tone='due'] {
+  --tone: #b6e04a;
+  background: var(--tone);
+}
+
+.invoiced [data-tone='late'] {
+  --tone: #f0705f;
+  background: var(--tone);
+}
+
+.invoicedKey [data-tone] {
+  background: none;
+}
+
+/* Three of the studio's clients and what each owes. */
+.filedClient {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgb(9 25 28 / 0.1);
+}
+
+.filedClient:last-child {
+  border-bottom: 0;
+}
+
+.filedInitials {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--mist);
+  font-size: 11px;
+  letter-spacing: 0;
+  color: var(--night);
+}
+
+.filedName {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--night);
+}
+
+.filedOwes {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--night);
+}
+
+.filedOwes span {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.filedOwes [data-tone='late'] {
+  color: #b3380a;
 }
 
 /* How one invoice gets paid */
@@ -2599,9 +2917,10 @@
     /* Each section's words rise into place as they arrive, in the order they are read; a page's opening lands on load. */
     .site
       main
-      :is(.label, .h2, .lead, .numeral, .stepName, .stepHeading, .pillarHeading, .pillarBody, .caption):not(
+      :is(.label, .h2, .lead, .numeral, .stepName, .stepHeading, .caption):not(
         .hero *,
-        [data-lands] *
+        [data-lands] *,
+        .file *
       ),
     .moreLink,
     .tryIt,
@@ -2618,18 +2937,17 @@
       animation-range: entry 15% entry 85%;
     }
 
-    /* The pillars' rules are drawn one after another, left to right. */
-    .pillarRule {
-      transform-origin: left;
-      animation: rule linear both;
+    /* Why Invoica's folders rise into place one after another, each in front of the one before, the later ones from
+       further down; what is filed in each comes in after it. */
+    .folder {
+      animation: file linear both;
       animation-timeline: view();
-      animation-range: entry 40% cover 30%;
+      animation-range: entry 0% entry 70%;
     }
-    .pillar:nth-child(2) .pillarRule {
-      animation-range: entry 60% cover 34%;
-    }
-    .pillar:nth-child(3) .pillarRule {
-      animation-range: entry 80% cover 38%;
+    .filedPiece {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 30% cover 40%;
     }
 
     /* The shelf is dealt out: the six arrive as one stack, the front card on top, and spread to their places. */
@@ -2766,9 +3084,13 @@
   }
 }
 
-@keyframes rule {
+@keyframes file {
   from {
-    scale: 0 1;
+    opacity: 0;
+    translate: 0 var(--lift);
+  }
+  40% {
+    opacity: 1;
   }
 }
 
@@ -2911,6 +3233,32 @@
 }
 
 @media (max-width: 960px) {
+  .folder {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 24px;
+  }
+  .folder:nth-child(1) {
+    --inset: 24px;
+  }
+  .folder:nth-child(2) {
+    --inset: 12px;
+  }
+  .folder:nth-child(3) {
+    border-radius: 10px 0 10px 10px;
+  }
+  .folder:nth-child(2) .folderTab {
+    left: 50%;
+    translate: -50% 0;
+  }
+  .folder:nth-child(3) .folderTab {
+    right: 18px;
+    left: auto;
+  }
+  .filedPiece {
+    flex: none;
+    order: -1;
+  }
   .clientsWindow {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -3036,7 +3384,7 @@
     font-size: 30px;
   }
   .lead,
-  .pillarBody {
+  .folderBody {
     font-size: 16px;
   }
   .pillars {
@@ -3047,12 +3395,30 @@
     padding-top: 112px;
     padding-bottom: 8px;
   }
-  .pillarList {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 40px;
+  .file {
     margin-top: 48px;
+    padding-top: 36px;
   }
-  .pillarHeading {
+  .folder {
+    --tab-h: 36px;
+    padding: 28px 24px calc(var(--overlap) + var(--tab-h) + 26px);
+  }
+  .folder:nth-child(1) {
+    --inset: 12px;
+  }
+  .folder:nth-child(2) {
+    --inset: 6px;
+  }
+  .folder:nth-child(3) {
+    padding-bottom: 30px;
+  }
+  .folderTab::before {
+    clip-path: path('M0 36 C 9.9 36 7.2 0 18 0 L 18 36 Z');
+  }
+  .folderTab::after {
+    clip-path: path('M0 0 C 10.8 0 8.1 36 18 36 L 0 36 Z');
+  }
+  .folderHeading {
     font-size: 26px;
   }
   .step {
