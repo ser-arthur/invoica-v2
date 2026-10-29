@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addClient, signUpAndOnboard } from './helpers';
+import { addClient, choose, signUpAndOnboard } from './helpers';
 
 test('every control on the main pages can be reached with Tab and shows where focus is', async ({
   page,
@@ -48,7 +48,7 @@ test('an open dialog keeps focus inside it, and closing it returns focus to what
   await signUpAndOnboard(page, 'Quayside Office', { vat: true });
   await addClient(page, 'Tidewater Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Tidewater Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Tidewater Ltd' });
   await page.getByLabel('Line 1 description').fill('Survey');
   await page.getByLabel('Line 1 price').fill('300');
 

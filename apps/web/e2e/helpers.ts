@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { linkIn, waitForEmail } from './mailbox';
 
 export const PASSWORD = 'correct horse battery';
@@ -90,4 +90,37 @@ export function watchErrors(page: Page) {
       errors.push(m.location().url ? `${m.text()} (${m.location().url})` : m.text());
   });
   return errors;
+}
+
+/** The list one of Invoica's dropdowns opens (docs/specs/form-errors-and-controls.md). */
+function listOf(field: Locator) {
+  return field.getAttribute('aria-controls').then((id) => field.page().locator(`[id="${id}"]`));
+}
+
+/**
+ * Chooses in one of Invoica's dropdowns as a person does: opens it and clicks the option, given by its value or by
+ * its words (`{ label }`).
+ */
+export async function choose(field: Locator, option: string | { label: string }) {
+  // Found before it opens: while open, the list and its search carry the field's name too.
+  const list = await listOf(field);
+  await field.click();
+  await expect(list).toBeVisible();
+  const row =
+    typeof option === 'string'
+      ? list.locator(`[role="option"][data-value="${option}"]`)
+      : list.getByRole('option', { name: option.label, exact: true });
+  await row.click();
+  await expect(list).toBeHidden();
+}
+
+/** The words of the options a dropdown offers, read by opening it and closing it again. */
+export async function optionsOf(field: Locator) {
+  const list = await listOf(field);
+  await field.click();
+  await expect(list).toBeVisible();
+  const words = await list.getByRole('option').allInnerTexts();
+  await field.page().keyboard.press('Escape');
+  await expect(list).toBeHidden();
+  return words.map((w) => w.trim());
 }

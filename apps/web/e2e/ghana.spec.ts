@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addClient, confirmAndSignIn, signUp, uniqueEmail, watchErrors } from './helpers';
+import { addClient, choose, confirmAndSignIn, signUp, uniqueEmail, watchErrors } from './helpers';
 import { linkIn, waitForEmail } from './mailbox';
 
 /**
@@ -23,9 +23,9 @@ test('a Ghana business invoices in cedis with VAT, NHIL and GETFund Levy, is par
     linkIn(await waitForEmail(email, 'Confirm your email for Invoica', started)),
   );
   await page.fill('#name', 'Osu Craft Works');
-  await page.getByLabel('Country').selectOption({ label: 'Ghana' });
-  await expect(page.getByLabel('Main currency')).toHaveValue('GHS');
-  await expect(page.getByLabel('Time zone')).toHaveValue('Africa/Accra');
+  await choose(page.getByLabel('Country'), { label: 'Ghana' });
+  await expect(page.getByLabel('Main currency')).toHaveAttribute('data-value', 'GHS');
+  await expect(page.getByLabel('Time zone')).toHaveAttribute('data-value', 'Africa/Accra');
   await page.getByLabel('I am registered for VAT').check();
   await page.fill('#taxNumber', 'C0000000001');
   await page.getByRole('button', { name: 'Continue to Invoica' }).click();
@@ -33,7 +33,7 @@ test('a Ghana business invoices in cedis with VAT, NHIL and GETFund Levy, is par
 
   await addClient(page, 'Labadi Textiles Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Labadi Textiles Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Labadi Textiles Ltd' });
   await page.getByLabel('Line 1 description').fill('Kente weaving, ten pieces');
   await page.getByLabel('Line 1 price').fill('1,000');
   // GH₵1,000.00 plus NHIL 2.5%, GETFund Levy 2.5% and VAT 15%: GH₵1,200.00.
@@ -51,13 +51,13 @@ test('a Ghana business invoices in cedis with VAT, NHIL and GETFund Levy, is par
 
   await page.getByRole('button', { name: 'Record payment' }).click();
   await page.fill('#pay-amount', '500');
-  await page.selectOption('#pay-method', 'mobile_money');
+  await choose(page.locator('#pay-method'), 'mobile_money');
   await page.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Part paid');
   await expect(page.getByText(/Mobile money/).first()).toBeVisible();
 
   await page.getByRole('button', { name: 'Credit note' }).click();
-  await page.locator('#cn-mode').selectOption('balance');
+  await choose(page.locator('#cn-mode'), 'balance');
   await page.fill('#cn-reason', 'Two pieces not delivered; the rest written off as agreed.');
   await page.getByRole('dialog').getByRole('button', { name: 'Issue credit note' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('CN-0001');

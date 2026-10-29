@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { addClient, signUpAndOnboard } from './helpers';
+import { addClient, choose, signUpAndOnboard } from './helpers';
 
 test('on a phone, finished lines fold to one row and open again when tapped', async ({ page }, info) => {
   test.skip(info.project.name !== 'phone', 'Lines fold on phones only.');
   await signUpAndOnboard(page, 'Fold Studio');
   await addClient(page, 'Wren Bakery');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Wren Bakery' });
+  await choose(page.getByLabel('Bill to'), { label: 'Wren Bakery' });
   await page.getByLabel('Line 1 description').fill('Menu design');
   await page.getByLabel('Line 1 price').fill('300');
   await page.getByRole('button', { name: 'Add a line' }).click();
@@ -47,12 +47,12 @@ test('a UK VAT invoice in euros asks for the rate to pounds and prints the VAT i
   await page.goto('/clients/new');
   await page.fill('#c-name', 'Lyon Ateliers SARL');
   await page.fill('#c-email', 'compta@lyon.example');
-  await page.selectOption('#c-currency', 'EUR');
+  await choose(page.locator('#c-currency'), 'EUR');
   await page.getByRole('button', { name: 'Save client' }).click();
   await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
 
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Lyon Ateliers SARL' });
+  await choose(page.getByLabel('Bill to'), { label: 'Lyon Ateliers SARL' });
   await page.getByLabel('Line 1 description').fill('Brand workshop');
   await page.getByLabel('Line 1 price').fill('100');
   await expect(page.getByLabel('Exchange rate: EUR to £1')).toBeVisible();
@@ -87,19 +87,19 @@ test('a rate entered for euros is cleared and asked for again when the invoice m
     await page.goto('/clients/new');
     await page.fill('#c-name', name);
     await page.fill('#c-email', `accounts@${currency.toLowerCase()}.example`);
-    await page.selectOption('#c-currency', currency);
+    await choose(page.locator('#c-currency'), currency);
     await page.getByRole('button', { name: 'Save client' }).click();
     await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
   }
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Lyon Ateliers SARL' });
+  await choose(page.getByLabel('Bill to'), { label: 'Lyon Ateliers SARL' });
   await page.getByLabel('Line 1 description').fill('Print run');
   await page.getByLabel('Line 1 price').fill('100.00');
   await page.fill('#e-sterling-rate', '1.15');
   await page.getByRole('button', { name: 'Save draft' }).click();
   await expect(page.getByText('Draft saved.')).toBeVisible();
 
-  await page.getByLabel('Bill to').selectOption({ label: 'Kyoto Prints KK' });
+  await choose(page.getByLabel('Bill to'), { label: 'Kyoto Prints KK' });
   await expect(page.getByLabel('Line 1 price')).toHaveValue('100');
   await expect(page.locator('#e-sterling-rate')).toHaveValue('');
   await expect(
@@ -124,15 +124,15 @@ test('a period asks for the rate of the month it ends, needs both its dates, and
   await page.goto('/clients/new');
   await page.fill('#c-name', 'Lyon Ateliers SARL');
   await page.fill('#c-email', 'compta@lyon.example');
-  await page.selectOption('#c-currency', 'EUR');
+  await choose(page.locator('#c-currency'), 'EUR');
   await page.getByRole('button', { name: 'Save client' }).click();
   await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
 
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Lyon Ateliers SARL' });
+  await choose(page.getByLabel('Bill to'), { label: 'Lyon Ateliers SARL' });
   await page.getByLabel('Line 1 description').fill('September retainer');
   await page.getByLabel('Line 1 price').fill('100');
-  await page.selectOption('#e-supplymode', 'period');
+  await choose(page.locator('#e-supplymode'), 'period');
   await page.fill('#e-pe', '2026-09-30');
   await expect(page.getByRole('link', { name: 'September 2026' })).toHaveAttribute(
     'href',
@@ -155,12 +155,12 @@ test('when the month changes, the same figure typed again for the new month is s
   await page.goto('/clients/new');
   await page.fill('#c-name', 'Lyon Ateliers SARL');
   await page.fill('#c-email', 'compta@lyon.example');
-  await page.selectOption('#c-currency', 'EUR');
+  await choose(page.locator('#c-currency'), 'EUR');
   await page.getByRole('button', { name: 'Save client' }).click();
   await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
 
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Lyon Ateliers SARL' });
+  await choose(page.getByLabel('Bill to'), { label: 'Lyon Ateliers SARL' });
   await page.getByLabel('Line 1 description').fill('Workshop');
   await page.getByLabel('Line 1 price').fill('100');
   await page.fill('#e-supply', '2026-09-15');
@@ -189,18 +189,18 @@ test('a saved item keeps its figure on an invoice in another currency', async ({
   await page.goto('/clients/new');
   await page.fill('#c-name', 'Kyoto Prints KK');
   await page.fill('#c-email', 'accounts@kyoto.example');
-  await page.selectOption('#c-currency', 'JPY');
+  await choose(page.locator('#c-currency'), 'JPY');
   await page.getByRole('button', { name: 'Save client' }).click();
   await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
 
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Kyoto Prints KK' });
+  await choose(page.getByLabel('Bill to'), { label: 'Kyoto Prints KK' });
   // The empty first line takes the item, so no blank line is left above it.
-  await page.getByLabel('Add a saved item').selectOption({ label: 'Location day' });
+  await choose(page.getByLabel('Add a saved item'), { label: 'Location day' });
   await expect(page.getByLabel('Line 1 price')).toHaveValue('500');
   await expect(page.getByLabel('Line 2 price')).toHaveCount(0);
   // A second item, with the first line filled, goes on a line of its own.
-  await page.getByLabel('Add a saved item').selectOption({ label: 'Location day' });
+  await choose(page.getByLabel('Add a saved item'), { label: 'Location day' });
   await expect(page.getByLabel('Line 2 price')).toHaveValue('500');
 });
 
@@ -210,7 +210,7 @@ test('a draft saved with no issue date keeps following the payment terms until i
   await signUpAndOnboard(page, 'Ahead Studio');
   await addClient(page, 'Wren Bakery');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Wren Bakery' });
+  await choose(page.getByLabel('Bill to'), { label: 'Wren Bakery' });
   await page.getByLabel('Line 1 description').fill('Menu design');
   await page.getByLabel('Line 1 price').fill('300');
   await expect(page.getByText('Set from the payment terms.')).toBeVisible();
@@ -226,6 +226,6 @@ test('a draft saved with no issue date keeps following the payment terms until i
   await page.getByRole('button', { name: 'Save draft' }).click();
   await expect(page.getByText('Draft saved.')).toBeVisible();
   await page.reload();
-  await expect(page.locator('#e-due')).toHaveValue('2026-12-31');
+  await expect(page.locator('#e-due')).toHaveAttribute('data-value', '2026-12-31');
   await expect(page.getByText('Set from the payment terms.')).toHaveCount(0);
 });

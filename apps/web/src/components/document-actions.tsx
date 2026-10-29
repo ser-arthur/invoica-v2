@@ -22,6 +22,7 @@ import {
   type CreditTaken,
   type DocumentTotals,
 } from '@invoica/core';
+import { DateField } from './controls/date-field';
 import { Dialog } from './dialog';
 import {
   creditNoteAction,
@@ -43,18 +44,16 @@ import { reach } from '@/lib/reach';
 
 export { Dialog };
 
-function MethodOptions() {
-  return (
-    <>
-      <option value="bank_transfer">Bank transfer</option>
-      <option value="mobile_money">Mobile money</option>
-      <option value="card">Card</option>
-      <option value="cash">Cash</option>
-      <option value="cheque">Cheque</option>
-      <option value="other">Other</option>
-    </>
-  );
-}
+const METHOD_OPTIONS = (
+  <>
+    <option value="bank_transfer">Bank transfer</option>
+    <option value="mobile_money">Mobile money</option>
+    <option value="card">Card</option>
+    <option value="cash">Cash</option>
+    <option value="cheque">Cheque</option>
+    <option value="other">Other</option>
+  </>
+);
 
 export function DeleteDraftButton({ id }: { id: string }) {
   const router = useRouter();
@@ -193,18 +192,18 @@ export function PaymentDialog({
             />
           </Field>
           <Field label="Received on" htmlFor="pay-date">
-            <Input
+            <DateField
               id="pay-date"
-              type="date"
               value={paidOn}
               max={today}
-              onChange={(e) => setPaidOn(e.target.value)}
+              today={today}
+              onChange={(value) => setPaidOn(value)}
             />
           </Field>
         </div>
         <Field label="How it was paid" htmlFor="pay-method">
           <Select id="pay-method" value={method} onChange={(e) => setMethod(e.target.value)}>
-            <MethodOptions />
+            {METHOD_OPTIONS}
           </Select>
         </Field>
         <Field label="Reference" htmlFor="pay-ref" hint="Optional, as it appears on your statement.">
@@ -619,13 +618,13 @@ export function CreditNoteButton({
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Refunded on" htmlFor="cn-refund-date">
-                    <Input
+                    <DateField
                       id="cn-refund-date"
                       min={latestPaidOn ?? undefined}
                       max={refundDay}
-                      type="date"
+                      today={refundDay}
                       value={refundedOn}
-                      onChange={(e) => setRefundedOn(e.target.value)}
+                      onChange={(value) => setRefundedOn(value)}
                     />
                   </Field>
                   <Field label="How it was refunded" htmlFor="cn-refund-method">
@@ -634,7 +633,7 @@ export function CreditNoteButton({
                       value={refundMethod}
                       onChange={(e) => setRefundMethod(e.target.value)}
                     >
-                      <MethodOptions />
+                      {METHOD_OPTIONS}
                     </Select>
                   </Field>
                 </div>

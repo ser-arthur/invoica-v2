@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { PASSWORD, addClient, signIn, signUpAndOnboard } from './helpers';
+import { PASSWORD, addClient, choose, signIn, signUpAndOnboard } from './helpers';
 
 /** docs/specs/kept-on-this-device.md, acceptance criteria 1 to 4. */
 
@@ -20,7 +20,7 @@ async function closeWithoutAsking(page: Page) {
 
 async function newInvoice(page: Page, client: string, title: string, price: string) {
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: client });
+  await choose(page.getByLabel('Bill to'), { label: client });
   await page.getByLabel('Line 1 description').fill(title);
   await page.getByLabel('Line 1 price').fill(price);
 }
@@ -47,7 +47,7 @@ test('1: a new invoice typed and closed without saving is offered back, every fi
   await expect(again.getByText(OFFER)).toHaveCount(0);
   await expect(again.getByLabel('Line 1 description')).toHaveValue('Gate restoration');
   await expect(again.getByLabel('Line 1 price')).toHaveValue('640');
-  await expect(again.getByLabel('Bill to').locator('option:checked')).toHaveText('Ashdown Forge Ltd');
+  await expect(again.getByLabel('Bill to')).toHaveText('Ashdown Forge Ltd');
   await again.getByRole('button', { name: 'Save draft' }).click();
   await again.waitForURL(/\/invoices\/[0-9a-f-]{36}\/edit/);
   await expect(again.getByLabel('Line 1 description')).toHaveValue('Gate restoration');

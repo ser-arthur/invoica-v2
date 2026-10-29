@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { addClient, confirmAndSignIn, signUp, uniqueEmail, watchErrors } from './helpers';
+import { addClient, choose, confirmAndSignIn, signUp, uniqueEmail, watchErrors } from './helpers';
 import { emailsTo, linkIn, waitForEmail } from './mailbox';
 
 /**
@@ -91,7 +91,7 @@ test('a business’s first weeks: drafts, invoices, emails, payments, a credit n
 
   // 3. A draft saved, found in the list, reopened, finished and issued.
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: CAFE });
+  await choose(page.getByLabel('Bill to'), { label: CAFE });
   await page.getByLabel('Line 1 description').fill('Menu design');
   await page.getByLabel('Line 1 price').fill('600');
   await page.getByRole('button', { name: 'Save draft' }).click();
@@ -153,8 +153,8 @@ test('a business’s first weeks: drafts, invoices, emails, payments, a credit n
 
   // 6. A second invoice from the saved item, on the client's own terms.
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: ARCHITECTS });
-  await page.getByLabel('Add a saved item').selectOption({ label: WORKSHOP });
+  await choose(page.getByLabel('Bill to'), { label: ARCHITECTS });
+  await choose(page.getByLabel('Add a saved item'), { label: WORKSHOP });
   await expect(page.getByLabel('Line 1 price')).toHaveValue('950.00');
   await expect(page.getByText('£1,140.00').first()).toBeVisible();
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -175,7 +175,7 @@ test('a business’s first weeks: drafts, invoices, emails, payments, a credit n
 
   // 7. Half the workshop cancelled: a credit note for £200.00 before VAT, £240.00 in all.
   await page.getByRole('button', { name: 'Credit note' }).click();
-  await page.locator('#cn-mode').selectOption('amount');
+  await choose(page.locator('#cn-mode'), 'amount');
   await page.fill('#cn-amount', '200');
   await page.fill('#cn-reason', 'Half the workshop was cancelled.');
   await page.getByRole('dialog').getByRole('button', { name: 'Issue credit note' }).click();
@@ -200,7 +200,7 @@ test('a business’s first weeks: drafts, invoices, emails, payments, a credit n
 
   // 9. A draft for later.
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: CAFE });
+  await choose(page.getByLabel('Bill to'), { label: CAFE });
   await page.getByLabel('Line 1 description').fill('Spring menu');
   await page.getByLabel('Line 1 price').fill('100');
   await page.getByRole('button', { name: 'Save draft' }).click();

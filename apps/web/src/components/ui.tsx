@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cloneElement, isValidElement, type ComponentProps, type ReactElement, type ReactNode } from 'react';
 import { formatMoney, STATE_LABELS, type DocumentState } from '@invoica/core';
 import { Logo } from './logo';
+import { Select as OwnSelect, type SelectProps } from './controls/select';
 
 export function cx(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join(' ');
@@ -138,8 +139,9 @@ export function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
   );
 }
 
-export function Select({ className, ...props }: ComponentProps<'select'>) {
-  return <select className={cx(inputClass, width(className), 'select-chevron pr-9', className)} {...props} />;
+/** Invoica's own dropdown, written like a select (`components/controls/select.tsx`), sized like the other fields. */
+export function Select({ className, ...props }: SelectProps) {
+  return <OwnSelect className={cx(inputClass, width(className), 'pr-3', className)} {...props} />;
 }
 
 export function Checkbox({
@@ -149,7 +151,7 @@ export function Checkbox({
 }: ComponentProps<'input'> & { label: string; hint?: string }) {
   return (
     <label className="flex cursor-pointer items-start gap-3">
-      <input type="checkbox" className="mt-0.5 size-4.5 shrink-0 accent-[var(--brand)]" {...props} />
+      <input type="checkbox" className="mt-0.5" {...props} />
       <span className="flex flex-col">
         <span className="text-[15px] text-ink">{label}</span>
         {hint ? <span className="text-[13px] text-muted">{hint}</span> : null}
