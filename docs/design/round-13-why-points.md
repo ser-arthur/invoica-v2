@@ -1,0 +1,33 @@
+# Round 13: Why Invoica's three points
+
+29 October 2026, 00:49. The owner asked for other, more creative ways to show the three points in Why Invoica (your
+identity, financial clarity, client management). Today each point is a short coloured rule, lime, green or teal, over
+its label, heading and paragraph. Mockups only; the product is unchanged, and so are the words.
+
+`round-13/why-points.cjs` rearranges the live section on the development server and screenshots it at 1440 and 390
+pixels. `round-13/boards.cjs` puts each option's two renders on a board (`round-13/why-*.png`). The website has one
+palette in either app theme, so there is no Dark board.
+
+| Option | What it is |
+| --- | --- |
+| A, a small working piece over each point | In place of each rule: one invoice in three businesses' colours, what is owed split into paid, due and late, and three clients with their balances. |
+| B, one invoice, each point drawn to its part | A Signature invoice in the middle, fading out below its lines. A fine line runs from each label to its part: the business's name in the head, the amount due, "Billed to". On a phone the invoice comes first, with a dot on each part matching the dot by each label. |
+| C, filed | The rule runs the whole width once, lime to teal, and each label sits on a tab in its colour, like dividers in a file. On a phone each point has its own rule and the tabs step across, left, middle, right. |
+| D, each point on its own sheet | Three white sheets with a turned corner in each point's colour, laid down a little loose. |
+
+Motion, if built: A deals the invoices out, fills the bar and brings the rows in; B draws the lines out to the invoice
+one after another; C draws the rule from left to right and raises each tab as the line reaches it; D brings the sheets
+down loose and squares them up.
+
+## Recommended
+
+C. The page shows each of the three in depth around this section: the dashboard just above it, invoices in How it
+works and the templates, and the clients section. Why Invoica works best as the short statement between those pictures,
+and C gives it a character of its own, filed and in order as its heading says, without adding a fourth picture of the
+same things. It is also the smallest change and reads well on a phone.
+
+B is the one to choose if the section should carry a picture of its own. It makes "one place" literal. Built, it would
+use an invoice other than INV-0044, which How it works shows at its third step.
+
+A repeats the dashboard's figures a few hundred pixels below the dashboard. D's white sheets read as cards, and their
+loose angles sit apart from the precision of the rest of the site.
