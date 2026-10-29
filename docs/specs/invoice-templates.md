@@ -158,6 +158,37 @@ canvas page "Signature, new directions"):
 22. Monochrome renders every fixture in greys only: no colour outside the logo, and the logo set in grey.
 23. The picker shows Signature's four styles as choices under it, and choosing one saves it; the editor lists them.
 
+## Signature's Night accents in the business's colour
+
+The owner's question of 27 October, 16:34, and his answer of 29 October, 14:48 (`docs/design/round-11-signature-colour.md`,
+proposed): when a business's colour changed, only Signature's turned corner and how to pay's tint followed it, so an
+orange business had an orange corner beside a green number. Now the Night head's accents come from the business's
+colour, lifted for Night in OKLCH so they keep its hue and read:
+
+- The labels ("VAT invoice", "Amount due") and the number past the crease: the colour at lightness 0.80, keeping its
+  hue and at least 0.11 of chroma (`liftForNight` in `@invoica/core`).
+- The due date: the colour at lightness 0.87, at least 0.10 of chroma.
+- The crease line: from the due date's colour, through the accent, to the colour at lightness 0.68 (at least 0.13).
+- Route on Night, Signature's other Night style, the same way: the route's first stop in the due date's colour, and
+  its line from that colour through the accent to the deep one. The route's last stop already takes the business's
+  colour.
+- A colour near grey (chroma under 0.03) gives silver accents, not a hue the business never chose.
+- In Invoica's own colour (`#17795a`, the default and the free plan's), Signature is as it was: mint, lime and the
+  lime, green and teal line.
+- Unchanged: the turned corner, how to pay's tint, the rule over the amount due, "Powered by" and Invoica's wordmark,
+  and the Light and Route styles on white. A document issued before this shows the new accents on screen; its kept PDF
+  is unchanged.
+
+24. In the Night head the labels and the number past the crease are the accent, the due date the lighter colour and
+    the crease line runs from the lighter colour through the accent to the deep one; the head holds none of Invoica's
+    mint or lime, for a business in orange and one in navy.
+25. Route on Night's first stop and line follow the same colours.
+26. Every accent keeps the business's hue within 3 degrees, the accent and the due date read at 4.5:1 or more on Night
+    and the deep colour at 3:1, for every colour on a grid across the whole range.
+27. A colour near grey gives silver accents; Invoica's own colour gives today's mint, lime and line exactly.
+28. The turned corner and how to pay's tint still take the business's colour, and the Light and Route styles on white
+    are unchanged.
+
 ## Order of work
 
 1. This spec, approved.

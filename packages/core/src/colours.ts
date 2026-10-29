@@ -44,6 +44,11 @@ export function hueOf(hex: string): number {
   return oklch(hex)[2];
 }
 
+/** A colour's OKLCH chroma: 0 for a grey, about 0.1 to 0.3 for a strong colour. */
+export function chromaOf(hex: string): number {
+  return oklch(hex.toLowerCase())[1];
+}
+
 /** sRGB, linear 0 to 1, to a hex channel. */
 function encode(x: number): string {
   const v = Math.min(1, Math.max(0, x));
@@ -84,4 +89,14 @@ export function secondColour(brand: string): string {
   const deep = fromOklch(0.27, chroma < 0.02 ? 0 : 0.11, opposite);
   const pale = fromOklch(0.94, chroma < 0.02 ? 0 : 0.12, opposite);
   return contrastRatio(hex, deep) >= contrastRatio(hex, pale) ? deep : pale;
+}
+
+/**
+ * A brand colour made light enough to read on a Night ground (docs/specs/invoice-templates.md, Signature's Night
+ * accents): the colour at OKLCH lightness `lightness`, keeping its hue and at least `minChroma` of colourfulness, less
+ * only where sRGB cannot show that much. A colour near grey (chroma under 0.03) stays grey, so it turns silver.
+ */
+export function liftForNight(brand: string, lightness: number, minChroma: number): string {
+  const [, chroma, hue] = oklch(brand.toLowerCase());
+  return fromOklch(lightness, chroma < 0.03 ? 0 : Math.max(chroma, minChroma), hue);
 }

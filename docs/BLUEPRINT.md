@@ -171,6 +171,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **28 Oct, about 02:00 to 03:30, on `main`.** The phone menu closes on a tap outside it, Escape or a link, and lights its page as bold green words; on phones sign in and sign up open with the website's mark rising on a Night head (round 12, option A). 920 unit, database and PDF tests and 312 end-to-end tests run, none failed (95 skipped by design). Bundle 46.
 - **29 Oct, about 00:50 to 03:40, on `main`.** Why Invoica's three points become a file of three white folders, the colour on their tabs, each wider than the one before and holding a picture of what is filed in it (round 13, chosen white and stepped). 920 unit, database and PDF tests and 322 end-to-end tests run, none failed (95 skipped by design). Bundle 47.
 - **29 Oct, about 03:40 to 05:00, on `main`.** A Templates page holds all sixteen with the try-it controls; the header's and footer's Templates lead to it, and the home page keeps six with "See all sixteen" as a link. "Compare plans and prices" is an outlined button. 920 unit, database and PDF tests and 334 end-to-end tests run, none failed (95 skipped by design). Bundle 48.
+- **29 Oct, about 14:45 to 15:45, on `main`.** Signature's Night head and Route on Night take their accents from the business's colour, lifted for Night in OKLCH (`liftForNight`); in Invoica's own colour nothing changes. 932 unit, database and PDF tests and 334 end-to-end tests run, none failed (95 skipped by design). Bundle 49.
 
 ## Decisions in force
 
@@ -248,11 +249,12 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 8. Approve a plan for the R5-L1 four-taxes refusal (`HANDOVER.md`, "Open finding"): how a credit note that settles a balance shares its tax across the components when one would go below zero.
 9. Answered 26 October, 16:38: Signature in four styles, Powered by Invoica on every Signature, Monochrome as the sixteenth template (`docs/specs/invoice-templates.md`).
 10. Answered 27 October, 14:22: the theme is saved on the account and follows a person to other devices (`docs/specs/theme-on-the-account.md`, decision 0014).
-11. Signature's Night head with its accents in the business's colour (`docs/design/round-11-signature-colour.md`): proposed 27 October, 17:00, waiting for the owner.
+11. Answered 29 October, 14:48: Signature's Night head (and Route on Night) takes its accents from the business's colour (`docs/design/round-11-signature-colour.md`; built in bundle 49).
 12. Answered 28 October, 02:05: sign up on phones opens with the website's mark on a Night head (option A of `docs/design/round-12-sign-up-phone.md`).
 13. Answered 29 October, 03:26: the website's six picks stay on the home page and the sixteen get a Templates page of their own, which the header's Templates link leads to (`docs/specs/templates-page.md`). Later: a "Use this one" on each template, opening sign up with it chosen.
+14. The website's footer (asked 29 October, 14:48): agreed in outline to one row of product links and a bottom line with Privacy (with a cookies section), Terms and the business's details; Help, About, Contact and Cookies leave the footer. Waiting on: the domain (recommended getinvoica.com, with invoica.uk pointing to it; invoica.com, .io, .co, .app and .co.uk are taken), the email on it, and a UK address (a virtual office, not his home). Invoica is a sole trader's trading name; the line names him, the address and the email. The Privacy notice and Terms are legal wording: drafted for the owner, checked by someone qualified before launch.
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-48.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-49.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.
