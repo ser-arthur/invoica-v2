@@ -214,7 +214,7 @@ const { chromium } = require('/home/claude/invoica/node_modules/.pnpm/node_modul
   await p.screenshot({
     path: out,
     fullPage: true,
-    clip: { x: 0, y: box.y - 24, width: +width, height: box.height + (process.env.MORE ? 900 : phone ? 72 : 120) },
+    clip: { x: 0, y: box.y - (process.env.ABOVE ? +process.env.ABOVE : 24), width: +width, height: box.height + (process.env.ABOVE ? +process.env.ABOVE : 24) - 24 + (process.env.MORE ? 900 : phone ? 72 : 120) },
   });
   await b.close();
 })();

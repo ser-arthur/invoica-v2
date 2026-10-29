@@ -77,3 +77,7 @@ shade greyer in white (`#f6f8f7`, `#fbfcfb`, `#fff`) and a shade darker in Night
 The steps answer W1's weakness: each divider's corners and sides now show past the one behind it, so the three no longer
 run together, without a heavier shadow. Recommended: white. After the dashboard's Night, a light file keeps the page's
 rhythm, and the tabs' lime, green and teal are at their clearest on white.
+
+`round-13/why-step-page.png` shows both with the dashboard above and How it works below (`ABOVE=900 MORE=1`). Seen
+in the page, the Night file is a second dark slab the dashboard's width straight under the first, and reads as another
+screen of the app; the white file reads as something else, the business's side, between two pictures of the app.
