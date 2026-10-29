@@ -1,6 +1,14 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { addClient, choose, confirmAndSignIn, signUp, signUpAndOnboard, uniqueEmail } from './helpers';
+import {
+  addClient,
+  choose,
+  chooseTheme,
+  confirmAndSignIn,
+  signUp,
+  signUpAndOnboard,
+  uniqueEmail,
+} from './helpers';
 import { linkIn, waitForEmail } from './mailbox';
 
 // docs/specs/form-errors-and-controls.md, "Invoica's own controls", acceptance criteria 7 to 14.
@@ -278,8 +286,8 @@ test('the dropdown, the calendar and the colour picker open pass the accessibili
   test.skip(test.info().project.name !== 'desktop', 'Checked at one width.');
   await signUpAndOnboard(page, 'Open Panels Ltd');
   let examined = 0;
-  for (const theme of ['light', 'dark']) {
-    await page.context().addCookies([{ name: 'invoica_theme', value: theme, url: page.url() }]);
+  for (const theme of ['light', 'dark'] as const) {
+    await chooseTheme(page, theme);
     for (const [path, open, name] of [
       ['/settings', () => page.locator('#s-country').click(), 'dropdown'],
       ['/settings', () => page.locator('#s-colour').click(), 'colour picker'],
@@ -290,6 +298,7 @@ test('the dropdown, the calendar and the colour picker open pass the accessibili
       ],
     ] as const) {
       await page.goto(path);
+      expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
       await open();
       await page.waitForTimeout(300);
       const result = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();

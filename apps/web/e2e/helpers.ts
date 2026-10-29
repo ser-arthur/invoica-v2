@@ -137,3 +137,16 @@ export async function optionValuesOf(field: Locator) {
   await expect(list).toBeHidden();
   return values;
 }
+
+/**
+ * Chooses the app's theme from the account menu, as a person does (docs/specs/theme-on-the-account.md), and waits
+ * until the page shows it. A signed-in page follows the account's theme, not the device's cookie alone.
+ */
+export async function chooseTheme(page: Page, theme: 'light' | 'dark') {
+  const menu = page.locator('details:has(> summary[aria-label="Account and settings"])');
+  if (!(await menu.evaluate((d) => (d as HTMLDetailsElement).open)))
+    await page.getByLabel('Account and settings').click();
+  await page.getByRole('group', { name: 'Appearance' }).getByRole('button', { name: theme }).click();
+  await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
+  await page.getByLabel('Account and settings').click();
+}

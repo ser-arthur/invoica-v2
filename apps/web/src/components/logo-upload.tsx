@@ -42,7 +42,8 @@ export function LogoUpload({ logoUrl, name }: { logoUrl: string | null; name: st
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logoUrl} alt={`${name} logo`} className="max-h-16 max-w-full object-contain" />
             ) : (
-              <span className="text-[14px] text-muted">
+              // The box is white paper in both themes, so its words keep the light theme's muted ink.
+              <span className="text-[14px] text-[#56675e]">
                 No logo yet. Your business name is printed instead.
               </span>
             )}

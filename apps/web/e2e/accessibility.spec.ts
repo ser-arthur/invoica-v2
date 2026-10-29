@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { addClient, choose, signUp, signUpAndOnboard, uniqueEmail } from './helpers';
+import { addClient, choose, chooseTheme, signUp, signUpAndOnboard, uniqueEmail } from './helpers';
 import { linkIn, waitForEmail } from './mailbox';
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -55,10 +55,11 @@ test('app pages have no automated accessibility violations, in light and dark', 
     '/invoices/00000000-0000-4000-8000-000000000000',
   ];
   let examined = 0;
-  for (const theme of ['light', 'dark']) {
-    await page.context().addCookies([{ name: 'invoica_theme', value: theme, url: page.url() }]);
+  for (const theme of ['light', 'dark'] as const) {
+    await chooseTheme(page, theme);
     for (const path of paths) {
       await page.goto(path);
+      expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
       await page.waitForLoadState('networkidle');
       const result = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();
       examined += 1;
@@ -153,10 +154,13 @@ test('open dialogs have no automated accessibility violations, in light and dark
   await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\?issued=1/);
   const invoice = page.url().replace('?issued=1', '');
   let examined = 0;
-  for (const theme of ['light', 'dark']) {
-    await page.context().addCookies([{ name: 'invoica_theme', value: theme, url: page.url() }]);
+  for (const theme of ['light', 'dark'] as const) {
+    // From the invoice's own page: the one just issued opens with a dialog of its own.
+    await page.goto(invoice);
+    await chooseTheme(page, theme);
     for (const opener of ['Record payment', 'Credit note']) {
       await page.goto(invoice);
+      expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
       await page.getByRole('button', { name: opener }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
       const result = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();
@@ -234,10 +238,11 @@ test('the notices for an email that could not be sent have no automated accessib
     await expect(page.getByText(/could not be sent/)).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 30_000 });
   let examined = 0;
-  for (const theme of ['light', 'dark']) {
-    await page.context().addCookies([{ name: 'invoica_theme', value: theme, url: page.url() }]);
+  for (const theme of ['light', 'dark'] as const) {
+    await chooseTheme(page, theme);
     for (const path of [invoice, '/dashboard']) {
       await page.goto(path);
+      expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
       await expect(page.getByText(/could not be sent/).first()).toBeVisible();
       const result = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();
       examined += 1;
