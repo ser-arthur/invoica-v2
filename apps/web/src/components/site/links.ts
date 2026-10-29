@@ -13,7 +13,7 @@ export const FOOTER_COLUMNS: FooterColumn[] = [
     links: [
       { label: 'Why Invoica', href: '/#why' },
       { label: 'How it works', href: '/#how' },
-      { label: 'Templates', href: '/#templates' },
+      { label: 'Templates', href: '/templates' },
       { label: 'Pricing', href: '/pricing' },
     ],
   },

@@ -7,9 +7,10 @@ import { useEffect, useRef, useState } from 'react';
 export type SectionLink = { label: string; href: string; section: string };
 
 /**
- * The header's links. A link to a page of its own (Pricing) is current on that page. On the home page, as it scrolls,
- * the link for the section a third of the way down the screen is current; a link that is clicked becomes current at
- * once and stays so while the page moves to its section, without the sections passed on the way lighting up in turn.
+ * The header's links. A link to a page of its own (Templates, Pricing) is current on that page. On the home page, as
+ * it scrolls, the link for the section a third of the way down the screen is current; a link that is clicked becomes
+ * current at once and stays so while the page moves to its section, without the sections passed on the way lighting up
+ * in turn.
  * site.module.css lights the current link in the logo's green.
  */
 export function SectionLinks({ links }: { links: SectionLink[] }) {

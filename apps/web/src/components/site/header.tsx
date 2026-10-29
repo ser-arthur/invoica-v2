@@ -4,11 +4,14 @@ import { MenuCloser } from './menu-closer';
 import { SectionLinks, type SectionLink } from './section-links';
 import s from './site.module.css';
 
-/** The header's links, each with the home page's section it leads to. */
+/**
+ * The header's links, each with the home page's section it lights up for. Templates and Pricing lead to pages of their
+ * own.
+ */
 const LINKS: SectionLink[] = [
   { label: 'Why Invoica', href: '/#why', section: 'why' },
   { label: 'How it works', href: '/#how', section: 'how' },
-  { label: 'Templates', href: '/#templates', section: 'templates' },
+  { label: 'Templates', href: '/templates', section: 'templates' },
   { label: 'Pricing', href: '/pricing', section: 'pricing' },
 ];
 

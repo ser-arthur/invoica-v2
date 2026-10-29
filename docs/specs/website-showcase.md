@@ -14,7 +14,8 @@ The section says there are fifteen templates, but showed three, and only the one
   another (pointer, tap or keyboard) brings it to the front.
 - **Yours.** Typing a business name or choosing a colour redraws all six with the visitor's name and colour, keeping
   each template's own sample work. "Back to the examples" puts the six back as designed.
-- **All fifteen.** "See all fifteen" opens the whole range, each named with who it is for.
+- **All fifteen.** "See all fifteen" opens the whole range, each named with who it is for. (Since 29 October it leads
+  to the Templates page, `templates-page.md`.)
 - **Colours.** Eight chosen colours, one of them pale (a yellow), so the contrast rule and Marquee's second colour show.
   No colour picker on the website; the app has the full one.
 - The section's heading keeps "Fifteen layouts. Your logo, your colour."
@@ -249,8 +250,8 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
    pointer and by keyboard. Marquee is lime with navy.
 2. Typing a business name redraws all six with it; choosing a colour redraws all six in it; "Back to the examples"
    restores the six businesses.
-3. "See all fifteen" shows the fifteen, named: on a wide screen in the picker's order; on a phone in the same row as the
-   six, the six first.
+3. Replaced by `templates-page.md` (29 October): "See all sixteen" is a link to the Templates page, which shows the
+   sixteen named, in the picker's order.
 4. There are eight colours to choose, each named for screen readers.
 5. Loading the home page, the header arrives first, the headline's near half comes from the left and its far half from
    the right, the crease is drawn from its foot as they meet, then the facts, the sentence and the buttons, then the
@@ -297,7 +298,8 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
     dark.
 30. Replaced by 43 (28 October): on a phone the line no longer opens the page.
 31. Every template in the range is shown made out by its own business, each different, none the example studio, every
-    one passing the public samples checks.
+    one passing the public samples checks. Since 29 October the range is on the Templates page (`templates-page.md`,
+    criterion 1).
 32. In Night, "Forgot your password?" is the muted grey; "Create an account" and the button stay lime.
 33. Grid's invoice in the range is numbered INV-0047, under the plan mark from the first template rounds.
 34. Every rendered document asks phones not to turn its numbers into links (`packages/documents/test/render.test.ts`).

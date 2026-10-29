@@ -6,7 +6,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 test('every scroll-linked movement on the website follows the page’s scroll', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'The same at every width.');
-  for (const path of ['/', '/pricing', '/sign-in', '/no-such-page']) {
+  for (const path of ['/', '/pricing', '/templates', '/sign-in', '/no-such-page']) {
     await page.goto(path);
     await page.waitForLoadState('networkidle');
     const found = await page.evaluate(() =>
@@ -22,7 +22,8 @@ test('every scroll-linked movement on the website follows the page’s scroll', 
         }),
     );
     for (const animation of found) expect(animation.page, `${path}: ${animation.name}`).toBe(true);
-    if (path === '/' || path === '/pricing') expect(found.length, path).toBeGreaterThan(0);
+    if (path === '/' || path === '/pricing' || path === '/templates')
+      expect(found.length, path).toBeGreaterThan(0);
   }
 });
 
