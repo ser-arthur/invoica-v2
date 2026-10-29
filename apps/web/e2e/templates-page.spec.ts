@@ -71,8 +71,12 @@ test('a name or a colour redraws all sixteen as yours, and they go back to the e
   const frames = page.getByRole('list', { name: 'All sixteen templates' }).locator('iframe');
   await page.getByLabel('Business name').fill('Fernhill Joinery');
   for (let i = 0; i < 16; i++) await expect(frames.nth(i)).toHaveAttribute('srcdoc', /Fernhill Joinery/);
+  // Monochrome is greys only, whatever the colour (docs/specs/invoice-templates.md).
   await page.getByRole('radio', { name: 'Navy', exact: true }).check();
-  for (let i = 0; i < 16; i++) await expect(frames.nth(i)).toHaveAttribute('srcdoc', /#1d3c5a/i);
+  for (const [i, name] of SIXTEEN.entries()) {
+    if (name === 'Monochrome') await expect(frames.nth(i)).not.toHaveAttribute('srcdoc', /#1d3c5a/i);
+    else await expect(frames.nth(i), name).toHaveAttribute('srcdoc', /#1d3c5a/i);
+  }
   await page.getByRole('button', { name: 'Back to the examples' }).click();
   await expect(page.getByLabel('Business name')).toHaveValue('');
   for (const [i, maker] of MAKERS.entries())
@@ -93,7 +97,10 @@ test('the header’s Templates and the footer’s lead to the page, where the he
   }
   await expect(page).toHaveURL(/\/templates$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Sixteen layouts\./);
-  const current = page.locator('header [aria-current]');
+  // On a phone the menu closed as the link was chosen: open it again to see which link is current. On a wide screen
+  // the menu's copy of the links is in the page too, folded away.
+  if (info.project.name === 'phone') await page.locator('header summary').click();
+  const current = page.locator('header [aria-current]:visible');
   await expect(current).toHaveCount(1);
   await expect(current).toHaveText('Templates');
   await expect(current).toHaveAttribute('aria-current', 'page');

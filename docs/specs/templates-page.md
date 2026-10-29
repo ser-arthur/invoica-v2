@@ -40,8 +40,8 @@ End-to-end in `apps/web/e2e`.
 
 1. `/templates` shows sixteen templates in the picker's order, each a rendered invoice named with who it is for, each
    made out by a business of its own, none of them the example studio.
-2. Typing a business name redraws all sixteen with it; choosing a colour redraws all sixteen in it; "Back to the
-   examples" restores the sixteen businesses.
+2. Typing a business name redraws all sixteen with it; choosing a colour redraws all sixteen in it but Monochrome,
+   which is greys only; "Back to the examples" restores the sixteen businesses.
 3. The header's "Templates" (in the menu on a phone) and the footer's lead to `/templates`; there, the header's link
    is current with `aria-current="page"` and is the only current link.
 4. The home page shows the six, and its "See all sixteen" is a link to `/templates`; the home page holds no more than
