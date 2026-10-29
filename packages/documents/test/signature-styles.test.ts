@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, daysBetween, SIGNATURE_STYLES } from '@invoica/core';
+import { addDays, daysBetween, INVOICA_COLOUR, liftForNight, SIGNATURE_STYLES } from '@invoica/core';
 import { buildView, creaseFold, renderDocumentHtml, TEMPLATE_LIST, TEMPLATES } from '../src/index';
 import { FIXTURES } from './fixtures';
 
@@ -133,6 +133,77 @@ describe('Monochrome (criterion 22)', () => {
       expect(greys(`${css}${body}${mono.footer.color}`), name).toEqual([]);
       expect(`${css}${body}`.toLowerCase()).not.toContain(s.seller.brandColour.toLowerCase());
       expect(css).toMatch(/img\{[^}]*filter:grayscale\(1\)/);
+    }
+  });
+});
+
+// docs/specs/invoice-templates.md, "Signature's Night accents in the business's colour", criteria 24 to 28.
+describe('Signature’s Night accents in the business’s colour', () => {
+  const MINT = '#6ce4a2';
+  const LIME = '#cff26a';
+  const inColour = (template: string, brandColour: string) =>
+    renderDocumentHtml(
+      { ...FIXTURES.ukVat!, template, seller: { ...FIXTURES.ukVat!.seller, brandColour } },
+      { fontUrl },
+    );
+  const headOf = (html: string) =>
+    html.slice(html.indexOf('<header class="head">'), html.indexOf('</header>'));
+  const lifted = (brand: string) => ({
+    accent: liftForNight(brand, 0.8, 0.11),
+    light: liftForNight(brand, 0.87, 0.1),
+    deep: liftForNight(brand, 0.68, 0.13),
+  });
+
+  it('the Night head’s labels, number past the crease, due date and line take the colour (24)', () => {
+    for (const brand of ['#d9480f', '#1d3c5a']) {
+      const html = inColour('signature', brand);
+      const { accent, light, deep } = lifted(brand);
+      expect(html, brand).toContain(`.head .lab{font-size:7.8pt;color:${accent}`);
+      expect(html, brand).toMatch(new RegExp(`\\.fold \\.past\\{[^}]*color:${accent}`));
+      expect(html, brand).toContain(`.due .when{font-size:8.8pt;color:${light}`);
+      const head = headOf(html);
+      expect(head, brand).toContain(`stop-color="${light}"`);
+      expect(head, brand).toContain(`stop-color="${accent}"`);
+      expect(head, brand).toContain(`stop-color="${deep}"`);
+      for (const ours of [MINT, LIME, '#46da80', '#2fb3a6'])
+        expect(head.toLowerCase(), brand).not.toContain(ours);
+      expect(html.slice(html.indexOf('<style'), html.indexOf('</style>')), brand).not.toContain(MINT);
+    }
+  });
+
+  it('Route on Night’s first stop and line follow the same colours (25)', () => {
+    const brand = '#d9480f';
+    const html = inColour('signature-route-dark', brand);
+    const { accent, light, deep } = lifted(brand);
+    expect(html).toMatch(new RegExp(`\\.dot\\{[^}]*background:${light}`));
+    expect(html).toContain(
+      `.track{position:relative;height:.8mm;border-radius:.4mm;background:linear-gradient(90deg,${light},${accent} 55%,${deep})}`,
+    );
+    expect(html).not.toContain(LIME);
+  });
+
+  it('a colour near grey gives silver, and Invoica’s own colour gives today’s (27)', () => {
+    const grey = lifted('#2f3a3d');
+    const html = inColour('signature', '#2f3a3d');
+    expect(html).toContain(`.head .lab{font-size:7.8pt;color:${grey.accent}`);
+    const own = inColour('signature', INVOICA_COLOUR);
+    expect(own).toContain(`.head .lab{font-size:7.8pt;color:${MINT}`);
+    expect(own).toContain(`.due .when{font-size:8.8pt;color:${LIME}`);
+    expect(headOf(own)).toContain('stop-color="#cff26a"');
+    expect(headOf(own)).toContain('stop-color="#46da80"');
+    expect(headOf(own)).toContain('stop-color="#2fb3a6"');
+    const route = inColour('signature-route-dark', INVOICA_COLOUR);
+    expect(route).toContain(
+      '.track{position:relative;height:.8mm;border-radius:.4mm;background:linear-gradient(90deg,#cff26a,#37c66b 55%,#138c86)}',
+    );
+  });
+
+  it('the turned corner and how to pay keep the business’s colour; the styles on white are unchanged (28)', () => {
+    const brand = '#d9480f';
+    expect(inColour('signature', brand)).toMatch(new RegExp(`\\.flap\\{[^}]*${brand}`));
+    for (const style of ['signature-light', 'signature-route']) {
+      const before = inColour(style, brand);
+      expect(before, style).toContain(LIME);
     }
   });
 });

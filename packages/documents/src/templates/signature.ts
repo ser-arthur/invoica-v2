@@ -1,3 +1,4 @@
+import { INVOICA_COLOUR, liftForNight } from '@invoica/core';
 import type { DocumentView } from '../view';
 import { creaseCss, creaseNumber, onNight, POWERED_CSS, poweredByInvoica } from './invoica';
 import { esc, fitPt, lines, linesTable, logoTile, notesBlock, onWhite, para, totalsBlock } from './shared';
@@ -11,7 +12,10 @@ import { esc, fitPt, lines, linesTable, logoTile, notesBlock, onWhite, para, tot
  * - Light (`signature-light`): the number crossed by the crease, its far side grey; the amount due on a slip of the
  *   business's colour with its corner turned, the way Invoica's mark turns the corner of its i.
  * - Route and Route on Night (`signature-route`, `signature-route-dark`): the page's corner turned in the business's
- *   colour, the way from issue to due along Invoica's line, and the amount due the largest thing on the page.
+ *   colour, the way from issue to due along a line, and the amount due the largest thing on the page.
+ *
+ * On Night the accents (the labels, the number past the crease, the due date, the crease and the route) are the
+ * business's colour lifted to read there; in Invoica's own colour they are Invoica's.
  *
  * Every style ends with "Powered by" and Invoica's wordmark.
  */
@@ -22,6 +26,19 @@ const MINT = '#6ce4a2';
 const LIME = '#cff26a';
 const LINE_ON_NIGHT: [string, string, string] = ['#cff26a', '#46da80', '#2fb3a6'];
 const LINE_ON_WHITE: [string, string, string] = ['#cff26a', '#37c66b', '#138c86'];
+const ROUTE_LINE: [string, string, string] = ['#cff26a', '#37c66b', '#138c86'];
+
+/**
+ * The accents on Night (docs/specs/invoice-templates.md, Signature's Night accents): the business's colour lifted to
+ * read on Night, keeping its hue, so the labels, the number past the crease, the due date and the line are the
+ * business's. In Invoica's own colour they are Invoica's mint, lime and line, as they always were.
+ */
+function nightAccents(brand: string): { accent: string; light: string; line: [string, string, string] } {
+  if (brand.toLowerCase() === INVOICA_COLOUR) return { accent: MINT, light: LIME, line: LINE_ON_NIGHT };
+  const accent = liftForNight(brand, 0.8, 0.11);
+  const light = liftForNight(brand, 0.87, 0.1);
+  return { accent, light, line: [light, accent, liftForNight(brand, 0.68, 0.13)] };
+}
 
 /** The parts below the top, the same in every style; `c` carries the colours for a light or a Night page. */
 function lower(c: { ink: string; soft: string; hair: string; panel: string; brand: string }) {
@@ -121,6 +138,7 @@ export const signature = {
   fonts: ['Sora', 'Onest'] as const,
   css: (v: DocumentView) => {
     const tile = logoTile(v) ?? '#ffffff';
+    const { accent, light } = nightAccents(v.brandColour);
     return `
 @page{size:A4;margin:15mm 0 18mm}
 @page:first{margin-top:0}
@@ -131,11 +149,11 @@ body{font-family:'Onest',sans-serif;font-size:9.2pt;line-height:1.5;color:#16201
 .head .who{padding-right:18mm}
 ${whoCss(13, '#ffffff', 'rgb(255 255 255 / .62)', !!tile)}
 .title{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10mm;align-items:end;margin-top:11mm}
-.head .lab{font-size:7.8pt;color:${MINT};margin-bottom:.6mm}
-${creaseCss(fitPt(v.number, 96, 0.64, 46, 20), '#ffffff', MINT)}
+.head .lab{font-size:7.8pt;color:${accent};margin-bottom:.6mm}
+${creaseCss(fitPt(v.number, 96, 0.64, 46, 20), '#ffffff', accent)}
 .due{text-align:right}
 .due .amt{font-family:'Sora',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:${amountPt(v, 78, 25, 15)}pt;line-height:1.05;color:#ffffff;white-space:nowrap}
-.due .when{font-size:8.8pt;color:${LIME};margin-top:1mm}
+.due .when{font-size:8.8pt;color:${light};margin-top:1mm}
 .wrap{padding:0 16mm}
 .facts{display:flex;flex-wrap:wrap;gap:0 9mm;margin:0 0 6mm;padding:0 0 2.6mm;border-bottom:.6pt solid #dfe5e1}
 .facts .v{font-weight:500}
@@ -147,7 +165,7 @@ ${lower({ ink: '#16201b', soft: '#5b6862', hair: '#dfe5e1', panel: `color-mix(in
   <span class="flap" aria-hidden="true"></span>
   ${who(v, logo, logoTile(v) ?? '#ffffff')}
   <div class="title">
-    <div><div class="lab">${esc(v.heading)}</div>${creaseNumber(v.number, { line: LINE_ON_NIGHT, tone: NIGHT_TONE })}</div>
+    <div><div class="lab">${esc(v.heading)}</div>${creaseNumber(v.number, { line: nightAccents(v.brandColour).line, tone: NIGHT_TONE })}</div>
     <div class="due"><div class="lab">${esc(v.amountDue.label)}</div><div class="amt">${esc(v.amountDue.value)}</div>${
       v.amountDue.dueLine ? `<div class="when">${esc(v.amountDue.dueLine)}</div>` : ''
     }</div>
@@ -208,6 +226,14 @@ function route(dark: boolean) {
       const brand = dark ? onNight(v.brandColour, NIGHT, 3) : v.brandColour;
       const brandText = dark ? onNight(v.brandColour, NIGHT) : onWhite(v.brandColour);
       const tile = dark ? (logoTile(v) ?? '#ffffff') : null;
+      // On Night the route takes the business's colour, as the Night head's accents do; on white it is Invoica's.
+      const own = !dark || v.brandColour.toLowerCase() === INVOICA_COLOUR;
+      const line = own ? ROUTE_LINE : nightAccents(v.brandColour).line;
+      const glow = !dark
+        ? 'rgb(55 198 107 / .16)'
+        : own
+          ? 'rgb(207 242 106 / .18)'
+          : `color-mix(in oklab,${line[0]} 18%,transparent)`;
       return `
 @page{size:A4;margin:15mm 0 18mm${dark ? `;background:${NIGHT}` : ''}}
 @page:first{margin-top:0}
@@ -220,12 +246,12 @@ ${whoCss(18, ink, soft, !!tile)}
 .who .n{font-weight:700}
 .route{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4mm;margin:12mm 0 8mm}
 .stop{display:flex;align-items:center;gap:2.6mm}
-.dot{width:3.6mm;height:3.6mm;border-radius:50%;flex:none;background:${LIME};box-shadow:0 0 0 1.2mm ${dark ? 'rgb(207 242 106 / .18)' : 'rgb(55 198 107 / .16)'}}
+.dot{width:3.6mm;height:3.6mm;border-radius:50%;flex:none;background:${line[0]};box-shadow:0 0 0 1.2mm ${glow}}
 .stop.end .dot{background:${brand};box-shadow:0 0 0 1.2mm color-mix(in oklab,${brand} 24%,transparent)}
 .stop.end{text-align:right}
 .stop .k{font-size:7.8pt;color:${soft}}
 .stop .v{font-weight:600;color:${ink};line-height:1.2;white-space:nowrap}
-.track{position:relative;height:.8mm;border-radius:.4mm;background:linear-gradient(90deg,${LIME},#37c66b 55%,#138c86)}
+.track{position:relative;height:.8mm;border-radius:.4mm;background:linear-gradient(90deg,${line[0]},${line[1]} 55%,${line[2]})}
 .track span{position:absolute;left:50%;top:-6.4mm;translate:-50% 0;font-size:7.8pt;color:${soft};white-space:nowrap}
 .big{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10mm;padding-bottom:7mm;border-bottom:1.4pt solid ${ink};margin-top:9mm}
 .route+.big{margin-top:0}
