@@ -1,7 +1,8 @@
 const { chromium } = require('/home/claude/invoica/node_modules/.pnpm/node_modules/playwright');
 // Round 13, second pass: the folder tabs of option C made properly, and with option A's pieces filed behind them.
 // node why-tabs.cjs <option> <width> <height> <out.png>
-// Options: line (C1), sheets (C2), file (C3), filed (C4).
+// Options: line (C1), sheets (C2), file (C3), filed (C4); then C4's colour only on the tabs:
+// white (W1), edge (W2), night (W3).
 (async () => {
   const [, , option, width, height, out] = process.argv;
   const b = await chromium.launch();
@@ -52,7 +53,7 @@ const { chromium } = require('/home/claude/invoica/node_modules/.pnpm/node_modul
         ['left:0', 'left:50%;translate:-50% 0', 'right:0'][i];
 
       // Option A's three pieces, for C4
-      const specimen = (i) => {
+      const specimen = (i, look = { ink: '#09191c', soft: '#3e4f51', rule: 'rgb(9 25 28/.1)', disc: '#fff', late: '#b3380a' }) => {
         const sheet = (x, y, r, colour, z) =>
           `<div style="position:absolute;left:${x}px;top:${y}px;width:136px;height:96px;background:#fff;border-radius:4px;rotate:${r}deg;z-index:${z};box-shadow:0 0 0 1px rgb(0 0 0/.05),0 14px 24px -14px rgb(19 32 26/.45);overflow:hidden">
             <div style="height:46px;background:${colour};padding:9px 10px;position:relative">
@@ -69,21 +70,21 @@ const { chromium } = require('/home/claude/invoica/node_modules/.pnpm/node_modul
           return `<div style="position:relative;height:140px;width:300px">${sheet(4, 30, -7, '#d9480f', 1)}${sheet(80, 16, -1, '#5b2a4e', 2)}${sheet(156, 28, 5, '#17795a', 3)}</div>`;
         const seg = (w, c) => `<span style="display:block;width:${w}%;height:100%;background:${c};border-radius:5px"></span>`;
         const key = (c, k, v) =>
-          `<span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${c};box-shadow:0 0 0 1px rgb(9 25 28/.12)"></span><span style="color:#3e4f51">${k}</span><b style="color:#09191c;font-weight:600">${v}</b></span>`;
+          `<span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${c};box-shadow:0 0 0 1px rgb(9 25 28/.12)"></span><span style="color:${look.soft}">${k}</span><b style="color:${look.ink};font-weight:600">${v}</b></span>`;
         if (i === 1)
           return `<div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:360px">
-            <div style="display:flex;align-items:baseline;gap:10px"><span style="font:800 36px/1 ${display};letter-spacing:-.03em;color:#09191c">£6,420.00</span><span style="font-size:13px;color:#3e4f51">owed to you</span></div>
+            <div style="display:flex;align-items:baseline;gap:10px"><span style="font:800 36px/1 ${display};letter-spacing:-.03em;color:${look.ink}">£6,420.00</span><span style="font-size:13px;color:${look.soft}">owed to you</span></div>
             <div style="display:flex;gap:3px;height:10px">${seg(58, '#37c66b')}${seg(27, '#b6e04a')}${seg(15, '#f0705f')}</div>
             <div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap">${key('#37c66b', 'Paid', '£8,950')}${key('#b6e04a', 'Due', '£4,180')}${key('#f0705f', 'Late', '£2,240')}</div></div>`;
         const row = (ini, name, amount, note, noteColour, last) =>
-          `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;${last ? '' : 'border-bottom:1px solid rgb(9 25 28/.1)'}">
-            <span style="width:28px;height:28px;border-radius:50%;background:#fff;display:grid;place-items:center;font:700 11px/1 ${display};color:#09191c">${ini}</span>
-            <span style="flex:1;font-size:14px;color:#09191c;font-weight:600">${name}</span>
-            <span style="text-align:right;font-size:14px;color:#09191c;font-weight:600;font-variant-numeric:tabular-nums">${amount}<span style="display:block;font-size:11px;font-weight:500;color:${noteColour}">${note}</span></span></div>`;
+          `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;${last ? '' : `border-bottom:1px solid ${look.rule}`}">
+            <span style="width:28px;height:28px;border-radius:50%;background:${look.disc};display:grid;place-items:center;font:700 11px/1 ${display};color:${look.ink}">${ini}</span>
+            <span style="flex:1;font-size:14px;color:${look.ink};font-weight:600">${name}</span>
+            <span style="text-align:right;font-size:14px;color:${look.ink};font-weight:600;font-variant-numeric:tabular-nums">${amount}<span style="display:block;font-size:11px;font-weight:500;color:${noteColour}">${note}</span></span></div>`;
         return `<div style="width:100%;max-width:360px">
-          ${row('OD', 'Oakridge Dental', '£1,440.00', '12 days late', '#b3380a')}
-          ${row('FS', 'Fennick &amp; Shaw', '£800.00', 'due 18 Nov', '#3e4f51')}
-          ${row('MA', 'Meridian Architects', 'Settled', '3 invoices', '#3e4f51', true)}</div>`;
+          ${row('OD', 'Oakridge Dental', '£1,440.00', '12 days late', look.late)}
+          ${row('FS', 'Fennick &amp; Shaw', '£800.00', 'due 18 Nov', look.soft)}
+          ${row('MA', 'Meridian Architects', 'Settled', '3 invoices', look.soft, true)}</div>`;
       };
 
       items.forEach((item) => part(item, 'pillarRule').remove());
@@ -125,23 +126,48 @@ const { chromium } = require('/home/claude/invoica/node_modules/.pnpm/node_modul
         if (phone) list.style.gap = '14px';
       }
 
-      if (option === 'file' || option === 'filed') {
+      if (['file', 'filed', 'white', 'edge', 'night'].includes(option)) {
         // C3: a file of three dividers, one in front of the other, their tabs stepping across.
         // C4: the same, with what is filed behind each divider showing on it (option A's pieces).
-        const withPiece = option === 'filed';
-        list.style.cssText += `;display:block;filter:none;padding-top:${TAB_H}px`;
+        // W1 to W3: C4 with each point's colour on its tab only; the dividers white with depth (W1), white with the
+        // tab's colour running along the divider's top edge (W2), or Night (W3).
+        const withPiece = option !== 'file';
+        const only = ['white', 'edge', 'night'].includes(option);
+        const night = option === 'night';
+        const sheetOf = (i) => (night ? '#0f2427' : only ? '#fff' : pale[i]);
+        const tabOf = (i) => (only ? strong[i] : pale[i]);
+        const depth = (i) =>
+          night
+            ? `filter:drop-shadow(0 -4px 10px rgb(0 0 0/.35))`
+            : option === 'white'
+              ? `filter:drop-shadow(0 0 .6px rgb(9 25 28/.16)) drop-shadow(0 -5px 12px rgb(19 32 26/${i ? 0.14 : 0.06}))`
+              : option === 'edge'
+                ? `filter:drop-shadow(0 0 .6px rgb(9 25 28/.12)) drop-shadow(0 -2px 6px rgb(19 32 26/${i ? 0.06 : 0.03}))`
+                : i > 0
+                  ? 'filter:drop-shadow(0 -4px 8px rgb(19 32 26/.09))'
+                  : '';
+        const look = night
+          ? { ink: '#fff', soft: 'rgb(255 255 255/.72)', rule: 'rgb(255 255 255/.12)', disc: 'rgb(255 255 255/.1)', late: '#ff8f73' }
+          : only
+            ? { ink: '#09191c', soft: '#3e4f51', rule: 'rgb(9 25 28/.1)', disc: '#ecefed', late: '#b3380a' }
+            : undefined;
+        list.style.cssText += `;display:block;padding-top:${TAB_H}px;filter:${
+          option === 'white' || option === 'edge' ? 'drop-shadow(0 26px 34px rgb(19 32 26/.10))' : 'none'
+        }`;
         items.forEach((item, i) => {
           const heading = part(item, 'pillarHeading');
           const body = part(item, 'pillarBody');
           // each divider stands a little in front of the one before it; the one before leaves room for its tab
           const overlap = 16;
           const room = i === 2 ? (phone ? 30 : 48) : overlap + TAB_H + (phone ? 26 : 38);
-          item.style.cssText += `;position:relative;z-index:${i + 1};background:${pale[i]};border-radius:${
+          item.style.cssText += `;position:relative;z-index:${i + 1};background:${sheetOf(i)};border-radius:${
             i === 0 ? '0 10px 10px 10px' : i === 2 ? '10px 0 10px 10px' : '10px'
-          };margin-top:${i === 0 ? 0 : -overlap}px;padding:${phone ? `28px 24px ${room}px` : `40px 56px ${room}px`};${
-            i > 0 ? 'filter:drop-shadow(0 -4px 8px rgb(19 32 26/.09))' : ''
-          }`;
-          const t = tab(part(item, 'label'), pale[i], phone ? stagger(i) : ['left:0', 'left:33.333%', 'left:66.666%'][i]);
+          };margin-top:${i === 0 ? 0 : -overlap}px;padding:${phone ? `28px 24px ${room}px` : `40px 56px ${room}px`};${depth(i)};${option === 'edge' ? `box-shadow:inset 0 3px 0 ${strong[i]}` : ''}`;
+          if (night) {
+            heading.style.color = '#fff';
+            body.style.color = 'rgb(255 255 255/.74)';
+          }
+          const t = tab(part(item, 'label'), tabOf(i), phone ? stagger(i) : ['left:0', 'left:33.333%', 'left:66.666%'][i]);
           t.dataset.tab = '';
           item.prepend(t);
           if (!phone) {
@@ -157,7 +183,7 @@ const { chromium } = require('/home/claude/invoica/node_modules/.pnpm/node_modul
               words.appendChild(heading);
               words.appendChild(body);
               row.appendChild(words);
-              row.appendChild(el('div', 'flex:0 1 40%;display:flex;justify-content:flex-end', specimen(i)));
+              row.appendChild(el('div', 'flex:0 1 40%;display:flex;justify-content:flex-end', specimen(i, look)));
             } else {
               row.appendChild(heading);
               body.style.margin = '6px 0 0';
@@ -166,7 +192,7 @@ const { chromium } = require('/home/claude/invoica/node_modules/.pnpm/node_modul
             }
             item.appendChild(row);
           } else if (withPiece) {
-            heading.before(el('div', 'margin:4px 0 24px', specimen(i)));
+            heading.before(el('div', 'margin:4px 0 24px', specimen(i, look)));
           }
         });
       }

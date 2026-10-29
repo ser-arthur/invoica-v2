@@ -49,3 +49,20 @@ Recommended: C4. It is both of the owner's leanings at once: the file says "in o
 in it. Seen with How it works below it, the tints sit in the same family as that section's stage panels without
 competing. Built, the money piece would show figures of its own, since the same studio's dashboard just above already
 shows £6,420.00 owed with the same bar.
+
+## Third pass, 01:59: the colour on the tabs only
+
+The owner agreed C4, and asked to try first keeping each point's colour only where its name is written, the tab, with
+the rest of each divider white and given depth on the top and sides so it stands out from the ground. If it does not
+work, C4 as it is. `why-tabs.cjs` renders three (`round-13/why-colour-*.png`, by `boards.cjs ... colour`):
+
+| Option | What it is |
+| --- | --- |
+| W1, white with depth | White dividers, the tabs in lime `#cff26a`, green `#6cd47a` and teal `#2fb3a6`, a fine edge and a soft shadow on the top and sides, heavier where a divider stands in front of the one before. |
+| W2, white with the colour along the top edge | As W1, each tab's colour carried along its divider's top edge as a 3 pixel line, with lighter shadows. |
+| W3, Night | The dividers in Night `#0f2427`, the tabs in their colours, the words and pieces in white. |
+
+Recommended: W2. In W1 the three white dividers run together into one white block, more so on a phone; the shadow has
+to do all the separating, and a shadow strong enough to do it looks heavy. The line along each top edge does it
+cleanly, makes each tab and its divider one sheet, and brings back the coloured rules the section has today. W3 is
+striking, but it follows the dashboard's Night straight after, and dark on dark divides no better than white on white.

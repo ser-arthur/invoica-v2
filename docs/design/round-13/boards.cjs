@@ -2,7 +2,7 @@ const { chromium } = require('/home/claude/invoica/node_modules/.pnpm/node_modul
 const fs = require('fs');
 const path = require('path');
 // The round 13 boards: each option's wide-screen render beside its phone render, with a line on what it is.
-// node boards.cjs <renders folder> <boards folder> [first | tabs]
+// node boards.cjs <renders folder> <boards folder> [first | tabs | colour]
 const FIRST = [
   {
     key: 'specimens',
@@ -60,9 +60,33 @@ const TABS = [
     motion: 'Arriving, each divider slides up from behind the one before it, then its piece comes in.',
   },
 ];
+// 01:59: C4 with each point's colour on its tab only. Renders by why-tabs.cjs.
+const COLOUR = [
+  {
+    key: 't-white',
+    out: 'colour-white',
+    title: 'W1. White dividers, the colour on the tabs, depth from shadow',
+    what: 'Each divider is white and only its tab carries the colour. A fine edge and a soft shadow on the top and sides, heavier where a divider stands in front of the one before, keep the white apart from the ground.',
+    motion: 'Arriving, each divider slides up from behind the one before it, then its piece comes in.',
+  },
+  {
+    key: 't-edge',
+    out: 'colour-edge',
+    title: 'W2. White dividers, the tab’s colour running along the top edge',
+    what: 'As W1, with each tab’s colour carried along its divider’s top edge as a fine line, so tab and divider read as one sheet and each divider stands clear of the one behind it with less shadow.',
+    motion: 'Arriving, each divider slides up, the line along its top drawing out from its tab.',
+  },
+  {
+    key: 't-night',
+    out: 'colour-night',
+    title: 'W3. Night dividers, the colour on the tabs',
+    what: 'The dividers in Night, the tabs in their colours, the words and pieces in white. For comparison: it would sit straight after the dashboard, also in Night.',
+    motion: 'Arriving, each divider slides up from behind the one before it.',
+  },
+];
 (async () => {
   const [, , renders, outDir, set = 'first'] = process.argv;
-  const OPTIONS = set === 'tabs' ? TABS : FIRST;
+  const OPTIONS = set === 'tabs' ? TABS : set === 'colour' ? COLOUR : FIRST;
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1560, height: 900 }, deviceScaleFactor: 1.25 });
   for (const o of OPTIONS) {
