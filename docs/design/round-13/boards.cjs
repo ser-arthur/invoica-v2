@@ -2,8 +2,8 @@ const { chromium } = require('/home/claude/invoica/node_modules/.pnpm/node_modul
 const fs = require('fs');
 const path = require('path');
 // The round 13 boards: each option's wide-screen render beside its phone render, with a line on what it is.
-// node boards.cjs <renders folder> <boards folder>
-const OPTIONS = [
+// node boards.cjs <renders folder> <boards folder> [first | tabs]
+const FIRST = [
   {
     key: 'specimens',
     title: 'A. A small working piece over each point',
@@ -29,8 +29,40 @@ const OPTIONS = [
     motion: 'Arriving, they come down loose and square up.',
   },
 ];
+// The second pass, 01:51: C's tabs made properly, and A's pieces filed behind them. Renders by why-tabs.cjs.
+const TABS = [
+  {
+    key: 't-line',
+    out: 'tabs-line',
+    title: 'C1. The same line, with proper tabs',
+    what: 'The tabs have soft shoulders, as a folder’s do, and rise out of the line in its own colour where each one stands. The label is a touch larger. On a phone each point has its own line and the tabs step across.',
+    motion: 'Arriving, the line draws from left to right and each tab rises as the line reaches it.',
+  },
+  {
+    key: 't-sheets',
+    out: 'tabs-sheets',
+    title: 'C2. Each point on its own divider',
+    what: 'Each point is a divider in a pale tint of its colour, its tab part of the same sheet, the tabs stepping left, middle and right.',
+    motion: 'Arriving, the dividers rise into place one after another.',
+  },
+  {
+    key: 't-file',
+    out: 'tabs-file',
+    title: 'C3. A file of dividers',
+    what: 'The three dividers stand one in front of the other across the full width, their tabs stepping across as in a real file. The heading on the left, the words on the right.',
+    motion: 'Arriving, each divider slides up from behind the one before it.',
+  },
+  {
+    key: 't-filed',
+    out: 'tabs-filed',
+    title: 'C4. The file, with what is filed on each divider (A in C)',
+    what: 'As C3, with option A’s piece on each divider: the invoices in three businesses’ colours, what is owed, and the clients with their balances. On a phone each piece sits above its heading.',
+    motion: 'Arriving, each divider slides up from behind the one before it, then its piece comes in.',
+  },
+];
 (async () => {
-  const [, , renders, outDir] = process.argv;
+  const [, , renders, outDir, set = 'first'] = process.argv;
+  const OPTIONS = set === 'tabs' ? TABS : FIRST;
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1560, height: 900 }, deviceScaleFactor: 1.25 });
   for (const o of OPTIONS) {
@@ -51,7 +83,7 @@ const OPTIONS = [
     const file = path.resolve(renders, `board-${o.key}.html`);
     fs.writeFileSync(file, html);
     await p.goto(`file://${file}`, { waitUntil: 'load' });
-    await p.screenshot({ path: path.resolve(outDir, `why-${o.key}.png`), fullPage: true });
+    await p.screenshot({ path: path.resolve(outDir, `why-${o.out ?? o.key}.png`), fullPage: true });
   }
   await b.close();
 })();

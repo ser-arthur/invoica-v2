@@ -31,3 +31,21 @@ use an invoice other than INV-0044, which How it works shows at its third step.
 
 A repeats the dashboard's figures a few hundred pixels below the dashboard. D's white sheets read as cards, and their
 loose angles sit apart from the precision of the rest of the site.
+
+## Second pass, 01:51: C made properly, and A in C
+
+The owner leaned between A and C. B looked intuitive at first, but one "Billed to" stands for one client, which is not
+how keeping every client in order appears; A shows what actually happens. He liked the folder tabs but felt they could
+be made better. `round-13/why-tabs.cjs` renders four ways (`round-13/why-tabs-*.png`, by `boards.cjs ... tabs`):
+
+| Option | What it is |
+| --- | --- |
+| C1, the same line, with proper tabs | The tabs have soft shoulders, as a folder's do, and rise out of the line in its own colour where each stands. |
+| C2, each point on its own divider | A divider in a pale tint of the point's colour (`#e8f5c4`, `#d5f0dd`, `#cfe9e6`), its tab part of the same sheet; the tabs step left, middle and right. |
+| C3, a file of dividers | The three stand one in front of the other across the full width, their tabs stepping across in thirds, the heading on the left and the words on the right. |
+| C4, the file with A's piece on each divider | As C3, with A's piece on the right of each divider; on a phone the piece sits above the heading. |
+
+Recommended: C4. It is both of the owner's leanings at once: the file says "in order" and each divider shows what is
+in it. Seen with How it works below it, the tints sit in the same family as that section's stage panels without
+competing. Built, the money piece would show figures of its own, since the same studio's dashboard just above already
+shows £6,420.00 owed with the same bar.
