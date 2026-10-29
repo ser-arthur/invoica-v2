@@ -9,7 +9,7 @@ test.use({ contextOptions: { reducedMotion: 'reduce' } });
 
 test('the home page leads with one headline, and every way in goes to sign-up or sign-in', async ({
   page,
-}) => {
+}, info) => {
   await page.goto('/');
   const h1 = page.getByRole('heading', { level: 1 });
   await expect(h1).toHaveCount(1);
@@ -18,6 +18,9 @@ test('the home page leads with one headline, and every way in goes to sign-up or
   const create = page.getByRole('link', { name: /^Create (your )?free account$/ });
   expect(await create.count()).toBeGreaterThanOrEqual(2);
   for (const link of await create.all()) await expect(link).toHaveAttribute('href', '/sign-up');
+  // On a phone "Sign in" is in the header's menu (docs/specs/website-showcase.md, criterion 7), and the footer does
+  // not carry it (docs/specs/website-footer.md).
+  if (info.project.name === 'phone') await page.locator('header summary').click();
   await expect(page.getByRole('link', { name: 'Sign in' }).first()).toHaveAttribute('href', '/sign-in');
 });
 
