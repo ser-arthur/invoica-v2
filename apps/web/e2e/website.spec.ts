@@ -9,7 +9,7 @@ test.use({ contextOptions: { reducedMotion: 'reduce' } });
 
 test('the home page leads with one headline, and every way in goes to sign-up or sign-in', async ({
   page,
-}) => {
+}, info) => {
   await page.goto('/');
   const h1 = page.getByRole('heading', { level: 1 });
   await expect(h1).toHaveCount(1);
@@ -18,6 +18,9 @@ test('the home page leads with one headline, and every way in goes to sign-up or
   const create = page.getByRole('link', { name: /^Create (your )?free account$/ });
   expect(await create.count()).toBeGreaterThanOrEqual(2);
   for (const link of await create.all()) await expect(link).toHaveAttribute('href', '/sign-up');
+  // On a phone "Sign in" is in the header's menu (docs/specs/website-showcase.md, criterion 7), and the footer does
+  // not carry it (docs/specs/website-footer.md).
+  if (info.project.name === 'phone') await page.locator('header summary').click();
   await expect(page.getByRole('link', { name: 'Sign in' }).first()).toHaveAttribute('href', '/sign-in');
 });
 
@@ -99,24 +102,29 @@ test('the crease crosses the headline and nothing else in the hero, at every wid
   }
 });
 
-test('the footer carries the planned pages and the ways in', async ({ page }) => {
+// docs/specs/website-footer.md, criteria 1 and 2.
+test('the footer holds the product’s links, who is behind Invoica, its email, Privacy and Terms', async ({
+  page,
+}) => {
   await page.goto('/');
   const footer = page.getByRole('contentinfo');
-  const planned: [string, string][] = [
-    ['About', '/about'],
-    ['Contact', '/contact'],
-    ['Help centre', '/help'],
-    ['Getting started', '/help/getting-started'],
+  const links: [string, string][] = [
+    ['Why Invoica', '/#why'],
+    ['How it works', '/#how'],
+    ['Templates', '/templates'],
+    ['Pricing', '/pricing'],
+    ['hello@getinvoica.com', 'mailto:hello@getinvoica.com'],
     ['Privacy', '/privacy'],
     ['Terms', '/terms'],
-    ['Cookies', '/cookies'],
-    ['Pricing', '/pricing'],
-    ['Sign in', '/sign-in'],
     ['Create free account', '/sign-up'],
   ];
-  for (const [name, href] of planned) {
+  for (const [name, href] of links) {
     await expect(footer.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);
   }
+  for (const name of ['About', 'Contact', 'Help centre', 'Getting started', 'Sign in', 'Cookies']) {
+    await expect(footer.getByRole('link', { name, exact: true }), name).toHaveCount(0);
+  }
+  await expect(footer.getByText('Invoica is a trading name of Kobby S. Arthur.')).toBeVisible();
 });
 
 test('the header stays in view while the page scrolls under it', async ({ page }, info) => {
@@ -449,13 +457,19 @@ test('moving between the Templates and pricing pages keeps the header where it i
   ).toEqual({ kept: true, started: [] });
 });
 
-test('the home page shows no email address and no example domain, in its words or its invoices', async ({
+test('the home page shows no email address but the footer’s, and no example domain, in its words or its invoices', async ({
   page,
 }) => {
   await page.goto('/');
+  // docs/specs/website-footer.md, criterion 4: the footer's own address is the one email on the page.
+  expect(
+    await page
+      .getByRole('contentinfo')
+      .evaluate((el) => (el as HTMLElement).innerText.match(/[\w.+-]+@[\w-]+\.[a-z]{2,}/gi)),
+  ).toEqual(['hello@getinvoica.com']);
   const everything = await page.evaluate(() =>
     [
-      document.body.innerText,
+      document.querySelector('main')!.innerText,
       ...[...document.querySelectorAll('iframe')].map((frame) => frame.getAttribute('srcdoc') ?? ''),
       ...[...document.querySelectorAll('input')].map((input) => input.placeholder),
     ].join('\n'),

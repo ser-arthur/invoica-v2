@@ -6,7 +6,7 @@ What a visitor sees at an address with no page: a mistyped link, an old link, or
 
 1. **The site's header and footer,** as on the home page.
 2. **An address with no page.** "There is no page at this address.", a line saying the link may be mistyped or out of date, and ways on: the home page (or the dashboard, when signed in), the plans and prices, and signing in.
-3. **A planned page not written yet** (the footer's About, Contact, Help centre, Getting started, Privacy, Terms and Cookies). Its own heading, for example "The About page is being written.", a line on what the page will hold, and the same ways on.
+3. **A planned page not written yet** (the footer's Privacy and Terms; About, Contact, Help centre, Getting started and Cookies left the footer on 29 October, `website-footer.md`). Its own heading, for example "The About page is being written.", a line on what the page will hold, and the same ways on.
 4. **A drawing:** an envelope addressed in grey lines, with Invoica's stamp in the corner and a rubber stamp across it, "Return to sender, address not known" for an address with no page and "Coming soon, being written" for a planned page.
 
 ## Rules

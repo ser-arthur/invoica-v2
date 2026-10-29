@@ -23,6 +23,9 @@ the weaker layouts the same billing as the six picks.
   across beside the controls on a wide screen, three under them on a narrow one, two on a phone. Each rises into place
   as it arrives, as the rest of the site's pieces do.
 - **Foot.** A line and "Create free account", leading to sign up.
+- **Signature's styles** (29 October, 16:56). Signature's card offers its four styles, Night head, Light, Route and Route
+  on Night, as a choice under the card; choosing one redraws the card in it, with the visitor's name and colour. It is
+  still one of the sixteen.
 - No "Use this one" yet: opening sign up with a template already chosen needs a change to setting up an account, for a
   later round.
 
@@ -50,3 +53,6 @@ End-to-end in `apps/web/e2e`.
 6. The page ends with "Create free account", leading to sign up.
 7. The page passes the automated accessibility checks, its scroll-linked motion follows the page's scroll, no words
    run past the edge of a phone (375, 360 and 320 pixels) and its title is "Templates".
+8. Signature's card offers its four styles, Night head first and chosen; choosing Route on Night redraws the card in it,
+   in the visitor's colour when one is chosen, and the other fifteen cards are unchanged.
+

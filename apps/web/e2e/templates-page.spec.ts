@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { liftForNight } from '@invoica/core';
 
 // docs/specs/templates-page.md, acceptance criteria 1 to 7.
 
@@ -59,7 +60,9 @@ test('the Templates page shows all sixteen in the picker’s order, each made ou
   expect(docs).toHaveLength(16);
   docs.forEach((doc, i) => expect(doc, MAKERS[i]).toMatch(inHtml(MAKERS[i]!)));
   for (const doc of docs) expect(doc).not.toMatch(inHtml('Linden & Rowe'));
-  const everything = [await page.evaluate(() => document.body.innerText), ...docs].join('\n');
+  const everything = [await page.evaluate(() => document.querySelector('main')!.innerText), ...docs].join(
+    '\n',
+  );
   expect(everything).not.toMatch(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i);
   expect(everything).not.toMatch(/\.example\b/i);
 });
@@ -170,4 +173,35 @@ test('on small phones no words on the Templates page run past the edge of the sc
     expect(past, `${width}px`).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
   }
+});
+
+test('Signature’s card offers its four styles, and Route on Night redraws it in the visitor’s colour (8)', async ({
+  page,
+}) => {
+  await page.goto('/templates');
+  const range = page.getByRole('list', { name: 'All sixteen templates' });
+  const signature = range.getByRole('listitem').first();
+  const styles = signature.getByRole('group', { name: 'Signature’s style' }).getByRole('radio');
+  await expect(styles).toHaveCount(4);
+  for (const [i, name] of ['Night head', 'Light', 'Route', 'Route on Night'].entries()) {
+    await expect(styles.nth(i)).toHaveAccessibleName(name);
+  }
+  await expect(styles.first()).toBeChecked();
+  const others = await range
+    .locator('iframe')
+    .evaluateAll((els) => els.slice(1).map((e) => (e as HTMLIFrameElement).srcdoc));
+
+  await page.getByRole('radio', { name: 'Navy', exact: true }).check();
+  await signature.getByRole('radio', { name: 'Route on Night' }).check();
+  const frame = signature.locator('iframe');
+  await expect(frame).toHaveAttribute('srcdoc', /class="route"/);
+  // the route's first stop in navy lifted for Night (docs/specs/invoice-templates.md, criterion 25)
+  await expect(frame).toHaveAttribute('srcdoc', new RegExp(liftForNight('#1d3c5a', 0.87, 0.1), 'i'));
+  await page.getByRole('button', { name: 'Back to the examples' }).click();
+  await expect(frame).toHaveAttribute('srcdoc', /class="route"/);
+  expect(
+    await range
+      .locator('iframe')
+      .evaluateAll((els) => els.slice(1).map((e) => (e as HTMLIFrameElement).srcdoc)),
+  ).toEqual(others);
 });

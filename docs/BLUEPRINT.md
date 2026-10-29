@@ -172,6 +172,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **29 Oct, about 00:50 to 03:40, on `main`.** Why Invoica's three points become a file of three white folders, the colour on their tabs, each wider than the one before and holding a picture of what is filed in it (round 13, chosen white and stepped). 920 unit, database and PDF tests and 322 end-to-end tests run, none failed (95 skipped by design). Bundle 47.
 - **29 Oct, about 03:40 to 05:00, on `main`.** A Templates page holds all sixteen with the try-it controls; the header's and footer's Templates lead to it, and the home page keeps six with "See all sixteen" as a link. "Compare plans and prices" is an outlined button. 920 unit, database and PDF tests and 334 end-to-end tests run, none failed (95 skipped by design). Bundle 48.
 - **29 Oct, about 14:45 to 15:45, on `main`.** Signature's Night head and Route on Night take their accents from the business's colour, lifted for Night in OKLCH (`liftForNight`); in Invoica's own colour nothing changes. 932 unit, database and PDF tests and 334 end-to-end tests run, none failed (95 skipped by design). Bundle 49.
+- **29 Oct, about 17:00 to 18:00, on `main`.** A shorter footer: one row of links, the trading-name line, `hello@getinvoica.com`, Privacy and Terms. Signature's four styles on the Templates page. Drafts of the Privacy notice and Terms in `docs/legal/`. 932 unit, database and PDF tests and 336 end-to-end tests run, none failed on the second run (95 skipped by design). Bundle 50.
 
 ## Decisions in force
 
@@ -220,7 +221,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 1. Hosting: Cloudflare, or a better alternative. Proposed in decision 0010; waiting for a yes.
 2. Email: Resend for what the product sends; Zoho Mail keeps the company mailbox (decision 0008).
 3. GitHub: to be linked through the GitHub connector in Settings; the owner creates an empty repository. The first copy of `main` is pushed as a branch and renamed by the owner.
-4. Domain: `invoicer.io` has lapsed; another domain will be bought (the `.com` is taken).
+4. Domain: `invoicer.io` has lapsed. Answered 29 October: `getinvoica.com`, bought at Namecheap (renews 29 October 2027).
 5. Commits and code comments never mention the AI assistant, and messages stay short. The history was rewritten before any push to match.
 6. Sign-in fixes (`fix/auth-hardening`): merged.
 7. Password reset and email verification: build them.
@@ -252,9 +253,9 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 11. Answered 29 October, 14:48: Signature's Night head (and Route on Night) takes its accents from the business's colour (`docs/design/round-11-signature-colour.md`; built in bundle 49).
 12. Answered 28 October, 02:05: sign up on phones opens with the website's mark on a Night head (option A of `docs/design/round-12-sign-up-phone.md`).
 13. Answered 29 October, 03:26: the website's six picks stay on the home page and the sixteen get a Templates page of their own, which the header's Templates link leads to (`docs/specs/templates-page.md`). Later: a "Use this one" on each template, opening sign up with it chosen.
-14. The website's footer (asked 29 October, 14:48): agreed in outline to one row of product links and a bottom line with Privacy (with a cookies section), Terms and the business's details; Help, About, Contact and Cookies leave the footer. Waiting on: the domain (recommended getinvoica.com, with invoica.uk pointing to it; invoica.com, .io, .co, .app and .co.uk are taken), the email on it, and a UK address (a virtual office, not his home). Invoica is a sole trader's trading name; the line names him, the address and the email. The Privacy notice and Terms are legal wording: drafted for the owner, checked by someone qualified before launch.
+14. The website's footer: built 29 October (`docs/specs/website-footer.md`): one row of product links and a bottom line naming Kobby S. Arthur (Invoica is a sole trader's trading name), `hello@getinvoica.com`, Privacy and Terms. The owner bought `getinvoica.com` at Namecheap on 29 October (one domain for now). Before taking paying customers: a UK postal address on the website and invoices (a virtual office, presented as London), a mailbox or forwarding for `hello@`, closing an account from Settings (today by writing in), the Privacy notice and Terms approved and checked by someone qualified (drafts in `docs/legal/`, law of England and Wales at the owner's word, 17:07), and whether the ICO data protection fee applies.
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-49.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-50.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.

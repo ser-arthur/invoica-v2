@@ -12,26 +12,6 @@ export interface PlannedPage {
 
 export const PLANNED_PAGES: PlannedPage[] = [
   {
-    href: '/about',
-    heading: 'The About page is being written.',
-    about: 'It will tell you who makes Invoica, and why.',
-  },
-  {
-    href: '/contact',
-    heading: 'The Contact page is being written.',
-    about: 'It will list the ways to reach the people behind Invoica.',
-  },
-  {
-    href: '/help',
-    heading: 'The help centre is being written.',
-    about: 'It will answer common questions, one step at a time.',
-  },
-  {
-    href: '/help/getting-started',
-    heading: 'The getting started guide is being written.',
-    about: 'It will take you from a new account to your first invoice sent.',
-  },
-  {
     href: '/privacy',
     heading: 'The Privacy page is being written.',
     about: 'It will hold Invoica’s privacy notice.',
@@ -40,11 +20,6 @@ export const PLANNED_PAGES: PlannedPage[] = [
     href: '/terms',
     heading: 'The Terms page is being written.',
     about: 'It will hold the terms for using Invoica.',
-  },
-  {
-    href: '/cookies',
-    heading: 'The Cookies page is being written.',
-    about: 'It will explain the cookies Invoica uses.',
   },
 ];
 

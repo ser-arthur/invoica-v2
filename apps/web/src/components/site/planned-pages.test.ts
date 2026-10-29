@@ -2,7 +2,7 @@ import { readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { FOOTER_COLUMNS } from './links';
+import { FOOTER_LINKS, FOOTER_SMALL_PRINT } from './links';
 import { PLANNED_PAGES, plannedPage } from './planned-pages';
 
 const APP = fileURLToPath(new URL('../../app', import.meta.url));
@@ -22,20 +22,21 @@ function builtAddresses(dir = APP): string[] {
 
 describe('planned pages', () => {
   it('finds a planned page by its address, with or without a closing slash', () => {
-    expect(plannedPage('/about')?.heading).toBe('The About page is being written.');
-    expect(plannedPage('/help/getting-started/')?.href).toBe('/help/getting-started');
+    expect(plannedPage('/privacy')?.heading).toBe('The Privacy page is being written.');
+    expect(plannedPage('/terms/')?.href).toBe('/terms');
   });
 
   it('finds nothing for an address that is not planned, or no address at all', () => {
     expect(plannedPage('/no-such-page')).toBeUndefined();
-    expect(plannedPage('/About')).toBeUndefined();
-    expect(plannedPage('/about/team')).toBeUndefined();
+    expect(plannedPage('/Privacy')).toBeUndefined();
+    expect(plannedPage('/privacy/cookies')).toBeUndefined();
+    expect(plannedPage('/about')).toBeUndefined();
     expect(plannedPage('')).toBeUndefined();
     expect(plannedPage(null)).toBeUndefined();
   });
 
   it('are every one linked from the footer', () => {
-    const footer = FOOTER_COLUMNS.flatMap((column) => column.links.map((link) => link.href));
+    const footer = [...FOOTER_LINKS, ...FOOTER_SMALL_PRINT].map((link) => link.href);
     for (const page of PLANNED_PAGES) expect(footer, page.href).toContain(page.href);
   });
 

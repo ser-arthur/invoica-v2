@@ -281,7 +281,8 @@ Each is a test. End-to-end in `apps/web/e2e`; sample details in `packages/docume
 16. As the page scrolls, the header's link for the section in view is marked as current (`aria-current`), and only that
     one; it sits on the logo's green with dark words, and carries no dot or underline.
 17. The home page's text and its rendered invoices contain no email address and no `.example`; the sign-up slip has no
-    example address.
+    example address. (Since 29 October the footer's own address,
+    `hello@getinvoica.com`, is the one exception: `website-footer.md`.)
 18. The client section shows a list of clients with what each owes and one client's page with its history: an invoice,
     a payment and a credit note.
 19. The crease's ends are drawn past the headline's box on the hero and the sign-in page, fading out there.
