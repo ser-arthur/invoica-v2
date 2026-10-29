@@ -173,6 +173,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **29 Oct, about 03:40 to 05:00, on `main`.** A Templates page holds all sixteen with the try-it controls; the header's and footer's Templates lead to it, and the home page keeps six with "See all sixteen" as a link. "Compare plans and prices" is an outlined button. 920 unit, database and PDF tests and 334 end-to-end tests run, none failed (95 skipped by design). Bundle 48.
 - **29 Oct, about 14:45 to 15:45, on `main`.** Signature's Night head and Route on Night take their accents from the business's colour, lifted for Night in OKLCH (`liftForNight`); in Invoica's own colour nothing changes. 932 unit, database and PDF tests and 334 end-to-end tests run, none failed (95 skipped by design). Bundle 49.
 - **29 Oct, about 17:00 to 18:00, on `main`.** A shorter footer: one row of links, the trading-name line, `hello@getinvoica.com`, Privacy and Terms. Signature's four styles on the Templates page. Drafts of the Privacy notice and Terms in `docs/legal/`. 932 unit, database and PDF tests and 336 end-to-end tests run, none failed on the second run (95 skipped by design). Bundle 50.
+- **29 Oct, about 17:35 to 21:40, on `main`.** Errors in plain words under their fields (sign in, create account, the password pages and every form in the app); only database guards written for people reach the page. Invoica's own dropdowns, dates, colours, checkboxes and radio buttons, as a sheet on phones (decision 0015). 945 unit, database and PDF tests and 368 end-to-end tests run, none failed on the third run (98 skipped by design). Bundle 51.
 
 ## Decisions in force
 
@@ -192,6 +193,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 0012 | The logo | Accepted: the name, its first i a slip with the corner turned |
 | 0013 | Where the launch offers show | Accepted: the trial leads; local prices public; the founding offer in the app at the end of the trial |
 | 0014 | The theme on the account | Accepted: saved on the account in `user_preference`, one row per person under its own row rule; each device keeps a copy |
+| 0015 | The app's own controls | Accepted: dropdowns, dates, colours, checkboxes and radio buttons drawn by the app; a sheet from the foot of the screen on phones |
 
 ## Choices made during the build (reversible, flagged for Kobby)
 
@@ -257,5 +259,5 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-50.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-51.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.
