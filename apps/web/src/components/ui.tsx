@@ -51,10 +51,15 @@ export function Wordmark({ className }: { className?: string }) {
   return <Logo className={cx('text-ink', className)} />;
 }
 
+/**
+ * A label, its control, and under it the control's error or, when there is none, its hint. `keepHint` keeps a hint
+ * that is not about what was typed (a link such as "Forgot your password?") under the error too.
+ */
 export function Field({
   label,
   hint,
   error,
+  keepHint,
   htmlFor,
   children,
   className,
@@ -62,6 +67,7 @@ export function Field({
   label: string;
   hint?: ReactNode;
   error?: string;
+  keepHint?: boolean;
   htmlFor: string;
   children: ReactNode;
   className?: string;
@@ -73,15 +79,28 @@ export function Field({
       </label>
       {children}
       {error ? (
-        <p id={`${htmlFor}-error`} className="text-[13px] text-danger">
-          {error}
+        <p id={`${htmlFor}-error`} className="flex items-start gap-1.5 text-[13px] text-danger">
+          <ErrorMark />
+          <span>{error}</span>
         </p>
-      ) : hint ? (
+      ) : null}
+      {hint && (!error || keepHint) ? (
         <p id={`${htmlFor}-hint`} className="text-[13px] text-muted">
           {hint}
         </p>
       ) : null}
     </div>
+  );
+}
+
+/** The small circled mark before a field's error, so the error does not rest on its colour alone. */
+export function ErrorMark({ className = 'mt-px' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" className={cx('size-3.5 shrink-0', className)}>
+      <circle cx="8" cy="8" r="7" fill="currentColor" />
+      <path d="M8 4.2v4.6" stroke="var(--color-surface, #fff)" strokeWidth="1.7" strokeLinecap="round" />
+      <circle cx="8" cy="11.3" r="1" fill="var(--color-surface, #fff)" />
+    </svg>
   );
 }
 
@@ -284,10 +303,17 @@ export function FormMessage({
       role={tone === 'danger' ? 'alert' : 'status'}
       className={cx(
         'rounded-[10px] px-4 py-3 text-sm [overflow-wrap:anywhere]',
-        tone === 'danger' ? 'bg-danger-soft text-danger' : 'bg-info-soft text-info',
+        tone === 'danger' ? 'flex items-start gap-2 bg-danger-soft text-danger' : 'bg-info-soft text-info',
       )}
     >
-      {children}
+      {tone === 'danger' ? (
+        <>
+          <ErrorMark className="mt-[3px]" />
+          <span>{children}</span>
+        </>
+      ) : (
+        children
+      )}
     </div>
   );
 }

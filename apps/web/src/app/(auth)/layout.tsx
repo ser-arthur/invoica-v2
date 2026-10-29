@@ -74,7 +74,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <span>&copy; 2026 Invoica</span>
             <a href="/privacy">Privacy</a>
             <a href="/terms">Terms</a>
-            <a href="/help">Help</a>
           </div>
         </footer>
       </div>
