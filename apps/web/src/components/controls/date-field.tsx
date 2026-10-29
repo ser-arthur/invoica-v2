@@ -80,8 +80,16 @@ export function DateField({
     if (label?.textContent) setTitle(label.textContent.trim());
   }, [ariaLabel, id]);
 
+  // Set when the field itself empties the value because what was typed is not a date, so that text stays to be fixed.
+  const emptiedHere = useRef(false);
+
   // A value set from outside (a client's terms setting the due date) shows, unless it is the one being typed.
   useEffect(() => {
+    if (emptiedHere.current && !value) {
+      emptiedHere.current = false;
+      return;
+    }
+    emptiedHere.current = false;
     if (document.activeElement === input.current && readTypedDate(text) === value) return;
     setText(showDate(value));
     setWrong(false);
@@ -115,7 +123,10 @@ export function DateField({
     if (iso) setText(showDate(iso));
     else {
       setWrong(true);
-      if (value) onChange('');
+      if (value) {
+        emptiedHere.current = true;
+        onChange('');
+      }
     }
   };
 
