@@ -12,6 +12,7 @@ import { saveReminderSettingsAction } from '@/lib/actions/settings';
 import { Button, Checkbox, Field, FormMessage, Input, Panel, Textarea } from './ui';
 import { reach } from '@/lib/reach';
 import { LeaveDialog, useLeaveGuard } from './leave-guard';
+import { focusFirstInvalid } from '@/lib/focus-first-invalid';
 
 const WHEN: Record<number, string> = {
   [-3]: '3 days before the due date',
@@ -73,6 +74,7 @@ export function ReminderSettings({
       );
       if (!r.ok) {
         setErrors(r.fieldErrors ?? {});
+        if (r.fieldErrors) focusFirstInvalid();
         return setMessage({ tone: 'danger', text: r.message });
       }
       setErrors({});

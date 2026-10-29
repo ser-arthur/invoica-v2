@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { ComponentProps, ReactNode } from 'react';
+import { cloneElement, isValidElement, type ComponentProps, type ReactElement, type ReactNode } from 'react';
 import { formatMoney, STATE_LABELS, type DocumentState } from '@invoica/core';
 import { Logo } from './logo';
 
@@ -72,12 +72,24 @@ export function Field({
   children: ReactNode;
   className?: string;
 }) {
+  // The control the label names is marked invalid and described by the error while there is one.
+  const control =
+    error && isValidElement<Record<string, unknown>>(children) && children.props.id === htmlFor
+      ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+          'aria-invalid': true,
+          'aria-describedby': [
+            ...new Set([...String(children.props['aria-describedby'] ?? '').split(' '), `${htmlFor}-error`]),
+          ]
+            .filter(Boolean)
+            .join(' '),
+        })
+      : children;
   return (
     <div className={cx('flex flex-col gap-1.5', className)}>
       <label htmlFor={htmlFor} className="text-[13px] font-medium text-ink-soft">
         {label}
       </label>
-      {children}
+      {control}
       {error ? (
         <p id={`${htmlFor}-error`} className="flex items-start gap-1.5 text-[13px] text-danger">
           <ErrorMark />

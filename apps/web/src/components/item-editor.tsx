@@ -10,6 +10,7 @@ import { reach } from '@/lib/reach';
 import { LeaveDialog, useLeaveGuard } from './leave-guard';
 import { useHydrated } from '@/lib/use-hydrated';
 import { requestKey } from '@/lib/request-key';
+import { focusFirstInvalid } from '@/lib/focus-first-invalid';
 
 export interface ItemValue {
   id: string;
@@ -96,6 +97,7 @@ export function ItemEditor({
     const price = parseMoney(v.unitPrice, currency);
     if (price === null || price < 0) {
       setErrors({ unitPrice: 'Enter a price, for example 450 or 450.00.' });
+      focusFirstInvalid();
       return;
     }
     const input = {
@@ -113,6 +115,7 @@ export function ItemEditor({
       if (!r.ok) {
         setErrors(r.fieldErrors ?? {});
         setMessage(r.message);
+        if (r.fieldErrors) focusFirstInvalid();
         if (r.code === 'item_changed') {
           setConflict(true);
           // The item's version is fetched again, for "Save mine anyway"; what was typed stays.

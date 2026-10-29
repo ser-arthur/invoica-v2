@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { signUpAndOnboard } from './helpers';
 
 // docs/specs/form-errors-and-controls.md, "Errors in plain words", acceptance criteria 1 to 5.
 
@@ -125,4 +126,19 @@ test('forgot password with a broken email says so under the field, and sends not
   await expectFieldError(page, 'email', 'Enter the whole email address, with the @ and the part after it.');
   await expectNoServiceWords(page);
   expect(calls).toEqual([]);
+});
+
+test('a client saved without a name or with a broken email marks both and moves focus to the first (in the app)', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'Fieldwork Studio');
+  await page.goto('/clients/new');
+  await page.getByLabel('Email for invoices').fill('accounts-at-nowhere');
+  await page.getByRole('button', { name: 'Save client' }).click();
+  await expect(page.locator('#c-name')).toBeFocused();
+  await expect(page.locator('#c-name')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.locator('#c-name')).toHaveAttribute('aria-describedby', /c-name-error/);
+  await expect(page.locator('#c-email')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.locator('#c-email')).toHaveAttribute('aria-describedby', /c-email-error/);
+  await expectNoServiceWords(page);
 });

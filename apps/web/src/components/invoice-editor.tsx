@@ -47,6 +47,7 @@ import { DocumentFrame } from './document-frame';
 import {
   Button,
   Checkbox,
+  ErrorMark,
   Field,
   FormMessage,
   Input,
@@ -57,6 +58,7 @@ import {
   inlineLinkClass,
 } from './ui';
 import { reach } from '@/lib/reach';
+import { focusFirstInvalid } from '@/lib/focus-first-invalid';
 
 export interface EditorClient {
   id: string;
@@ -618,6 +620,7 @@ export function InvoiceEditor(props: EditorProps) {
     const key = asNew ? newDraftKey.current! : createKey;
     if (Object.keys(parsed.lineErrors).length) {
       setMessage({ tone: 'danger', text: 'Some lines need attention before saving.' });
+      focusFirstInvalid();
       return;
     }
     if (parsed.totalsError) {
@@ -629,6 +632,7 @@ export function InvoiceEditor(props: EditorProps) {
         sterlingRate: 'Enter the rate as a number with up to six decimal places, for example 1.1500.',
       });
       setMessage({ tone: 'danger', text: 'Check the exchange rate to pounds.' });
+      focusFirstInvalid();
       return;
     }
     if (issue && needsSterling && !sterlingRate) {
@@ -638,6 +642,7 @@ export function InvoiceEditor(props: EditorProps) {
         tone: 'danger',
         text: 'Enter the exchange rate to pounds: a UK VAT invoice in another currency shows its VAT in sterling.',
       });
+      focusFirstInvalid();
       return;
     }
     const changesAtSave = changes.current;
@@ -659,6 +664,7 @@ export function InvoiceEditor(props: EditorProps) {
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: result.message });
+        if (result.fieldErrors) focusFirstInvalid();
         if (result.code === 'draft_changed') setConflict(issue ? 'issue' : 'save');
         if (result.code === 'draft_deleted') setDeleted(true);
         // Today, the tax codes, the settings, the next number and the draft's version as the server has them now,
@@ -1081,6 +1087,7 @@ export function InvoiceEditor(props: EditorProps) {
                 return (
                   <li
                     key={l.key}
+                    data-invalid={error ? '' : undefined}
                     className={cx(
                       'rounded-[12px] border bg-surface',
                       expanded ? 'p-3' : 'sm:p-3',
@@ -1243,7 +1250,12 @@ export function InvoiceEditor(props: EditorProps) {
                           {amount === null ? '' : money(amount)}
                         </output>
                       </div>
-                      {error ? <p className="mt-2 text-[13px] text-danger">{error}</p> : null}
+                      {error ? (
+                        <p className="mt-2 flex items-start gap-1.5 text-[13px] text-danger">
+                          <ErrorMark />
+                          <span>{error}</span>
+                        </p>
+                      ) : null}
                       {l.key === openLine && !error && l.title.trim() ? (
                         <Button
                           type="button"

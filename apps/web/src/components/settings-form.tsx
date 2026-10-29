@@ -18,6 +18,7 @@ import { LeaveDialog, useLeaveGuard } from './leave-guard';
 import { followUntouched } from '@/lib/follow-untouched';
 import { reach } from '@/lib/reach';
 import { useHydrated } from '@/lib/use-hydrated';
+import { focusFirstInvalid } from '@/lib/focus-first-invalid';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -357,6 +358,7 @@ export function SettingsForm({
       if (!r.ok) {
         setErrors(r.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: r.message });
+        if (r.fieldErrors) focusFirstInvalid();
         if (r.code === 'settings_changed') {
           setConflict(true);
           // The page's version is fetched again, for "Save mine anyway"; what was typed stays.

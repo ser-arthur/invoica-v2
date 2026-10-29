@@ -6,7 +6,7 @@ import { FileText, Home, Package, Plus, Settings, Users } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { setThemeAction } from '@/lib/actions/preferences';
 import { removeAllKept } from '@/lib/kept-typing';
-import { reach, reachAuth } from '@/lib/reach';
+import { UNREACHABLE, reach, reachAuth } from '@/lib/reach';
 import { showNotice } from '@/lib/notice';
 import { Notices } from './notices';
 import { BusinessTimeZoneProvider } from './business-time';
@@ -42,7 +42,10 @@ export function AppShell({
 
   async function signOut() {
     const r = await reachAuth(authClient.signOut());
-    if (r.error) return showNotice(r.error.message ?? 'Signing out did not work. Try again.');
+    if (r.error)
+      return showNotice(
+        r.error.code === 'UNREACHABLE' ? UNREACHABLE : 'Signing out did not work. Try again.',
+      );
     // Nothing typed and kept on this device stays behind for the next person (kept-on-this-device.md, rule 2).
     removeAllKept();
     router.push('/sign-in');
