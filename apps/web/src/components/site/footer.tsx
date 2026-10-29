@@ -1,10 +1,14 @@
 import Link from 'next/link';
 import { FooterLight } from './footer-light';
 import { FooterMark } from './footer-mark';
-import { FOOTER_COLUMNS } from './links';
+import { BUSINESS_EMAIL, FOOTER_LINKS, FOOTER_SMALL_PRINT, TRADER } from './links';
 import s from './site.module.css';
 
-/** Plain links, so nothing is fetched ahead, including the planned pages that are not written yet. */
+/**
+ * The site's footer (docs/specs/website-footer.md): the line and the way in, one row of the product's links, then the
+ * small print, who is behind Invoica, its email, Privacy and Terms. Plain links, so nothing is fetched ahead, including
+ * the planned pages that are not written yet.
+ */
 export function SiteFooter() {
   return (
     <footer className={s.footer}>
@@ -16,24 +20,30 @@ export function SiteFooter() {
           </Link>
         </div>
         <nav className={s.footerNav} aria-label="Footer">
-          {FOOTER_COLUMNS.map((column) => (
-            <div key={column.title}>
-              <h2 className={s.footerTitle}>{column.title}</h2>
-              <ul>
-                {column.links.map((link) => (
-                  <li key={link.label}>
-                    <a href={link.href}>{link.label}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <ul>
+            {FOOTER_LINKS.map((link) => (
+              <li key={link.label}>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))}
+          </ul>
         </nav>
       </div>
       <div className={s.wrap}>
         <div className={s.footerBase}>
-          <p>&copy; 2026 Invoica</p>
-          <p>Made for freelancers, studios and small firms.</p>
+          <p>
+            &copy; 2026 Invoica. Invoica is a trading name of <span className={s.keep}>{TRADER}.</span>
+          </p>
+          <ul className={s.footerSmall}>
+            <li>
+              <a href={`mailto:${BUSINESS_EMAIL}`}>{BUSINESS_EMAIL}</a>
+            </li>
+            {FOOTER_SMALL_PRINT.map((link) => (
+              <li key={link.label}>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
       <FooterLight className={`${s.wrap} ${s.footerMark}`}>

@@ -27,11 +27,11 @@ test('a planned page not written yet answers 404 and says what it will hold', as
   }
 });
 
-test('the footer’s About link opens the About page’s notice', async ({ page }) => {
+test('the footer’s Privacy link opens the Privacy page’s notice', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('contentinfo').getByRole('link', { name: 'About', exact: true }).click();
-  await page.waitForURL((url) => url.pathname === '/about');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('The About page is being written.');
+  await page.getByRole('contentinfo').getByRole('link', { name: 'Privacy', exact: true }).click();
+  await page.waitForURL((url) => url.pathname === '/privacy');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('The Privacy page is being written.');
 });
 
 test('signed in, the not-found page leads back to the dashboard', async ({ page }, info) => {
@@ -61,7 +61,7 @@ test('the not-found page never scrolls sideways on a phone', async ({ page }, in
   test.skip(info.project.name !== 'phone', 'Phone widths only.');
   for (const width of [390, 360]) {
     await page.setViewportSize({ width, height: 800 });
-    for (const path of ['/no-such-page', '/about']) {
+    for (const path of ['/no-such-page', '/privacy']) {
       await page.goto(path);
       const { scroll, client } = await page.evaluate(() => ({
         scroll: document.documentElement.scrollWidth,
