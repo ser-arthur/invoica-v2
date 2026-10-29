@@ -2,7 +2,7 @@ const { chromium } = require('/home/claude/invoica/node_modules/.pnpm/node_modul
 const fs = require('fs');
 const path = require('path');
 // The round 13 boards: each option's wide-screen render beside its phone render, with a line on what it is.
-// node boards.cjs <renders folder> <boards folder> [first | tabs | colour]
+// node boards.cjs <renders folder> <boards folder> [first | tabs | colour | step]
 const FIRST = [
   {
     key: 'specimens',
@@ -84,9 +84,26 @@ const COLOUR = [
     motion: 'Arriving, each divider slides up from behind the one before it.',
   },
 ];
+// 02:38: W1 and W3, each divider a little wider than the one before. Renders by why-tabs.cjs.
+const STEP = [
+  {
+    key: 't-white-step',
+    out: 'step-white',
+    title: 'W1 stepped. White, each divider wider than the one before',
+    what: 'The first divider is 44 pixels narrower each side than the last and the second 22 (12 and 6 on a phone), and the ones further back are a shade greyer, so each stands behind the next. The colour is on the tabs only.',
+    motion: 'Arriving, each divider slides up from behind the one before it, then its piece comes in.',
+  },
+  {
+    key: 't-night-step',
+    out: 'step-night',
+    title: 'W3 stepped. Night, each divider wider than the one before',
+    what: 'The same steps in Night, the ones further back a shade darker. The colour is on the tabs only.',
+    motion: 'Arriving, each divider slides up from behind the one before it, then its piece comes in.',
+  },
+];
 (async () => {
   const [, , renders, outDir, set = 'first'] = process.argv;
-  const OPTIONS = set === 'tabs' ? TABS : set === 'colour' ? COLOUR : FIRST;
+  const OPTIONS = { tabs: TABS, colour: COLOUR, step: STEP }[set] ?? FIRST;
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1560, height: 900 }, deviceScaleFactor: 1.25 });
   for (const o of OPTIONS) {

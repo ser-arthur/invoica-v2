@@ -66,3 +66,14 @@ Recommended: W2. In W1 the three white dividers run together into one white bloc
 to do all the separating, and a shadow strong enough to do it looks heavy. The line along each top edge does it
 cleanly, makes each tab and its divider one sheet, and brings back the coloured rules the section has today. W3 is
 striking, but it follows the dashboard's Night straight after, and dark on dark divides no better than white on white.
+
+## Fourth pass, 02:38: W1 and W3, stepped
+
+The owner asked to take W1 and W3 further, each divider wider than the one before so that one looks to stand behind the
+other. `why-tabs.cjs white-step` and `night-step` (`round-13/why-step-*.png`, by `boards.cjs ... step`): the first
+divider 44 pixels narrower each side than the last and the second 22 (12 and 6 on a phone); the ones further back a
+shade greyer in white (`#f6f8f7`, `#fbfcfb`, `#fff`) and a shade darker in Night (`#0a1c1f`, `#0c2023`, `#0f2427`).
+
+The steps answer W1's weakness: each divider's corners and sides now show past the one behind it, so the three no longer
+run together, without a heavier shadow. Recommended: white. After the dashboard's Night, a light file keeps the page's
+rhythm, and the tabs' lime, green and teal are at their clearest on white.
