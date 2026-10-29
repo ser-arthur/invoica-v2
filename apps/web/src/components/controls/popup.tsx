@@ -128,9 +128,9 @@ export function Popup({
       id={id}
       popover="manual"
       className={c.popup}
-      role={role}
-      aria-label={role ? label : undefined}
-      aria-modal={role ? false : undefined}
+      role={open ? role : undefined}
+      aria-label={open && role ? label : undefined}
+      aria-modal={open && role ? false : undefined}
     >
       {open && sheet ? (
         <div className={c.sheetHead}>

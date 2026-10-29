@@ -256,6 +256,12 @@
   opacity: 0.6;
 }
 
+/* A field that fills its column takes no width from its words, so a long option never widens the layout. */
+.trigger[data-fill] .triggerText {
+  flex: 1 1 0;
+  width: 0;
+}
+
 .triggerText {
   min-width: 0;
   overflow: hidden;

@@ -20,7 +20,8 @@ test('every control on the main pages can be reached with Tab and shows where fo
         const el = document.activeElement as HTMLElement | null;
         // The development server's own overlay is not part of the app.
         if (!el || el === document.body || el.tagName === 'NEXTJS-PORTAL') return null;
-        const s = getComputedStyle(el);
+        // A field drawn as a box around its input (a date) shows focus on the box.
+        const s = getComputedStyle(el.closest<HTMLElement>('[data-focus-box]') ?? el);
         const r = el.getBoundingClientRect();
         return {
           id: `${el.tagName}:${el.getAttribute('aria-label') ?? el.id ?? ''}:${(el.textContent ?? '').trim().slice(0, 30)}:${Math.trunc(r.top)}:${Math.trunc(r.left)}`,

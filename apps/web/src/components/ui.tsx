@@ -141,7 +141,8 @@ export function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
 
 /** Invoica's own dropdown, written like a select (`components/controls/select.tsx`), sized like the other fields. */
 export function Select({ className, ...props }: SelectProps) {
-  return <OwnSelect className={cx(inputClass, width(className), 'pr-3', className)} {...props} />;
+  const fill = width(className);
+  return <OwnSelect className={cx(inputClass, fill, 'pr-3', className)} fill={!!fill} {...props} />;
 }
 
 export function Checkbox({

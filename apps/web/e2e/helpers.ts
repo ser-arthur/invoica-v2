@@ -124,3 +124,16 @@ export async function optionsOf(field: Locator) {
   await expect(list).toBeHidden();
   return words.map((w) => w.trim());
 }
+
+/** The values of the options a dropdown offers, in order, read by opening it and closing it again. */
+export async function optionValuesOf(field: Locator) {
+  const list = await listOf(field);
+  await field.click();
+  await expect(list).toBeVisible();
+  const values = await list
+    .getByRole('option')
+    .evaluateAll((els) => els.map((e) => e.getAttribute('data-value') ?? ''));
+  await field.page().keyboard.press('Escape');
+  await expect(list).toBeHidden();
+  return values;
+}

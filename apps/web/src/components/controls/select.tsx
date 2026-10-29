@@ -43,6 +43,8 @@ export interface SelectProps {
   required?: boolean;
   /** Search at the top of the list: on by default for lists longer than twelve. */
   searchable?: boolean;
+  /** As wide as its column, the chosen option's words cut short to fit; otherwise as wide as those words. */
+  fill?: boolean;
   className?: string;
   children?: ReactNode;
   'aria-label'?: string;
@@ -116,6 +118,7 @@ export function Select({
   disabled,
   required,
   searchable,
+  fill,
   className,
   children,
   'aria-label': ariaLabel,
@@ -380,6 +383,7 @@ export function Select({
         aria-required={required || undefined}
         disabled={disabled}
         data-value={current}
+        data-fill={fill ? '' : undefined}
         className={`${c.trigger} ${className ?? ''}`}
         onClick={() => (open ? close() : openList())}
         onKeyDown={onKey}

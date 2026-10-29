@@ -100,7 +100,9 @@ test('Bill to opens with a click or the keyboard, chooses, and Escape leaves it 
   await addClient(page, 'Alder Print Ltd');
   await addClient(page, 'Birch Bindery Ltd');
   await page.goto('/invoices/new');
-  const field = page.getByLabel('Bill to');
+  // By its id: while it is open, its list carries the field's name too.
+  const field = page.locator('#e-client');
+  await expect(field).toHaveAccessibleName('Bill to');
   await expect(field).toHaveAttribute('role', 'combobox');
   const listId = (await field.getAttribute('aria-controls'))!;
   const list = page.locator(`[id="${listId}"]`);

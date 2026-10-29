@@ -138,6 +138,7 @@ export function DateField({
         ref={box}
         className={cx(inputClass, /(^|\s)w-/.test(className ?? '') ? null : 'w-full', c.dateField, className)}
         aria-disabled={disabled || undefined}
+        data-focus-box=""
         data-invalid-date={wrong ? '' : undefined}
       >
         <input
