@@ -57,6 +57,8 @@ import {
   inlineLinkClass,
 } from './ui';
 import { reach } from '@/lib/reach';
+import { DateField } from './controls/date-field';
+import { focusFirstInvalid } from '@/lib/focus-first-invalid';
 
 export interface EditorClient {
   id: string;
@@ -618,6 +620,7 @@ export function InvoiceEditor(props: EditorProps) {
     const key = asNew ? newDraftKey.current! : createKey;
     if (Object.keys(parsed.lineErrors).length) {
       setMessage({ tone: 'danger', text: 'Some lines need attention before saving.' });
+      focusFirstInvalid();
       return;
     }
     if (parsed.totalsError) {
@@ -629,6 +632,7 @@ export function InvoiceEditor(props: EditorProps) {
         sterlingRate: 'Enter the rate as a number with up to six decimal places, for example 1.1500.',
       });
       setMessage({ tone: 'danger', text: 'Check the exchange rate to pounds.' });
+      focusFirstInvalid();
       return;
     }
     if (issue && needsSterling && !sterlingRate) {
@@ -638,6 +642,7 @@ export function InvoiceEditor(props: EditorProps) {
         tone: 'danger',
         text: 'Enter the exchange rate to pounds: a UK VAT invoice in another currency shows its VAT in sterling.',
       });
+      focusFirstInvalid();
       return;
     }
     const changesAtSave = changes.current;
@@ -659,6 +664,7 @@ export function InvoiceEditor(props: EditorProps) {
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: result.message });
+        if (result.fieldErrors) focusFirstInvalid();
         if (result.code === 'draft_changed') setConflict(issue ? 'issue' : 'save');
         if (result.code === 'draft_deleted') setDeleted(true);
         // Today, the tax codes, the settings, the next number and the draft's version as the server has them now,
@@ -934,11 +940,11 @@ export function InvoiceEditor(props: EditorProps) {
                 hint="Leave blank to use the day you issue it."
                 error={errors.issueDate}
               >
-                <Input
+                <DateField
                   id="e-issue"
-                  type="date"
+                  today={today}
                   value={state.issueDate}
-                  onChange={(e) => update({ issueDate: e.target.value })}
+                  onChange={(value) => update({ issueDate: value })}
                 />
               </Field>
               <Field
@@ -947,11 +953,11 @@ export function InvoiceEditor(props: EditorProps) {
                 error={errors.dueDate}
                 hint={state.dueTouched ? undefined : 'Set from the payment terms.'}
               >
-                <Input
+                <DateField
                   id="e-due"
-                  type="date"
+                  today={today}
                   value={state.dueDate}
-                  onChange={(e) => update({ dueDate: e.target.value, dueTouched: true })}
+                  onChange={(value) => update({ dueDate: value, dueTouched: true })}
                 />
               </Field>
               <Field label="Work was done" htmlFor="e-supplymode">
@@ -966,29 +972,29 @@ export function InvoiceEditor(props: EditorProps) {
               </Field>
               {state.supplyMode === 'date' ? (
                 <Field label="Date of the work" htmlFor="e-supply" hint="Blank uses the issue date.">
-                  <Input
+                  <DateField
                     id="e-supply"
-                    type="date"
+                    today={today}
                     value={state.supplyDate}
-                    onChange={(e) => update({ supplyDate: e.target.value })}
+                    onChange={(value) => update({ supplyDate: value })}
                   />
                 </Field>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="From" htmlFor="e-ps" error={errors.servicePeriodStart}>
-                    <Input
+                    <DateField
                       id="e-ps"
-                      type="date"
+                      today={today}
                       value={state.periodStart}
-                      onChange={(e) => update({ periodStart: e.target.value })}
+                      onChange={(value) => update({ periodStart: value })}
                     />
                   </Field>
                   <Field label="To" htmlFor="e-pe" error={errors.servicePeriodEnd}>
-                    <Input
+                    <DateField
                       id="e-pe"
-                      type="date"
+                      today={today}
                       value={state.periodEnd}
-                      onChange={(e) => update({ periodEnd: e.target.value })}
+                      onChange={(value) => update({ periodEnd: value })}
                     />
                   </Field>
                 </div>
@@ -1081,6 +1087,7 @@ export function InvoiceEditor(props: EditorProps) {
                 return (
                   <li
                     key={l.key}
+                    data-invalid={error ? '' : undefined}
                     className={cx(
                       'rounded-[12px] border bg-surface',
                       expanded ? 'p-3' : 'sm:p-3',
@@ -1115,11 +1122,11 @@ export function InvoiceEditor(props: EditorProps) {
                       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                         <div className="grid gap-3">
                           {state.lineStyle === 'dated' ? (
-                            <Input
-                              type="date"
+                            <DateField
                               aria-label={`Line ${index + 1} date`}
+                              today={today}
                               value={l.serviceDate}
-                              onChange={(e) => updateLine(l.key, { serviceDate: e.target.value })}
+                              onChange={(value) => updateLine(l.key, { serviceDate: value })}
                               className="sm:w-44"
                             />
                           ) : null}
@@ -1380,15 +1387,15 @@ export function InvoiceEditor(props: EditorProps) {
                     />
                   </Field>
                   <Field label="On" htmlFor={`p-d-${d.key}`}>
-                    <Input
+                    <DateField
                       id={`p-d-${d.key}`}
                       max={today}
-                      type="date"
+                      today={today}
                       value={d.paidOn}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         update({
                           deposits: state.deposits.map((x) =>
-                            x.key === d.key ? { ...x, paidOn: e.target.value } : x,
+                            x.key === d.key ? { ...x, paidOn: value } : x,
                           ),
                         })
                       }

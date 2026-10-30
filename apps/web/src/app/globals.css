@@ -136,3 +136,64 @@
   background-position: right 12px center;
   background-size: 12px 12px;
 }
+
+/*
+ * Checkboxes and radio buttons drawn by the app, the same in every browser (docs/specs/form-errors-and-controls.md):
+ * a rounded box or a circle in the field border colour, the brand colour with a white tick or dot when chosen. They
+ * stay real inputs. The website draws its own.
+ */
+@layer base {
+  :where(input[type='checkbox'], input[type='radio']):not(:where([data-site] *)) {
+    appearance: none;
+    flex: none;
+    display: inline-grid;
+    place-content: center;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    border: 1.5px solid var(--line-strong);
+    background: var(--surface);
+    cursor: pointer;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease;
+  }
+  :where(input[type='checkbox']):not(:where([data-site] *)) {
+    border-radius: 5px;
+  }
+  :where(input[type='radio']):not(:where([data-site] *)) {
+    border-radius: 50%;
+  }
+  :where(input[type='checkbox'], input[type='radio']):not(:where([data-site] *)):hover {
+    border-color: var(--brand);
+  }
+  :where(input[type='checkbox'], input[type='radio']):not(:where([data-site] *)):checked {
+    border-color: var(--brand);
+    background: var(--brand);
+  }
+  :where(input[type='checkbox']):not(:where([data-site] *)):checked::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: var(--brand-ink);
+    clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 22%, 86% 8%, 38% 70%);
+  }
+  :where(input[type='radio']):not(:where([data-site] *)):checked::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--brand-ink);
+  }
+  :where(input[type='checkbox'], input[type='radio']):not(:where([data-site] *)):focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+  :where(input[type='checkbox'], input[type='radio']):not(:where([data-site] *)):disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+  :where(input[type='checkbox'], input[type='radio']):not(:where([data-site] *))[aria-invalid='true'] {
+    border-color: var(--danger);
+  }
+}

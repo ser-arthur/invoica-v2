@@ -120,10 +120,11 @@ export function Itemised() {
                     <span className={s.keep}>Start with</span>{' '}
                     <span className={s.keep}>your next invoice.</span>
                   </h2>
-                  <form className={s.slipForm} action="/sign-up" method="get">
+                  {/* Checked by the sign-up page it opens, in Invoica's words, never by the browser. */}
+                  <form className={s.slipForm} action="/sign-up" method="get" noValidate>
                     <label>
                       Your email
-                      <input className={s.field} type="email" name="email" autoComplete="email" required />
+                      <input className={s.field} type="email" name="email" autoComplete="email" />
                     </label>
                     <button type="submit" className={s.button}>
                       Create your free account

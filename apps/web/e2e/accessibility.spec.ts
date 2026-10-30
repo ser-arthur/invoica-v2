@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { addClient, signUp, signUpAndOnboard, uniqueEmail } from './helpers';
+import { addClient, choose, chooseTheme, signUp, signUpAndOnboard, uniqueEmail } from './helpers';
 import { linkIn, waitForEmail } from './mailbox';
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -55,10 +55,11 @@ test('app pages have no automated accessibility violations, in light and dark', 
     '/invoices/00000000-0000-4000-8000-000000000000',
   ];
   let examined = 0;
-  for (const theme of ['light', 'dark']) {
-    await page.context().addCookies([{ name: 'invoica_theme', value: theme, url: page.url() }]);
+  for (const theme of ['light', 'dark'] as const) {
+    await chooseTheme(page, theme);
     for (const path of paths) {
       await page.goto(path);
+      expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
       await page.waitForLoadState('networkidle');
       const result = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();
       examined += 1;
@@ -86,7 +87,7 @@ test('no page scrolls sideways at phone widths, and nothing is cut off at the ed
   );
   const clientPage = new URL(page.url()).pathname;
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Aura Coffee Roasters and Bakery Limited' });
+  await choose(page.getByLabel('Bill to'), { label: 'Aura Coffee Roasters and Bakery Limited' });
   await page.fill('#e-title', 'Winterservicingforallroastingequipmentandgrindersacrosseverysite');
   await page.fill('#e-ref', 'PO-AURA-2026-WINTER-SERVICING-ALL-SITES-0000123456789');
   await page.getByLabel('Line 1 description').fill('Roasting equipment servicing for the winter season');
@@ -145,7 +146,7 @@ test('open dialogs have no automated accessibility violations, in light and dark
   await signUpAndOnboard(page, 'Dialog Office', { vat: true });
   await addClient(page, 'Marlow Joinery');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Marlow Joinery' });
+  await choose(page.getByLabel('Bill to'), { label: 'Marlow Joinery' });
   await page.getByLabel('Line 1 description').fill('Fitting');
   await page.getByLabel('Line 1 price').fill('250');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -153,10 +154,13 @@ test('open dialogs have no automated accessibility violations, in light and dark
   await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\?issued=1/);
   const invoice = page.url().replace('?issued=1', '');
   let examined = 0;
-  for (const theme of ['light', 'dark']) {
-    await page.context().addCookies([{ name: 'invoica_theme', value: theme, url: page.url() }]);
+  for (const theme of ['light', 'dark'] as const) {
+    // From the invoice's own page: the one just issued opens with a dialog of its own.
+    await page.goto(invoice);
+    await chooseTheme(page, theme);
     for (const opener of ['Record payment', 'Credit note']) {
       await page.goto(invoice);
+      expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
       await page.getByRole('button', { name: opener }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
       const result = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();
@@ -177,7 +181,7 @@ test('the leave dialog and the notice at the foot of the screen have no automate
   await signUpAndOnboard(page, 'Notice Office', { vat: true });
   await addClient(page, 'Thimble Lane Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Thimble Lane Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Thimble Lane Ltd' });
   await page.getByLabel('Line 1 description').fill('Fitting');
   await page.getByLabel('Line 1 price').fill('250');
   await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Clients' }).click({
@@ -219,7 +223,7 @@ test('the notices for an email that could not be sent have no automated accessib
   await signUpAndOnboard(page, 'Undelivered Office', { vat: true });
   await addClient(page, 'Nowhere Ltd', 'accounts@nowhere.invalid');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Nowhere Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Nowhere Ltd' });
   await page.getByLabel('Line 1 description').fill('Survey');
   await page.getByLabel('Line 1 price').fill('300');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -234,10 +238,11 @@ test('the notices for an email that could not be sent have no automated accessib
     await expect(page.getByText(/could not be sent/)).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 30_000 });
   let examined = 0;
-  for (const theme of ['light', 'dark']) {
-    await page.context().addCookies([{ name: 'invoica_theme', value: theme, url: page.url() }]);
+  for (const theme of ['light', 'dark'] as const) {
+    await chooseTheme(page, theme);
     for (const path of [invoice, '/dashboard']) {
       await page.goto(path);
+      expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
       await expect(page.getByText(/could not be sent/).first()).toBeVisible();
       const result = await new AxeBuilder({ page }).withTags(TAGS).exclude('iframe').analyze();
       examined += 1;

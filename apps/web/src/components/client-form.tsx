@@ -12,6 +12,7 @@ import { reach } from '@/lib/reach';
 import { LeaveDialog, useLeaveGuard } from './leave-guard';
 import { useHydrated } from '@/lib/use-hydrated';
 import { requestKey } from '@/lib/request-key';
+import { focusFirstInvalid } from '@/lib/focus-first-invalid';
 
 export interface ClientFormValues {
   name: string;
@@ -159,6 +160,7 @@ export function ClientForm({
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setMessage(result.message);
+        if (result.fieldErrors) focusFirstInvalid();
         if (result.code === 'client_changed') {
           setConflict(true);
           // The page's version is fetched again, for "Save mine anyway"; what was typed stays.

@@ -135,8 +135,8 @@ Built on `main`, as the owner asked for this round.
   light up in turn.
 - **Moving between the home page and pricing** keeps the header where it is: the public pages share one header and
   footer, so the header settles in once, as the first of them loads, and never comes in again on the way between them.
-- **Sign in and sign up** take the first Invoica's line, "The smarter way to bill, track and get paid.", in place of
-  the home page's. Their panel lands as it opens: the corner turns, the logo comes down, the headline's halves come in
+- **Sign in and sign up** take the hero's promise, "Every invoice, all the way to paid." (`docs/specs/brand-lines.md`,
+  30 October; until then the first Invoica's line, "The smarter way to bill, track and get paid."). Their panel lands as it opens: the corner turns, the logo comes down, the headline's halves come in
   from opposite sides and meet, the crease is drawn and the page past it turns a shade lighter, then each thing an
   account brings settles in turn.
 - **The pricing page** lands the same way: the label, the heading's two halves from opposite sides, the words under

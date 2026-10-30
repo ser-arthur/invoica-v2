@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import type { ComponentProps, ReactNode } from 'react';
+import { cloneElement, isValidElement, type ComponentProps, type ReactElement, type ReactNode } from 'react';
 import { formatMoney, STATE_LABELS, type DocumentState } from '@invoica/core';
 import { Logo } from './logo';
+import { Select as OwnSelect, type SelectProps } from './controls/select';
 
 export function cx(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join(' ');
@@ -51,10 +52,15 @@ export function Wordmark({ className }: { className?: string }) {
   return <Logo className={cx('text-ink', className)} />;
 }
 
+/**
+ * A label, its control, and under it the control's error or, when there is none, its hint. `keepHint` keeps a hint
+ * that is not about what was typed (a link such as "Forgot your password?") under the error too.
+ */
 export function Field({
   label,
   hint,
   error,
+  keepHint,
   htmlFor,
   children,
   className,
@@ -62,21 +68,35 @@ export function Field({
   label: string;
   hint?: ReactNode;
   error?: string;
+  keepHint?: boolean;
   htmlFor: string;
   children: ReactNode;
   className?: string;
 }) {
+  // The control the label names is marked invalid and described by the error while there is one.
+  const control =
+    error && isValidElement<Record<string, unknown>>(children) && children.props.id === htmlFor
+      ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+          'aria-invalid': true,
+          'aria-describedby': [
+            ...new Set([...String(children.props['aria-describedby'] ?? '').split(' '), `${htmlFor}-error`]),
+          ]
+            .filter(Boolean)
+            .join(' '),
+        })
+      : children;
   return (
     <div className={cx('flex flex-col gap-1.5', className)}>
       <label htmlFor={htmlFor} className="text-[13px] font-medium text-ink-soft">
         {label}
       </label>
-      {children}
+      {control}
       {error ? (
         <p id={`${htmlFor}-error`} className="text-[13px] text-danger">
           {error}
         </p>
-      ) : hint ? (
+      ) : null}
+      {hint && (!error || keepHint) ? (
         <p id={`${htmlFor}-hint`} className="text-[13px] text-muted">
           {hint}
         </p>
@@ -107,8 +127,10 @@ export function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
   );
 }
 
-export function Select({ className, ...props }: ComponentProps<'select'>) {
-  return <select className={cx(inputClass, width(className), 'select-chevron pr-9', className)} {...props} />;
+/** Invoica's own dropdown, written like a select (`components/controls/select.tsx`), sized like the other fields. */
+export function Select({ className, ...props }: SelectProps) {
+  const fill = width(className);
+  return <OwnSelect className={cx(inputClass, fill, 'pr-3', className)} fill={!!fill} {...props} />;
 }
 
 export function Checkbox({
@@ -118,7 +140,7 @@ export function Checkbox({
 }: ComponentProps<'input'> & { label: string; hint?: string }) {
   return (
     <label className="flex cursor-pointer items-start gap-3">
-      <input type="checkbox" className="mt-0.5 size-4.5 shrink-0 accent-[var(--brand)]" {...props} />
+      <input type="checkbox" className="mt-0.5" {...props} />
       <span className="flex flex-col">
         <span className="text-[15px] text-ink">{label}</span>
         {hint ? <span className="text-[13px] text-muted">{hint}</span> : null}

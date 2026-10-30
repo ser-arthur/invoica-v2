@@ -18,6 +18,8 @@ import { LeaveDialog, useLeaveGuard } from './leave-guard';
 import { followUntouched } from '@/lib/follow-untouched';
 import { reach } from '@/lib/reach';
 import { useHydrated } from '@/lib/use-hydrated';
+import { focusFirstInvalid } from '@/lib/focus-first-invalid';
+import { ColourField } from './controls/colour-field';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -52,15 +54,15 @@ function SecondColour({
       </label>
       <label className="flex items-center gap-3 text-[14px]">
         <input type="radio" name="accent" checked={own} onChange={() => onChange(own ? value : auto)} />
-        <input
-          type="color"
-          aria-label="Your second colour"
-          value={own && HEX.test(value) ? value : auto}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-8 w-12 cursor-pointer rounded-[8px] border border-line-strong bg-surface p-0.5"
-        />
         Your own
       </label>
+      <div className="ml-8">
+        <ColourField
+          aria-label="Your second colour"
+          value={own && HEX.test(value) ? value : auto}
+          onChange={(colour) => onChange(colour)}
+        />
+      </div>
       {error ? <FormMessage>{error}</FormMessage> : null}
     </fieldset>
   );
@@ -357,6 +359,7 @@ export function SettingsForm({
       if (!r.ok) {
         setErrors(r.fieldErrors ?? {});
         setMessage({ tone: 'danger', text: r.message });
+        if (r.fieldErrors) focusFirstInvalid();
         if (r.code === 'settings_changed') {
           setConflict(true);
           // The page's version is fetched again, for "Save mine anyway"; what was typed stays.
@@ -603,12 +606,10 @@ export function SettingsForm({
           hint="Used for accents on your invoices."
         >
           <div className="flex items-center gap-3">
-            <input
+            <ColourField
               id="s-colour"
-              type="color"
               value={v.brandColour}
-              onChange={(e) => set('brandColour', e.target.value)}
-              className="h-10 w-14 cursor-pointer rounded-[10px] border border-line-strong bg-surface p-1"
+              onChange={(colour) => set('brandColour', colour)}
             />
             <Input
               aria-label="Brand colour code"

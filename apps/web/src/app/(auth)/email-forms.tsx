@@ -4,34 +4,35 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
+import { authAnswer, authWords, checkAuthFields } from '@/lib/auth-messages';
 import { reachAuth } from '@/lib/reach';
 import { useHydrated } from '@/lib/use-hydrated';
 import { Button, Field, FormMessage, Input, inlineLinkClass } from '@/components/ui';
+import { useFieldErrors } from './use-field-errors';
 
 const linkClass = inlineLinkClass;
-
-function tooMany(error: { status?: number; message?: string }) {
-  return error.status === 429
-    ? 'Too many requests. Wait a minute, then try again.'
-    : (error.message ?? 'Something went wrong. Try again.');
-}
 
 /** Asks for an email address and sends it a reset link; answers alike whether or not an account uses it. */
 export function ForgotPasswordForm() {
   const ready = useHydrated();
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const fields = useFieldErrors();
   const [pending, setPending] = useState(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    const formElement = event.currentTarget;
+    const email = String(new FormData(formElement).get('email') ?? '').trim();
+    if (fields.show(checkAuthFields('email', { email }), formElement)) return;
     setPending(true);
-    const email = String(new FormData(event.currentTarget).get('email') ?? '').trim();
     const result = await reachAuth(authClient.requestPasswordReset({ email, redirectTo: '/reset-password' }));
     setPending(false);
     if (result.error) {
-      setError(tooMany(result.error));
+      const answer = authAnswer(result.error);
+      if ('field' in answer) fields.show({ [answer.field]: answer.message }, formElement);
+      else setError(answer.form);
       return;
     }
     setSentTo(email);
@@ -51,8 +52,8 @@ export function ForgotPasswordForm() {
         </FormMessage>
       ) : null}
       {error ? <FormMessage>{error}</FormMessage> : null}
-      <Field label="Email" htmlFor="email">
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+      <Field label="Email" htmlFor="email" error={fields.errors.email}>
+        <Input id="email" name="email" type="email" autoComplete="email" {...fields.input('email')} />
       </Field>
       <Button type="submit" size="lg" disabled={pending || !ready}>
         {pending ? 'One moment' : 'Send a reset link'}
@@ -73,22 +74,26 @@ export function ResetPasswordForm({ token }: { token: string }) {
   const ready = useHydrated();
   const [error, setError] = useState<string | null>(null);
   const [expired, setExpired] = useState(false);
+  const fields = useFieldErrors();
   const [pending, setPending] = useState(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    const newPassword = String(new FormData(event.currentTarget).get('password') ?? '');
-    if (newPassword.length < 10) {
-      setError('Use at least 10 characters.');
-      return;
-    }
+    const formElement = event.currentTarget;
+    const newPassword = String(new FormData(formElement).get('password') ?? '');
+    if (fields.show(checkAuthFields('new-password', { password: newPassword }), formElement)) return;
     setPending(true);
     const result = await reachAuth(authClient.resetPassword({ newPassword, token }));
     setPending(false);
     if (result.error) {
-      if (result.error.code === 'INVALID_TOKEN') setExpired(true);
-      else setError(tooMany(result.error));
+      if (result.error.code === 'INVALID_TOKEN' || result.error.code === 'TOKEN_EXPIRED') {
+        setExpired(true);
+        return;
+      }
+      const answer = authAnswer(result.error);
+      if ('field' in answer) fields.show({ [answer.field]: answer.message }, formElement);
+      else setError(answer.form);
       return;
     }
     router.push('/sign-in?reset=done');
@@ -105,14 +110,18 @@ export function ResetPasswordForm({ token }: { token: string }) {
         <p className="mt-2 text-muted">Changing it signs your account out on every device.</p>
       </div>
       {error ? <FormMessage>{error}</FormMessage> : null}
-      <Field label="New password" htmlFor="password" hint="At least 10 characters.">
+      <Field
+        label="New password"
+        htmlFor="password"
+        hint="At least 10 characters."
+        error={fields.errors.password}
+      >
         <Input
           id="password"
           name="password"
           type="password"
           autoComplete="new-password"
-          minLength={10}
-          required
+          {...fields.input('password')}
         />
       </Field>
       <Button type="submit" size="lg" disabled={pending || !ready}>
@@ -127,17 +136,22 @@ export function ResendConfirmationForm() {
   const ready = useHydrated();
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const fields = useFieldErrors();
   const [pending, setPending] = useState(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    const formElement = event.currentTarget;
+    const email = String(new FormData(formElement).get('email') ?? '').trim();
+    if (fields.show(checkAuthFields('email', { email }), formElement)) return;
     setPending(true);
-    const email = String(new FormData(event.currentTarget).get('email') ?? '').trim();
     const result = await reachAuth(authClient.sendVerificationEmail({ email }));
     setPending(false);
     if (result.error) {
-      setError(tooMany(result.error));
+      const answer = authAnswer(result.error);
+      if ('field' in answer) fields.show({ [answer.field]: answer.message }, formElement);
+      else setError(answer.form);
       return;
     }
     setSentTo(email);
@@ -149,8 +163,8 @@ export function ResendConfirmationForm() {
         <FormMessage tone="info">If {sentTo} needs confirming, a new link is on its way.</FormMessage>
       ) : null}
       {error ? <FormMessage>{error}</FormMessage> : null}
-      <Field label="Email" htmlFor="email">
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+      <Field label="Email" htmlFor="email" error={fields.errors.email}>
+        <Input id="email" name="email" type="email" autoComplete="email" {...fields.input('email')} />
       </Field>
       <Button type="submit" size="lg" disabled={pending || !ready}>
         {pending ? 'One moment' : 'Send a new link'}
@@ -165,14 +179,16 @@ export function ConfirmEmailForm({ token, email }: { token: string; email: strin
   const ready = useHydrated();
   const [error, setError] = useState<string | null>(null);
   const [expired, setExpired] = useState(false);
+  const fields = useFieldErrors();
   const [pending, setPending] = useState(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    const password = String(new FormData(event.currentTarget).get('password') ?? '');
+    const formElement = event.currentTarget;
+    const password = String(new FormData(formElement).get('password') ?? '');
     if (!password) {
-      setError('Enter the password you chose for this account.');
+      fields.show({ password: 'Enter the password you chose for this account.' }, formElement);
       return;
     }
     setPending(true);
@@ -184,8 +200,9 @@ export function ConfirmEmailForm({ token, email }: { token: string; email: strin
       const code = 'code' in result.error ? result.error.code : undefined;
       if (code === 'ALREADY_CONFIRMED') router.push('/sign-in?confirmed=1');
       else if (code === 'INVALID_TOKEN') setExpired(true);
-      else if (code === 'INVALID_PASSWORD') setError('That is not the password for this account.');
-      else setError(tooMany(result.error));
+      else if (code === 'INVALID_PASSWORD')
+        fields.show({ password: 'That is not the password for this account.' }, formElement);
+      else setError(authWords(result.error));
       return;
     }
     router.push('/onboarding');
@@ -210,13 +227,21 @@ export function ConfirmEmailForm({ token, email }: { token: string; email: strin
       <Field
         label="Password"
         htmlFor="password"
+        error={fields.errors.password}
+        keepHint
         hint={
           <Link href="/forgot-password" className={linkClass}>
             Forgot your password?
           </Link>
         }
       >
-        <Input id="password" name="password" type="password" autoComplete="current-password" required />
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          {...fields.input('password')}
+        />
       </Field>
       <Button type="submit" size="lg" disabled={pending || !ready}>
         {pending ? 'One moment' : 'Confirm and sign in'}

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addClient, signUpAndOnboard, watchErrors } from './helpers';
+import { addClient, choose, signUpAndOnboard, watchErrors } from './helpers';
 
 test('from the invoice list: mark an invoice as sent and record a payment without opening it', async ({
   page,
@@ -8,7 +8,7 @@ test('from the invoice list: mark an invoice as sent and record a payment withou
   await signUpAndOnboard(page, 'Quick Studio');
   await addClient(page, 'Wren Bakery');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Wren Bakery' });
+  await choose(page.getByLabel('Bill to'), { label: 'Wren Bakery' });
   await page.getByLabel('Line 1 description').fill('Menu design');
   await page.getByLabel('Line 1 price').fill('300');
   await page.getByRole('button', { name: 'Issue invoice' }).click();

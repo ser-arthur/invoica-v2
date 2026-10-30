@@ -8,6 +8,7 @@ import { createOrganisationAction } from '@/lib/actions/onboarding';
 import { COUNTRIES, TIME_ZONES } from '@/lib/countries';
 import { reach } from '@/lib/reach';
 import { useHydrated } from '@/lib/use-hydrated';
+import { focusFirstInvalid } from '@/lib/focus-first-invalid';
 
 const BUSINESS_TYPES = [
   { value: 'sole_trader', label: 'Sole trader or freelancer' },
@@ -54,6 +55,7 @@ export function OnboardingForm() {
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setMessage(result.message);
+        if (result.fieldErrors) focusFirstInvalid();
         return;
       }
       router.push('/dashboard?welcome=1');

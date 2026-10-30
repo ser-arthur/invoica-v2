@@ -18,7 +18,8 @@ import a from './auth.module.css';
  * light, or Night all through when the visitor chose Dark in the app on this device (or System, with the device dark),
  * the head then a shade lighter; the root layout sets the theme from that choice.
  */
-const LINE = ['The smarter way', 'to bill, track', 'and get paid.'];
+// The promise, as the hero says it (docs/specs/brand-lines.md).
+const LINE = ['Every invoice,', 'all the way', 'to paid.'];
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -74,7 +75,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <span>&copy; 2026 Invoica</span>
             <a href="/privacy">Privacy</a>
             <a href="/terms">Terms</a>
-            <a href="/help">Help</a>
           </div>
         </footer>
       </div>

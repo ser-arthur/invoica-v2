@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
-import { addClient, signUpAndOnboard, watchErrors } from './helpers';
+import { addClient, choose, signUpAndOnboard, watchErrors } from './helpers';
 import { emailsTo, waitForEmail } from './mailbox';
 
 /** docs/specs/reminders.md, acceptance criteria 5 and 6. */
@@ -21,7 +21,7 @@ test('a reminder goes with the PDF and what is owed now, and appears in the acti
   await expect(page.getByText('Reminder settings saved.')).toBeVisible();
 
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Kestrel Joinery Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Kestrel Joinery Ltd' });
   await page.getByLabel('Line 1 description').fill('Oak shelving');
   await page.getByLabel('Line 1 price').fill('100');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -90,7 +90,7 @@ test('the scheduled drain sends the reminder due today, once', async ({ page, re
   await expect(page.getByText('Reminder settings saved.')).toBeVisible();
 
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Heron Wharf Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Heron Wharf Ltd' });
   // Today in the business's time zone, as the editor and the scan count it.
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
   await page.fill('#e-due', today);

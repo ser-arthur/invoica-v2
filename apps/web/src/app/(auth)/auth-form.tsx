@@ -4,21 +4,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
+import { authAnswer, authWords, checkAuthFields } from '@/lib/auth-messages';
 import { reachAuth } from '@/lib/reach';
 import { useHydrated } from '@/lib/use-hydrated';
 import { Button, Field, FormMessage, Input, inlineLinkClass } from '@/components/ui';
+import { useFieldErrors } from './use-field-errors';
 import a from './auth.module.css';
 
 const linkClass = inlineLinkClass;
-
-function messageFor(error: { status?: number; code?: string; message?: string }) {
-  if (error.status === 401 || error.code === 'INVALID_EMAIL_OR_PASSWORD')
-    return 'That email and password do not match an account.';
-  if (error.code === 'EMAIL_NOT_VERIFIED')
-    return 'Confirm your email address first. We have sent you a new link.';
-  if (error.status === 429) return 'Too many attempts. Wait a minute, then try again.';
-  return error.message ?? 'Something went wrong. Try again.';
-}
 
 /** After sign-up: the link is on its way, and it can be sent again. */
 export function CheckEmail({ email }: { email: string }) {
@@ -29,7 +22,7 @@ export function CheckEmail({ email }: { email: string }) {
     setState('sending');
     const result = await reachAuth(authClient.sendVerificationEmail({ email }));
     if (result.error) {
-      setError(messageFor(result.error));
+      setError(authWords(result.error));
       setState('error');
       return;
     }
@@ -72,29 +65,29 @@ export function AuthForm({
   const router = useRouter();
   const ready = useHydrated();
   const [error, setError] = useState<string | null>(null);
+  const fields = useFieldErrors();
   const [pending, setPending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setPending(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const name = String(form.get('name') ?? '').trim();
     const email = String(form.get('email') ?? '').trim();
     const password = String(form.get('password') ?? '');
+    if (fields.show(checkAuthFields(mode, { name, email, password }), formElement)) return;
+    setPending(true);
     const result =
       mode === 'sign-up'
-        ? await reachAuth(
-            authClient.signUp.email({
-              email,
-              password,
-              name: String(form.get('name') ?? '').trim() || email,
-            }),
-          )
+        ? await reachAuth(authClient.signUp.email({ email, password, name }))
         : await reachAuth(authClient.signIn.email({ email, password }));
     setPending(false);
     if (result.error) {
-      setError(messageFor(result.error));
+      const answer = authAnswer(result.error);
+      if ('field' in answer) fields.show({ [answer.field]: answer.message }, formElement);
+      else setError(answer.form);
       return;
     }
     if (mode === 'sign-up') {
@@ -122,23 +115,25 @@ export function AuthForm({
       {notice ? <FormMessage tone="info">{notice}</FormMessage> : null}
       {error ? <FormMessage>{error}</FormMessage> : null}
       {mode === 'sign-up' ? (
-        <Field label="Your name" htmlFor="name">
-          <Input id="name" name="name" autoComplete="name" maxLength={100} required />
+        <Field label="Your name" htmlFor="name" error={fields.errors.name}>
+          <Input id="name" name="name" autoComplete="name" maxLength={100} {...fields.input('name')} />
         </Field>
       ) : null}
-      <Field label="Email" htmlFor="email">
+      <Field label="Email" htmlFor="email" error={fields.errors.email}>
         <Input
           id="email"
           name="email"
           type="email"
           autoComplete="email"
           defaultValue={defaultEmail}
-          required
+          {...fields.input('email')}
         />
       </Field>
       <Field
         label="Password"
         htmlFor="password"
+        error={fields.errors.password}
+        keepHint={mode === 'sign-in'}
         hint={
           mode === 'sign-up' ? (
             'At least 10 characters.'
@@ -154,8 +149,7 @@ export function AuthForm({
           name="password"
           type="password"
           autoComplete={mode === 'sign-up' ? 'new-password' : 'current-password'}
-          minLength={mode === 'sign-up' ? 10 : undefined}
-          required
+          {...fields.input('password')}
         />
       </Field>
       <Button type="submit" size="lg" disabled={pending || !ready}>

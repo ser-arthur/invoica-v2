@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { addClient, PASSWORD, signIn, signUpAndOnboard, watchErrors } from './helpers';
+import { PASSWORD, addClient, choose, signIn, signUpAndOnboard, watchErrors } from './helpers';
 import { linkIn, waitForEmail } from './mailbox';
 
 /**
@@ -12,7 +12,7 @@ test.skip(({ isMobile }) => isMobile, 'Run at desktop width; the phone checks ar
 /** £100.00 plus VAT at 20%, issued; returns the invoice's address. */
 async function issueInvoice(page: Page, clientName: string) {
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: clientName });
+  await choose(page.getByLabel('Bill to'), { label: clientName });
   await page.getByLabel('Line 1 description').fill('Consulting');
   await page.getByLabel('Line 1 price').fill('100');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -35,7 +35,7 @@ test('a draft is still there after a reload and signing in again, and two tabs c
   const email = await signUpAndOnboard(page, 'Persist Studio', { vat: true });
   await addClient(page, 'Kettle Yard Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Kettle Yard Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Kettle Yard Ltd' });
   await page.fill('#e-title', 'Spring catalogue');
   await page.getByLabel('Line 1 description').fill('Photography');
   await page.getByLabel('Line 1 qty').fill('2.5');
@@ -115,7 +115,7 @@ test('a credit note from a tab opened before the invoice was paid asks for the r
   const url = await issueInvoice(page, 'Ferry Road Ltd');
   const other = await secondTab(page, url);
   await other.getByRole('button', { name: 'Credit note' }).click();
-  await other.locator('#cn-mode').selectOption('whole');
+  await choose(other.locator('#cn-mode'), 'whole');
   await other.fill('#cn-reason', 'Order cancelled.');
   await expect(other.getByRole('dialog').getByText(/Refund of/)).toHaveCount(0);
 
@@ -129,7 +129,7 @@ test('a credit note from a tab opened before the invoice was paid asks for the r
   ).toBeVisible();
   await other.reload();
   await other.getByRole('button', { name: 'Credit note' }).click();
-  await other.locator('#cn-mode').selectOption('whole');
+  await choose(other.locator('#cn-mode'), 'whole');
   await expect(other.getByRole('dialog').getByText('Refund of £120.00')).toBeVisible();
   await other.fill('#cn-reason', 'Order cancelled.');
   await other
@@ -155,7 +155,7 @@ test('a refund confirmed in one tab is refused when another tab records a paymen
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Part paid');
 
   await page.getByRole('button', { name: 'Credit note' }).click();
-  await page.locator('#cn-mode').selectOption('whole');
+  await choose(page.locator('#cn-mode'), 'whole');
   await page.fill('#cn-reason', 'Order cancelled.');
   await expect(page.getByRole('dialog').getByText('Refund of £60.00')).toBeVisible();
 
@@ -244,7 +244,7 @@ test.describe('on a phone', () => {
     await page.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await page.getByRole('button', { name: 'Credit note' }).click();
-    await page.locator('#cn-mode').selectOption('whole');
+    await choose(page.locator('#cn-mode'), 'whole');
     await expect(page.getByRole('dialog').getByText('Refund of £120.00')).toBeVisible();
     const overflow = await page.evaluate(() => {
       const dialog = document.querySelector('[role="dialog"]')!;
@@ -268,7 +268,7 @@ test('after a refund, the dashboard shows what was received net, with what was p
   await page.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Paid');
   await page.getByRole('button', { name: 'Credit note' }).click();
-  await page.locator('#cn-mode').selectOption('whole');
+  await choose(page.locator('#cn-mode'), 'whole');
   await page.fill('#cn-reason', 'Cancelled before work began.');
   await page.getByRole('dialog').getByRole('button', { name: 'Issue credit note and record refund' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('CN-0001');

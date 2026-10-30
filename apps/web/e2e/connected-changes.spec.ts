@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { PASSWORD, addClient, signUpAndOnboard } from './helpers';
+import { PASSWORD, addClient, choose, signUpAndOnboard, optionsOf } from './helpers';
 import { emailsTo } from './mailbox';
 
 /**
@@ -17,7 +17,7 @@ test('signed out while typing an invoice: the page says so and keeps the invoice
   const email = await signUpAndOnboard(page, 'Signed Out Studio', { vat: true });
   await addClient(page, 'Bramble Lane Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Bramble Lane Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Bramble Lane Ltd' });
   await page.fill('#e-title', 'Autumn catalogue');
   await page.getByLabel('Line 1 description').fill('Styling');
   await page.getByLabel('Line 1 price').fill('640');
@@ -48,10 +48,10 @@ test('a tax code archived while a draft uses it: the draft still shows it and is
   await signUpAndOnboard(page, 'Archived Rate Studio', { vat: true });
   await addClient(page, 'Paper Mill Books Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Paper Mill Books Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Paper Mill Books Ltd' });
   await page.getByLabel('Line 1 description').fill('Printed guides');
   await page.getByLabel('Line 1 price').fill('100');
-  await page.getByLabel('Line 1 tax').selectOption({ label: 'Reduced rate' });
+  await choose(page.getByLabel('Line 1 tax'), { label: 'Reduced rate' });
   await expect(page.getByText('£105.00').first()).toBeVisible();
   await page.getByRole('button', { name: 'Save draft' }).click();
   await expect(page.getByText('Draft saved.')).toBeVisible();
@@ -63,7 +63,7 @@ test('a tax code archived while a draft uses it: the draft still shows it and is
   await expect(page.locator('li', { hasText: 'Reduced rate' })).toHaveCount(0);
 
   await page.goto(draft);
-  await expect(page.getByLabel('Line 1 tax').locator('option:checked')).toHaveText('Reduced rate (archived)');
+  await expect(page.getByLabel('Line 1 tax')).toHaveText('Reduced rate (archived)');
   await expect(page.getByText('£105.00').first()).toBeVisible();
   await page.getByRole('button', { name: 'Issue invoice' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
@@ -71,7 +71,7 @@ test('a tax code archived while a draft uses it: the draft still shows it and is
   await expect(page.getByText('£105.00').first()).toBeVisible();
   // A new line cannot pick it.
   await page.goto('/invoices/new');
-  await expect(page.getByLabel('Line 1 tax').getByRole('option', { name: /Reduced rate/ })).toHaveCount(0);
+  expect((await optionsOf(page.getByLabel('Line 1 tax'))).filter((o) => /Reduced rate/.test(o))).toEqual([]);
 });
 
 test('a client and the business changed after issuing: the issued invoice stays as it was, the next one is new', async ({
@@ -80,7 +80,7 @@ test('a client and the business changed after issuing: the issued invoice stays 
   await signUpAndOnboard(page, 'Before Rename Studio', { vat: true });
   await addClient(page, 'Old Name Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Old Name Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Old Name Ltd' });
   await page.getByLabel('Line 1 description').fill('Survey');
   await page.getByLabel('Line 1 price').fill('300');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -110,7 +110,7 @@ test('a client and the business changed after issuing: the issued invoice stays 
 
   // The next invoice uses the new names and the next number.
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'New Name Holdings Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'New Name Holdings Ltd' });
   await page.getByLabel('Line 1 description').fill('Second survey');
   await page.getByLabel('Line 1 price').fill('200');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -126,7 +126,7 @@ test('leaving an invoice with changes not saved asks first, from any link', asyn
   await signUpAndOnboard(page, 'Leaving Studio', { vat: true });
   await addClient(page, 'Harbourside Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Harbourside Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Harbourside Ltd' });
   await page.getByLabel('Line 1 description').fill('Mooring plan');
   await page.getByLabel('Line 1 price').fill('450');
   await page
@@ -187,13 +187,13 @@ test('settings saved stay saved, and the next invoice follows them', async ({ pa
   }
 
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Lantern Works Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Lantern Works Ltd' });
   await page.getByLabel('Line 1 description').fill('Lighting plan');
   await page.getByLabel('Line 1 price').fill('900');
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
   const due = new Date(`${today}T12:00:00Z`);
   due.setUTCDate(due.getUTCDate() + 14);
-  await expect(page.locator('#e-due')).toHaveValue(due.toISOString().slice(0, 10));
+  await expect(page.locator('#e-due')).toHaveAttribute('data-value', due.toISOString().slice(0, 10));
   await page.getByRole('button', { name: 'Issue invoice' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Issue invoice' }).click();
   await page.waitForURL(/\?issued=1/);
@@ -229,7 +229,7 @@ test('a voided invoice leaves what is owed, gets no reminder, and can take no pa
   await expect(page.getByText('Reminder settings saved.')).toBeVisible();
 
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Osprey Quay Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Osprey Quay Ltd' });
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
   await page.fill('#e-due', today);
   await page.getByLabel('Line 1 description').fill('Raised in error');
@@ -273,10 +273,10 @@ test('a tax rate changed in another tab while issuing: the new total is shown to
   await signUpAndOnboard(page, 'Rate Change Studio', { vat: true });
   await addClient(page, 'Tern Row Press Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Tern Row Press Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Tern Row Press Ltd' });
   await page.getByLabel('Line 1 description').fill('Printed guides');
   await page.getByLabel('Line 1 price').fill('100');
-  await page.getByLabel('Line 1 tax').selectOption({ label: 'Reduced rate' });
+  await choose(page.getByLabel('Line 1 tax'), { label: 'Reduced rate' });
   await page.getByRole('button', { name: 'Save draft' }).click();
   await page.waitForURL(/\/invoices\/[0-9a-f-]{36}\/edit\?saved=1/);
 
@@ -321,7 +321,7 @@ test('a client’s page follows its invoices: payments, credit notes and refunds
 
   const issue = async (what: string, price: string) => {
     await page.goto('/invoices/new');
-    await page.getByLabel('Bill to').selectOption({ label: 'Lapwing Mill Ltd' });
+    await choose(page.getByLabel('Bill to'), { label: 'Lapwing Mill Ltd' });
     await page.getByLabel('Line 1 description').fill(what);
     await page.getByLabel('Line 1 price').fill(price);
     await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -347,7 +347,7 @@ test('a client’s page follows its invoices: payments, credit notes and refunds
 
   await page.goto(second);
   await page.getByRole('button', { name: 'Credit note' }).click();
-  await page.locator('#cn-mode').selectOption('whole');
+  await choose(page.locator('#cn-mode'), 'whole');
   await page.fill('#cn-reason', 'Fitting not needed.');
   await page.getByRole('dialog').getByRole('button', { name: 'Issue credit note' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('CN-0001');
@@ -362,7 +362,7 @@ test('a client’s page follows its invoices: payments, credit notes and refunds
   await page.getByRole('dialog').getByRole('button', { name: 'Record payment' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Paid');
   await page.getByRole('button', { name: 'Credit note' }).click();
-  await page.locator('#cn-mode').selectOption('whole');
+  await choose(page.locator('#cn-mode'), 'whole');
   await page.fill('#cn-reason', 'Returned.');
   await page.getByRole('dialog').getByRole('button', { name: 'Issue credit note and record refund' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('CN-0002');
@@ -381,19 +381,19 @@ test('the way rates are chosen changed in another tab: the editor asks for the r
   await page.goto('/clients/new');
   await page.fill('#c-name', 'Lyon Ateliers SARL');
   await page.fill('#c-email', 'compta@lyon.example');
-  await page.selectOption('#c-currency', 'EUR');
+  await choose(page.locator('#c-currency'), 'EUR');
   await page.getByRole('button', { name: 'Save client' }).click();
   await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
 
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Lyon Ateliers SARL' });
+  await choose(page.getByLabel('Bill to'), { label: 'Lyon Ateliers SARL' });
   await page.getByLabel('Line 1 description').fill('Workshop');
   await page.getByLabel('Line 1 price').fill('100');
   await page.fill('#e-sterling-rate', '1.1400');
 
   const settings = await page.context().newPage();
   await settings.goto('/settings');
-  await settings.selectOption('#s-sterling', 'market');
+  await choose(settings.locator('#s-sterling'), 'market');
   await settings.getByRole('button', { name: 'Save settings' }).click();
   await expect(settings.getByText(/Settings saved\./)).toBeVisible();
   await settings.close();
@@ -419,7 +419,7 @@ test('a draft changed in another tab is not replaced without asking', async ({ p
   await signUpAndOnboard(page, 'Two Tabs Studio');
   await addClient(page, 'Heron Wharf Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Heron Wharf Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Heron Wharf Ltd' });
   await page.fill('#e-title', 'Spring survey');
   await page.getByLabel('Line 1 description').fill('Survey');
   await page.getByLabel('Line 1 price').fill('300');
@@ -473,7 +473,7 @@ test('the business’s name and email changed after issuing: its emails come fro
   await expect(page.getByText('Reminder settings saved.')).toBeVisible();
 
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Kestrel Mill Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Kestrel Mill Ltd' });
   await page.getByLabel('Line 1 description').fill('Millwork survey');
   await page.getByLabel('Line 1 price').fill('300');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -583,7 +583,7 @@ test('a client changed in another tab: the older tab’s save is refused, the ch
   const phone = await context.newPage();
   await phone.goto(`${clientUrl}/edit`);
   await phone.fill('#c-email', 'payables@wren.example');
-  await phone.selectOption('#c-currency', 'EUR');
+  await choose(phone.locator('#c-currency'), 'EUR');
   await phone.fill('#c-notes', 'Pays by the end of the month.');
   await phone.getByRole('button', { name: 'Save changes' }).click();
   await phone.waitForURL(clientUrl);
@@ -600,14 +600,14 @@ test('a client changed in another tab: the older tab’s save is refused, the ch
   // What was typed stays; a field not typed in now shows the change made elsewhere.
   await expect(page.locator('#c-contact')).toHaveValue('Ada Wren');
   await expect(page.locator('#c-email')).toHaveValue('payables@wren.example');
-  await expect(page.locator('#c-currency')).toHaveValue('EUR');
+  await expect(page.locator('#c-currency')).toHaveAttribute('data-value', 'EUR');
   await expect(page.locator('#c-notes')).toHaveValue('Pays by the end of the month.');
   await page.getByRole('button', { name: 'Save mine anyway' }).click();
   await page.waitForURL(clientUrl);
   await expect(page.getByText('Ada Wren')).toBeVisible();
   await expect(page.getByText('payables@wren.example')).toBeVisible();
   await page.goto(`${clientUrl}/edit`);
-  await expect(page.locator('#c-currency')).toHaveValue('EUR');
+  await expect(page.locator('#c-currency')).toHaveAttribute('data-value', 'EUR');
   await expect(page.locator('#c-notes')).toHaveValue('Pays by the end of the month.');
 });
 
@@ -698,7 +698,7 @@ test('a tax code archived after a saved item used it: the item keeps it, says so
   await page.goto('/items');
   await page.fill('#i-name', 'Child car seat');
   await page.fill('#i-price', '80');
-  await page.locator('#i-tax').selectOption({ label: 'Reduced rate' });
+  await choose(page.locator('#i-tax'), { label: 'Reduced rate' });
   await page.getByRole('button', { name: 'Add item' }).click();
   await expect(page.getByRole('button', { name: /Child car seat/ })).toContainText('Reduced rate');
 
@@ -710,7 +710,7 @@ test('a tax code archived after a saved item used it: the item keeps it, says so
   const row = page.getByRole('button', { name: /Child car seat/ });
   await expect(row).toContainText('Reduced rate (archived)');
   await row.click();
-  await expect(page.locator('#i-tax option:checked')).toHaveText('Reduced rate (archived)');
+  await expect(page.locator('#i-tax')).toHaveText('Reduced rate (archived)');
   await page.fill('#i-price', '85');
   await page.getByRole('button', { name: 'Save item' }).click();
   await expect(page.getByRole('button', { name: /Child car seat/ })).toContainText('£85.00');
@@ -724,7 +724,7 @@ test('a draft deleted in another tab: the editor still open saves what was typed
   await signUpAndOnboard(page, 'Deleted Draft Studio', { vat: true });
   await addClient(page, 'Fenwick Yard Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Fenwick Yard Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Fenwick Yard Ltd' });
   await page.getByLabel('Line 1 description').fill('Survey');
   await page.getByLabel('Line 1 price').fill('300');
   await page.getByRole('button', { name: 'Save draft' }).click();
@@ -759,7 +759,7 @@ test('an invoice page left open past midnight records a payment on the new day',
   await signUpAndOnboard(page, 'Overnight Studio', { vat: true });
   await addClient(page, 'Harrow Lane Bakery Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Harrow Lane Bakery Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Harrow Lane Bakery Ltd' });
   await page.getByLabel('Line 1 description').fill('Shop fit-out');
   await page.getByLabel('Line 1 price').fill('500');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -776,6 +776,6 @@ test('an invoice page left open past midnight records a payment on the new day',
     new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(ms));
   const tomorrow = londonDay(Date.now() + 86_400_000);
   await page.getByRole('button', { name: 'Record payment' }).click();
-  await expect(page.locator('#pay-date')).toHaveValue(tomorrow);
-  await expect(page.locator('#pay-date')).toHaveAttribute('max', tomorrow);
+  await expect(page.locator('#pay-date')).toHaveAttribute('data-value', tomorrow);
+  await expect(page.locator('#pay-date')).toHaveAttribute('data-max', tomorrow);
 });

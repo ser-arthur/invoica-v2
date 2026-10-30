@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { PASSWORD, addClient, signUpAndOnboard } from './helpers';
+import { PASSWORD, addClient, choose, signUpAndOnboard } from './helpers';
 
 /**
  * A connection that drops, or an answer lost on the way back, never throws away what was typed, and trying again
@@ -33,7 +33,7 @@ test('an invoice typed while offline is kept on screen and saved once the connec
   await signUpAndOnboard(page, 'Offline Studio', { vat: true });
   await addClient(page, 'Harbour Mill Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Harbour Mill Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Harbour Mill Ltd' });
   await page.fill('#e-title', 'Winter shoot');
   await page.getByLabel('Line 1 description').fill('Location days');
   await page.getByLabel('Line 1 qty').fill('3');
@@ -59,7 +59,7 @@ test('a new draft whose answer is lost is saved once, however often it is tried 
   await signUpAndOnboard(page, 'Lost Answer Studio', { vat: true });
   await addClient(page, 'Quay Street Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Quay Street Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Quay Street Ltd' });
   await page.fill('#e-title', 'Spring brochure');
   await page.getByLabel('Line 1 description').fill('Design');
   await page.getByLabel('Line 1 price').fill('900');
@@ -80,7 +80,7 @@ test('a payment whose answer is lost is recorded once when tried again', async (
   await signUpAndOnboard(page, 'Lost Payment Studio', { vat: true });
   await addClient(page, 'Tannery Lane Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Tannery Lane Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Tannery Lane Ltd' });
   await page.getByLabel('Line 1 description').fill('Consulting');
   await page.getByLabel('Line 1 price').fill('100');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -110,7 +110,7 @@ test('marking as sent while offline says so, and the invoice stays as it was', a
   await signUpAndOnboard(page, 'Offline Send Studio', { vat: true });
   await addClient(page, 'Wharf Road Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Wharf Road Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Wharf Road Ltd' });
   await page.getByLabel('Line 1 description').fill('Survey');
   await page.getByLabel('Line 1 price').fill('300');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -168,7 +168,7 @@ test('a copy of an invoice whose answer is lost is made once when asked again', 
   await signUpAndOnboard(page, 'Lost Copy Studio', { vat: true });
   await addClient(page, 'Juniper Row Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Juniper Row Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Juniper Row Ltd' });
   await page.fill('#e-title', 'Monthly upkeep');
   await page.getByLabel('Line 1 description').fill('Upkeep');
   await page.getByLabel('Line 1 price').fill('80');
@@ -230,7 +230,7 @@ test('issuing a saved draft again after a lost answer says which number it was i
   await signUpAndOnboard(page, 'Lost Issue Studio', { vat: true });
   await addClient(page, 'Tannery Yard Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Tannery Yard Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Tannery Yard Ltd' });
   await page.getByLabel('Line 1 description').fill('Signage');
   await page.getByLabel('Line 1 price').fill('240');
   await page.getByRole('button', { name: 'Save draft' }).click();

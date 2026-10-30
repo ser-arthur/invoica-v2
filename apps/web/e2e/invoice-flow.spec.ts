@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addClient, signUpAndOnboard, watchErrors } from './helpers';
+import { addClient, choose, signUpAndOnboard, watchErrors } from './helpers';
 import { waitForEmail } from './mailbox';
 
 test('a VAT-registered business invoices a client, issues, downloads the PDF and records a part payment', async ({
@@ -11,7 +11,7 @@ test('a VAT-registered business invoices a client, issues, downloads the PDF and
   await addClient(page, 'Northlane Logistics Ltd');
 
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Northlane Logistics Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Northlane Logistics Ltd' });
   await page.fill('#e-title', 'Operations review');
   await page.getByLabel('Line 1 description').fill('Site visits');
   await page.getByLabel('Line 1 qty').fill('4');
@@ -62,7 +62,7 @@ test('an issued invoice cannot be opened by another business', async ({ browser 
   await signUpAndOnboard(a, 'Alpha Studio');
   await addClient(a, 'Client of Alpha');
   await a.goto('/invoices/new');
-  await a.getByLabel('Bill to').selectOption({ label: 'Client of Alpha' });
+  await choose(a.getByLabel('Bill to'), { label: 'Client of Alpha' });
   await a.getByLabel('Line 1 description').fill('Design');
   await a.getByLabel('Line 1 price').fill('500');
   await a.getByRole('button', { name: 'Issue invoice' }).click();
@@ -83,7 +83,7 @@ test('an issued invoice is emailed with its PDF and marked as sent', async ({ pa
   await signUpAndOnboard(page, 'Field Office');
   await addClient(page, 'Mara Linden Ceramics');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Mara Linden Ceramics' });
+  await choose(page.getByLabel('Bill to'), { label: 'Mara Linden Ceramics' });
   await page.getByLabel('Line 1 description').fill('Website design');
   await page.getByLabel('Line 1 price').fill('2400');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -114,7 +114,7 @@ test('an invoice emailed to an address that cannot exist says so, stays issued, 
     'accountspayabledepartmentforinvoices@wrongaddressforthisclient.invalid',
   );
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Wrong Address Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Wrong Address Ltd' });
   await page.getByLabel('Line 1 description').fill('Survey');
   await page.getByLabel('Line 1 price').fill('300');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -170,7 +170,7 @@ test('two payments recorded from the same page both count, and a credit note cre
   await signUpAndOnboard(page, 'Calder Works', { vat: true });
   await addClient(page, 'Ostrava Supplies Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Ostrava Supplies Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Ostrava Supplies Ltd' });
   await page.getByLabel('Line 1 description').fill('Site visits');
   await page.getByLabel('Line 1 qty').fill('2');
   await page.getByLabel('Line 1 price').fill('100');
@@ -194,7 +194,7 @@ test('two payments recorded from the same page both count, and a credit note cre
   }
 
   await page.getByRole('button', { name: 'Credit note' }).click();
-  await page.locator('#cn-mode').selectOption('lines');
+  await choose(page.locator('#cn-mode'), 'lines');
   await page.getByLabel(/^Site visits/).fill('1');
   // One of two site visits: £100.00 plus VAT at 20%, worked out from the invoice as issued.
   await expect(page.getByRole('dialog').getByText('£120.00')).toBeVisible();
@@ -226,7 +226,7 @@ test('after a part payment, a credit note for everything still owed settles the 
   await signUpAndOnboard(page, 'Penny Lane Studio', { vat: true });
   await addClient(page, 'Harbour Kilns Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Harbour Kilns Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Harbour Kilns Ltd' });
   await page.getByLabel('Line 1 description').fill('Glaze testing');
   await page.getByLabel('Line 1 price').fill('100');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -240,12 +240,12 @@ test('after a part payment, a credit note for everything still owed settles the 
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Credit note' }).click();
-  await page.locator('#cn-mode').selectOption('amount');
+  await choose(page.locator('#cn-mode'), 'amount');
   // £49.97 before VAT is the most that keeps the credit note within the £59.97 still owed; above it, a refund.
   await expect(
     page.getByRole('dialog').getByText(/Above £49\.97, the credit note is more than the £59\.97 still owed/),
   ).toBeVisible();
-  await page.locator('#cn-mode').selectOption('balance');
+  await choose(page.locator('#cn-mode'), 'balance');
   await expect(page.getByRole('dialog').getByText('£59.97').last()).toBeVisible();
   await page.fill('#cn-reason', 'The rest is waived.');
   await page.getByRole('dialog').getByRole('button', { name: 'Issue credit note' }).click();
@@ -263,7 +263,7 @@ test('a paid invoice is credited in full with a refund, shown on the invoice and
   await signUpAndOnboard(page, 'Refund Row Studio', { vat: true });
   await addClient(page, 'Mallow Prints Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Mallow Prints Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Mallow Prints Ltd' });
   await page.getByLabel('Line 1 description').fill('Print run');
   await page.getByLabel('Line 1 price').fill('100');
   await page.getByRole('button', { name: 'Issue invoice' }).click();
@@ -277,10 +277,10 @@ test('a paid invoice is credited in full with a refund, shown on the invoice and
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Credit note' }).click();
-  await page.locator('#cn-mode').selectOption('whole');
+  await choose(page.locator('#cn-mode'), 'whole');
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByText('Refund of £120.00')).toBeVisible();
-  await page.selectOption('#cn-refund-method', 'bank_transfer');
+  await choose(page.locator('#cn-refund-method'), 'bank_transfer');
   await page.fill('#cn-refund-ref', 'RF-0042');
   await page.fill('#cn-reason', 'The prints were returned.');
   await dialog.getByRole('button', { name: 'Issue credit note and record refund' }).click();

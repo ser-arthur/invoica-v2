@@ -6,7 +6,7 @@ needed a page of their own, whether the help centre belonged on the website, and
 
 ## The footer
 
-- **Top.** As now: the line "The business side of your business, in order." and "Create free account". Beside them, one
+- **Top.** The line "Invoicing for freelancers and small businesses." (`docs/specs/brand-lines.md`, 30 October) and "Create free account". Beside them, one
   row of the product's links: Why Invoica, How it works, Templates, Pricing.
 - **Bottom line.** The copyright line, "2026 Invoica. Invoica is a trading name of Kobby S. Arthur.", the business's email,
   `hello@getinvoica.com`, as a link to write to it, and Privacy and Terms.

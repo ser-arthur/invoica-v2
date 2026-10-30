@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { signUpAndOnboard } from './helpers';
+import { optionsOf, optionValuesOf, signUpAndOnboard } from './helpers';
 
 /** Acceptance criteria 11 and 12 of docs/specs/invoice-templates.md. */
 
@@ -55,11 +55,8 @@ test('the picker offers the sixteen, filters by kind and feel, and the choice is
   await expect(page.locator('input[name="template"]:checked')).toHaveValue('statement');
 
   await page.goto('/invoices/new');
-  const options = page.locator('#e-template option');
-  await expect
-    .poll(() => options.evaluateAll((els) => els.map((e) => (e as HTMLOptionElement).value)))
-    .toEqual([...STYLES, ...RANGE.slice(1)]);
-  await expect(page.locator('#e-template')).toHaveValue('statement');
+  expect(await optionValuesOf(page.locator('#e-template'))).toEqual([...STYLES, ...RANGE.slice(1)]);
+  await expect(page.locator('#e-template')).toHaveAttribute('data-value', 'statement');
 });
 
 test('Signature’s four styles are chosen under it, saved, and offered in the editor', async ({ page }) => {
@@ -84,8 +81,10 @@ test('Signature’s four styles are chosen under it, saved, and offered in the e
   ).toBeChecked();
 
   await page.goto('/invoices/new');
-  await expect(page.locator('#e-template')).toHaveValue('signature-route-dark');
-  await expect(page.locator('#e-template option[value="signature-light"]')).toHaveText(/^Signature, Light/);
+  await expect(page.locator('#e-template')).toHaveAttribute('data-value', 'signature-route-dark');
+  expect(
+    (await optionsOf(page.locator('#e-template'))).filter((o) => /^Signature, Light/.test(o)),
+  ).toHaveLength(1);
 });
 
 test('the second colour and what sits behind the logo are named for screen readers and reachable by keyboard', async ({

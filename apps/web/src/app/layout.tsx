@@ -6,7 +6,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: { default: 'Invoica', template: '%s | Invoica' },
   description:
-    'Invoices that make a new business look established, and an easy way to keep track of what is owed.',
+    'Invoicing for freelancers and small businesses. Invoices that make a new business look established, followed all the way to paid.',
 };
 
 export const viewport: Viewport = {

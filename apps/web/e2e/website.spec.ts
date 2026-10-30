@@ -127,6 +127,41 @@ test('the footer holds the product’s links, who is behind Invoica, its email, 
   await expect(footer.getByText('Invoica is a trading name of Kobby S. Arthur.')).toBeVisible();
 });
 
+// docs/specs/brand-lines.md, acceptance criteria 1 to 3.
+
+test('the promise on sign in and create account is the hero’s, and the first Invoica’s line is gone (brand 1)', async ({
+  page,
+}, info) => {
+  for (const path of ['/sign-in', '/sign-up']) {
+    await page.goto(path);
+    const panel = page.locator('aside');
+    if (info.project.name === 'desktop')
+      await expect(panel.locator('p').first(), path).toHaveText(/^Every invoice,\s*all the way\s*to paid\.$/);
+    await expect(page.getByText('The smarter way'), path).toHaveCount(0);
+  }
+  await page.goto('/');
+  await expect(page.getByText('The smarter way')).toHaveCount(0);
+});
+
+test('the footer says what Invoica is and for whom; the section heading stays in its section (brand 2, 3)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const footer = page.getByRole('contentinfo');
+  await expect(
+    footer.getByText('Invoicing for freelancers and small businesses.', { exact: true }),
+  ).toBeVisible();
+  await expect(footer.getByText('The business side')).toHaveCount(0);
+  await expect(page.getByText('The business side of your business, in order.')).toHaveCount(1);
+  await expect(page.locator('#why-heading')).toHaveText(
+    /^The business side\s*of your business,\s*in order\.$/,
+  );
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    'content',
+    /^Invoicing for freelancers and small businesses\./,
+  );
+});
+
 test('the header stays in view while the page scrolls under it', async ({ page }, info) => {
   await page.goto('/');
   await page.evaluate(() => window.scrollTo(0, 2400));
@@ -563,7 +598,7 @@ test('on a phone sign in and sign up open with the mark on a Night head, then th
     const home = page.getByRole('link', { name: 'Invoica home' });
     await expect(home).toHaveCount(1);
     await expect(head.getByRole('link', { name: 'Invoica home' })).toBeVisible();
-    await expect(page.getByText('The smarter way').first()).toBeHidden();
+    await expect(page.getByText('Every invoice,').first()).toBeHidden();
     await expect(foot.getByRole('link', { name: 'Privacy' })).toBeVisible();
     await expect(foot.getByRole('link', { name: 'Invoica home' })).toHaveCount(0);
   }

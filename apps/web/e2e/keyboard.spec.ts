@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addClient, signUpAndOnboard } from './helpers';
+import { addClient, choose, signUpAndOnboard } from './helpers';
 
 test('every control on the main pages can be reached with Tab and shows where focus is', async ({
   page,
@@ -20,7 +20,8 @@ test('every control on the main pages can be reached with Tab and shows where fo
         const el = document.activeElement as HTMLElement | null;
         // The development server's own overlay is not part of the app.
         if (!el || el === document.body || el.tagName === 'NEXTJS-PORTAL') return null;
-        const s = getComputedStyle(el);
+        // A field drawn as a box around its input (a date) shows focus on the box.
+        const s = getComputedStyle(el.closest<HTMLElement>('[data-focus-box]') ?? el);
         const r = el.getBoundingClientRect();
         return {
           id: `${el.tagName}:${el.getAttribute('aria-label') ?? el.id ?? ''}:${(el.textContent ?? '').trim().slice(0, 30)}:${Math.trunc(r.top)}:${Math.trunc(r.left)}`,
@@ -48,7 +49,7 @@ test('an open dialog keeps focus inside it, and closing it returns focus to what
   await signUpAndOnboard(page, 'Quayside Office', { vat: true });
   await addClient(page, 'Tidewater Ltd');
   await page.goto('/invoices/new');
-  await page.getByLabel('Bill to').selectOption({ label: 'Tidewater Ltd' });
+  await choose(page.getByLabel('Bill to'), { label: 'Tidewater Ltd' });
   await page.getByLabel('Line 1 description').fill('Survey');
   await page.getByLabel('Line 1 price').fill('300');
 

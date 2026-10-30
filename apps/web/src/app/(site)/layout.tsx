@@ -10,7 +10,7 @@ import { isSignedIn } from '@/lib/session';
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const signedIn = await isSignedIn();
   return (
-    <div className={s.site}>
+    <div className={s.site} data-site="">
       <SiteHeader signedIn={signedIn} arrive />
       {children}
       <SiteFooter />

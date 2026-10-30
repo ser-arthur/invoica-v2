@@ -232,8 +232,8 @@ test('signing in, the Night panel lands: the logo, the halves from opposite side
     expect(hit, what).toBeDefined();
     return hit!;
   };
-  const near = find((x) => x.tag === 'p' && x.text.startsWith('The smarter way'), 'the near half');
-  const far = find((x) => x.tag === 'div' && x.text.startsWith('The smarter way'), 'the far half');
+  const near = find((x) => x.tag === 'p' && x.text.startsWith('Every invoice'), 'the near half');
+  const far = find((x) => x.tag === 'div' && x.text.startsWith('Every invoice'), 'the far half');
   const crease = find((x) => x.tag === 'svg', 'the crease');
   const points = seq.filter((x) => x.tag === 'li').map((x) => x.start);
   expect(near.start).toBe(far.start);
