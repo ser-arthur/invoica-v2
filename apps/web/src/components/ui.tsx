@@ -92,9 +92,8 @@ export function Field({
       </label>
       {control}
       {error ? (
-        <p id={`${htmlFor}-error`} className="flex items-start gap-1.5 text-[13px] text-danger">
-          <ErrorMark />
-          <span>{error}</span>
+        <p id={`${htmlFor}-error`} className="text-[13px] text-danger">
+          {error}
         </p>
       ) : null}
       {hint && (!error || keepHint) ? (
@@ -103,17 +102,6 @@ export function Field({
         </p>
       ) : null}
     </div>
-  );
-}
-
-/** The small circled mark before a field's error, so the error does not rest on its colour alone. */
-export function ErrorMark({ className = 'mt-px' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" aria-hidden="true" className={cx('size-3.5 shrink-0', className)}>
-      <circle cx="8" cy="8" r="7" fill="currentColor" />
-      <path d="M8 4.2v4.6" stroke="var(--color-surface, #fff)" strokeWidth="1.7" strokeLinecap="round" />
-      <circle cx="8" cy="11.3" r="1" fill="var(--color-surface, #fff)" />
-    </svg>
   );
 }
 
@@ -318,17 +306,10 @@ export function FormMessage({
       role={tone === 'danger' ? 'alert' : 'status'}
       className={cx(
         'rounded-[10px] px-4 py-3 text-sm [overflow-wrap:anywhere]',
-        tone === 'danger' ? 'flex items-start gap-2 bg-danger-soft text-danger' : 'bg-info-soft text-info',
+        tone === 'danger' ? 'bg-danger-soft text-danger' : 'bg-info-soft text-info',
       )}
     >
-      {tone === 'danger' ? (
-        <>
-          <ErrorMark className="mt-[3px]" />
-          <span>{children}</span>
-        </>
-      ) : (
-        children
-      )}
+      {children}
     </div>
   );
 }

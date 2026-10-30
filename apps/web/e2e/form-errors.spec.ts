@@ -17,6 +17,8 @@ function authCalls(page: Page) {
 async function expectFieldError(page: Page, id: string, message: string) {
   const field = page.locator(`#${id}`);
   await expect(page.locator(`#${id}-error`)).toHaveText(message);
+  // The words and the field's border carry the error, without a mark beside it (the owner's note of 30 October).
+  await expect(page.locator(`#${id}-error svg`)).toHaveCount(0);
   await expect(field).toHaveAttribute('aria-invalid', 'true');
   await expect(field).toHaveAttribute('aria-describedby', new RegExp(`(^| )${id}-error( |$)`));
 }
@@ -76,6 +78,7 @@ test('sign in sent empty asks for both, and a wrong password says they do not ma
   await expect(page.locator('form').getByRole('alert')).toHaveText(
     'That email and password do not match an account.',
   );
+  await expect(page.locator('form').getByRole('alert').locator('svg')).toHaveCount(0);
   await expectNoServiceWords(page);
 });
 

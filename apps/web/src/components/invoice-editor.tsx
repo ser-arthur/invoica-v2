@@ -47,7 +47,6 @@ import { DocumentFrame } from './document-frame';
 import {
   Button,
   Checkbox,
-  ErrorMark,
   Field,
   FormMessage,
   Input,
@@ -1251,12 +1250,7 @@ export function InvoiceEditor(props: EditorProps) {
                           {amount === null ? '' : money(amount)}
                         </output>
                       </div>
-                      {error ? (
-                        <p className="mt-2 flex items-start gap-1.5 text-[13px] text-danger">
-                          <ErrorMark />
-                          <span>{error}</span>
-                        </p>
-                      ) : null}
+                      {error ? <p className="mt-2 text-[13px] text-danger">{error}</p> : null}
                       {l.key === openLine && !error && l.title.trim() ? (
                         <Button
                           type="button"
