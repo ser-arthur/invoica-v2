@@ -47,6 +47,21 @@ describe('the drain route', () => {
     expect(await response.json()).toEqual({ done: 2, failed: 0, reminders: null });
   });
 
+  // docs/decisions/0016-hosting-on-vercel.md: Vercel's scheduler calls with GET and the CRON_SECRET bearer token.
+  it('runs the same for the scheduler’s GET, with the secret, and refuses it without', async () => {
+    jobs.queueReminders.mockResolvedValue(1);
+    const { GET } = await import('./route');
+    const ok = await GET(
+      new Request('http://localhost/api/jobs/drain', { headers: { authorization: `Bearer ${SECRET}` } }),
+    );
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toEqual({ done: 2, failed: 0, reminders: 1 });
+    jobs.runJobs.mockClear();
+    const refused = await GET(new Request('http://localhost/api/jobs/drain'));
+    expect(refused.status).toBe(401);
+    expect(jobs.runJobs).not.toHaveBeenCalled();
+  });
+
   it('refuses a request without the secret', async () => {
     const { POST } = await import('./route');
     const response = await POST(new Request('http://localhost/api/jobs/drain', { method: 'POST' }));
