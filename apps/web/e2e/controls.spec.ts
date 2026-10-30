@@ -174,6 +174,8 @@ test('on a phone a dropdown opens as a sheet at the foot of the screen, named fo
   const panel = page.locator(`[id="${await field.getAttribute('aria-controls')}"]`).locator('xpath=..');
   await field.click();
   await expect(panel).toBeVisible();
+  // Measured once it has finished sliding up.
+  await panel.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
   const box = (await panel.boundingBox())!;
   const viewport = page.viewportSize()!;
   expect(box.x).toBe(0);
