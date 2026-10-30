@@ -17,6 +17,7 @@
     "test:db": "pnpm --filter @invoica/db test",
     "test:e2e": "pnpm --filter @invoica/web test:e2e",
     "db:migrate": "pnpm --filter @invoica/db migrate",
+    "db:check": "pnpm --filter @invoica/db check-connection",
     "db:seed": "pnpm --filter @invoica/web seed",
     "copy:check": "node scripts/copy-check.mjs",
     "check": "pnpm format:check && pnpm copy:check && pnpm lint && pnpm typecheck && pnpm test"

@@ -7,6 +7,7 @@ A business tool for client management, invoicing, cash flow and dashboards, ship
 - Install: `pnpm install` (Node 22, pnpm 10)
 - Local database, first time: `DATABASE_ADMIN_URL=postgres://postgres@localhost:5432/postgres pnpm --filter @invoica/db setup:dev` (creates the three roles and the `invoica` database, then migrates; prints the three connection URLs)
 - Migrate: `pnpm db:migrate` (uses `DATABASE_OWNER_URL`)
+- Check a database address: `CHECK_URL=... pnpm db:check` (says whom it connected as, or why not; prints no address)
 - Seed demo data: `pnpm db:seed`
 - Dev server: `pnpm dev`
 - Typecheck: `pnpm typecheck`
