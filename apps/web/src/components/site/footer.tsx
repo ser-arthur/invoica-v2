@@ -14,7 +14,9 @@ export function SiteFooter() {
     <footer className={s.footer}>
       <div className={`${s.wrap} ${s.grid} ${s.footerTop}`}>
         <div className={s.footerBrand}>
-          <p className={s.footerLine}>The business side of your business, in order.</p>
+          <p className={s.footerLine}>
+            Invoicing for freelancers <span className={s.keep}>and small businesses.</span>
+          </p>
           <Link href="/sign-up" className={`${s.button} ${s.limeButton}`}>
             Create free account
           </Link>
