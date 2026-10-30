@@ -2,16 +2,24 @@ import { join } from 'node:path';
 import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
 
-/** For `next build`: a self-contained server for the container image (Dockerfile), with the fonts PDFs embed. */
+/**
+ * For `next build`: a self-contained server for the container image (Dockerfile), with the fonts PDFs embed. Built on
+ * Vercel (which sets VERCEL), it also carries the Chromium made for Vercel's functions (docs/spikes/pdf-on-vercel.md).
+ */
 const standalone: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: join(import.meta.dirname, '../..'),
-  outputFileTracingIncludes: { '/**': ['../../packages/documents/fonts/**'] },
+  outputFileTracingIncludes: {
+    '/**': [
+      '../../packages/documents/fonts/**',
+      ...(process.env.VERCEL ? ['./node_modules/@sparticuz/chromium/bin/**'] : []),
+    ],
+  },
 };
 
 const config: NextConfig = {
   transpilePackages: ['@invoica/core', '@invoica/schemas', '@invoica/db', '@invoica/documents'],
-  serverExternalPackages: ['pg', 'playwright-core'],
+  serverExternalPackages: ['pg', 'playwright-core', '@sparticuz/chromium'],
   poweredByHeader: false,
   agentRules: false,
   async headers() {
