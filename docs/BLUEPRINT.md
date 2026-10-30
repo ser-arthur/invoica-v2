@@ -177,6 +177,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **29 Oct, about 17:35 to 21:40, on `main`.** Errors in plain words under their fields (sign in, create account, the password pages and every form in the app); only database guards written for people reach the page. Invoica's own dropdowns, dates, colours, checkboxes and radio buttons, as a sheet on phones (decision 0015). 945 unit, database and PDF tests and 368 end-to-end tests run, none failed on the third run (98 skipped by design). Bundle 51.
 - **30 Oct, about 03:05 to 04:35, on `main`.** Errors without the mark. One promise, "Every invoice, all the way to paid.", on the hero and the sign-in pages; the footer says "Invoicing for freelancers and small businesses." (`docs/specs/brand-lines.md`). 945 unit, database and PDF tests and 372 end-to-end tests run, none failed on the second run (98 skipped by design). Bundle 52.
 - **30 Oct, about 16:06 to 19:00, on `main`.** Hosting on Vercel (decision 0016, replacing 0010): DNS at Cloudflare and `hello@` forwarded, done by the owner; PDFs with the serverless Chromium (the spike in `docs/spikes/pdf-on-vercel.md`); files in Cloudflare R2; the scheduler every fifteen minutes so Neon's free plan lasts the month; `GET /api/health/pdf`; `docs/deploy.md` rewritten as the owner's steps. 955 unit, database and PDF tests and 372 end-to-end tests run, none failed (98 skipped by design). Bundle 53.
+- **30 Oct, about 19:30 to 21:30, on `main`.** The owner deployed bundle 53 on Hobby with the scheduler once a day; the app starts but does not yet reach the database. The health check tries both database roles and logs why one fails; `pnpm db:check` tries an address; the end-to-end suite checks the health and PDF answers. 965 unit, database and PDF tests and 376 end-to-end tests run, none failed (100 skipped by design). Bundle 54.
 
 ## Decisions in force
 
@@ -264,5 +265,5 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-53.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-54.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.

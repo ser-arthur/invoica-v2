@@ -156,7 +156,7 @@ Sign-in works at `https://getinvoica.com` only: the `vercel.app` address is a di
 2. Check the database and the PDFs (run the PDF check twice: the first call starts a cold function):
 
    ```
-   curl -fsS https://getinvoica.com/api/health
+   curl -sS https://getinvoica.com/api/health
    curl -fsS -H "Authorization: Bearer CRON_SECRET" https://getinvoica.com/api/health/pdf
    curl -fsS -H "Authorization: Bearer CRON_SECRET" https://getinvoica.com/api/health/pdf
    ```
