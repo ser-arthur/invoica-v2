@@ -359,7 +359,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 
 ## Next steps
 
-1. Hosting (decision 0016, bundle 53): the owner's setup, `docs/deploy.md` steps 2 to 6 (Neon and the migrations, R2, Resend, Vercel Pro and its settings, the first deployment). Then the PDF check on Vercel itself, one call cold and one warm; if it fails there, a small container service for PDFs only (`docs/spikes/pdf-on-vercel.md`). Later: DNSSEC, the registration moved to Cloudflare after 60 days, a second copy of the files (step 8), a mailbox for sending as `hello@`.
+1. Hosting (decision 0016, bundle 53): on moving to Vercel Pro, the scheduler back to every fifteen minutes in `apps/web/vercel.json` (BLUEPRINT, open question 15). The owner's setup, `docs/deploy.md` steps 2 to 6 (Neon and the migrations, R2, Resend, Vercel Pro and its settings, the first deployment). Then the PDF check on Vercel itself, one call cold and one warm; if it fails there, a small container service for PDFs only (`docs/spikes/pdf-on-vercel.md`). Later: DNSSEC, the registration moved to Cloudflare after 60 days, a second copy of the files (step 8), a mailbox for sending as `hello@`.
 2. GitHub: on 23 October the owner chose to put v2 in its own private repository, `ser-arthur/invoica-v2`, cloned from bundle 20 into `~/Downloads/_DEV/invoica-v2` with `feat/website` as its `main`, and to show the site from its own Vercel project (root `apps/web`, no database: the site shows, account actions fail). The old repository and `invoica-io.vercel.app` stay untouched. CI (`.github/workflows/ci.yml`) runs there for the first time on that push. When this session is linked to GitHub: pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
 3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
 4. Templates: real-looking sample details in the picker (account, company and VAT numbers that fail their check digits). Later: static fonts for PDFs, and the website's templates section.
@@ -369,7 +369,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 
 ## Open questions
 
-The list is kept in `docs/BLUEPRINT.md`, "Open questions" (14 items, 5 open).
+The list is kept in `docs/BLUEPRINT.md`, "Open questions" (15 items, 6 open).
 
 ## Decisions
 

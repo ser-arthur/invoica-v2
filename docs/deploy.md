@@ -110,7 +110,8 @@ address.
 ## 5. Vercel
 
 1. Move the team to Pro (team settings, Billing) before deploying this version. Hobby allows a cron job once a day
-   only and refuses the deployment, and it is for personal use.
+   only and refuses the deployment, and it is for personal use. To test on Hobby first, set the schedule in
+   `apps/web/vercel.json` to `0 6 * * *` (once a day) and put `*/15 * * * *` back on moving to Pro.
 2. Project settings: Root Directory `apps/web` (as now); Build and Deployment, Node.js Version 22.x.
 3. Two secrets, from your terminal:
 
