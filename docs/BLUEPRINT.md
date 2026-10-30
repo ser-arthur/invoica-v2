@@ -23,7 +23,7 @@ Invoica v2: a re-architecture from scratch (decision 0001) that keeps the old ap
 
 ## Stack in force
 
-TypeScript throughout (0002). pnpm workspaces. Next.js 16 (App Router) with React 19. PostgreSQL 16 with row-level security; Drizzle for typed queries; migrations are plain SQL run by our own runner, which refuses edited migrations. Zod 4 for inputs. Better Auth for sign-in. Vitest and fast-check for tests; Playwright for end-to-end and PDF; axe-core for accessibility. Tailwind CSS 4 with design tokens as CSS variables. Pinned versions live in each `package.json`.
+TypeScript throughout (0002). pnpm workspaces. Next.js 16 (App Router) with React 19. PostgreSQL 16 with row-level security; Drizzle for typed queries; migrations are plain SQL run by our own runner, which refuses edited migrations. Zod 4 for inputs. Better Auth for sign-in. Vitest and fast-check for tests; Playwright for end-to-end and PDF; axe-core for accessibility. Tailwind CSS 4 with design tokens as CSS variables. Pinned versions live in each `package.json`. Hosting (0016): Vercel Pro in London, Neon in London, Cloudflare R2 in the EU for files, Resend for email, Cloudflare for DNS.
 
 ## Phases
 
@@ -65,6 +65,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 2z4 | Approved on 20 October: confirming an address asks for the account's password; a reminder scan for each app image (decision 0011, migration 0026); forms wait for the page's script | Done |
 | 2z5 | After bundle 14: a save from an older page never undoes a change made elsewhere (settings, clients, items, tax codes); a password reset also confirms the address; leaving a form with changes not saved asks first; an item keeps an archived tax code; reminder placeholders checked | Done |
 | 2z6 | After bundle 15: deleted drafts saved again, copies priced now, typing kept on this device, dates past midnight, the full journey test, review 12 and its fixes | Done |
+| H1 | Hosting on Vercel (decision 0016): PDFs with the serverless Chromium, files in R2, the scheduler, the runbook (`docs/deploy.md`) | Built (bundle 53); the owner's setup and the PDF check on Vercel itself to come |
 | 2x | Billing for the plans, then the plans turned on | Waits for the billing provider; the free version comes first (owner, 20 October) |
 | 2y | Plan limits enforced by the database; the deferred number counter check (review 7, R7-L1) | After 2x |
 | D1 | Design round 5 on the website: the logo everywhere and as the icon (decision 0012), the home page rebuilt with its story (`docs/specs/website.md`), the sign-up form filled in from the home page | Built on `feat/website`; waiting for Kobby's review |
@@ -175,6 +176,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **29 Oct, about 17:00 to 18:00, on `main`.** A shorter footer: one row of links, the trading-name line, `hello@getinvoica.com`, Privacy and Terms. Signature's four styles on the Templates page. Drafts of the Privacy notice and Terms in `docs/legal/`. 932 unit, database and PDF tests and 336 end-to-end tests run, none failed on the second run (95 skipped by design). Bundle 50.
 - **29 Oct, about 17:35 to 21:40, on `main`.** Errors in plain words under their fields (sign in, create account, the password pages and every form in the app); only database guards written for people reach the page. Invoica's own dropdowns, dates, colours, checkboxes and radio buttons, as a sheet on phones (decision 0015). 945 unit, database and PDF tests and 368 end-to-end tests run, none failed on the third run (98 skipped by design). Bundle 51.
 - **30 Oct, about 03:05 to 04:35, on `main`.** Errors without the mark. One promise, "Every invoice, all the way to paid.", on the hero and the sign-in pages; the footer says "Invoicing for freelancers and small businesses." (`docs/specs/brand-lines.md`). 945 unit, database and PDF tests and 372 end-to-end tests run, none failed on the second run (98 skipped by design). Bundle 52.
+- **30 Oct, about 16:06 to 19:00, on `main`.** Hosting on Vercel (decision 0016, replacing 0010): DNS at Cloudflare and `hello@` forwarded, done by the owner; PDFs with the serverless Chromium (the spike in `docs/spikes/pdf-on-vercel.md`); files in Cloudflare R2; the scheduler every fifteen minutes so Neon's free plan lasts the month; `GET /api/health/pdf`; `docs/deploy.md` rewritten as the owner's steps. 955 unit, database and PDF tests and 372 end-to-end tests run, none failed (98 skipped by design). Bundle 53.
 
 ## Decisions in force
 
@@ -189,12 +191,13 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 | 0007 | Tax rounding | Proposed; built (UK per line, nearest penny; Ghana per document) |
 | 0008 | Email provider | Accepted: Resend |
 | 0009 | Credit notes worked out slot by slot | Proposed; built |
-| 0010 | Hosting | Proposed: Cloudflare in front, one small server, managed Postgres |
+| 0010 | Hosting | Replaced by 0016, never built |
 | 0011 | The reminder scan when an older image runs | Accepted: a second scan function for the worker (migration 0026) |
 | 0012 | The logo | Accepted: the name, its first i a slip with the corner turned |
 | 0013 | Where the launch offers show | Accepted: the trial leads; local prices public; the founding offer in the app at the end of the trial |
 | 0014 | The theme on the account | Accepted: saved on the account in `user_preference`, one row per person under its own row rule; each device keeps a copy |
 | 0015 | The app's own controls | Accepted: dropdowns, dates, colours, checkboxes and radio buttons drawn by the app; a sheet from the foot of the screen on phones |
+| 0016 | Hosting on Vercel | Accepted: Vercel Pro and Neon in London, files in Cloudflare R2 in the EU, Resend from `send.getinvoica.com`, Cloudflare DNS with every record DNS only, the scheduler every fifteen minutes |
 
 ## Choices made during the build (reversible, flagged for Kobby)
 
@@ -243,9 +246,9 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 ## Open questions
 
-1. Hosting: decision 0010 (a server behind Cloudflare) is to be replaced. On 27 October the owner agreed to Vercel Pro and Neon in London, starting on Neon's free plan, to be written as a decision after a spike on the PDF of record on Vercel; the public pages come first.
+1. Answered 30 October: hosting is decision 0016 (Vercel Pro and Neon in London, Cloudflare R2 for files, chosen by the owner that afternoon), after the spike on the PDF of record (`docs/spikes/pdf-on-vercel.md`). The scheduler runs every fifteen minutes, not five, so Neon's free plan lasts the month (decision 0016, Consequences).
 2. Billing provider, when the free version has been used: Paddle as merchant of record (recommended; about 5% + 50p a sale, no monthly fee, it handles VAT on your sales), or Stripe (1.5% + 20p a UK card plus 0.7% for subscriptions, no monthly fee); Paystack later for mobile money in Ghana.
-3. The domain to buy, then the sending subdomain for Resend.
+3. Answered 29 and 30 October: `getinvoica.com`, its DNS at Cloudflare, sending from `send.getinvoica.com` through Resend.
 4. Answered 23 October: the repository is `ser-arthur/invoica-v2`, and commits are authored as Kobby S. Arthur <kobbyarthur95@gmail.com>.
 5. Answered 25 October: the invoice templates for v1 are the fifteen in `docs/specs/invoice-templates.md`, built on `feat/invoice-templates`. The design pass on Signature, Letter and Ticket was answered and built the same evening. Left: real-looking sample details in the picker, and static fonts for PDFs.
 6. Approve or change 0003, 0006 and 0007.
@@ -256,9 +259,9 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 11. Answered 29 October, 14:48: Signature's Night head (and Route on Night) takes its accents from the business's colour (`docs/design/round-11-signature-colour.md`; built in bundle 49).
 12. Answered 28 October, 02:05: sign up on phones opens with the website's mark on a Night head (option A of `docs/design/round-12-sign-up-phone.md`).
 13. Answered 29 October, 03:26: the website's six picks stay on the home page and the sixteen get a Templates page of their own, which the header's Templates link leads to (`docs/specs/templates-page.md`). Later: a "Use this one" on each template, opening sign up with it chosen.
-14. The website's footer: built 29 October (`docs/specs/website-footer.md`): one row of product links and a bottom line naming Kobby S. Arthur (Invoica is a sole trader's trading name), `hello@getinvoica.com`, Privacy and Terms. The owner bought `getinvoica.com` at Namecheap on 29 October (one domain for now). Before taking paying customers: a UK postal address on the website and invoices (a virtual office, presented as London), a mailbox or forwarding for `hello@`, closing an account from Settings (today by writing in), the Privacy notice and Terms approved and checked by someone qualified (drafts in `docs/legal/`, law of England and Wales at the owner's word, 17:07), and whether the ICO data protection fee applies.
+14. The website's footer: built 29 October (`docs/specs/website-footer.md`): one row of product links and a bottom line naming Kobby S. Arthur (Invoica is a sole trader's trading name), `hello@getinvoica.com`, Privacy and Terms. The owner bought `getinvoica.com` at Namecheap on 29 October (one domain for now). Before taking paying customers: a UK postal address on the website and invoices (a virtual office, presented as London), a mailbox for `hello@` (forwarding works since 30 October, through Cloudflare Email Routing), closing an account from Settings (today by writing in), the Privacy notice and Terms approved and checked by someone qualified (drafts in `docs/legal/`, law of England and Wales at the owner's word, 17:07), and whether the ICO data protection fee applies.
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-52.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-53.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.
