@@ -174,6 +174,7 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 - **29 Oct, about 14:45 to 15:45, on `main`.** Signature's Night head and Route on Night take their accents from the business's colour, lifted for Night in OKLCH (`liftForNight`); in Invoica's own colour nothing changes. 932 unit, database and PDF tests and 334 end-to-end tests run, none failed (95 skipped by design). Bundle 49.
 - **29 Oct, about 17:00 to 18:00, on `main`.** A shorter footer: one row of links, the trading-name line, `hello@getinvoica.com`, Privacy and Terms. Signature's four styles on the Templates page. Drafts of the Privacy notice and Terms in `docs/legal/`. 932 unit, database and PDF tests and 336 end-to-end tests run, none failed on the second run (95 skipped by design). Bundle 50.
 - **29 Oct, about 17:35 to 21:40, on `main`.** Errors in plain words under their fields (sign in, create account, the password pages and every form in the app); only database guards written for people reach the page. Invoica's own dropdowns, dates, colours, checkboxes and radio buttons, as a sheet on phones (decision 0015). 945 unit, database and PDF tests and 368 end-to-end tests run, none failed on the third run (98 skipped by design). Bundle 51.
+- **30 Oct, about 03:05 to 04:35, on `main`.** Errors without the mark. One promise, "Every invoice, all the way to paid.", on the hero and the sign-in pages; the footer says "Invoicing for freelancers and small businesses." (`docs/specs/brand-lines.md`). 945 unit, database and PDF tests and 372 end-to-end tests run, none failed on the second run (98 skipped by design). Bundle 52.
 
 ## Decisions in force
 
@@ -259,5 +260,5 @@ Each phase ends with its checks run and counted, a commit, and this file updated
 
 ## Files a new chat needs
 
-- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-51.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
+- The latest `invoica-repo-NN.zip` (repository bundle). Latest: `invoica-repo-52.zip`. The history was rewritten on 19 October: clones from bundle 08 or earlier need a new clone.
 - Nothing else: everything else is in the repository or the project docs.
