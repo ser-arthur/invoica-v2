@@ -27,7 +27,7 @@ This is the **v2 repository**: a re-architecture from scratch (decision 0001). T
 
 **Running the end-to-end suite.** Against the development server: `pnpm dev`, then `E2E_BASE_URL=http://localhost:3000 pnpm test:e2e`. Against a production build: `pnpm build`, start `apps/web/.next/standalone/apps/web/server.js` with `NODE_ENV=production`, `BETTER_AUTH_URL=http://localhost:3100`, `EMAIL_PROVIDER=file`, `MAILBOX_DIR`, `FILE_STORAGE_DIR`, `CRON_SECRET` and `INVOICA_CLIENT_IP_HEADER=x-forwarded-for` (the suite gives each sign-up its own address in that header, so the sign-up limit holds), then run the suite with `E2E_BASE_URL=http://localhost:3100`, the same `MAILBOX_DIR` and the same `CRON_SECRET` (its value, without quotes: the drain tests send it). If the development server reloads a page over and over after a change to `next.config.ts`, stop it, delete `apps/web/.next/dev` and start it again. Editing files while the suite runs against the development server makes tests fail at random; run it against a production build to keep working meanwhile.
 
-**Production readiness.** `docs/deploy.md` is the runbook for decision 0010: the domain and Cloudflare tunnel, the database roles, Resend, the server, a settings file per container, the first start, upgrades and backups. A production server checks its settings when it starts and stops with a list of what to fix. `/api/health` answers whether the database is reachable. The container image cannot be built here (Docker Hub is blocked); CI builds both images on every commit and runs the migration image against an empty database (job `image`), and runs the end-to-end suite against the production server on every push (job `e2e-production`); the same suite against the development server (job `e2e`) runs only when started by hand (Actions, CI, "Run workflow"). CI first ran on GitHub on 23 October 2026.
+**Production readiness.** `docs/deploy.md` is the runbook for decision 0016: the app on Vercel Pro in London, the database on Neon in London with the three roles, kept PDFs and logos in Cloudflare R2 in the EU, email out through Resend from `send.getinvoica.com`, DNS at Cloudflare, the settings for Vercel, the first deployment, new versions and backups. On Vercel, PDFs come from `@sparticuz/chromium` (`chromiumLaunch()` in `apps/web/src/lib/pdf.ts`, the spike in `docs/spikes/pdf-on-vercel.md`), and the scheduler calls `/api/jobs/drain` every fifteen minutes (`apps/web/vercel.json`). `GET /api/health/pdf`, with the `CRON_SECRET` bearer token, renders one invoice and says how long it took. The `Dockerfile` and `deploy/compose.yaml` still run Invoica on a server of its own. A production server checks its settings when it starts and stops with a list of what to fix. `/api/health` answers whether the database is reachable. The container image cannot be built here (Docker Hub is blocked); CI builds both images on every commit and runs the migration image against an empty database (job `image`), and runs the end-to-end suite against the production server on every push (job `e2e-production`); the same suite against the development server (job `e2e`) runs only when started by hand (Actions, CI, "Run workflow"). CI first ran on GitHub on 23 October 2026.
 
 **Waiting for approval:** nothing built is waiting. The owner approved the three open items at 13:50 on 20 October; they are on `main` (below). Open questions are in the blueprint.
 
@@ -57,6 +57,15 @@ To take a later bundle into an existing clone: `git pull ~/Downloads/invoica-rep
 The switch to pull requests (foundation section 7) waits on GitHub: the owner connects GitHub in Settings, Connectors, and creates an empty private repository. The history is then pushed as a branch `start`, which the owner renames to `main` (the assistant never pushes to `main`). From then on every change arrives as a pull request.
 
 ## What changed last
+
+30 October 2026, about 16:06 to 19:00, on `main`, the owner's choices that afternoon (Cloudflare for DNS, Cloudflare R2 for files) and his yes to the plan:
+- DNS for `getinvoica.com` moved to Cloudflare (the Invoica account), every record "DNS only"; the domain added to Vercel with `www` redirecting; `hello@getinvoica.com` forwarded by Cloudflare Email Routing. All done by the owner, step by step.
+- Decision 0016 replaces 0010: Vercel Pro in London, Neon in London, R2 in the EU, Resend from `send.getinvoica.com`, `x-real-ip` for visitors' addresses. `docs/deploy.md` rewritten as the owner's steps, each with its commands.
+- The spike (`docs/spikes/pdf-on-vercel.md`): `@sparticuz/chromium` 141 passes the whole PDF pack once `--single-process` and two flags that loosen security are dropped. A local `vercel build` puts the Chromium archives in every function, about 85 MB each. The role statements for Neon were run on a PostgreSQL 16 whose admin is not a superuser: the database needs `grant invoica_owner to neondb_owner` first, then every migration applied.
+- Files in R2 when the four `R2_*` settings are set, a folder otherwise (`apps/web/src/lib/storage.ts`, `aws4fetch`); on Vercel the start-up check asks for them. `GET /api/health/pdf` renders one invoice with the bearer token and says how long it took. The drain answers Vercel's GET.
+- The scheduler runs every fifteen minutes, not five: Neon's free plan gives 100 compute hours a month and sleeps after five minutes without use, so a call every five minutes would keep it awake all month and Neon would stop it. Told to the owner with the setup steps; one line in `apps/web/vercel.json` if he wants five back.
+- Checks: 955 unit, database and PDF tests run, 955 passed, 0 failed, 0 skipped (core 263, schemas 7, documents 84, PDF 231, database 244, web unit 126); format, copy rules, lint, types and the production build pass. The new tests of R2 storage, the R2 and Vercel settings and the drain's GET failed first; the PDF check's three came with it. The end-to-end suite against the production build, run from a copy elsewhere with production settings: 372 run, 274 passed, 98 skipped by design (one width only), 0 failed. Its first run of `pnpm check` found two files not formatted; the formatting went into the commits that added them, and `pnpm check` ran again on the final `main`.
+- Bundle 53.
 
 30 October 2026, about 03:05 to 04:35, on `main`, the owner's notes of 03:05 and his yes of 03:23:
 - Errors without the mark: a field's error is its words in the danger colour under it, with the field's red border; the box above a form has no mark either. The words carry the error, so nothing rests on colour alone.
@@ -350,7 +359,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 
 ## Next steps
 
-1. Hosting, after the public pages: the owner agreed on 27 October to Vercel Pro and Neon in London (Neon's free plan while testing). First a spike: the PDF of record on Vercel with the pinned Chromium (a container function), the three database roles on Neon, and emails sent straight after the action that queues them so the database can sleep between uses. Then a decision replacing 0010, and `docs/deploy.md` rewritten for it.
+1. Hosting (decision 0016, bundle 53): the owner's setup, `docs/deploy.md` steps 2 to 6 (Neon and the migrations, R2, Resend, Vercel Pro and its settings, the first deployment). Then the PDF check on Vercel itself, one call cold and one warm; if it fails there, a small container service for PDFs only (`docs/spikes/pdf-on-vercel.md`). Later: DNSSEC, the registration moved to Cloudflare after 60 days, a second copy of the files (step 8), a mailbox for sending as `hello@`.
 2. GitHub: on 23 October the owner chose to put v2 in its own private repository, `ser-arthur/invoica-v2`, cloned from bundle 20 into `~/Downloads/_DEV/invoica-v2` with `feat/website` as its `main`, and to show the site from its own Vercel project (root `apps/web`, no database: the site shows, account actions fail). The old repository and `invoica-io.vercel.app` stay untouched. CI (`.github/workflows/ci.yml`) runs there for the first time on that push. When this session is linked to GitHub: pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
 3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
 4. Templates: real-looking sample details in the picker (account, company and VAT numbers that fail their check digits). Later: static fonts for PDFs, and the website's templates section.
@@ -360,7 +369,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 
 ## Open questions
 
-The list is kept in `docs/BLUEPRINT.md`, "Open questions" (12 items, 7 open).
+The list is kept in `docs/BLUEPRINT.md`, "Open questions" (14 items, 5 open).
 
 ## Decisions
 
@@ -375,8 +384,10 @@ The list is kept in `docs/BLUEPRINT.md`, "Open questions" (12 items, 7 open).
 | 0007 | Tax rounding | Proposed, built |
 | 0008 | Email provider | Accepted: Resend |
 | 0009 | Credit notes worked out slot by slot | Proposed, built |
-| 0010 | Hosting | Proposed |
+| 0010 | Hosting | Replaced by 0016, never built |
 | 0011 | The reminder scan when an older image runs | Accepted |
 | 0012 | The logo | Accepted |
 | 0013 | Where the launch offers show | Accepted |
 | 0014 | The theme on the account | Accepted |
+| 0015 | The app's own controls | Accepted |
+| 0016 | Hosting on Vercel, with Neon, Cloudflare R2, Resend and Cloudflare DNS | Accepted |

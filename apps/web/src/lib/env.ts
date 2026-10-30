@@ -22,6 +22,16 @@ export const env = {
   get fileStorageDir() {
     return process.env.FILE_STORAGE_DIR ?? '.data/files';
   },
+  /** Cloudflare R2 for kept PDFs and logos, when all four are set (decision 0016); otherwise the local folder. */
+  get r2() {
+    const endpoint = process.env.R2_ENDPOINT;
+    const bucket = process.env.R2_BUCKET;
+    const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+    return endpoint && bucket && accessKeyId && secretAccessKey
+      ? { endpoint, bucket, accessKeyId, secretAccessKey }
+      : null;
+  },
   get chromiumPath() {
     return process.env.CHROMIUM_PATH || undefined;
   },

@@ -20,6 +20,8 @@
     "@invoica/documents": "workspace:*",
     "@invoica/pdf": "workspace:*",
     "@invoica/schemas": "workspace:*",
+    "@sparticuz/chromium": "141.0.0",
+    "aws4fetch": "1.0.20",
     "better-auth": "1.7.10",
     "lucide-react": "1.50.0",
     "next": "16.4.2",
@@ -36,7 +38,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "tailwindcss": "4.3.3",
-    "vitest": "4.1.12",
-    "tsx": "4.23.15"
+    "tsx": "4.23.15",
+    "vitest": "4.1.12"
   }
 }

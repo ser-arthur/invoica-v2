@@ -19,12 +19,12 @@ export function fontDataUrl(file: string): string {
 
 let browser: Promise<Browser> | null = null;
 
-function getBrowser(executablePath?: string): Promise<Browser> {
+/** The launch settings the PDF test pack passes with on every Chromium Invoica runs. */
+export const LAUNCH_ARGS = ['--disable-dev-shm-usage', '--font-render-hinting=none'];
+
+function getBrowser(executablePath?: string, args: string[] = LAUNCH_ARGS): Promise<Browser> {
   if (!browser) {
-    browser = chromium.launch({
-      executablePath,
-      args: ['--disable-dev-shm-usage', '--font-render-hinting=none'],
-    });
+    browser = chromium.launch({ executablePath, args });
     browser.catch(() => {
       browser = null;
     });
@@ -40,6 +40,8 @@ export async function closePdfRenderer(): Promise<void> {
 
 export interface PdfOptions {
   executablePath?: string;
+  /** Chromium's launch settings, for a Chromium built for a host of its own (Vercel's functions). */
+  args?: string[];
   logoDataUrl?: string | null;
   /** Marks the PDF as a draft preview. Drafts are never kept. */
   draft?: boolean;
@@ -55,7 +57,7 @@ export async function renderPdf(snapshot: DocumentSnapshot, options: PdfOptions 
     logoUrl: options.logoDataUrl ?? null,
     draft: options.draft,
   });
-  const b = await getBrowser(options.executablePath);
+  const b = await getBrowser(options.executablePath, options.args);
   const context = await b.newContext({ javaScriptEnabled: false });
   try {
     const page = await context.newPage();

@@ -31,10 +31,23 @@ export function configProblems(env: Record<string, string | undefined>): string[
     (v) => /^[^<>]+ <[^<>@\s]+@[^<>@\s]+>$/.test(v),
     'a sender such as "Invoica <invoices@send.yourdomain>"',
   );
-  need('FILE_STORAGE_DIR', (v) => v.startsWith('/'), 'an absolute path to a kept, backed-up folder');
+  // Kept PDFs and logos: Cloudflare R2 (decision 0016), or a kept folder on a server of our own. Vercel's disk is not
+  // kept, so there it must be R2.
+  const R2 = ['R2_ENDPOINT', 'R2_BUCKET', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY'];
+  const r2Set = R2.filter((name) => env[name]);
+  if (r2Set.length > 0 || env.VERCEL) {
+    for (const name of R2.filter((n) => !env[n]))
+      problems.push(
+        `${name} is not set: Cloudflare R2 keeps the PDFs and logos${env.VERCEL ? ' on Vercel' : ''}.`,
+      );
+    if (env.R2_ENDPOINT && !/^https:\/\/[^/]+\.r2\.cloudflarestorage\.com\/?$/.test(env.R2_ENDPOINT))
+      problems.push(
+        'R2_ENDPOINT is not right: the bucket’s S3 address, https://<account>.r2.cloudflarestorage.com.',
+      );
+  } else need('FILE_STORAGE_DIR', (v) => v.startsWith('/'), 'an absolute path to a kept, backed-up folder');
   if (!env.INVOICA_CLIENT_IP_HEADER && !env.INVOICA_TRUSTED_PROXIES) {
     problems.push(
-      'INVOICA_CLIENT_IP_HEADER is not set: the header the proxy in front sets to the visitor’s address (cf-connecting-ip behind Cloudflare), or INVOICA_TRUSTED_PROXIES.',
+      'INVOICA_CLIENT_IP_HEADER is not set: the header the proxy in front sets to the visitor’s address (x-real-ip on Vercel, cf-connecting-ip behind Cloudflare’s proxy), or INVOICA_TRUSTED_PROXIES.',
     );
   }
   return problems;
