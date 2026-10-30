@@ -21,6 +21,7 @@
     "@invoica/pdf": "workspace:*",
     "@invoica/schemas": "workspace:*",
     "@sparticuz/chromium": "141.0.0",
+    "aws4fetch": "1.0.20",
     "better-auth": "1.7.10",
     "lucide-react": "1.50.0",
     "next": "16.4.2",

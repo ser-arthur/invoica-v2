@@ -44,6 +44,37 @@ describe('settings a production server checks at start', () => {
     expect(problems[0]).toContain(name);
   });
 
+  // docs/decisions/0016-hosting-on-vercel.md: on Vercel, files go to Cloudflare R2.
+  const r2 = {
+    R2_ENDPOINT: 'https://0123456789abcdef.eu.r2.cloudflarestorage.com',
+    R2_BUCKET: 'invoica-files',
+    R2_ACCESS_KEY_ID: 'key-id',
+    R2_SECRET_ACCESS_KEY: 'secret',
+  };
+
+  it('accepts R2 in place of a folder for the files', () => {
+    expect(configProblems({ ...good, FILE_STORAGE_DIR: undefined, ...r2 })).toEqual([]);
+  });
+
+  it('on Vercel, whose disk is not kept, needs R2 for the files', () => {
+    const problems = configProblems({ ...good, VERCEL: '1', INVOICA_CLIENT_IP_HEADER: 'x-real-ip' });
+    expect(problems.map((p) => p.split(' ')[0])).toEqual(Object.keys(r2));
+    expect(configProblems({ ...good, ...r2, VERCEL: '1', INVOICA_CLIENT_IP_HEADER: 'x-real-ip' })).toEqual(
+      [],
+    );
+  });
+
+  it('names the R2 settings that are missing when only some are set', () => {
+    const problems = configProblems({
+      ...good,
+      FILE_STORAGE_DIR: undefined,
+      ...r2,
+      R2_SECRET_ACCESS_KEY: undefined,
+    });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('R2_SECRET_ACCESS_KEY');
+  });
+
   it('accepts the proxies list in place of the client address header', () => {
     expect(
       configProblems({ ...good, INVOICA_CLIENT_IP_HEADER: undefined, INVOICA_TRUSTED_PROXIES: '10.0.0.0/8' }),
