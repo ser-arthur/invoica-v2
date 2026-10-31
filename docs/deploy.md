@@ -75,8 +75,12 @@ a production server stops at start with a list of what is missing, so pages that
 
    ```
    cd ~/Downloads/_DEV/invoica-v2
-   DATABASE_OWNER_URL='postgresql://invoica_owner:OWNER_PASSWORD@DIRECT_HOST/invoica?sslmode=verify-full' pnpm db:migrate
+   read -s "OWNER_PW?invoica_owner password: "
+   DATABASE_OWNER_URL="postgresql://invoica_owner:${OWNER_PW}@DIRECT_HOST/invoica?sslmode=verify-full" pnpm db:migrate
+   unset OWNER_PW
    ```
+
+   `read -s` takes the password without showing it, so it stays out of the shell's history and off the screen.
 
    It answers `Applied: 0001_init.sql, …, 0028_user_preference.sql. Already applied: 0.` Never run the seed against
    this database, and never give Vercel the owner's address.
@@ -110,7 +114,8 @@ address.
 ## 5. Vercel
 
 1. Move the team to Pro (team settings, Billing) before deploying this version. Hobby allows a cron job once a day
-   only and refuses the deployment, and it is for personal use.
+   only and refuses the deployment, and it is for personal use. To test on Hobby first, set the schedule in
+   `apps/web/vercel.json` to `0 6 * * *` (once a day) and put `*/15 * * * *` back on moving to Pro.
 2. Project settings: Root Directory `apps/web` (as now); Build and Deployment, Node.js Version 22.x.
 3. Two secrets, from your terminal:
 
@@ -151,14 +156,30 @@ Sign-in works at `https://getinvoica.com` only: the `vercel.app` address is a di
 2. Check the database and the PDFs (run the PDF check twice: the first call starts a cold function):
 
    ```
-   curl -fsS https://getinvoica.com/api/health
+   curl -sS https://getinvoica.com/api/health
    curl -fsS -H "Authorization: Bearer CRON_SECRET" https://getinvoica.com/api/health/pdf
    curl -fsS -H "Authorization: Bearer CRON_SECRET" https://getinvoica.com/api/health/pdf
    ```
 
-   The first answers `{"status":"ok"}`. The PDF check answers `{"status":"ok","ms":…,"bytes":…}`: a few seconds
-   cold, under a second warm. A `503` means Chromium did not start on Vercel; the function's log in Vercel says why,
-   and the fallback is in `docs/spikes/pdf-on-vercel.md`.
+   The first answers `{"status":"ok"}` when the app reaches the database as both `invoica_app` and
+   `invoica_worker`. The PDF check answers `{"status":"ok","ms":…,"bytes":…}`: a few seconds cold, under a second
+   warm. A `503` from the PDF check means Chromium did not start on Vercel; the function's log says why, and the
+   fallback is in `docs/spikes/pdf-on-vercel.md`.
+
+   When the health check answers `{"status":"unavailable"}`, the function's log in Vercel (Logs, path
+   `/api/health`) names the setting and the reason, for example
+   `health check: DATABASE_URL: 28P01 password authentication failed for user "invoica_app"`. To try an address from
+   your terminal before putting it in Vercel, paste it when asked:
+
+   ```
+   cd ~/Downloads/_DEV/invoica-v2
+   read -s "CHECK_URL?Address to check: "
+   CHECK_URL="$CHECK_URL" pnpm -s db:check
+   unset CHECK_URL
+   ```
+
+   It answers `Connected as invoica_app to invoica, PostgreSQL 16…`, or `Could not connect:` and the reason. It never
+   prints the address.
 3. Settings, Cron Jobs shows `/api/jobs/drain` every fifteen minutes. After the first run its log shows `200`.
 4. Create an account with your own address at `https://getinvoica.com/sign-up`: the confirmation email
    arrives from `invoices@send.getinvoica.com`. Then add a logo, a client and an invoice, issue it, and download its

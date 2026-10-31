@@ -3,9 +3,9 @@ import { bearerMatches } from '@/lib/secret';
 
 /**
  * Queues the reminders due now, then runs due jobs, including retries. Called by the host's scheduler with the
- * CRON_SECRET bearer token: every fifteen minutes on Vercel (`apps/web/vercel.json`), every five on a server of our
- * own (`deploy/compose.yaml`). The jobs run even when queuing the reminders fails; the answer is then 500, so the
- * scheduler's log and an uptime monitor show it.
+ * CRON_SECRET bearer token: on Vercel as `apps/web/vercel.json` sets (every fifteen minutes on Pro), every five on a
+ * server of our own (`deploy/compose.yaml`). The jobs run even when queuing the reminders fails; the answer is then
+ * 500, so the scheduler's log and an uptime monitor show it.
  */
 export const dynamic = 'force-dynamic';
 /** A cold function may start Chromium for the PDFs the jobs need. */

@@ -1,7 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { PASSWORD, addClient, choose, signUpAndOnboard, optionsOf } from './helpers';
+import { PASSWORD, addClient, choose, cronSecret, signUpAndOnboard, optionsOf } from './helpers';
 import { emailsTo } from './mailbox';
 
 /**
@@ -203,16 +201,6 @@ test('settings saved stay saved, and the next invoice follows them', async ({ pa
   await expect(doc.getByText('12-34-56').first()).toBeVisible();
   await expect(doc.getByText('Thank you for your business.').first()).toBeVisible();
 });
-
-/** The server's CRON_SECRET: from the environment for a production run, else the development server's `.env.local`. */
-function cronSecret() {
-  if (process.env.CRON_SECRET) return process.env.CRON_SECRET;
-  try {
-    return /^CRON_SECRET=(.+)$/m.exec(readFileSync(join(process.cwd(), '.env.local'), 'utf8'))?.[1]?.trim();
-  } catch {
-    return undefined;
-  }
-}
 
 test('a voided invoice leaves what is owed, gets no reminder, and can take no payment', async ({
   page,

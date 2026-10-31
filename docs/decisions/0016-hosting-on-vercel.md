@@ -37,8 +37,9 @@ Cloudflare Email Routing, and chose Cloudflare R2 for files. The spike passed (`
   month (about 180 hours at the smallest size), and Neon then stops it until the month ends. Every fifteen minutes it
   sleeps about two thirds of the time (about 60 hours). Nothing waits on the scheduler but retries, which are at most
   fifteen minutes late, and reminders, whose scan looks three hours either side of each organisation's day.
-- Hobby allows a scheduler once a day only, and is for personal use, so the team is on Pro before the first
-  deployment with `vercel.json`.
+- Hobby allows a scheduler once a day only, and is for personal use, so the team is on Pro before customers. The
+  owner first deployed on Hobby on 30 October, with the scheduler once a day for testing; it goes back to every
+  fifteen minutes on Pro.
 - Files no longer live beside the app. The database's backup is Neon's restore window; the files' is R2's own
   durability, with a second copy still to choose (step 8 of `docs/deploy.md`).
 - A deployment from before these settings keeps files on the function's disk, which Vercel does not keep, so going

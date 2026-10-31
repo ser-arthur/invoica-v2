@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { linkIn, waitForEmail } from './mailbox';
 
@@ -149,4 +151,17 @@ export async function chooseTheme(page: Page, theme: 'light' | 'dark') {
   await page.getByRole('group', { name: 'Appearance' }).getByRole('button', { name: theme }).click();
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
   await page.getByLabel('Account and settings').click();
+}
+
+/**
+ * The server's CRON_SECRET, which the host's scheduler sends: from the environment for a production run, else the
+ * development server's `.env.local`.
+ */
+export function cronSecret() {
+  if (process.env.CRON_SECRET) return process.env.CRON_SECRET;
+  try {
+    return /^CRON_SECRET=(.+)$/m.exec(readFileSync(join(process.cwd(), '.env.local'), 'utf8'))?.[1]?.trim();
+  } catch {
+    return undefined;
+  }
 }

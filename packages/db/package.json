@@ -13,6 +13,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "migrate": "tsx scripts/migrate.ts",
+    "check-connection": "tsx scripts/check.ts",
     "setup:dev": "tsx scripts/setup-dev.ts"
   },
   "dependencies": {

@@ -58,6 +58,15 @@ The switch to pull requests (foundation section 7) waits on GitHub: the owner co
 
 ## What changed last
 
+30 October 2026, about 19:30 to 21:30, on `main`, while the owner was away (his notes of 19:34 and 19:37):
+- The owner deployed bundle 53 on Vercel's Hobby plan at 19:33, with his commit `053afb042` setting the scheduler to once a day, which Hobby requires. The same change is on this `main`, so the next bundle merges cleanly onto his; putting fifteen minutes back on moving to Pro is open question 15 in the blueprint.
+- Live at about 19:45: the website and the sign-in page load, so the app starts with all its settings, but `/api/health` answers `unavailable`: the app does not reach Neon. The likeliest cause is a password or host in `DATABASE_URL` or `DATABASE_WORKER_URL` in Vercel; told to the owner with a command to test each address from his terminal.
+- The health check now tries the worker role too, and when either connection fails it writes the setting and the driver's code and words to the function's log (`databaseProblem`, `describeDatabaseError` in `packages/db/src/client.ts`), never a password. `pnpm db:check` tries an address from `CHECK_URL` and prints whom it connected as, or why not. `docs/deploy.md` step 6 says how to use both; step 2.6 now reads the owner's password with `read -s`.
+- The end-to-end suite checks `/api/health` and `/api/health/pdf` against the production server (`e2e/health.spec.ts`); the cron secret helper is shared in `e2e/helpers.ts`.
+- Outside the repository: an internal technical record of the whole setup for the owner (`Invoica_Internal_Record_v1.pdf`), with fillable fields for the values he holds.
+- Checks: 965 unit, database and PDF tests run, 965 passed, 0 failed, 0 skipped (core 263, schemas 7, documents 84, PDF 231, database 251, web unit 129); format, copy rules, lint, types and the production build pass. The ten new tests failed first (seven on the database's reasons, three on the health check). The end-to-end suite against the production build, run from a copy elsewhere with production settings: 376 run, 276 passed, 100 skipped by design (one width only), 0 failed.
+- Bundle 54.
+
 30 October 2026, about 16:06 to 19:00, on `main`, the owner's choices that afternoon (Cloudflare for DNS, Cloudflare R2 for files) and his yes to the plan:
 - DNS for `getinvoica.com` moved to Cloudflare (the Invoica account), every record "DNS only"; the domain added to Vercel with `www` redirecting; `hello@getinvoica.com` forwarded by Cloudflare Email Routing. All done by the owner, step by step.
 - Decision 0016 replaces 0010: Vercel Pro in London, Neon in London, R2 in the EU, Resend from `send.getinvoica.com`, `x-real-ip` for visitors' addresses. `docs/deploy.md` rewritten as the owner's steps, each with its commands.
@@ -359,7 +368,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 
 ## Next steps
 
-1. Hosting (decision 0016, bundle 53): the owner's setup, `docs/deploy.md` steps 2 to 6 (Neon and the migrations, R2, Resend, Vercel Pro and its settings, the first deployment). Then the PDF check on Vercel itself, one call cold and one warm; if it fails there, a small container service for PDFs only (`docs/spikes/pdf-on-vercel.md`). Later: DNSSEC, the registration moved to Cloudflare after 60 days, a second copy of the files (step 8), a mailbox for sending as `hello@`.
+1. Hosting (decision 0016): first, the app must reach the database: `/api/health` answered `unavailable` on 30 October at about 19:45 (see What changed last). Then, on moving to Vercel Pro, the scheduler back to every fifteen minutes in `apps/web/vercel.json` (BLUEPRINT, open question 15). The owner's setup, `docs/deploy.md` steps 2 to 6 (Neon and the migrations, R2, Resend, Vercel Pro and its settings, the first deployment). Then the PDF check on Vercel itself, one call cold and one warm; if it fails there, a small container service for PDFs only (`docs/spikes/pdf-on-vercel.md`). Later: DNSSEC, the registration moved to Cloudflare after 60 days, a second copy of the files (step 8), a mailbox for sending as `hello@`.
 2. GitHub: on 23 October the owner chose to put v2 in its own private repository, `ser-arthur/invoica-v2`, cloned from bundle 20 into `~/Downloads/_DEV/invoica-v2` with `feat/website` as its `main`, and to show the site from its own Vercel project (root `apps/web`, no database: the site shows, account actions fail). The old repository and `invoica-io.vercel.app` stay untouched. CI (`.github/workflows/ci.yml`) runs there for the first time on that push. When this session is linked to GitHub: pull requests with CI (which also builds the container image and runs the end-to-end suite against the production server).
 3. Billing (2x) once the free version has been used and a provider is chosen; then plan limits in the database and the deferred number counter check (2y).
 4. Templates: real-looking sample details in the picker (account, company and VAT numbers that fail their check digits). Later: static fonts for PDFs, and the website's templates section.
@@ -369,7 +378,7 @@ Session 2, 19 October 2026, afternoon: phases 2q to 2w (Resend, email verificati
 
 ## Open questions
 
-The list is kept in `docs/BLUEPRINT.md`, "Open questions" (14 items, 5 open).
+The list is kept in `docs/BLUEPRINT.md`, "Open questions" (15 items, 6 open).
 
 ## Decisions
 

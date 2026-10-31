@@ -1,7 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
-import { addClient, choose, signUpAndOnboard, watchErrors } from './helpers';
+import { addClient, choose, cronSecret, signUpAndOnboard, watchErrors } from './helpers';
 import { emailsTo, waitForEmail } from './mailbox';
 
 /** docs/specs/reminders.md, acceptance criteria 5 and 6. */
@@ -63,19 +61,6 @@ test('a reminder goes with the PDF and what is owed now, and appears in the acti
 async function dueDate(page: Page) {
   const row = page.locator('dt', { hasText: /^Due$/ }).locator('xpath=following-sibling::dd[1]');
   return (await row.textContent())!.trim();
-}
-
-/**
- * The server's CRON_SECRET, which the host's scheduler would send: from the environment for a production run, else the
- * development server's `.env.local`.
- */
-function cronSecret() {
-  if (process.env.CRON_SECRET) return process.env.CRON_SECRET;
-  try {
-    return /^CRON_SECRET=(.+)$/m.exec(readFileSync(join(process.cwd(), '.env.local'), 'utf8'))?.[1]?.trim();
-  } catch {
-    return undefined;
-  }
 }
 
 test('the scheduled drain sends the reminder due today, once', async ({ page, request }) => {

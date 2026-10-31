@@ -16,12 +16,39 @@ export function createDatabase(url: string, options: { max?: number } = {}): Dat
   return { db: drizzle(pool, { schema }), pool };
 }
 
-/** Whether the database answers, for health checks. */
-export async function databaseAnswers(db: Database): Promise<boolean> {
+/**
+ * For health checks: null when the database answers, otherwise why not, in the driver's words. Those name the role,
+ * the database or the host, never a password.
+ */
+export async function databaseProblem(db: Database): Promise<string | null> {
   try {
     await db.execute(sql`select 1`);
-    return true;
-  } catch {
-    return false;
+    return null;
+  } catch (error) {
+    return describeDatabaseError(error);
   }
+}
+
+interface DriverError {
+  code?: unknown;
+  message?: unknown;
+  cause?: unknown;
+  errors?: unknown;
+}
+
+/**
+ * The code and words of a database error, at most 200 characters: the driver's own error inside a failed query, and
+ * the first of several when every address of a host refused.
+ */
+export function describeDatabaseError(error: unknown): string {
+  let e = (error ?? {}) as DriverError;
+  for (let depth = 0; depth < 5; depth++) {
+    if (e.cause && typeof e.cause === 'object') e = e.cause as DriverError;
+    else if (!e.message && Array.isArray(e.errors) && e.errors[0] && typeof e.errors[0] === 'object')
+      e = e.errors[0] as DriverError;
+    else break;
+  }
+  const code = typeof e.code === 'string' ? e.code : '';
+  const message = typeof e.message === 'string' ? e.message : '';
+  return ([code, message].filter(Boolean).join(' ') || 'no reason given').slice(0, 200);
 }
